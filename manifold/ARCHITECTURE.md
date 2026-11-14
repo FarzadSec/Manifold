@@ -1,9 +1,10 @@
 # Manifold — Architecture and Roadmap
 
-Version 0.3 · 2026-11-14 · Status: P0 in progress
+Version 0.4 · 2026-11-14 · Status: P0 in progress
 
 Decision log:
 
+- 2026-11-14 — The repository carries only Manifold's own descriptions and guides. The base project's pages, documentation site, media and community files are removed from the product branch and stay readable on `upstream-main`. The same applies to names and links inside the program, which P0 replaces.
 - 2026-11-14 — Project name: Manifold. Repository: `FarzadSec/Manifold`, private, a mirror of `MHSanaei/3x-ui` at commit `5297fd3c`.
 - 2026-11-14 — WireGuard in this panel is standard kernel WireGuard, driven exactly the way WGDashboard drives it. AmneziaWG is not part of the product.
 - 2026-11-14 — Panel first, Mirza Bot after.
@@ -178,7 +179,7 @@ This is the contract Mirza Bot will sync against, so it is frozen before the bot
 
 | Phase | Scope | Done when |
 |---|---|---|
-| P0 Foundation | Private mirror (done); rename binary, service and paths from `x-ui` to `manifold`; CI trimmed to what the fork needs; staging server | A Manifold build installs beside a stock x-ui on one server and passes `make verify` |
+| P0 Foundation | Private mirror (done); own README and guides, base project's pages removed (done); rename binary, service, paths and install scripts from `x-ui` to `manifold`; remove the sponsor, donate and documentation links and the base project's name from the interface; repoint or disable self-update; CI trimmed to what the fork needs; staging server | Nothing a user sees or runs carries another project's name, a Manifold build installs beside a stock x-ui on one server, and `make verify` passes |
 | P1 WireGuard | Engine 4.3, inbound form, `.conf` and QR in subscriptions, traffic and limits, node support, WGDashboard adoption | An existing WGDashboard server is taken over and its users connect without new configs; a peer and an Xray client on one account draw down the same quota |
 | P2 OpenVPN | Engine 4.4, inbound form, `.ovpn` in subscriptions, traffic and limits, node support | Same shared-quota test with an OpenVPN client, locally and on a remote node |
 | P3 L2TP/IPsec | Engine 4.5, embedded RADIUS, optional IKEv2 | Same test with a native L2TP client |
@@ -213,7 +214,9 @@ Branches in `FarzadSec/Manifold`:
 - `upstream-main` — pristine `MHSanaei/3x-ui` `main`. It only ever fast-forwards from upstream and is then merged into `main`.
 - Phase branches (`p0/foundation`, `p1/wireguard`, …) — where work happens before it reaches `main`.
 
-Fork-specific documents live in `manifold/`, a directory upstream does not have.
+Manifold's documents live in `manifold/`, a directory upstream does not have: this file, and `docs/` with the installation, usage and development guides. The merge procedure and the list of removed paths are in `docs/development.md`.
+
+What must stay from the base project: the `LICENSE` file and the attribution in `NOTICE`. Both are conditions of the GPL-3.0 licence the code is used under. The Go module path (`github.com/mhsanaei/3x-ui/v3`) also stays: it is an internal identifier no user sees, and changing it would rewrite the imports of every Go file and turn every upstream merge into a conflict.
 
 3x-ui moves fast (4,011 commits; last upstream commit 2026-11-13). To keep merges cheap:
 
@@ -222,7 +225,9 @@ Fork-specific documents live in `manifold/`, a directory upstream does not have.
 - Edits to shared upstream files stay as small as the integration allows.
 - Upstream is merged on a fixed cadence, not ad hoc.
 
-GitHub Actions: upstream ships ten workflows (CI, release, Docker, docs deploy, CodeQL and others). They stay disabled in this repository until P0 trims them to what the fork needs.
+GitHub Actions: six of upstream's workflows remain (CI, release, Docker, CodeQL, mutation tests, cache cleanup). They stay disabled in this repository until P0 trims them to what Manifold needs.
+
+Build verification: the workspace this plan is written from cannot fetch the Go toolchain's module proxy, so Go changes are verified by CI in this repository or on a server with the toolchain, never assumed.
 
 ## 9. Assumptions and open decisions
 

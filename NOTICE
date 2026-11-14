@@ -1,0 +1,13 @@
+Manifold
+Copyright (C) 2026 The Manifold Authors
+
+Manifold is free software: you can redistribute it and/or modify it under the
+terms of the GNU General Public License, version 3, as published by the Free
+Software Foundation. It is distributed without any warranty. See the LICENSE
+file for the full text.
+
+Manifold is a modified version of 3x-ui (https://github.com/MHSanaei/3x-ui),
+Copyright (C) the 3x-ui authors, which is licensed under the GNU General Public
+License, version 3. Modification began on 2026-11-14 from upstream commit
+5297fd3c8495d80fab97ae511553fa545c69e913. The 3x-ui authors do not endorse
+Manifold and are not responsible for it.
