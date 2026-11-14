@@ -2,7 +2,7 @@
 
 One control panel for several VPN protocols. A customer has one account with one quota and one expiry date, and that account works on every protocol the server offers.
 
-**Status:** version 0.1, private project. The base panel is complete and installable; the protocol engines that make it Manifold are being built in phases.
+**Status:** version 0.1. The base panel is complete and installable; the protocol engines that make it Manifold are being built in phases.
 
 ## Protocols
 
@@ -39,9 +39,7 @@ The full plan is in [manifold/ARCHITECTURE.md](manifold/ARCHITECTURE.md).
 On a Linux server with systemd, as root:
 
 ```bash
-export MANIFOLD_TOKEN=github_pat_xxx   # read access to this repository
-curl -fsSL -H "Authorization: Bearer $MANIFOLD_TOKEN" -H "Accept: application/vnd.github.raw" \
-  https://api.github.com/repos/FarzadSec/Manifold/contents/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/FarzadSec/Manifold/main/install.sh | bash
 ```
 
 The installer downloads the latest release, installs the `manifold` service and prints the panel address and login once. After that the server is managed with the `manifold` command:

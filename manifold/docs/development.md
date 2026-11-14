@@ -45,7 +45,7 @@ A change is done when `make verify` passes. Changes to the database layer, node 
 | A phase branch (`p0/…`, `p1/…`) or `merge/…` | Go tests, linters, generated-file check, shell lint, frontend | About 20 runner minutes |
 | `main`, or any pull request | The above, plus the race detector, two PostgreSQL jobs, the two-panel node test, the fuzz smoke test and the vulnerability check | About 52 runner minutes |
 
-A private repository has a monthly allowance of runner minutes, so push a phase branch when the work is ready to be checked, not after every edit.
+Standard runners are free for a public repository. The two tiers still keep a phase branch's feedback fast; if the repository is made private again, its monthly allowance of runner minutes is the reason not to push after every edit.
 
 ## Building without the Go module proxy
 

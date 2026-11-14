@@ -8,22 +8,12 @@ Manifold installs from a release package as a systemd service. The server downlo
 - Root access
 - An open TCP port for the panel and one for every inbound you create
 
-## A token for the private repository
-
-While the repository is private, the installer needs a GitHub token to download a release.
-
-1. On GitHub, open Settings, then Developer settings, then Personal access tokens, then Fine-grained tokens.
-2. Create a token limited to the `Manifold` repository, with the repository permission **Contents: Read-only**.
-3. Keep the token; it is used for the first install and for every update.
-
 ## Install
 
 As root on the server:
 
 ```bash
-export MANIFOLD_TOKEN=github_pat_xxx
-curl -fsSL -H "Authorization: Bearer $MANIFOLD_TOKEN" -H "Accept: application/vnd.github.raw" \
-  https://api.github.com/repos/FarzadSec/Manifold/contents/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/FarzadSec/Manifold/main/install.sh | bash
 ```
 
 The installer:
@@ -56,7 +46,7 @@ These first-install options are ignored when a database already exists.
 
 ### Installing without GitHub access on the server
 
-If the server cannot reach GitHub, download `manifold-linux-amd64.tar.gz` (or `arm64`) from the repository's Releases page on another machine, copy it to the server, then:
+If the server cannot reach GitHub, or reaches it only through a rate limit, download `manifold-linux-amd64.tar.gz` (or `arm64`) from the repository's Releases page on another machine, copy it to the server, then:
 
 ```bash
 tar -xzf manifold-linux-amd64.tar.gz manifold/install.sh
@@ -102,7 +92,6 @@ manifold iplimit install
 ## Update
 
 ```bash
-export MANIFOLD_TOKEN=github_pat_xxx
 manifold update
 ```
 
@@ -134,7 +123,7 @@ manifold uninstall --purge   # deletes the data as well
 The repository also builds as a container image. This path compiles on the server, so it needs more memory and time than the package install.
 
 ```bash
-git clone git@github.com:FarzadSec/Manifold.git
+git clone https://github.com/FarzadSec/Manifold.git
 cd Manifold
 docker compose up -d --build
 docker compose logs manifold | grep "Username"
@@ -144,3 +133,7 @@ docker compose logs manifold | grep "Username"
 - `docker-compose.yml` publishes only the panel port (2053). Add every inbound port, and the subscription port (2096) if you use subscriptions, under `ports:`.
 - Data is in `./db/`, certificates in `./cert/`.
 - Update with `git pull` and `docker compose up -d --build`.
+
+## Installing from a private copy
+
+If you keep a private copy of the repository, set `MANIFOLD_REPO=owner/name` and `MANIFOLD_TOKEN` (a token with read access to its contents) before running the installer or `manifold update`. The installer then sends the token with every download. Leave `MANIFOLD_TOKEN` unset for the public repository: a wrong token makes GitHub answer 401.

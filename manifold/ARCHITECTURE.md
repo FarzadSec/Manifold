@@ -4,10 +4,11 @@ Version 0.5 · 2026-11-14 · Status: P0 delivered; see 8.1 for what it leaves op
 
 Decision log:
 
+- 2026-11-14 — The repository is public. The installer needs no token; `MANIFOLD_TOKEN` remains for a private copy.
 - 2026-11-14 — The panel never updates itself. The code that downloaded and ran an updater is removed; updates go through `install.sh` (`manifold update`). The update routes and the node fan-out remain and answer with a refusal, so masters and nodes keep one API.
 - 2026-11-14 — Two versions. `product_version` (0.1.0) is what people see and what release tags equal. The base version stays, because a master gates protocols on the version a node reports.
 - 2026-11-14 — Operators use `MANIFOLD_<NAME>` variables; the code keeps reading `XUI_<NAME>` and start-up copies one onto the other. Internal identifiers a user never sees (the Go module path, `XUI_` reads, `window.X_UI_*` globals) are kept to keep upstream merges cheap.
-- 2026-11-14 — Manifold installs natively under systemd from release packages built by CI; Docker remains as a second path. The repository is private, so the installer downloads through the GitHub API with a token, or from a local package file.
+- 2026-11-14 — Manifold installs natively under systemd from release packages built by CI; Docker remains as a second path. The installer downloads through the GitHub API, or installs from a local package file.
 
 - 2026-11-14 — The repository carries only Manifold's own descriptions and guides. The base project's pages, documentation site, media and community files are removed from the product branch and stay readable on `upstream-main`. The same applies to names and links inside the program, which P0 replaces.
 - 2026-11-14 — Project name: Manifold. Repository: `FarzadSec/Manifold`, private, a mirror of `MHSanaei/3x-ui` at commit `5297fd3c`.
