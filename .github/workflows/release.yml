@@ -151,7 +151,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
-            --title "Manifold $GITHUB_REF_NAME" \
-            --notes "Install or update with install.sh. See manifold/docs/installation.md." \
-            --latest packages/*
+          # A release drafted on GitHub creates the tag and already exists here;
+          # a tag pushed with git does not. Both end with the packages attached.
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --clobber packages/*
+          else
+            gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+              --title "Manifold $GITHUB_REF_NAME" \
+              --notes "Install or update with install.sh. See manifold/docs/installation.md." \
+              --latest packages/*
+          fi
