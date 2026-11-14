@@ -122,7 +122,9 @@ jobs:
           sudo manifold settings
           # An update must keep the database: the second run is an update in place.
           sudo bash install.sh --package manifold-linux-amd64.tar.gz
-          sudo manifold settings | grep -q 'port: 20530'
+          settings=$(sudo manifold settings)
+          grep -q 'port: 20530' <<<"$settings"
+          grep -q 'webBasePath: /smoke/' <<<"$settings"
           sudo manifold uninstall --purge
           test ! -e /usr/local/manifold
 

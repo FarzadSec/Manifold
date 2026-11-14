@@ -135,7 +135,7 @@ exempt_ports() {
     local ssh_ports panel_port
     ssh_ports=$(grep -oE '^[[:space:]]*Port[[:space:]]+[0-9]+' /etc/ssh/sshd_config 2>/dev/null | grep -oE '[0-9]+' | paste -sd, - || true)
     [ -n "$ssh_ports" ] || ssh_ports=22
-    panel_port=$("$BIN" setting -show true 2>/dev/null | grep -Eo 'port: .+' | awk '{print $2}' || true)
+    panel_port=$("$BIN" setting -show 2>/dev/null | grep -Eo 'port: .+' | awk '{print $2}' || true)
     if [ -n "$panel_port" ]; then
         echo "${ssh_ports},${panel_port}"
     else
@@ -209,7 +209,7 @@ main() {
                 journalctl -u manifold --no-pager -n "${1:-100}"
             fi
             ;;
-        settings) "$BIN" setting -show true ;;
+        settings) "$BIN" setting -show ;;
         login) set_login "$@" ;;
         port) apply_setting -port "${1:?usage: manifold port N}" ;;
         path) apply_setting -webBasePath "${1:?usage: manifold path /p/}" ;;
