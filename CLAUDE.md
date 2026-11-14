@@ -16,7 +16,7 @@ locations when it can answer in one hop.
   imports `github.com/xtls/xray-core` for config types + gRPC stats/handler/router
   API. MTProto inbounds run a second managed child — the `mtg-multi` binary
   (a multi-secret mtg fork — NOT a Go dependency; its prebuilt release binary is
-  fetched at image/release build time by `DockerInit.sh` + `release.yml`,
+  fetched at image build time by `DockerInit.sh`,
   panel-side code in `internal/mtproto/`) — outside Xray, one process per inbound
   serving each
   client's FakeTLS secret via the fork's `[secrets]` section (plus per-client
@@ -189,7 +189,13 @@ reads as a broken repo, not a missing step. Run `make dist-stub` once; every
 
     make verify   # gen-check + lint + typecheck + test + build + build-storybook
 
-That is the *fast* gate, not all of CI. `ci.yml` also runs `make race`,
+Without access to the Go module proxy, build offline: fetch the `build/vendor`
+branch (`vendor.yml` republishes it whenever `go.mod` or `go.sum` change),
+unpack its `vendor/` into the checkout and use `GOFLAGS=-mod=vendor`. Steps in
+`manifold/docs/development.md`. Never commit `vendor/` to a product branch.
+
+That is the *fast* gate, not all of CI. On `main` and on pull requests `ci.yml`
+also runs the jobs phase branches skip: `make race`,
 `make vulncheck`, a live-Postgres job (where a SKIP counts as a failure),
 `make node-e2e` (a real master and node panel, `internal/nodee2e/`) and a
 30s fuzz smoke on `FuzzParseLink`/`FuzzDecodeCertPin` — run those locally when

@@ -1,0 +1,52 @@
+name: Vendor snapshot
+
+# Publishes `go mod vendor` to the build/vendor branch, so a workspace that
+# cannot reach the Go module proxy can still build and test with -mod=vendor.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - "p[0-9]*/**"
+      - "merge/**"
+    paths:
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/vendor.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: vendor-snapshot
+  cancel-in-progress: true
+
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Vendor the module graph
+        run: go mod vendor
+      - name: Publish to build/vendor
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          work=$(mktemp -d)
+          mv vendor "$work/vendor"
+          cp go.mod go.sum "$work/"
+          sha256sum go.sum | cut -d' ' -f1 > "$work/GO_SUM_SHA256"
+          printf '%s\n' "$GITHUB_SHA" > "$work/SOURCE_COMMIT"
+          cd "$work"
+          git init -q -b build/vendor
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # -f: a vendored module's own .gitignore must not drop files the build needs.
+          git add -A -f
+          git commit -q -m "chore(vendor): snapshot for ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" build/vendor

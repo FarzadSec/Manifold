@@ -225,9 +225,9 @@ What must stay from the base project: the `LICENSE` file and the attribution in 
 - Edits to shared upstream files stay as small as the integration allows.
 - Upstream is merged on a fixed cadence, not ad hoc.
 
-GitHub Actions: six of upstream's workflows remain (CI, release, Docker, CodeQL, mutation tests, cache cleanup). They stay disabled in this repository until P0 trims them to what Manifold needs.
+GitHub Actions: two workflows remain. `ci.yml` is the gate: phase branches run the fast jobs (about 20 runner minutes), `main` and pull requests run everything (about 52). `vendor.yml` republishes `go mod vendor` to the `build/vendor` branch whenever dependencies change. The base project's release, Docker, CodeQL, mutation-test and cache-cleanup workflows are removed; Manifold's own release workflow is written with the rename.
 
-Build verification: the workspace this plan is written from cannot fetch the Go toolchain's module proxy, so Go changes are verified by CI in this repository or on a server with the toolchain, never assumed.
+Build verification: the workspace this plan is written from cannot reach the Go module proxy, so it builds and tests offline from `build/vendor`, and CI in this repository is the final word on every change.
 
 ## 9. Assumptions and open decisions
 

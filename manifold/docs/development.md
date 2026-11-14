@@ -37,7 +37,28 @@ A change is done when `make verify` passes. Changes to the database layer, node 
 
 ## Where verification runs
 
-`.github/workflows/ci.yml` runs the same gate, plus the race detector, a PostgreSQL job and the two-panel node test, on pull requests and on pushes to `main`. GitHub Actions is switched off in this repository until the workflows are trimmed for Manifold; until then, run the gate on a machine that has the toolchain.
+`.github/workflows/ci.yml` is the only gate that counts. What it runs depends on where the push lands:
+
+| Push to | Jobs | Cost per run |
+|---|---|---|
+| A phase branch (`p0/…`, `p1/…`) or `merge/…` | Go tests, linters, generated-file check, shell lint, frontend | About 20 runner minutes |
+| `main`, or any pull request | The above, plus the race detector, two PostgreSQL jobs, the two-panel node test, the fuzz smoke test and the vulnerability check | About 52 runner minutes |
+
+A private repository has a monthly allowance of runner minutes, so push a phase branch when the work is ready to be checked, not after every edit.
+
+## Building without the Go module proxy
+
+Some workspaces can reach GitHub but not the Go module proxy. For those, `.github/workflows/vendor.yml` publishes the output of `go mod vendor` to the `build/vendor` branch every time `go.mod` or `go.sum` change:
+
+```bash
+git fetch --depth 1 origin build/vendor
+git archive FETCH_HEAD vendor | tar -x
+echo vendor/ >> .git/info/exclude
+export GOFLAGS=-mod=vendor GOPROXY=off GOTOOLCHAIN=local
+make dist-stub && go build ./... && make test-go
+```
+
+`vendor/` is a local build aid. It is never committed to a product branch.
 
 ## Branches
 
