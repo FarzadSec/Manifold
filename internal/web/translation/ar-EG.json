@@ -121,10 +121,7 @@
     "routing": "التوجيه",
     "outbounds": "الصادرات",
     "apiDocs": "توثيق API",
-    "donate": "تبرع",
-    "sponsors": "الرعاة",
     "hosts": "المضيفات",
-    "docs": "التوثيق",
     "openMenu": "فتح القائمة",
     "pinSidebar": "تثبيت الشريط الجانبي",
     "unpinSidebar": "إلغاء تثبيت الشريط الجانبي",
@@ -1343,7 +1340,6 @@
       "subAnnounceDesc": "نص الإعلان المعروض في عميل VPN. يدعم رموز هوية العميل: {{EMAIL}}, {{ID}}, {{SHORT_ID}}, {{SUB_ID}}, {{TELEGRAM_ID}}.",
       "subThemeDir": "مجلد قالب الاشتراك",
       "subThemeDirDesc": "المسار المطلق لمجلد يحتوي على قالب مخصص (index.html/sub.html) لصفحة الاشتراك (مثل /etc/3x-ui/sub_templates/my-theme/). اتركه فارغًا لاستخدام الصفحة الافتراضية.",
-      "subThemeDirDocs": "دليل القالب ↗",
       "subEnableRouting": "تفعيل التوجيه",
       "happLinkEnable": "روابط اشتراك مشفّرة",
       "happLinkEnableDesc": "السماح بإنشاء روابط Happ مشفّرة في نافذة رمز الاستجابة السريعة للعميل. تُعالج عناوين الاشتراك محليًا.",
@@ -2513,15 +2509,6 @@
         "badVlessRoute": "أدخل رقماً واحداً بين 0 و65535"
       },
       "dragToReorder": "اسحب لتغيير ترتيب {name}"
-    },
-    "sponsors": {
-      "title": "الرعاة",
-      "intro": "شركات تدعم تطوير 3X-UI. تُفتح روابط الرعاة في علامة تبويب جديدة.",
-      "become": "كن راعيًا",
-      "tag": "راعٍ",
-      "visit": "زيارة",
-      "yourBrand": "علامتك التجارية هنا",
-      "yourBrandText": "ضع شركتك أمام آلاف مسؤولي الخوادم الذين يفتحون 3X-UI كل يوم."
     }
   },
   "tgbot": {
