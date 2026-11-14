@@ -64,12 +64,12 @@ func GetProductVersion() string {
 }
 
 func init() {
-	adoptManifoldEnv()
+	AdoptManifoldEnv()
 }
 
-// adoptManifoldEnv copies every MANIFOLD_<NAME> variable onto XUI_<NAME>, the
-// name the settings read, so the documented name always wins.
-func adoptManifoldEnv() {
+// AdoptManifoldEnv copies every MANIFOLD_<NAME> variable onto XUI_<NAME>, the name
+// the settings read. Call it again after loading an env file into the process.
+func AdoptManifoldEnv() {
 	for _, kv := range os.Environ() {
 		key, value, _ := strings.Cut(kv, "=")
 		if suffix, ours := strings.CutPrefix(key, "MANIFOLD_"); ours && suffix != "" {

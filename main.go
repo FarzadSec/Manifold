@@ -92,6 +92,7 @@ func runWebServer() {
 	}
 
 	_ = godotenv.Load()
+	config.AdoptManifoldEnv()
 
 	for _, line := range sys.ApplyMemoryTuning() {
 		logger.Info(line)
@@ -350,6 +351,7 @@ func updateTgbotSetting(tgBotToken string, tgBotChatid string, tgBotRuntime stri
 // It requires migration|required mode and a configured key.
 func encryptNodeTokens() {
 	_ = godotenv.Load()
+	config.AdoptManifoldEnv()
 	if err := initNodeTokenCrypto(); err != nil {
 		fmt.Println("node-token encryption init failed:", err)
 		os.Exit(1)
@@ -565,9 +567,7 @@ func migrateDb() {
 }
 
 // loadServiceEnvFile loads the systemd EnvironmentFile so CLI subcommands like
-// "x-ui setting" hit the same database backend as the panel. godotenv.Load does
-// not override variables already in the environment, so it is a no-op for the
-// systemd-managed service.
+// "manifold setting" hit the same database backend as the panel.
 func loadServiceEnvFile() {
 	for _, path := range config.GetEnvFilePaths() {
 		if _, err := os.Stat(path); err != nil {
@@ -576,6 +576,7 @@ func loadServiceEnvFile() {
 		if err := godotenv.Load(path); err != nil {
 			log.Printf("warning: failed to load env file %s: %v", path, err)
 		}
+		config.AdoptManifoldEnv()
 		return
 	}
 }

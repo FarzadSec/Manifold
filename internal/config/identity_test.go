@@ -12,7 +12,7 @@ func TestManifoldEnvNameSetsTheSetting(t *testing.T) {
 	}
 	t.Setenv("MANIFOLD_PORT", "8443")
 
-	adoptManifoldEnv()
+	AdoptManifoldEnv()
 
 	port, configured, err := GetPortOverride()
 	if err != nil {
@@ -27,7 +27,7 @@ func TestManifoldEnvNameWinsOverTheOldName(t *testing.T) {
 	t.Setenv("XUI_PORT", "1111")
 	t.Setenv("MANIFOLD_PORT", "8443")
 
-	adoptManifoldEnv()
+	AdoptManifoldEnv()
 
 	port, _, err := GetPortOverride()
 	if err != nil {
