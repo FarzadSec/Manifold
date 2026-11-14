@@ -240,6 +240,7 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - AmneziaWG and the userspace WireGuard inbound are still offered in the inbound form. They are hidden when the kernel WireGuard engine lands in P1.
 - The Nodes page shows each node's base version, not its product version.
 - The release workflow's arm64 package is built but only the amd64 package is installed and exercised on a runner.
+- The container image is not built or started in CI. The Dockerfile, entrypoint and compose file were changed together with the installer and are checked only by the shell linter.
 - `inbound-form-modal.test.tsx` ("keeps the persisted node share strategy through the nodes-loading race") timed out once on a runner and passed on the runs before and after; it is a timing-sensitive test inherited from the base code.
 
 ## 9. Assumptions and open decisions
