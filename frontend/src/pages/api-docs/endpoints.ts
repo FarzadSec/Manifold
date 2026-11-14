@@ -556,7 +556,8 @@ export const sections: readonly Section[] = [
       {
         method: 'GET',
         path: '/panel/api/server/getPanelUpdateInfo',
-        summary: 'Check whether a newer 3x-ui release is available on GitHub.',
+        summary:
+          'Report the running version. The panel never updates itself, so the latest version always equals the current one and updateAvailable is false.',
       },
       {
         method: 'GET',
@@ -664,7 +665,7 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/server/updatePanel',
         summary:
-          'Self-update the panel to the latest version. The server restarts on success. Bearer-token callers need admin or node-admin scope.',
+          'Always refused: the panel never downloads or runs an updater. Update with the installer. Bearer-token callers need admin or node-admin scope.',
         params: [
           {
             name: 'dev',
@@ -1850,7 +1851,7 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/nodes/updatePanel',
         summary:
-          'Trigger the official panel self-updater on each given node (downloads the latest release and restarts). Only enabled, online nodes are updated; offline/disabled ones are reported as skipped. Set "dev": true to move the nodes to the rolling per-commit dev channel instead of the latest stable release. Returns a per-node result list.',
+          'Ask each given node to update its panel. Nodes refuse, because a panel never updates itself; each node is reported with that error. Update nodes with the installer.',
         body: '{\n  "ids": [1, 2, 3],\n  "dev": false\n}',
         response:
           '{\n  "success": true,\n  "obj": [\n    { "id": 1, "name": "de-1", "ok": true },\n    { "id": 2, "name": "fr-1", "ok": false, "error": "node is offline" }\n  ]\n}',

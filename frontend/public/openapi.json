@@ -6706,7 +6706,7 @@
         "tags": [
           "Server"
         ],
-        "summary": "Check whether a newer 3x-ui release is available on GitHub.",
+        "summary": "Report the running version. The panel never updates itself, so the latest version always equals the current one and updateAvailable is false.",
         "operationId": "get_panel_api_server_getPanelUpdateInfo",
         "responses": {
           "200": {
@@ -7287,7 +7287,7 @@
         "tags": [
           "Server"
         ],
-        "summary": "Self-update the panel to the latest version. The server restarts on success. Bearer-token callers need admin or node-admin scope.",
+        "summary": "Always refused: the panel never downloads or runs an updater. Update with the installer. Bearer-token callers need admin or node-admin scope.",
         "operationId": "post_panel_api_server_updatePanel",
         "requestBody": {
           "required": false,
@@ -12075,7 +12075,7 @@
         "tags": [
           "Nodes"
         ],
-        "summary": "Trigger the official panel self-updater on each given node (downloads the latest release and restarts). Only enabled, online nodes are updated; offline/disabled ones are reported as skipped. Set \"dev\": true to move the nodes to the rolling per-commit dev channel instead of the latest stable release. Returns a per-node result list.",
+        "summary": "Ask each given node to update its panel. Nodes refuse, because a panel never updates itself; each node is reported with that error. Update nodes with the installer.",
         "operationId": "post_panel_api_nodes_updatePanel",
         "requestBody": {
           "required": true,

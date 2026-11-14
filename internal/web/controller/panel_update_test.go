@@ -6,7 +6,6 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -100,33 +99,26 @@ func TestGetUpdateStatus_RunIdIsAlwaysAString(t *testing.T) {
 	}
 }
 
-// TestUpdatePanel_UnsupportedPlatformReturnsNoRunId covers the one path of
-// updatePanel that's safe to exercise in an automated test on any OS/CI
-// runner: the runtime.GOOS != "linux" guard. Actually invoking StartUpdate's
-// launch logic on Linux would make a real network call and could launch a
-// real update.sh process, so that path is deliberately not covered here --
-// see the PR description for why.
-func TestUpdatePanel_UnsupportedPlatformReturnsNoRunId(t *testing.T) {
-	if runtime.GOOS == "linux" {
-		t.Skip("this test only exercises the non-Linux guard path; on Linux, updatePanel would attempt a real download/exec")
-	}
+// A panel that could update itself would have to download and run an updater
+// as root, so the route refuses on every platform and hands out no run to poll.
+func TestUpdatePanel_IsRefusedWithoutRunId(t *testing.T) {
 	newHostTestDB(t)
 	engine := newPanelUpdateTestEngine()
 
 	env := doPanelUpdateReq(t, engine, http.MethodPost, "/panel/api/server/updatePanel")
 	if env.Success {
-		t.Fatal("updatePanel on an unsupported platform: success = true, want false")
+		t.Fatal("updatePanel: success = true, want false")
+	}
+	if !strings.Contains(env.Msg, "self-update is not available") {
+		t.Fatalf("updatePanel msg = %q, want it to say self-update is not available", env.Msg)
 	}
 	if len(env.Obj) != 0 && string(env.Obj) != "null" {
 		t.Fatalf("updatePanel error response must not carry an obj/runId: got %s", env.Obj)
 	}
 }
 
-// TestUpdatePanel_InvalidDevValueRejectedBeforeLaunch covers the one branch of
-// updatePanel that's both untested and safe to exercise on any OS/CI runner:
-// an unparseable "dev" form value is rejected by strconv.ParseBool before
-// StartUpdateChannel (and therefore any real exec/network call) is ever
-// reached, on Linux or otherwise.
+// An unparseable "dev" form value is a bad request in its own right, reported
+// before the service is asked anything.
 func TestUpdatePanel_InvalidDevValueRejectedBeforeLaunch(t *testing.T) {
 	newHostTestDB(t)
 	engine := newPanelUpdateTestEngine()

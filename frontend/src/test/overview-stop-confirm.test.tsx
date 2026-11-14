@@ -23,8 +23,6 @@ function renderBar(
       isMobile={false}
       accessLogEnable={false}
       panelVersion="v3.10.1"
-      latestVersion="v3.10.1"
-      updateAvailable={false}
       onStopXray={onStopXray}
       onRestartXray={onRestartXray}
       onOpenLogs={noop}
@@ -34,7 +32,6 @@ function renderBar(
       onOpenBackup={noop}
       onOpenSystemHistory={noop}
       onOpenXrayMetrics={noop}
-      onOpenPanelUpdate={noop}
       onOpenVersionSwitch={noop}
     />,
   );
