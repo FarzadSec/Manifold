@@ -114,6 +114,7 @@ func run(root, outDir string) error {
 				"AmneziaWGLogs",
 				"PeerActivity",
 				"HwidSlotStatus",
+				"EngineStatus",
 			),
 		},
 		{

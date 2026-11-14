@@ -804,7 +804,8 @@
         "interface": "Tên giao diện",
         "interfaceHint": "Giao diện mạng mà điểm vào này chạy trên đó, đồng thời là tên tệp của nó trong /etc/wireguard. Để trống để dùng mfwg kèm số của điểm vào.",
         "interfaceInvalid": "Dùng từ 1 đến 15 chữ cái, chữ số hoặc các ký tự _ = + . -"
-      }
+      },
+      "engineMissing": "Gói {package} chưa được cài trên máy chủ này nên điểm vào này sẽ không chạy. Hãy cài gói đó và điểm vào sẽ tự khởi động."
     },
     "clients": {
       "tabBasics": "Cơ bản",

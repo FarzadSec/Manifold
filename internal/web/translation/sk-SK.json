@@ -804,7 +804,8 @@
         "interface": "Názov rozhrania",
         "interfaceHint": "Sieťové rozhranie, na ktorom tento vstup beží, a názov jeho súboru v /etc/wireguard. Ak pole necháte prázdne, použije sa mfwg a číslo vstupu.",
         "interfaceInvalid": "Použite 1 až 15 písmen, číslic alebo znakov _ = + . -"
-      }
+      },
+      "engineMissing": "Balík {package} nie je na tomto serveri nainštalovaný, preto sa tento vstup nespustí. Nainštalujte ho a vstup sa spustí sám."
     },
     "clients": {
       "tabBasics": "Základné údaje",

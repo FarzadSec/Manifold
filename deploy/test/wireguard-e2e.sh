@@ -63,6 +63,9 @@ network
 log "panel"
 start_panel
 
+engine_seen="$(field "$(api GET /panel/api/inbounds/engines)" "[e['installed'] for e in r['obj'] if e['protocol'] == 'wireguard']")"
+[ "$engine_seen" = "[True]" ] || fail "the panel does not see the WireGuard tools: $engine_seen"
+
 log "inbound and accounts"
 inbound_id="$(add_inbound wireguard "$WG_PORT" "{\"secretKey\": \"$(wg genkey)\", \"subnetIp\": \"10.198.0.0\", \"subnetCidr\": 24, \"clients\": []}")"
 add_client alice 0 "$inbound_id"

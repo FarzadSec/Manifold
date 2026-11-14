@@ -804,7 +804,8 @@
         "interface": "Nome da interface",
         "interfaceHint": "A interface de rede em que este inbound funciona e o nome do arquivo dela em /etc/wireguard. Deixe vazio para usar mfwg seguido do número do inbound.",
         "interfaceInvalid": "Use de 1 a 15 letras, dígitos ou os caracteres _ = + . -"
-      }
+      },
+      "engineMissing": "O pacote {package} não está instalado neste servidor, então este inbound não vai iniciar. Instale-o e o inbound sobe sozinho."
     },
     "clients": {
       "tabBasics": "Básico",

@@ -628,6 +628,11 @@ export const EXAMPLES: Record<string, unknown> = {
     "onlineCount": 1,
     "total": 2000
   },
+  "EngineStatus": {
+    "installed": true,
+    "package": "wireguard-tools",
+    "protocol": "wireguard"
+  },
   "FallbackParentInfo": {
     "masterId": 0,
     "path": ""

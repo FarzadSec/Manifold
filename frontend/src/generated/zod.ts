@@ -616,6 +616,13 @@ export const ClientsSummarySchema = z.object({
 });
 export type ClientsSummary = z.infer<typeof ClientsSummarySchema>;
 
+export const EngineStatusSchema = z.object({
+  installed: z.boolean(),
+  package: z.string(),
+  protocol: z.lazy(() => ProtocolSchema),
+});
+export type EngineStatus = z.infer<typeof EngineStatusSchema>;
+
 export const FallbackParentInfoSchema = z.object({
   masterId: z.number().int(),
   path: z.string().optional(),

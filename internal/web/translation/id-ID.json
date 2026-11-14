@@ -804,7 +804,8 @@
         "interface": "Nama antarmuka",
         "interfaceHint": "Antarmuka jaringan tempat inbound ini berjalan, sekaligus nama berkasnya di /etc/wireguard. Kosongkan untuk memakai mfwg diikuti nomor inbound.",
         "interfaceInvalid": "Gunakan 1 sampai 15 huruf, angka, atau karakter _ = + . -"
-      }
+      },
+      "engineMissing": "Paket {package} belum terpasang di server ini, sehingga inbound ini tidak akan berjalan. Pasang paketnya dan inbound akan menyala sendiri."
     },
     "clients": {
       "tabBasics": "Dasar",

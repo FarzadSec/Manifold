@@ -582,6 +582,12 @@ export interface ClientsSummary {
   total: number;
 }
 
+export interface EngineStatus {
+  installed: boolean;
+  package: string;
+  protocol: Protocol;
+}
+
 export interface FallbackParentInfo {
   masterId: number;
   path?: string;

@@ -190,3 +190,22 @@ func prepareWireGuardInbound(db *gorm.DB, inbound *model.Inbound) error {
 	}
 	return nil
 }
+
+// EngineStatus says whether this server can run the inbounds of a protocol
+// that is served outside Xray.
+type EngineStatus struct {
+	Protocol  model.Protocol `json:"protocol" example:"wireguard"`
+	Installed bool           `json:"installed" example:"true"`
+	// Package is the system package that brings the engine.
+	Package string `json:"package" example:"wireguard-tools"`
+}
+
+// NativeEngines reports, for every protocol served outside Xray, whether the
+// program it needs is installed on this server.
+func (s *InboundService) NativeEngines() []EngineStatus {
+	_, openvpnErr := openvpn.FindBinary()
+	return []EngineStatus{
+		{Protocol: model.OpenVPN, Installed: openvpnErr == nil, Package: "openvpn"},
+		{Protocol: model.WireGuard, Installed: wgquick.GetManager().Available(), Package: "wireguard-tools"},
+	}
+}

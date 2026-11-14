@@ -29,6 +29,7 @@ export const keys = {
     slim: () => ['inbounds', 'slim'] as const,
     options: () => ['inbounds', 'options'] as const,
     amneziawgKernelReadiness: () => ['inbounds', 'amneziawgKernelReadiness'] as const,
+    engines: () => ['inbounds', 'engines'] as const,
   },
   clients: {
     root: () => ['clients'] as const,

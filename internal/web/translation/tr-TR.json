@@ -804,7 +804,8 @@
         "interface": "Arayüz adı",
         "interfaceHint": "Bu gelen bağlantının çalıştığı ağ arayüzü ve /etc/wireguard içindeki dosyasının adı. Boş bırakırsanız mfwg ve gelen bağlantı numarası kullanılır.",
         "interfaceInvalid": "1 ile 15 arasında harf, rakam veya _ = + . - karakterlerini kullanın."
-      }
+      },
+      "engineMissing": "{package} paketi bu sunucuda kurulu değil, bu yüzden bu gelen bağlantı başlamaz. Paketi kurduğunuzda gelen bağlantı kendiliğinden açılır."
     },
     "clients": {
       "tabBasics": "Temel",

@@ -83,6 +83,7 @@ func (a *InboundController) initRouter(g *gin.RouterGroup) {
 	g.GET("/get/:id", a.getInbound)
 	g.GET("/:id/fallbacks", a.getFallbacks)
 	g.GET("/amneziawgKernelReadiness", a.getAmneziaWGKernelReadiness)
+	g.GET("/engines", a.getNativeEngines)
 
 	g.POST("/add", a.addInbound)
 	g.POST("/del/:id", a.delInbound)
@@ -463,6 +464,11 @@ func (a *InboundController) importInbound(c *gin.Context) {
 	}
 	a.broadcastInboundsUpdate(user.Id)
 	notifyClientsChanged()
+}
+
+// getNativeEngines reports which engines outside Xray this server can run.
+func (a *InboundController) getNativeEngines(c *gin.Context) {
+	jsonObj(c, a.inboundService.NativeEngines(), nil)
 }
 
 // resolveHost mirrors SubService.ResolveRequest's host: trusted X-Forwarded-Host,

@@ -34,6 +34,7 @@ import {
   canEnableSniffing,
   canEnableStream,
   canEnableTls,
+  hasNativeEngine,
   inboundProtocolChoices,
   isSS2022,
 } from '@/lib/xray/protocol-capabilities';
@@ -98,6 +99,7 @@ import { RealityForm, TlsForm } from './security';
 import { useSecurityActions } from './useSecurityActions';
 import { useInboundFallbacks } from './useInboundFallbacks';
 import FallbacksCard from './FallbacksCard';
+import EngineMissingAlert from './EngineMissingAlert';
 import SniffingTab from './SniffingTab';
 
 import type { DBInbound } from '@/models/dbinbound';
@@ -729,6 +731,7 @@ export default function InboundFormModal({
       <FormField name="protocol" label={t('pages.inbounds.protocol')}>
         <NativeSelect id="protocol" disabled={mode === 'edit'} options={protocolOptions} />
       </FormField>
+      {wNodeId === null && hasNativeEngine(protocol) && <EngineMissingAlert protocol={protocol} />}
 
       <FormField
         name="listen"

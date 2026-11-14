@@ -2528,6 +2528,30 @@
         ],
         "type": "object"
       },
+      "EngineStatus": {
+        "description": "EngineStatus says whether this server can run the inbounds of a protocol\nthat is served outside Xray.",
+        "properties": {
+          "installed": {
+            "example": true,
+            "type": "boolean"
+          },
+          "package": {
+            "description": "Package is the system package that brings the engine.",
+            "example": "wireguard-tools",
+            "type": "string"
+          },
+          "protocol": {
+            "example": "wireguard",
+            "type": "string"
+          }
+        },
+        "required": [
+          "installed",
+          "package",
+          "protocol"
+        ],
+        "type": "object"
+      },
       "FallbackParentInfo": {
         "description": "FallbackParentInfo carries everything the frontend needs to rewrite a\nchild inbound's client link: where to connect (the master's address\nand port) and which path matched on the master's fallbacks array.\nThe frontend already has the master inbound in its dbInbounds list,\nso we only ship identifiers + the match path here.",
         "properties": {
@@ -6055,6 +6079,41 @@
                       "type": "string"
                     },
                     "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/inbounds/engines": {
+      "get": {
+        "tags": [
+          "Inbounds"
+        ],
+        "summary": "For each protocol that is served outside Xray (OpenVPN, WireGuard), whether the program it needs is installed on the panel server, and the system package that brings it. An inbound of a protocol whose engine is missing is saved but does not start until the package is installed.",
+        "operationId": "get_panel_api_inbounds_engines",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/EngineStatus"
+                      }
+                    }
                   }
                 }
               }

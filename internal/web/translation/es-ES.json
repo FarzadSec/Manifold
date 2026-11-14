@@ -804,7 +804,8 @@
         "interface": "Nombre de la interfaz",
         "interfaceHint": "La interfaz de red en la que funciona esta entrada y el nombre de su archivo en /etc/wireguard. Déjalo vacío para usar mfwg seguido del número de la entrada.",
         "interfaceInvalid": "Usa de 1 a 15 letras, dígitos o los caracteres _ = + . -"
-      }
+      },
+      "engineMissing": "El paquete {package} no está instalado en este servidor, así que esta entrada no arrancará. Instálalo y la entrada se levantará sola."
     },
     "clients": {
       "tabBasics": "Básico",

@@ -26,6 +26,13 @@ const VISION_FLOW = 'xtls-rprx-vision';
 const RETIRED_INBOUND_PROTOCOLS: readonly string[] = [Protocols.AMNEZIAWG];
 const SS_2022_PREFIX = '2022';
 
+// Protocols the panel serves with a system program of their own, which may not be installed.
+const NATIVE_ENGINE_PROTOCOLS: readonly string[] = [Protocols.OPENVPN, Protocols.WIREGUARD];
+
+export function hasNativeEngine(protocol: string): boolean {
+  return NATIVE_ENGINE_PROTOCOLS.includes(protocol);
+}
+
 // inboundProtocolChoices lists what the inbound form offers; current is the
 // protocol of the inbound being edited, or '' for a new one.
 export function inboundProtocolChoices(current: string): string[] {

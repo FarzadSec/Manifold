@@ -804,7 +804,8 @@
         "interface": "接口名称",
         "interfaceHint": "此入站运行所在的网络接口，也是它在 /etc/wireguard 中的文件名。留空则使用 mfwg 加入站编号。",
         "interfaceInvalid": "请使用 1 到 15 个字母、数字或 _ = + . - 字符。"
-      }
+      },
+      "engineMissing": "此服务器未安装 {package} 软件包，因此该入站不会启动。安装后入站会自动启动。"
     },
     "clients": {
       "tabBasics": "基本",

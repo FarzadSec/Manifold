@@ -381,6 +381,16 @@ export const sections: readonly Section[] = [
         ],
       },
       {
+        method: 'GET',
+        path: '/panel/api/inbounds/engines',
+        responseObjectSchema: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/EngineStatus' },
+        },
+        summary:
+          'For each protocol that is served outside Xray (OpenVPN, WireGuard), whether the program it needs is installed on the panel server, and the system package that brings it. An inbound of a protocol whose engine is missing is saved but does not start until the package is installed.',
+      },
+      {
         method: 'POST',
         path: '/panel/api/inbounds/pushClientTraffics',
         summary:

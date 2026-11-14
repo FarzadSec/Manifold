@@ -2502,6 +2502,30 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "EngineStatus": {
+    "description": "EngineStatus says whether this server can run the inbounds of a protocol\nthat is served outside Xray.",
+    "properties": {
+      "installed": {
+        "example": true,
+        "type": "boolean"
+      },
+      "package": {
+        "description": "Package is the system package that brings the engine.",
+        "example": "wireguard-tools",
+        "type": "string"
+      },
+      "protocol": {
+        "example": "wireguard",
+        "type": "string"
+      }
+    },
+    "required": [
+      "installed",
+      "package",
+      "protocol"
+    ],
+    "type": "object"
+  },
   "FallbackParentInfo": {
     "description": "FallbackParentInfo carries everything the frontend needs to rewrite a\nchild inbound's client link: where to connect (the master's address\nand port) and which path matched on the master's fallbacks array.\nThe frontend already has the master inbound in its dbInbounds list,\nso we only ship identifiers + the match path here.",
     "properties": {
