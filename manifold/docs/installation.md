@@ -7,6 +7,7 @@ Manifold installs from a release package as a systemd service. The server downlo
 - A Linux server with systemd, on x86-64 or ARM64
 - Root access
 - An open TCP port for the panel and one for every inbound you create
+- For OpenVPN inbounds: the `openvpn`, `nftables` and `iptables` packages. The installer installs them on Debian, Ubuntu, Fedora, RHEL and its rebuilds, openSUSE and Arch; elsewhere install them yourself
 
 ## Install
 
@@ -20,8 +21,11 @@ The installer:
 
 1. downloads the latest release for the server's architecture and verifies its checksum,
 2. installs the program, the `manifold` command and the `manifold` service,
-3. chooses a random panel port, URL path, username and password,
-4. starts the service and prints the address and login.
+3. installs the system packages the VPN engines need, if they are missing,
+4. chooses a free panel port and a random URL path, username and password,
+5. starts the service, waits until the panel holds its port, and prints the address and login.
+
+If the panel does not come up, the installer prints the service's last log lines and exits with an error instead of an address.
 
 The login is shown once. Sign in, then change it under Panel Settings. Replace `SERVER-IP` in the printed address with the server's address, and open the printed port in the firewall.
 
@@ -42,6 +46,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/FarzadSec/Manifold/main/instal
 | `--version vX.Y.Z` | Install this release instead of the latest |
 | `--package FILE` | Install from a package file instead of downloading |
 | `--no-start` | Install without starting the service |
+| `--no-deps` | Do not install system packages; OpenVPN inbounds then need `openvpn` and `nftables` installed by hand |
 
 These first-install options are ignored when a database already exists.
 
@@ -64,7 +69,7 @@ bash manifold/install.sh --package manifold-linux-amd64.tar.gz
 | `/etc/default/manifold` | Environment variables for the service |
 | `/usr/bin/manifold` | The management command |
 
-Manifold shares no file, service name or command with other panels, so it can be installed on a server that already runs one. Give it its own ports.
+Manifold shares no file, service name or command with other panels, so it can be installed on a server that already runs one. The installer picks a free panel port, and when another program holds the default subscription port (2096) it gives Manifold's subscription server a free one and prints it. Inbound ports are yours to keep apart.
 
 ## Managing the service
 
@@ -132,6 +137,7 @@ docker compose logs manifold | grep "Username"
 
 - The login is generated on first start and written to the log once. To set a new one: `docker compose exec manifold manifold login`, then `docker compose restart manifold`.
 - `docker-compose.yml` publishes only the panel port (2053). Add every inbound port, and the subscription port (2096) if you use subscriptions, under `ports:`.
+- OpenVPN inbounds need the `NET_ADMIN` capability and the `/dev/net/tun` device, both set in `docker-compose.yml`. The container path is not exercised by the project's tests.
 - Data is in `./db/`, certificates in `./cert/`.
 - Update with `git pull` and `docker compose up -d --build`.
 

@@ -36,13 +36,23 @@ The rules an agent or a developer must follow while changing code are in [`CLAUD
 
 A change is done when `make verify` passes. Changes to the database layer, node sync or parsers also need `make race` and `make node-e2e`.
 
+Changes to a VPN engine also need its real-daemon tests, which need root, the engine's packages, `nft` and `iproute2`:
+
+```bash
+go test -c -o /tmp/openvpn.test ./internal/openvpn/
+sudo XUI_OPENVPN_E2E=1 /tmp/openvpn.test -test.run TestRealServerAndClient -test.v   # the engine alone
+sudo deploy/test/openvpn-e2e.sh build/manifold build/bin                              # panel, server and clients
+```
+
+Both start a real server and real clients in a network namespace of their own. Without `XUI_OPENVPN_E2E` the engine test is skipped, so a green `make test-go` does not mean it ran.
+
 ## Where verification runs
 
 `.github/workflows/ci.yml` is the gate. What it runs depends on where the push lands:
 
 | Push to | Jobs | Cost per run |
 |---|---|---|
-| A phase branch (`p0/…`, `p1/…`) or `merge/…` | Go tests, linters, generated-file check, shell lint, frontend | About 20 runner minutes |
+| A phase branch (`p0/…`, `p1/…`) or `merge/…` | Go tests, linters, generated-file check, shell lint, frontend, and the VPN engines against real daemons (`vpn-e2e`) | About 25 runner minutes |
 | `main`, or any pull request | The above, plus the race detector, two PostgreSQL jobs, the two-panel node test, the fuzz smoke test and the vulnerability check | About 52 runner minutes |
 
 Standard runners are free for a public repository. The two tiers still keep a phase branch's feedback fast; if the repository is made private again, its monthly allowance of runner minutes is the reason not to push after every edit.

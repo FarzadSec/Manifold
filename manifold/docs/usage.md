@@ -1,6 +1,6 @@
 # Using Manifold
 
-This guide covers what the panel does today. Pages for WireGuard, OpenVPN, L2TP and resellers are added here as each phase lands.
+This guide covers what the panel does today. Sections for L2TP, kernel WireGuard and resellers are added here as each phase lands.
 
 ## Sign in
 
@@ -33,6 +33,29 @@ Open the address the installer printed and sign in with the login it showed. `ma
 
 A client whose quota is used up or whose expiry date has passed stops working on all of its inbounds until it is renewed.
 
+## OpenVPN
+
+An OpenVPN inbound makes the panel run an OpenVPN server on that port. It needs the `openvpn` package on the server, which the installer installs.
+
+**Create the inbound.** On the Inbounds page choose the protocol `openvpn` and a port, then on the protocol tab:
+
+| Field | Meaning |
+|---|---|
+| Transport | UDP is faster. TCP gets through networks that block or slow down UDP. One inbound serves one of them; create two inbounds to offer both |
+| Client subnet | The private IPv4 network connected clients get their addresses from, between /16 and /29. Give every OpenVPN inbound its own |
+| DNS servers | Pushed to clients while they are connected |
+| Ask for the login | Off: the profile carries the username and password, so the app connects without asking. On: the app asks for them. Turn it on for apps older than OpenVPN 2.6 |
+
+The certificates and keys are created when you save and stay with the inbound. Open the port in the firewall for the transport you chose.
+
+**Add clients** on the Clients page as for any other inbound. The client's email is the OpenVPN username and its password is the OpenVPN password, so an email used for OpenVPN may only hold letters, digits and `_ . @ : / = -`.
+
+**Hand over the profile.** A client's information and QR windows show an "OpenVPN profile" block with copy and download; the downloaded `.ovpn` file imports into OpenVPN Connect and other OpenVPN apps. The client's subscription page offers the same file. The subscription URL that proxy apps import does not list OpenVPN, because those apps cannot read it.
+
+**Limits.** Quota, expiry and disabling work as for every protocol and take effect on a connected client within seconds: its session is cut and the app is told access is denied. "IP limit" on an OpenVPN client is the number of devices that may be connected at once; a further device is refused.
+
+Not supported yet: IPv6 inside the tunnel, logins by client certificate, and sending OpenVPN traffic through the routing rules and outbounds of Xray Configs.
+
 ## Subscriptions
 
 The subscription server is on by default and listens on its own port (2096). Its address, path and the extra formats (JSON and Clash, both off by default) are set under Panel Settings. Open that port in the firewall before handing out subscription links.
@@ -52,6 +75,7 @@ The `manifold` command manages the service and the panel settings; `manifold hel
 | `manifold settings` | Print the port, the URL path and whether the login is still a default one |
 | `manifold login [NAME PASS]` | Set the login; random when omitted, printed once |
 | `manifold port N` | Set the panel port |
+| `manifold setting -subPort N` | Set the subscription server's port |
 | `manifold path /p/` | Set the URL path the panel is served under |
 | `manifold setting -listenIP IP` | Bind the panel to one address |
 | `manifold setting -resetTwoFactor` | Turn two-factor login off, for a lost device |

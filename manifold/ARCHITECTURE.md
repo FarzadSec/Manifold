@@ -1,8 +1,15 @@
 # Manifold — Architecture and Roadmap
 
-Version 0.5 · 2026-11-14 · Status: P0 delivered; see 8.1 for what it leaves open
+Version 0.6 · 2026-11-14 · Status: P0 and OpenVPN delivered; see 8.1 and 8.2 for what they leave open
 
 Decision log:
+
+- 2026-11-14 — Engine order changed to OpenVPN, L2TP/IPsec, then kernel WireGuard. The owner looked for the first two in the installed panel and did not find them, while the inbound form already offers a WireGuard (Xray's own, and AmneziaWG) that keeps working until the kernel engine replaces it.
+- 2026-11-14 — OpenVPN accounts log in with the client's email and password, and the panel decides every login over the management interface. No client certificates: one account then has the same identity on every protocol, and disabling it needs no revocation list and no restart.
+- 2026-11-14 — A profile travels as an `openvpn://` link holding the `.ovpn` text. The panel renders it in one place (Go) and the client pages and the subscription page unwrap it, so the two cannot hand out different files. The subscription body that proxy apps import leaves it out.
+- 2026-11-14 — An OpenVPN server keeps running when its last account is switched off, so that account is refused in words instead of timing out against a closed port.
+- 2026-11-14 — A node tells its master which native engines it has in the capability header, with the protocol name as the token. The panel version cannot carry this: every Manifold release reports the same base version.
+- 2026-11-14 — The panel starts without its subscription server when that port is taken, and the installer moves the port at first setup. Installing next to another panel used to leave a service that died on every start.
 
 - 2026-11-14 — Installing works like other panels: one `bash <(curl …/install.sh)` command that downloads the latest release from its public address. A release is cut by changing `product_version` on `main`; the workflow builds, test-installs and publishes it, then installs the published release once more on a clean machine.
 - 2026-11-14 — The repository is public. The installer needs no token; `MANIFOLD_TOKEN` remains for a private copy.
@@ -81,6 +88,8 @@ Files that reference `model.MTProto` today show the integration surface a non-Xr
 - `internal/web/job/<engine>_job.go` (traffic and limits)
 - Frontend: `frontend/src/pages/inbounds/form/protocols/`, `frontend/src/schemas/protocols/`, plus the 14 locale files
 
+Since OpenVPN, an engine does not add its own branches to those files. `internal/web/runtime/native.go` holds a `nativeEngine` interface (apply an inbound, remove an inbound) and a table of engines by protocol; the local runtime, the Xray config builder, the traffic-limit dispatch and the client apply sites ask `IsNativeProtocol` and call the engine. A new engine adds one table entry, its `Desired…Instances` query and its job. `internal/egress` gives every tunnel engine NAT and forwarding in a table of its own.
+
 The rules in `CLAUDE.md` keep applying to fork code: every new route is registered in `frontend/src/pages/api-docs/endpoints.ts`, model changes need a migration in `db.go`, and state-changing operations go through `runtime.Runtime`.
 
 ### 4.3 WireGuard engine — standard kernel WireGuard, the WGDashboard way
@@ -111,15 +120,17 @@ Not used:
 
 Requirement: root and the kernel WireGuard module on the host (`NET_ADMIN` under Docker).
 
-### 4.4 OpenVPN engine (proposal, to validate in a spike)
+### 4.4 OpenVPN engine (built, 0.2.0)
 
-- One `openvpn` server process per inbound, supervised like `mtg-multi`.
-- Panel-managed PKI per inbound: CA, server certificate, `tls-crypt` key.
-- Authentication by username and password, decided by the panel through the OpenVPN management interface (`management-client-auth`). Enable, disable, expiry and quota then need no file rewrites and no restarts.
-- Accounting from the management interface's per-client byte counters into the traffic job.
-- Enforcement with `client-kill` on disable, expiry or exhausted quota; device limit by counting concurrent sessions per account.
-- Output: an inline `.ovpn` profile per account (UDP and TCP remotes) from the subscription server.
-- Egress: kernel NAT first. Steering into Xray routing, so WARP and outbound rules apply, is a later step.
+- One `openvpn` server process per inbound (`internal/openvpn`), started with the distribution's `openvpn` package (2.5 or newer). One inbound is one transport, UDP or TCP, on one port; offering both takes two inbounds.
+- Keys per inbound, issued by the panel when the inbound is saved and kept in its settings, so backup, restore and node sync carry them: an ECDSA CA, a server certificate and a `tls-crypt` key. An edit that leaves the keys out keeps the stored ones.
+- The panel attaches to each server's management socket. `management-client-auth` hands it every login and renegotiation; it answers from an in-memory account table. `management-hold` and `management-signal` keep the server from accepting anyone while the panel is not attached.
+- A changed account set is applied to the live server: the table is replaced and the sessions it no longer allows are cut with `client-kill`. Only a changed port, transport, subnet, DNS list or key restarts the process.
+- The device limit is the account's `limitIp`: the number of simultaneous sessions, counted by the panel at login. It does not depend on Fail2ban.
+- Accounting comes from the management interface's per-session byte counters every five seconds, plus the totals a disconnect reports, into the same traffic pipeline as every other protocol. Kernel data-channel offload is switched off, because it keeps those counters out of the management interface.
+- Clients reach the internet through kernel NAT (`internal/egress`): an nftables table per inbound and FORWARD accepts tagged with a comment, both removed with the server.
+- The profile embeds the login by default (`<auth-user-pass>`, read by OpenVPN 2.6 and OpenVPN Connect). Per inbound it can be left out for older apps, which then ask for it.
+- Not built: IPv6 inside the tunnel, client-certificate logins, static addresses per account, and steering tunnel traffic into Xray routing (WARP, outbound rules).
 
 ### 4.5 L2TP/IPsec engine (proposal, to validate in a spike)
 
@@ -187,15 +198,15 @@ This is the contract Mirza Bot will sync against, so it is frozen before the bot
 | Phase | Scope | Done when |
 |---|---|---|
 | P0 Foundation | Private mirror; own README and guides; base project's pages, sponsor feature, links and self-updater removed; program, service, paths, interface and notification texts named Manifold; own installer, management command, systemd unit and release workflow; CI trimmed to one gate | Done 2026-11-14. Open items in 8.1 |
+| P2 OpenVPN | Engine 4.4, inbound form, `.ovpn` in the client pages and the subscription page, traffic and limits, node support | Done 2026-11-14 (0.2.0). A real client connects, is billed, is held to its device limit and is cut off when disabled or out of quota, on this server. Open items in 8.2 |
+| P3 L2TP/IPsec | Engine 4.5, embedded RADIUS, optional IKEv2 | A native L2TP client connects and draws down the account's quota |
 | P1 WireGuard | Engine 4.3, inbound form, `.conf` and QR in subscriptions, traffic and limits, node support, WGDashboard adoption | An existing WGDashboard server is taken over and its users connect without new configs; a peer and an Xray client on one account draw down the same quota |
-| P2 OpenVPN | Engine 4.4, inbound form, `.ovpn` in subscriptions, traffic and limits, node support | Same shared-quota test with an OpenVPN client, locally and on a remote node |
-| P3 L2TP/IPsec | Engine 4.5, embedded RADIUS, optional IKEv2 | Same test with a native L2TP client |
 | P4 Access model | Items in 4.6 | A reseller can create accounts only within its limits and sees only its own |
 | P5 Events and API freeze | Items in 4.7; OpenAPI v1 for accounts, plans, resellers, usage | A test receiver gets signed events for every account state change, including after downtime |
 | P6 NX-parity operations | Setup wizard, backup upgrades, OIDC, managed tunnels, subscription themes, usage CSV | Checked against the gap table |
 | P7 Mirza Bot | Section 7 | A purchase in the bot yields one account with every protocol output, and panel events update the bot without polling |
 
-The protocol engines come first because they carry the most technical risk and everything else builds on the account model they must fit into. WireGuard leads because its mechanism is fully known from WGDashboard's source and live users already depend on it.
+The protocol engines come first because they carry the most technical risk and everything else builds on the account model they must fit into. The phases keep their numbers; they are built in the order of the table.
 
 ## 7. Mirza Bot phase (outline)
 
@@ -238,12 +249,22 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 
 ### 8.1 Open items after P0
 
+- Fixed in 0.2.0: the installer reported success for a panel that died right after starting. It now waits until the service's own process holds the panel port.
 - The Nodes page still shows its update actions. Nodes refuse them with a clear message; the buttons, the bulk selection that only served them and their tests are to be removed.
 - AmneziaWG and the userspace WireGuard inbound are still offered in the inbound form. They are hidden when the kernel WireGuard engine lands in P1.
 - The Nodes page shows each node's base version, not its product version.
 - The release workflow's arm64 package is built but only the amd64 package is installed and exercised on a runner.
 - The container image is not built or started in CI. The Dockerfile, entrypoint and compose file were changed together with the installer and are checked only by the shell linter.
 - `inbound-form-modal.test.tsx` ("keeps the persisted node share strategy through the nodes-loading race") timed out once on a runner and passed on the runs before and after; it is a timing-sensitive test inherited from the base code.
+
+### 8.2 Open items after OpenVPN
+
+- OpenVPN on a remote node is covered by a unit test of the capability check only. No test runs a master, a node and an OpenVPN client together.
+- Shared quota across protocols rests on the one traffic row per account that every engine writes to. It is not exercised by a test that uses an OpenVPN client and an Xray client on the same account.
+- The online mark of an OpenVPN account is recorded through the Xray process's online set, as the other side engines do, so it is missing while Xray is down. Traffic and limits do not depend on it.
+- "Copy all links" on the Inbounds page includes the `openvpn://` links, which are of no use outside the panel.
+- After the panel is killed (not stopped), the NAT table of an OpenVPN inbound stays until the next start cleans it up. `manifold uninstall` right after such a kill leaves it behind.
+- The container image now carries OpenVPN but, like the rest of the image, is not built or run in CI.
 
 ## 9. Assumptions and open decisions
 

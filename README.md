@@ -2,20 +2,21 @@
 
 One control panel for several VPN protocols. A customer has one account with one quota and one expiry date, and that account works on every protocol the server offers.
 
-**Status:** version 0.1. The base panel is complete and installable; the protocol engines that make it Manifold are being built in phases.
+**Status:** version 0.2. The base panel and OpenVPN are complete and installable; the other protocol engines are being built in phases.
 
 ## Protocols
 
 | Protocol | Status |
 |---|---|
 | VLESS, VMess, Trojan, Shadowsocks, Hysteria, TUIC, MTProto | Working |
-| WireGuard (standard kernel WireGuard, `wg-quick`) | Phase 1 |
-| OpenVPN | Phase 2 |
-| L2TP/IPsec | Phase 3 |
+| OpenVPN (UDP or TCP, login by username and password) | Working since 0.2 |
+| L2TP/IPsec | Next |
+| WireGuard (standard kernel WireGuard, `wg-quick`) | After L2TP |
 
 ## What works today
 
 - Inbounds and clients, with traffic quota, expiry date and periodic traffic reset per client
+- OpenVPN inbounds: the panel runs the server, hands each client a ready `.ovpn` profile, counts its traffic and enforces its quota, expiry and device limit
 - One client attached to several inbounds, and client groups
 - Subscription server: share links, JSON and Clash output
 - Several servers managed from one panel (nodes over mutual TLS)
@@ -27,7 +28,7 @@ One control panel for several VPN protocols. A customer has one account with one
 
 ## What is planned
 
-- The three protocol engines above, sharing quota and expiry with every other protocol on the account
+- The two remaining protocol engines, sharing quota and expiry with every other protocol on the account
 - Roles, administrators and resellers with their own limits
 - Plans, an audit log, and webhooks for every account event
 - A Telegram sales bot that stays in sync with the panel

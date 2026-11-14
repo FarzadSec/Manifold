@@ -36,7 +36,8 @@ locations when it can answer in one hop.
 ## Repo map
 - `main.go` — entry point + the `manifold` binary's CLI (run, migrate, migrate-db, encrypt-tokens, setting, cert).
 - `install.sh`, `manifold.sh` (installed as `/usr/bin/manifold`), `manifold.service` — installer,
-  management command and systemd unit. `deploy/test/install-functions.sh` tests the installer's functions.
+  management command and systemd unit. `deploy/test/install-functions.sh` tests the installer's functions;
+  `deploy/test/openvpn-e2e.sh` drives a real panel, OpenVPN server and clients (root).
 - `internal/config/` — env parsing (XUI_DEBUG, XUI_LOG_LEVEL, XUI_LOG_FOLDER,
   XUI_BIN_FOLDER, XUI_SKIP_HSTS, XUI_PORT, XUI_DB_*). Operators set the same
   variables as `MANIFOLD_<NAME>`; `AdoptManifoldEnv` copies them onto `XUI_<NAME>`,
@@ -49,6 +50,10 @@ locations when it can answer in one hop.
 - `internal/xray/geodata/` — streaming geosite/geoip `.dat` reader (cached
   category index + paged entries) and `geosite:`/`geoip:`/`ext:` token parsing.
 - `internal/mtproto/` — MTProto inbounds via the bundled `mtg-multi` binary.
+- `internal/openvpn/` — OpenVPN inbounds: one `openvpn` server per inbound, every
+  login decided by the panel over the management interface, per-inbound PKI,
+  `.ovpn` profiles, per-account traffic. Real-daemon test: `XUI_OPENVPN_E2E=1` as root.
+- `internal/egress/` — NAT and forwarding for a tunnel subnet, in a table of its own.
 - `internal/tuic/` — TUIC v5 inbounds: `tuic-server` sidecar supervisor, native Go UDP relay traffic metering.
 - `internal/amneziawg/` — AmneziaWG protocol shape: instance/peer derivation
   from an inbound, 3.1 obfuscation param generation + validation, port-forward
@@ -70,7 +75,8 @@ locations when it can answer in one hop.
   - `job/` — 19 cron jobs (traffic, fail2ban IP-limit, node heartbeat/sync, LDAP,
     CPU/memory watchdogs, …); full table in §5.4 of the navigation map above.
   - `middleware/`, `entity/`, `global/`, `session/` (CSRF), `network/`,
-    `runtime/` (master/sub-node over mTLS), `websocket/`.
+    `runtime/` (master/sub-node over mTLS; `native.go` is where an engine that
+    runs outside Xray plugs in), `websocket/`.
   - `locale/` + `translation/` — i18n, 14 embedded locale JSON files.
 - `frontend/` — React + TS source (see `frontend/CLAUDE.md`).
 - `tools/openapigen/` — Go generator that emits frontend types + Zod/JSON schemas
