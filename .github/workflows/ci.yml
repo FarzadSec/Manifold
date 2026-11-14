@@ -15,6 +15,8 @@ on:
   push:
     branches:
       - main
+      - "p[0-9]*/**"
+      - "merge/**"
     paths:
       - "**.go"
       - "go.mod"
@@ -46,6 +48,8 @@ jobs:
           go test -shuffle=on -count=1 $(cat /tmp/go-packages.txt)
 
   postgres-durable-first:
+    # Phase branches run the fast jobs only; the full set runs on main and on pull requests.
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -159,6 +163,8 @@ jobs:
   # The migration tests write and drop their own tables, so they need a
   # scratch database instead of the durable one the panel tests use.
   postgres-migration:
+    # Phase branches run the fast jobs only; the full set runs on main and on pull requests.
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -223,6 +229,8 @@ jobs:
         run: git diff --exit-code -- frontend/src/generated frontend/public/openapi.json
 
   govulncheck:
+    # Phase branches run the fast jobs only; the full set runs on main and on pull requests.
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -239,6 +247,8 @@ jobs:
 
   # Race + shuffle hygiene gate: data races and order-dependent tests fail the build.
   race:
+    # Phase branches run the fast jobs only; the full set runs on main and on pull requests.
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -257,6 +267,8 @@ jobs:
   # A real master and node panel, each its own process, driven through node sync.
   # A SKIP here means the binary was never handed over, so it fails the job.
   node-e2e:
+    # Phase branches run the fast jobs only; the full set runs on main and on pull requests.
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -273,6 +285,8 @@ jobs:
   # Brief native-fuzz smoke on the security-/parser-critical decoders. Each runs the
   # generated corpus plus 30s of exploration; a crash here is a real input-handling bug.
   fuzz-smoke:
+    # Phase branches run the fast jobs only; the full set runs on main and on pull requests.
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
