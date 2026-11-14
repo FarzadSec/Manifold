@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/config"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 )
@@ -57,6 +58,12 @@ func freePort(t *testing.T) int {
 	}
 	defer l.Close()
 	return l.Addr().(*net.TCPAddr).Port
+}
+
+// The panel process names its database after the program, so the harness must
+// ask for that name instead of repeating it.
+func (p *panel) dbPath() string {
+	return filepath.Join(p.dir, "db", config.GetName()+".db")
 }
 
 func (p *panel) env() []string {
@@ -116,7 +123,7 @@ func preparePanel(t *testing.T, bin, name string) *panel {
 	p.cli("setting", "-username", "e2e", "-password", "e2e-pass", "-port", strconv.Itoa(p.port), "-webBasePath", "/")
 	sharedDBMu.Lock()
 	defer sharedDBMu.Unlock()
-	if err := database.InitDB(filepath.Join(p.dir, "db", "x-ui.db")); err != nil {
+	if err := database.InitDB(p.dbPath()); err != nil {
 		t.Fatalf("%s: open db: %v", name, err)
 	}
 	db := database.GetDB()
@@ -185,7 +192,7 @@ func (p *panel) deleteInboundRow(id int) {
 	}
 	sharedDBMu.Lock()
 	defer sharedDBMu.Unlock()
-	if err := database.InitDB(filepath.Join(p.dir, "db", "x-ui.db")); err != nil {
+	if err := database.InitDB(p.dbPath()); err != nil {
 		p.t.Fatalf("%s: open db: %v", p.name, err)
 	}
 	defer func() { _ = database.CloseDB() }()
@@ -204,7 +211,7 @@ func (p *panel) setClientTrafficHome(email string, inboundID int) {
 	}
 	sharedDBMu.Lock()
 	defer sharedDBMu.Unlock()
-	if err := database.InitDB(filepath.Join(p.dir, "db", "x-ui.db")); err != nil {
+	if err := database.InitDB(p.dbPath()); err != nil {
 		p.t.Fatalf("%s: open db: %v", p.name, err)
 	}
 	defer func() { _ = database.CloseDB() }()
@@ -221,7 +228,7 @@ func (p *panel) seedClientIpAttribution(email, ips string) string {
 	}
 	sharedDBMu.Lock()
 	defer sharedDBMu.Unlock()
-	if err := database.InitDB(filepath.Join(p.dir, "db", "x-ui.db")); err != nil {
+	if err := database.InitDB(p.dbPath()); err != nil {
 		p.t.Fatalf("%s: open db: %v", p.name, err)
 	}
 	defer func() { _ = database.CloseDB() }()
