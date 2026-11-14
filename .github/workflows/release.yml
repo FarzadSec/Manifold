@@ -107,8 +107,15 @@ jobs:
         if: matrix.platform == 'amd64'
         run: |
           set -euo pipefail
+          # Another panel's subscription server usually holds port 2096: the
+          # install must still give a working panel, with its own port moved.
+          python3 -m http.server 2096 >/dev/null 2>&1 &
+          other_panel=$!
+          sleep 1
           sudo bash install.sh --package manifold-linux-amd64.tar.gz \
-            --port 20530 --path /smoke/ --username smoke --password smoke-pass-123
+            --port 20530 --path /smoke/ --username smoke --password smoke-pass-123 | tee /tmp/install.log
+          grep -q "Subscriptions use port" /tmp/install.log
+          kill "$other_panel"
           systemctl is-active manifold
           code=000
           for _ in $(seq 1 20); do
@@ -128,6 +135,24 @@ jobs:
           grep -q '"success":true' /tmp/login.json
           test "$(sudo manifold version)" = "$(tr -d '[:space:]' < internal/config/product_version)"
           sudo manifold settings
+          # The unit's sandbox must let the panel run the engines the installer
+          # brought in: an OpenVPN inbound has to end up listening, with its NAT.
+          token=$(curl -fsS -b "$jar" -c "$jar" http://127.0.0.1:20530/smoke/csrf-token | sed -E 's/.*"obj":"([^"]+)".*/\1/')
+          curl -fsS -b "$jar" -c "$jar" -H "X-CSRF-Token: $token" -H 'Content-Type: application/json' \
+            -d '{"remark":"smoke","enable":true,"port":21195,"protocol":"openvpn","settings":"{\"clients\":[{\"email\":\"smoke\",\"enable\":true}]}"}' \
+            http://127.0.0.1:20530/smoke/panel/api/inbounds/add | tee /tmp/inbound.json
+          grep -q '"success":true' /tmp/inbound.json
+          listening=no
+          for _ in $(seq 1 20); do
+            if sudo ss -lun | grep -q ':21195 '; then listening=yes; break; fi
+            sleep 1
+          done
+          if [ "$listening" != yes ]; then
+            sudo journalctl -u manifold -n 80 --no-pager
+            echo "the OpenVPN inbound is not listening" >&2
+            exit 1
+          fi
+          sudo nft list table ip manifold_ovpn1 >/dev/null
           # An update must keep the database: the second run is an update in place.
           sudo bash install.sh --package manifold-linux-amd64.tar.gz
           settings=$(sudo manifold settings)
@@ -135,6 +160,19 @@ jobs:
           grep -q 'webBasePath: /smoke/' <<<"$settings"
           sudo manifold uninstall --purge
           test ! -e /usr/local/manifold
+          # With the panel port held by another program the installer must fail
+          # instead of printing an address nobody can reach.
+          python3 -m http.server 20531 >/dev/null 2>&1 &
+          squatter=$!
+          sleep 1
+          if sudo bash install.sh --package manifold-linux-amd64.tar.gz \
+            --port 20531 --path /smoke/ --username smoke --password smoke-pass-123 2>/tmp/install-err.log; then
+            echo "the installer reported success for a panel that cannot listen" >&2
+            exit 1
+          fi
+          grep -q "not listening on port 20531" /tmp/install-err.log
+          kill "$squatter"
+          sudo manifold uninstall --purge
 
       - uses: actions/upload-artifact@v7
         with:

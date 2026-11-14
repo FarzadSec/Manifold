@@ -11,10 +11,13 @@ services:
     # The bundled Fail2ban (MANIFOLD_ENABLE_FAIL2BAN below) enforces the IP limit
     # with iptables, which needs NET_ADMIN. Without these caps a ban is logged
     # and shown in fail2ban status but never actually applied. NET_RAW covers
-    # ip6tables. If you disable Fail2ban, you can drop cap_add.
+    # ip6tables. OpenVPN inbounds need NET_ADMIN as well.
     cap_add:
       - NET_ADMIN
       - NET_RAW
+    # OpenVPN inbounds create their tunnel through this device.
+    devices:
+      - /dev/net/tun
     volumes:
       - $PWD/db/:/etc/manifold/
       - $PWD/cert/:/root/cert/

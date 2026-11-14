@@ -121,7 +121,7 @@ start_panel() {
     "$BIN" setting -port "$PANEL_PORT" -webBasePath /e2e/ -username e2e -password e2e-pass-123 >/dev/null
     "$BIN" >"$WORK/panel.log" 2>&1 &
     PANEL_PID=$!
-    wait_until 40 "the panel to answer" curl -fsS -o /dev/null "$BASE/"
+    wait_until 40 "the panel to answer" curl -fsS -o /dev/null "$BASE/csrf-token"
     TOKEN="$(field "$(curl -fsS -c "$JAR" "$BASE/csrf-token")" 'r["obj"]')"
     must_succeed "$(curl -fsS -b "$JAR" -c "$JAR" -H "X-CSRF-Token: $TOKEN" \
         -d 'username=e2e&password=e2e-pass-123' "$BASE/login")" "login"

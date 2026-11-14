@@ -12,7 +12,8 @@ on:
       - "install.sh"
       - "manifold.sh"
       - "DockerEntrypoint.sh"
-      - "deploy/test/install-functions.sh"
+      - "deploy/test/**"
+      - "DockerInit.sh"
       - ".github/workflows/ci.yml"
   push:
     branches:
@@ -29,7 +30,8 @@ on:
       - "install.sh"
       - "manifold.sh"
       - "DockerEntrypoint.sh"
-      - "deploy/test/install-functions.sh"
+      - "deploy/test/**"
+      - "DockerInit.sh"
       - ".github/workflows/ci.yml"
 
 permissions:
@@ -286,6 +288,33 @@ jobs:
           make node-e2e 2>&1 | tee /tmp/node-e2e.log
           if grep -q -- '--- SKIP' /tmp/node-e2e.log; then echo "node-e2e skipped"; exit 1; fi
 
+  # The VPN engines against the real daemons: a real server started by the
+  # panel and real clients in a network namespace. Runs on every branch.
+  vpn-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Install the VPN engines
+        run: sudo apt-get update && sudo apt-get install -y openvpn nftables iptables
+      - name: Build the panel and fetch Xray
+        run: |
+          mkdir -p internal/web/dist && touch internal/web/dist/.gitkeep
+          go build -o build/manifold .
+          ./DockerInit.sh amd64
+      - name: OpenVPN engine with a real server and client
+        run: |
+          go test -c -o build/openvpn.test ./internal/openvpn/
+          sudo XUI_OPENVPN_E2E=1 ./build/openvpn.test -test.run TestRealServerAndClient -test.v > /tmp/openvpn-engine.log 2>&1 \
+            || { tail -n 80 /tmp/openvpn-engine.log; exit 1; }
+          grep -E '^(---|===|PASS|FAIL|ok)' /tmp/openvpn-engine.log
+          if grep -q -- '--- SKIP' /tmp/openvpn-engine.log; then echo "the engine test was skipped"; exit 1; fi
+      - name: OpenVPN inbound end to end
+        run: sudo deploy/test/openvpn-e2e.sh build/manifold build/bin
+
   # Brief native-fuzz smoke on the security-/parser-critical decoders. Each runs the
   # generated corpus plus 30s of exploration; a crash here is a real input-handling bug.
   fuzz-smoke:
@@ -341,7 +370,7 @@ jobs:
       - name: Install shellcheck
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: shellcheck
-        run: shellcheck -x --severity=style install.sh manifold.sh DockerInit.sh DockerEntrypoint.sh deploy/test/install-functions.sh
+        run: shellcheck -x --severity=style install.sh manifold.sh DockerInit.sh DockerEntrypoint.sh deploy/test/install-functions.sh deploy/test/openvpn-e2e.sh
       - name: Installer function tests
         run: bash deploy/test/install-functions.sh
 
