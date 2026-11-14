@@ -1,11 +1,14 @@
 # CLAUDE.md
 
-Operational guide for AI agents working in this repo. Long-form human docs:
-`CONTRIBUTING.md` (setup, testing philosophy) and `frontend/README.md`.
-Read those before large changes. This file is the short, must-follow version.
-For a deep navigation map (request lifecycle, cron-job table, symptom → file
-index, layering rules), read `docs/architecture.md` on demand — do not guess
-file locations when it can answer in one hop.
+Operational guide for AI agents working in Manifold. Long-form human docs:
+`manifold/docs/development.md` (setup, verification, branches) and
+`frontend/README.md`. Read those before large changes. This file is the short,
+must-follow version. The plan every phase is checked against is
+`manifold/ARCHITECTURE.md`.
+For a deep navigation map of the base code (request lifecycle, cron-job table,
+symptom → file index, layering rules), run
+`git show upstream-main:docs/architecture.md` on demand — do not guess file
+locations when it can answer in one hop.
 
 ## Stack
 - Backend: Go 1.27 (`module github.com/mhsanaei/3x-ui/v3`), Gin, GORM.
@@ -60,7 +63,7 @@ file locations when it can answer in one hop.
   - `service/` — business logic (InboundService, SettingService, XrayService,
     node sync); subpackages tgbot/, discord/, email/, outbound/, panel/, integration/.
   - `job/` — 19 cron jobs (traffic, fail2ban IP-limit, node heartbeat/sync, LDAP,
-    CPU/memory watchdogs, …); full table in `docs/architecture.md` §5.4.
+    CPU/memory watchdogs, …); full table in §5.4 of the navigation map above.
   - `middleware/`, `entity/`, `global/`, `session/` (CSRF), `network/`,
     `runtime/` (master/sub-node over mTLS), `websocket/`.
   - `locale/` + `translation/` — i18n, 14 embedded locale JSON files.
@@ -69,10 +72,9 @@ file locations when it can answer in one hop.
   into `frontend/src/generated/` from Go structs. The OpenAPI doc itself
   (`frontend/public/openapi.json`) is assembled from those + `endpoints.ts` by
   `frontend/scripts/build-openapi.mjs`.
-- `docs/` — separate Next.js/Fumadocs site (pnpm, own CI in `docs-ci.yml`,
-  outside `make verify`). Holds a THIRD independent implementation of
-  link/subscription generation in `docs/lib/xray/` — check it whenever
-  share-link or install-command output changes.
+- `manifold/` — Manifold's own documents: `ARCHITECTURE.md` (plan and roadmap)
+  and `docs/` (installation, usage, development). Upstream has no such
+  directory, so upstream merges never touch it.
 
 ## Hard rules (non-negotiable)
 - Correct fix over small fix. Find the root cause and fix it the right way, however
@@ -102,11 +104,6 @@ file locations when it can answer in one hop.
   never hand-write them. A new struct must be added to openapigen's `StructAllow`
   allowlist (`tools/openapigen/main.go`) or it is silently omitted from
   schemas/examples (and `build-openapi.mjs` then fails on the missing schema).
-- A new or renamed endpoint has a FOURTH step: copy
-  `frontend/public/openapi.json` → `docs/public/openapi.json`, then
-  `cd docs && pnpm gen:api` to refresh the MDX under
-  `docs/content/docs/en/reference/api/`. The `codegen` job and `make verify`
-  fail on a stale copy, and `docs-ci.yml` fails on stale MDX.
 - A new English i18n key goes in EVERY locale JSON in `internal/web/translation/`
   (14 files) AND must be referenced from `frontend/src` or Go in the SAME commit —
   `frontend/src/test/i18n-dead-keys.test.ts` fails both ways. It is a frontend
@@ -116,7 +113,7 @@ file locations when it can answer in one hop.
 - Every state-changing inbound/client op dispatches through `runtime.Runtime`
   (`internal/web/runtime/`) — never straight to `internal/xray/api.go`, never from
   a controller or cron job. A direct call passes every local test and silently
-  breaks every multi-node deployment. Other layering rules: `docs/architecture.md` §8.
+  breaks every multi-node deployment. Other layering rules: §8 of the navigation map.
 - Conventional commits: `type(area): short imperative summary`, then a body
   explaining the why. Types in use: `fix`, `feat`, `chore`, `refactor`, `perf`,
   `docs`, `style`.
@@ -190,7 +187,7 @@ reads as a broken repo, not a missing step. Run `make dist-stub` once; every
 `make` Go target already depends on it, which is why `make test-go` beats
 `go test ./...`. Run `make help` for all targets. The local gate:
 
-    make verify   # gen-check + lint + typecheck + test + build + build-storybook + docs-openapi-check
+    make verify   # gen-check + lint + typecheck + test + build + build-storybook
 
 That is the *fast* gate, not all of CI. `ci.yml` also runs `make race`,
 `make vulncheck`, a live-Postgres job (where a SKIP counts as a failure),

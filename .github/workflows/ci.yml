@@ -221,8 +221,6 @@ jobs:
         working-directory: frontend
       - name: Fail if generated files are stale (run 'npm run gen' and commit)
         run: git diff --exit-code -- frontend/src/generated frontend/public/openapi.json
-      - name: Fail if the docs spec is not the panel's
-        run: cmp frontend/public/openapi.json docs/public/openapi.json
 
   govulncheck:
     runs-on: ubuntu-latest
