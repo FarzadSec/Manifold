@@ -61,6 +61,7 @@ var nodeEligibleProtocols = map[model.Protocol]bool{
 	model.AmneziaWG:   true,
 	model.TUIC:        true,
 	model.MASQUE:      true,
+	model.OpenVPN:     true,
 }
 
 // nodeProtocolFirstRelease is the panel release that introduced each protocol

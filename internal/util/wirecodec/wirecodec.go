@@ -26,8 +26,11 @@ const (
 	// CapAmneziaWGKernel marks a node that honours an AmneziaWG inbound's
 	// kernelMode; an older node drops the flag and serves it embedded.
 	CapAmneziaWGKernel = "awg-kernel"
+	// CapOpenVPN marks a node that serves OpenVPN inbounds; a native engine's
+	// capability is always its protocol name.
+	CapOpenVPN = "openvpn"
 	// NodeCaps is the full CapsHeader value this build advertises.
-	NodeCaps = CapZstd + "," + CapAmneziaWGKernel
+	NodeCaps = CapZstd + "," + CapAmneziaWGKernel + "," + CapOpenVPN
 
 	// maxDecodeBytes bounds in-memory decompression to defuse a zstd bomb from
 	// an (authenticated) node-API caller.
