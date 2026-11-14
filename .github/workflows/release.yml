@@ -2,10 +2,20 @@ name: Release
 
 # A version tag builds the Linux packages, installs the amd64 one on the runner
 # as a smoke test, and publishes the release only if that install works.
+# A phase branch that touches the packaging runs the same build and install as
+# a rehearsal and publishes nothing. Path filters do not apply to tag pushes.
 on:
   push:
     tags:
       - "v*.*.*"
+    branches:
+      - "p[0-9]*/**"
+    paths:
+      - ".github/workflows/release.yml"
+      - "install.sh"
+      - "manifold.sh"
+      - "manifold.service"
+      - "DockerInit.sh"
 
 permissions:
   contents: write
@@ -23,6 +33,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Check the tag against the product version
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
           want="v$(tr -d '[:space:]' < internal/config/product_version)"
           if [ "$GITHUB_REF_NAME" != "$want" ]; then
@@ -107,7 +118,7 @@ jobs:
           curl -fsS -b "$jar" -c "$jar" -H "X-CSRF-Token: $token" \
             -d 'username=smoke&password=smoke-pass-123' http://127.0.0.1:20530/smoke/login | tee /tmp/login.json
           grep -q '"success":true' /tmp/login.json
-          test "$(sudo manifold version)" = "${GITHUB_REF_NAME#v}"
+          test "$(sudo manifold version)" = "$(tr -d '[:space:]' < internal/config/product_version)"
           sudo manifold settings
           # An update must keep the database: the second run is an update in place.
           sudo bash install.sh --package manifold-linux-amd64.tar.gz
@@ -125,6 +136,7 @@ jobs:
 
   publish:
     needs: build
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v7
