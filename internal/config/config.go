@@ -20,6 +20,9 @@ var version string
 //go:embed name
 var name string
 
+//go:embed product_version
+var productVersion string
+
 // buildCommit and buildDate are injected at build time via `-ldflags -X` for
 // CI per-commit (dev channel) builds; see .github/workflows/release.yml. They
 // stay empty for a plain `go build` and for stable tagged releases, which is how
@@ -49,9 +52,30 @@ func GetBaseVersion() string {
 	return strings.TrimSpace(version)
 }
 
-// GetName returns the name of the 3x-ui application.
+// GetName returns the program name, which also names its database file.
 func GetName() string {
 	return strings.TrimSpace(name)
+}
+
+// GetProductVersion returns Manifold's own release version, the one people see.
+// Node compatibility is decided on GetBaseVersion, which follows the code base.
+func GetProductVersion() string {
+	return strings.TrimSpace(productVersion)
+}
+
+func init() {
+	adoptManifoldEnv()
+}
+
+// adoptManifoldEnv copies every MANIFOLD_<NAME> variable onto XUI_<NAME>, the
+// name the settings read, so the documented name always wins.
+func adoptManifoldEnv() {
+	for _, kv := range os.Environ() {
+		key, value, _ := strings.Cut(kv, "=")
+		if suffix, ours := strings.CutPrefix(key, "MANIFOLD_"); ours && suffix != "" {
+			_ = os.Setenv("XUI_"+suffix, value)
+		}
+	}
 }
 
 // GetBuildCommit returns the short git commit this binary was built from, or an
@@ -161,7 +185,7 @@ func GetDBFolderPath() string {
 	if runtime.GOOS == "windows" {
 		return getBaseDir()
 	}
-	return "/etc/x-ui"
+	return "/etc/manifold"
 }
 
 // GetDBPath returns the full path to the database file.
@@ -205,7 +229,7 @@ func GetNodeTokenKeyFile() string {
 	if p := strings.TrimSpace(os.Getenv("XUI_NODE_TOKEN_KEY_FILE")); p != "" {
 		return p
 	}
-	return "/etc/x-ui/node_token_key.json"
+	return "/etc/manifold/node_token_key.json"
 }
 
 // GetNodeTokenKeyEnv returns the name of the env var holding a single base64
@@ -221,9 +245,9 @@ func GetEnvFilePaths() []string {
 		return nil
 	}
 	return []string{
-		"/etc/default/x-ui",
-		"/etc/conf.d/x-ui",
-		"/etc/sysconfig/x-ui",
+		"/etc/default/manifold",
+		"/etc/conf.d/manifold",
+		"/etc/sysconfig/manifold",
 	}
 }
 
@@ -237,12 +261,12 @@ func GetLogFolder() string {
 	// scatters a log/ directory through the source tree (one per tested package).
 	// Redirect test runs to a shared temp folder so the source tree stays clean.
 	if testing.Testing() {
-		return filepath.Join(os.TempDir(), "3x-ui-test-log")
+		return filepath.Join(os.TempDir(), "manifold-test-log")
 	}
 	if runtime.GOOS == "windows" {
 		return filepath.Join(".", "log")
 	}
-	return "/var/log/x-ui"
+	return "/var/log/manifold"
 }
 
 func copyFile(src, dst string) error {

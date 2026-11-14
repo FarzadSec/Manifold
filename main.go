@@ -74,7 +74,7 @@ func initNodeTokenCrypto() error {
 
 // runWebServer initializes and starts the web server for the 3x-ui panel.
 func runWebServer() {
-	log.Printf("Starting %v %v", config.GetName(), config.GetPanelVersion())
+	log.Printf("Starting %v %v", config.GetName(), config.GetProductVersion())
 
 	switch config.GetLogLevel() {
 	case config.Debug:
@@ -602,7 +602,7 @@ func main() {
 	var migrateRestore string
 	var migrateOut string
 	migrateDbCmd.StringVar(&migrateDsn, "dsn", "", "Destination PostgreSQL DSN (postgres://user:pass@host:port/db?sslmode=disable)")
-	migrateDbCmd.StringVar(&migrateSrc, "src", "", "Source SQLite file (defaults to the configured x-ui.db)")
+	migrateDbCmd.StringVar(&migrateSrc, "src", "", "Source SQLite file (defaults to the configured manifold.db)")
 	migrateDbCmd.StringVar(&migrateDump, "dump", "", "Write a portable SQL text dump of --src to this file (.db -> .dump)")
 	migrateDbCmd.StringVar(&migrateRestore, "restore", "", "Rebuild a SQLite database from this SQL text dump (.dump -> .db); requires --out")
 	migrateDbCmd.StringVar(&migrateOut, "out", "", "Destination SQLite file for --restore (must not already exist)")
@@ -655,7 +655,7 @@ func main() {
 
 	flag.Parse()
 	if showVersion {
-		fmt.Println(config.GetPanelVersion())
+		fmt.Println(config.GetProductVersion())
 		return
 	}
 
@@ -772,7 +772,7 @@ func commandHelp() string {
 	return `
 Commands:
     run            run web panel
-    migrate        migrate from other/old x-ui
+    migrate        migrate a database from an older schema
     migrate-db     SQLite <-> .dump (--dump/--restore) or copy into PostgreSQL (--dsn)
     encrypt-tokens encrypt node bearer tokens with the configured active key
     setting        set settings
@@ -795,7 +795,7 @@ func installAmneziaWGKernelModule() {
 	if os.Geteuid() != 0 {
 		exe, err := os.Executable()
 		if err != nil || exe == "" {
-			exe = "/usr/local/x-ui/x-ui"
+			exe = "/usr/local/manifold/manifold"
 		}
 		fmt.Println("run as root: sudo " + exe + " install-awg-kernel")
 		return

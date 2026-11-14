@@ -325,7 +325,7 @@ export default function AppSidebar() {
       >
         <div className="sider-brand">
           <div className="brand-block">
-            <span className="brand-text">{railCollapsed ? '3X' : '3X-UI'}</span>
+            <span className="brand-text">{railCollapsed ? 'M' : 'Manifold'}</span>
           </div>
           {!railCollapsed && (
             <div className="brand-actions">
@@ -411,7 +411,7 @@ export default function AppSidebar() {
       >
         <div className="drawer-header">
           <div className="brand-block">
-            <span className="drawer-brand">3X-UI</span>
+            <span className="drawer-brand">Manifold</span>
           </div>
           <div className="drawer-header-actions">
             <ThemeCycleButton

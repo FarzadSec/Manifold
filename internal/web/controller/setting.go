@@ -375,7 +375,7 @@ type TgBotCapabilities struct {
 	// GroupPrivacy off means the bot reads every group message; when it is on,
 	// a bare /start in a group is invisible to the bot.
 	GroupPrivacy bool   `json:"groupPrivacy" example:"false"`
-	Username     string `json:"username" example:"xui_bot"`
+	Username     string `json:"username" example:"manifold_bot"`
 	Running      bool   `json:"running" example:"true"`
 }
 

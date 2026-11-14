@@ -1270,7 +1270,7 @@ func (s *ServerService) GetLogs(count string, level string, syslog string) []str
 		// Use hardcoded command with validated parameters
 		ctx, cancel := context.WithTimeout(context.Background(), syslogTimeout)
 		defer cancel()
-		cmd := exec.CommandContext(ctx, "journalctl", "-u", "x-ui", "--no-pager", "-n", strconv.Itoa(countInt), "-p", level)
+		cmd := exec.CommandContext(ctx, "journalctl", "-u", "manifold", "--no-pager", "-n", strconv.Itoa(countInt), "-p", level)
 		var out bytes.Buffer
 		cmd.Stdout = &out
 		err = cmd.Run()
@@ -1278,7 +1278,7 @@ func (s *ServerService) GetLogs(count string, level string, syslog string) []str
 			return []string{"journalctl did not answer in time. Try a smaller line count or a less strict level."}
 		}
 		if err != nil {
-			return []string{"Failed to run journalctl command! Make sure systemd is available and x-ui service is registered."}
+			return []string{"Failed to run journalctl command! Make sure systemd is available and the manifold service is registered."}
 		}
 		lines = strings.Split(out.String(), "\n")
 	} else {
@@ -1730,7 +1730,7 @@ func sanitizeBackupHost(host string) string {
 	}
 	out := strings.Trim(b.String(), ".-")
 	if out == "" {
-		return "x-ui"
+		return "manifold"
 	}
 	return out
 }
@@ -1756,7 +1756,7 @@ func (s *ServerService) GetMigration() ([]byte, string, error) {
 		if err != nil {
 			return nil, "", err
 		}
-		return data, "x-ui.db", nil
+		return data, "manifold.db", nil
 	}
 
 	backupPath, cleanup, err := s.backupSQLite()
@@ -1768,7 +1768,7 @@ func (s *ServerService) GetMigration() ([]byte, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	return data, "x-ui.dump", nil
+	return data, "manifold.dump", nil
 }
 
 // hostBoundSettingKeys are the settings that describe *this* machine rather

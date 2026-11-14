@@ -274,8 +274,8 @@ func (g *GatewayClient) connectAndListen(ctx context.Context) error {
 		Intents: discordIntents,
 		Properties: IdentifyProperties{
 			OS:      "linux",
-			Browser: "3x-ui",
-			Device:  "3x-ui",
+			Browser: "Manifold",
+			Device:  "Manifold",
 		},
 	}
 	dataBytes, _ := json.Marshal(identData)
@@ -484,7 +484,7 @@ func (g *GatewayClient) sendStatus(ctx context.Context) {
 
 	hostname, _ := os.Hostname()
 	if hostname == "" {
-		hostname = "3x-ui"
+		hostname = "Manifold"
 	}
 
 	var onlines []string
@@ -510,7 +510,7 @@ func (g *GatewayClient) sendStatus(ctx context.Context) {
 		Color:       ColorGreen,
 		Timestamp:   time.Now().UTC().Format(time.RFC3339),
 		Fields: []EmbedField{
-			{Name: tr("discord.fields.panelVersion"), Value: config.GetPanelVersion(), Inline: true},
+			{Name: tr("discord.fields.panelVersion"), Value: config.GetProductVersion(), Inline: true},
 			{Name: tr("discord.fields.xrayCore"), Value: fmt.Sprintf("%s (%s)", status.Xray.Version, status.Xray.State), Inline: true},
 			{Name: tr("pages.index.uptime"), Value: formatStatusUptime(status, tr), Inline: true},
 			{Name: tr("discord.fields.systemLoad"), Value: fmt.Sprintf("%.2f, %.2f, %.2f", load1, load2, load3), Inline: true},
@@ -540,7 +540,7 @@ func (g *GatewayClient) sendBackup(ctx context.Context) {
 
 	filename := g.serverService.BackupFilename("")
 	if filename == "" {
-		filename = "x-ui.db"
+		filename = "manifold.db"
 	}
 
 	files := []FileAttachment{

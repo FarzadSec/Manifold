@@ -857,7 +857,7 @@
       "deleteHwidConfirm": "このデバイスを削除しますか?次回のサブスクリプション取得時に再登録が必要になります。",
       "hwidDeleted": "デバイスを削除しました。",
       "clearHwidsConfirm": "登録済みのすべてのデバイスを削除しますか?各デバイスは次回のサブスクリプション取得時に再登録が必要になります。",
-      "limitIpFail2banMissing": "Fail2ban がインストールされていないため、IP 制限を適用できません。このオプションを有効にするには、x-ui の bash メニューから Fail2ban をインストールしてください。",
+      "limitIpFail2banMissing": "Fail2ban がインストールされていないため、IP 制限を適用できません。このオプションを有効にするには、manifold の bash メニューから Fail2ban をインストールしてください。",
       "limitIpFail2banWindows": "Windows では Fail2ban を利用できないため、IP 制限を適用できません。",
       "limitIpDisabled": "このサーバーでは IP 制限機能が無効になっています。",
       "password": "パスワード",
@@ -1325,7 +1325,7 @@
       "subAnnounce": "お知らせ",
       "subAnnounceDesc": "VPNクライアントに表示されるお知らせのテキスト。クライアント識別トークンをサポートします: {{EMAIL}}, {{ID}}, {{SHORT_ID}}, {{SUB_ID}}, {{TELEGRAM_ID}}。",
       "subThemeDir": "サブスクリプションテーマディレクトリ",
-      "subThemeDirDesc": "サブスクリプションページのカスタムテンプレート (index.html/sub.html) を含むフォルダーの絶対パス（例: /etc/3x-ui/sub_templates/my-theme/）。空欄の場合はデフォルトのページを使用します。",
+      "subThemeDirDesc": "サブスクリプションページのカスタムテンプレート (index.html/sub.html) を含むフォルダーの絶対パス（例: /etc/manifold/sub_templates/my-theme/）。空欄の場合はデフォルトのページを使用します。",
       "subEnableRouting": "ルーティングを有効化",
       "happLinkEnable": "暗号化されたサブスクリプションリンク",
       "happLinkEnableDesc": "クライアントの QR コード画面で、暗号化された Happ リンクを生成できるようにします。サブスクリプション URL はローカルで処理されます。",
@@ -2745,10 +2745,10 @@
   },
   "discord": {
     "test": {
-      "title": "3x-ui Discord通知テスト",
+      "title": "Manifold Discord通知テスト",
       "body": "これはDiscord通知が正しく設定されていることを確認するためのテスト通知です。"
     },
-    "footer": "3x-ui パネル",
+    "footer": "Manifold パネル",
     "fields": {
       "panelVersion": "パネルバージョン",
       "xrayCore": "Xray コア",
@@ -2783,13 +2783,13 @@
       "loginFailed": "ログイン失敗"
     },
     "report": {
-      "title": "📊 3x-ui ステータスレポート",
+      "title": "📊 Manifold ステータスレポート",
       "summary": "**{{ .Host }}** のサーバーとプロキシの定期ステータスレポート",
-      "footer": "3x-ui 定期レポート • スケジュール: {{ .RunTime }}"
+      "footer": "Manifold 定期レポート • スケジュール: {{ .RunTime }}"
     },
     "commands": {
-      "helpTitle": "🤖 3x-ui Discord Bot コマンド",
-      "helpDescription": "3x-ui サーバーの監視と管理に使えるコマンド:",
+      "helpTitle": "🤖 Manifold Discord Bot コマンド",
+      "helpDescription": "Manifold サーバーの監視と管理に使えるコマンド:",
       "helpStatus": "システム負荷、RAM、CPU、接続数、オンラインユーザーを表示",
       "helpReport": "完全なステータスレポートを生成（設定されていればDBバックアップ付き）",
       "helpBackup": "データベースのバックアップファイルを今すぐ送信",
@@ -2797,10 +2797,10 @@
       "helpInbounds": "設定済みのすべてのインバウンドをポートとクライアント統計付きで一覧表示",
       "helpRestart": "Xray コアを再起動",
       "helpHelp": "このコマンド一覧を表示",
-      "statusTitle": "⚡ 3x-ui サーバーステータス",
+      "statusTitle": "⚡ Manifold サーバーステータス",
       "statusDescription": "**{{ .Host }}** の現在の稼働メトリクス",
       "backupTitle": "🗄️ データベースバックアップ",
-      "backupDescription": "`{{ .Time }}` に生成された 3x-ui のバックアップ",
+      "backupDescription": "`{{ .Time }}` に生成された Manifold のバックアップ",
       "backupUnavailable": "❌ バックアップサービスを利用できません",
       "backupFailed": "❌ データベースのバックアップを読み込めませんでした: {{ .Error }}",
       "usageHint": "⚠️ 使い方: `!usage <email>` または `/usage <email>`",

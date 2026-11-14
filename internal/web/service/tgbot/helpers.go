@@ -19,4 +19,4 @@ func xrayProcessOrNil() *xray.Process {
 }
 
 // panelVersion is the version string the menu shows.
-func panelVersion() string { return config.GetPanelVersion() }
+func panelVersion() string { return config.GetProductVersion() }

@@ -33,7 +33,7 @@ type InboundProvider interface {
 func (s *DiscordService) BuildReport(ctx context.Context, server ServerProvider, inbound InboundProvider) (MessagePayload, []FileAttachment, error) {
 	hostname, _ := os.Hostname()
 	if hostname == "" {
-		hostname = "3x-ui"
+		hostname = "Manifold"
 	}
 
 	var status *service.Status
@@ -124,7 +124,7 @@ func (s *DiscordService) BuildReport(ctx context.Context, server ServerProvider,
 
 	fields := []EmbedField{
 		{Name: tr("host"), Value: hostname, Inline: true},
-		{Name: tr("discord.fields.panelVersion"), Value: config.GetPanelVersion(), Inline: true},
+		{Name: tr("discord.fields.panelVersion"), Value: config.GetProductVersion(), Inline: true},
 		{Name: tr("discord.fields.xrayCore"), Value: fmt.Sprintf("%s (%s)", status.Xray.Version, status.Xray.State), Inline: true},
 		{Name: tr("pages.index.uptime"), Value: uptimeStr, Inline: true},
 		{Name: tr("discord.fields.systemLoad"), Value: loadStr, Inline: true},
@@ -173,7 +173,7 @@ func (s *DiscordService) BuildReport(ctx context.Context, server ServerProvider,
 		} else if len(dbData) > 0 {
 			filename := server.BackupFilename("")
 			if filename == "" {
-				filename = "x-ui.db"
+				filename = "manifold.db"
 			}
 			files = append(files, FileAttachment{
 				Filename: filename,

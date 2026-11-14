@@ -857,7 +857,7 @@
       "deleteHwidConfirm": "Bu cihaz kaldırılsın mı? Bir sonraki abonelik alımında yeniden kaydolması gerekecek.",
       "hwidDeleted": "Cihaz kaldırıldı.",
       "clearHwidsConfirm": "Kayıtlı tüm cihazlar kaldırılsın mı? Her cihazın bir sonraki abonelik alımında yeniden kaydolması gerekecek.",
-      "limitIpFail2banMissing": "Fail2ban yüklü değil, bu nedenle IP sınırı uygulanamaz. Bu seçeneği etkinleştirmek için x-ui bash menüsünden Fail2ban'ı yükleyin.",
+      "limitIpFail2banMissing": "Fail2ban yüklü değil, bu nedenle IP sınırı uygulanamaz. Bu seçeneği etkinleştirmek için manifold bash menüsünden Fail2ban'ı yükleyin.",
       "limitIpFail2banWindows": "Fail2ban Windows'ta kullanılamadığından IP sınırı uygulanamaz.",
       "limitIpDisabled": "IP sınırı özelliği bu sunucuda devre dışı.",
       "password": "Şifre",
@@ -1325,7 +1325,7 @@
       "subAnnounce": "Duyuru",
       "subAnnounceDesc": "VPN istemcisinde görüntülenen duyuru metni. İstemci kimlik tokenlarını destekler: {{EMAIL}}, {{ID}}, {{SHORT_ID}}, {{SUB_ID}}, {{TELEGRAM_ID}}.",
       "subThemeDir": "Abonelik Tema Dizini",
-      "subThemeDirDesc": "Abonelik sayfası için özel bir şablon (index.html/sub.html) içeren klasörün mutlak yolu (örn. /etc/3x-ui/sub_templates/my-theme/). Varsayılan sayfayı kullanmak için boş bırakın.",
+      "subThemeDirDesc": "Abonelik sayfası için özel bir şablon (index.html/sub.html) içeren klasörün mutlak yolu (örn. /etc/manifold/sub_templates/my-theme/). Varsayılan sayfayı kullanmak için boş bırakın.",
       "subEnableRouting": "Yönlendirmeyi etkinleştir",
       "happLinkEnable": "Şifreli abonelik bağlantıları",
       "happLinkEnableDesc": "İstemcinin QR kodu penceresinde şifreli Happ bağlantıları oluşturulmasına izin verir. Abonelik URL’leri yerel olarak işlenir.",
@@ -2538,7 +2538,7 @@
       "report": "🕰 Planlanmış Raporlar: {{ .RunTime }}\r\n",
       "datetime": "⏰ Tarih ve Saat: {{ .DateTime }}\r\n",
       "hostname": "💻 Sunucu: {{ .Hostname }}",
-      "version": "🚀 3X-UI Sürümü: {{ .Version }}\r\n",
+      "version": "🚀 Manifold Sürümü: {{ .Version }}\r\n",
       "xrayVersion": "📡 Xray Sürümü: {{ .XrayVersion }}\r\n",
       "ipv6": "🌐 IPv6: {{ .IPv6 }}",
       "ipv4": "🌐 IPv4: {{ .IPv4 }}",
@@ -2745,10 +2745,10 @@
   },
   "discord": {
     "test": {
-      "title": "3x-ui Discord Bildirim Testi",
+      "title": "Manifold Discord Bildirim Testi",
       "body": "Bu, Discord bildirimlerinin doğru yapılandırıldığını doğrulayan bir test bildirimidir."
     },
-    "footer": "3x-ui Paneli",
+    "footer": "Manifold Paneli",
     "fields": {
       "panelVersion": "Panel Sürümü",
       "xrayCore": "Xray Çekirdeği",
@@ -2783,13 +2783,13 @@
       "loginFailed": "Giriş Başarısız"
     },
     "report": {
-      "title": "📊 3x-ui Durum Raporu",
+      "title": "📊 Manifold Durum Raporu",
       "summary": "**{{ .Host }}** için periyodik sunucu ve proxy durum raporu",
-      "footer": "3x-ui Zamanlanmış Rapor • Zamanlama: {{ .RunTime }}"
+      "footer": "Manifold Zamanlanmış Rapor • Zamanlama: {{ .RunTime }}"
     },
     "commands": {
-      "helpTitle": "🤖 3x-ui Discord Bot Komutları",
-      "helpDescription": "3x-ui sunucusunu izlemek ve yönetmek için kullanılabilir komutlar:",
+      "helpTitle": "🤖 Manifold Discord Bot Komutları",
+      "helpDescription": "Manifold sunucusunu izlemek ve yönetmek için kullanılabilir komutlar:",
       "helpStatus": "Sistem yükünü, RAM'i, CPU'yu, bağlantıları ve çevrimiçi kullanıcıları gösterir",
       "helpReport": "Tam durum raporu oluşturur (yapılandırıldıysa veritabanı yedeğiyle)",
       "helpBackup": "Veritabanı yedek dosyasını hemen gönderir",
@@ -2797,10 +2797,10 @@
       "helpInbounds": "Yapılandırılmış tüm gelen bağlantıları portları ve istemci istatistikleriyle listeler",
       "helpRestart": "Xray çekirdeğini yeniden başlatır",
       "helpHelp": "Bu komut listesini gösterir",
-      "statusTitle": "⚡ 3x-ui Sunucu Durumu",
+      "statusTitle": "⚡ Manifold Sunucu Durumu",
       "statusDescription": "**{{ .Host }}** için güncel çalışma metrikleri",
       "backupTitle": "🗄️ Veritabanı Yedeği",
-      "backupDescription": "`{{ .Time }}` tarihinde oluşturulan 3x-ui yedek arşivi",
+      "backupDescription": "`{{ .Time }}` tarihinde oluşturulan Manifold yedek arşivi",
       "backupUnavailable": "❌ Yedekleme hizmeti kullanılamıyor",
       "backupFailed": "❌ Veritabanı yedeği okunamadı: {{ .Error }}",
       "usageHint": "⚠️ Kullanım: `!usage <email>` veya `/usage <email>`",

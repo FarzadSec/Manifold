@@ -1171,7 +1171,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "groupPrivacy": false,
     "inlineEnabled": true,
     "running": true,
-    "username": "xui_bot"
+    "username": "manifold_bot"
   },
   "Traffic": {
     "Down": 2097152,

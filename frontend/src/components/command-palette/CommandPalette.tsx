@@ -756,7 +756,7 @@ export default function CommandPalette() {
                 {t('close')}
               </span>
             </div>
-            <span>3x-ui Command Palette</span>
+            <span>Manifold Command Palette</span>
           </div>
         </div>
       </div>

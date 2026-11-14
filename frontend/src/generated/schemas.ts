@@ -4727,7 +4727,7 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "boolean"
       },
       "username": {
-        "example": "xui_bot",
+        "example": "manifold_bot",
         "type": "string"
       }
     },

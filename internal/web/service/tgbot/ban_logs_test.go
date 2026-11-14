@@ -19,8 +19,8 @@ import (
 
 func TestSendBanLogsFile(t *testing.T) {
 	const (
-		previous = "3xipl-banned.prev.log"
-		current  = "3xipl-banned.log"
+		previous = "ip-limit-banned.prev.log"
+		current  = "ip-limit-banned.log"
 	)
 	for _, tt := range []struct {
 		name        string

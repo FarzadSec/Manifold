@@ -857,7 +857,7 @@
       "deleteHwidConfirm": "این دستگاه حذف شود؟ در دریافت بعدی اشتراک باید دوباره ثبت‌نام شود.",
       "hwidDeleted": "دستگاه حذف شد.",
       "clearHwidsConfirm": "همه دستگاه‌های ثبت‌شده حذف شوند؟ هر دستگاه در دریافت بعدی اشتراک باید دوباره ثبت‌نام شود.",
-      "limitIpFail2banMissing": "Fail2ban نصب نشده است، بنابراین محدودیت IP اعمال نمی‌شود. برای فعال‌سازی این گزینه، Fail2ban را از منوی بش x-ui نصب کنید.",
+      "limitIpFail2banMissing": "Fail2ban نصب نشده است، بنابراین محدودیت IP اعمال نمی‌شود. برای فعال‌سازی این گزینه، Fail2ban را از منوی بش manifold نصب کنید.",
       "limitIpFail2banWindows": "Fail2ban روی ویندوز در دسترس نیست، بنابراین محدودیت IP قابل اعمال نیست.",
       "limitIpDisabled": "قابلیت محدودیت IP روی این سرور غیرفعال است.",
       "password": "رمز عبور",
@@ -1329,7 +1329,7 @@
       "subAnnounce": "اعلان",
       "subAnnounceDesc": "متن اعلانی که در کلاینت VPN نمایش داده می‌شود. از توکن‌های هویت کلاینت پشتیبانی می‌کند: {{EMAIL}}, {{ID}}, {{SHORT_ID}}, {{SUB_ID}}, {{TELEGRAM_ID}}.",
       "subThemeDir": "پوشه قالب صفحه اشتراک",
-      "subThemeDirDesc": "مسیر مطلق پوشه‌ای که شامل یک قالب سفارشی (index.html/sub.html) برای صفحه اشتراک است (مثلاً /etc/3x-ui/sub_templates/my-theme/). برای استفاده از صفحه پیش‌فرض خالی بگذارید.",
+      "subThemeDirDesc": "مسیر مطلق پوشه‌ای که شامل یک قالب سفارشی (index.html/sub.html) برای صفحه اشتراک است (مثلاً /etc/manifold/sub_templates/my-theme/). برای استفاده از صفحه پیش‌فرض خالی بگذارید.",
       "subEnableRouting": "فعال‌سازی مسیریابی",
       "happLinkEnable": "لینک‌های رمزگذاری‌شدهٔ اشتراک",
       "happLinkEnableDesc": "امکان ایجاد لینک‌های رمزگذاری‌شدهٔ Happ در پنجرهٔ کد QR کلاینت را فراهم می‌کند. نشانی‌های اشتراک به‌صورت محلی پردازش می‌شوند.",
@@ -2745,10 +2745,10 @@
   },
   "discord": {
     "test": {
-      "title": "آزمایش اعلان دیسکورد 3x-ui",
+      "title": "آزمایش اعلان دیسکورد Manifold",
       "body": "این یک اعلان آزمایشی است که تأیید می‌کند اعلان‌های دیسکورد به‌درستی پیکربندی شده‌اند."
     },
-    "footer": "پنل 3x-ui",
+    "footer": "پنل Manifold",
     "fields": {
       "panelVersion": "نسخه پنل",
       "xrayCore": "هسته Xray",
@@ -2783,13 +2783,13 @@
       "loginFailed": "ورود ناموفق"
     },
     "report": {
-      "title": "📊 گزارش وضعیت 3x-ui",
+      "title": "📊 گزارش وضعیت Manifold",
       "summary": "گزارش دوره‌ای وضعیت سرور و پراکسی برای **{{ .Host }}**",
-      "footer": "گزارش زمان‌بندی‌شده 3x-ui • زمان‌بندی: {{ .RunTime }}"
+      "footer": "گزارش زمان‌بندی‌شده Manifold • زمان‌بندی: {{ .RunTime }}"
     },
     "commands": {
-      "helpTitle": "🤖 دستورات ربات دیسکورد 3x-ui",
-      "helpDescription": "دستورات موجود برای پایش و مدیریت سرور 3x-ui:",
+      "helpTitle": "🤖 دستورات ربات دیسکورد Manifold",
+      "helpDescription": "دستورات موجود برای پایش و مدیریت سرور Manifold:",
       "helpStatus": "نمایش بار سیستم، رم، پردازنده، اتصالات و کاربران آنلاین",
       "helpReport": "ایجاد گزارش کامل وضعیت (همراه پشتیبان پایگاه داده در صورت فعال بودن)",
       "helpBackup": "ارسال فوری فایل پشتیبان پایگاه داده",
@@ -2797,10 +2797,10 @@
       "helpInbounds": "فهرست همه ورودی‌های پیکربندی‌شده همراه پورت‌ها و آمار کاربران",
       "helpRestart": "راه‌اندازی مجدد هسته Xray",
       "helpHelp": "نمایش همین فهرست دستورات",
-      "statusTitle": "⚡ وضعیت سرور 3x-ui",
+      "statusTitle": "⚡ وضعیت سرور Manifold",
       "statusDescription": "شاخص‌های عملکرد فعلی **{{ .Host }}**",
       "backupTitle": "🗄️ پشتیبان پایگاه داده",
-      "backupDescription": "آرشیو پشتیبان 3x-ui ایجادشده در `{{ .Time }}`",
+      "backupDescription": "آرشیو پشتیبان Manifold ایجادشده در `{{ .Time }}`",
       "backupUnavailable": "❌ سرویس پشتیبان‌گیری در دسترس نیست",
       "backupFailed": "❌ خواندن پشتیبان پایگاه داده ناموفق بود: {{ .Error }}",
       "usageHint": "⚠️ نحوه استفاده: `!usage <email>` یا `/usage <email>`",

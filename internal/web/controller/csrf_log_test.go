@@ -23,7 +23,7 @@ import (
 func TestLoginCSRFRejectionLogsPeerIPNotForwardedHeader(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	engine := gin.New()
-	engine.Use(sessions.Sessions("3x-ui", cookie.NewStore([]byte("csrf-log-test-secret"))))
+	engine.Use(sessions.Sessions("manifold", cookie.NewStore([]byte("csrf-log-test-secret"))))
 	NewIndexController(engine.Group("/"))
 
 	req := httptest.NewRequest(http.MethodPost, "/login", nil)
@@ -53,7 +53,7 @@ func TestLoginRefusesOversizedUsernameBeforeRecordingIt(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
 	engine := gin.New()
-	engine.Use(sessions.Sessions("3x-ui", cookie.NewStore([]byte("login-length-test-secret"))))
+	engine.Use(sessions.Sessions("manifold", cookie.NewStore([]byte("login-length-test-secret"))))
 	engine.Use(func(c *gin.Context) {
 		c.Set("I18n", func(_ locale.I18nType, key string, _ ...string) string { return key })
 		c.Next()

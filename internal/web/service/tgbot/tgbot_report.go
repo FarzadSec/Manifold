@@ -158,7 +158,7 @@ func (t *Tgbot) prepareServerUsageInfo() string {
 	}
 
 	info += t.I18nBot("tgbot.messages.hostname", "Hostname=="+hostname)
-	info += t.I18nBot("tgbot.messages.version", "Version=="+config.GetPanelVersion())
+	info += t.I18nBot("tgbot.messages.version", "Version=="+config.GetProductVersion())
 	info += t.I18nBot("tgbot.messages.xrayVersion", "XrayVersion=="+fmt.Sprint(t.lastStatus.Xray.Version))
 
 	// get ip address

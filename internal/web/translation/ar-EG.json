@@ -857,7 +857,7 @@
       "deleteHwidConfirm": "إزالة هذا الجهاز؟ سيحتاج إلى إعادة التسجيل عند جلب الاشتراك التالي.",
       "hwidDeleted": "تمت إزالة الجهاز.",
       "clearHwidsConfirm": "إزالة جميع الأجهزة المسجلة؟ سيحتاج كل جهاز إلى إعادة التسجيل عند جلب الاشتراك التالي.",
-      "limitIpFail2banMissing": "Fail2ban غير مثبّت، لذا لا يمكن تطبيق حد عناوين IP. ثبّت Fail2ban من قائمة x-ui النصية لتفعيل هذا الخيار.",
+      "limitIpFail2banMissing": "Fail2ban غير مثبّت، لذا لا يمكن تطبيق حد عناوين IP. ثبّت Fail2ban من قائمة manifold النصية لتفعيل هذا الخيار.",
       "limitIpFail2banWindows": "Fail2ban غير متوفّر على نظام Windows، لذا لا يمكن تطبيق حد عناوين IP.",
       "limitIpDisabled": "ميزة حد عناوين IP معطّلة على هذا الخادم.",
       "password": "كلمة المرور",
@@ -1325,7 +1325,7 @@
       "subAnnounce": "إعلان",
       "subAnnounceDesc": "نص الإعلان المعروض في عميل VPN. يدعم رموز هوية العميل: {{EMAIL}}, {{ID}}, {{SHORT_ID}}, {{SUB_ID}}, {{TELEGRAM_ID}}.",
       "subThemeDir": "مجلد قالب الاشتراك",
-      "subThemeDirDesc": "المسار المطلق لمجلد يحتوي على قالب مخصص (index.html/sub.html) لصفحة الاشتراك (مثل /etc/3x-ui/sub_templates/my-theme/). اتركه فارغًا لاستخدام الصفحة الافتراضية.",
+      "subThemeDirDesc": "المسار المطلق لمجلد يحتوي على قالب مخصص (index.html/sub.html) لصفحة الاشتراك (مثل /etc/manifold/sub_templates/my-theme/). اتركه فارغًا لاستخدام الصفحة الافتراضية.",
       "subEnableRouting": "تفعيل التوجيه",
       "happLinkEnable": "روابط اشتراك مشفّرة",
       "happLinkEnableDesc": "السماح بإنشاء روابط Happ مشفّرة في نافذة رمز الاستجابة السريعة للعميل. تُعالج عناوين الاشتراك محليًا.",
@@ -2538,7 +2538,7 @@
       "report": "🕰 التقارير المجدولة: {{ .RunTime }}\r\n",
       "datetime": "⏰ التاريخ والوقت: {{ .DateTime }}\r\n",
       "hostname": "💻 المضيف: {{ .Hostname }}\r\n",
-      "version": "🚀 نسخة 3X-UI: {{ .Version }}\r\n",
+      "version": "🚀 نسخة Manifold: {{ .Version }}\r\n",
       "xrayVersion": "📡 نسخة Xray: {{ .XrayVersion }}\r\n",
       "ipv6": "🌐 IPv6: {{ .IPv6 }}\r\n",
       "ipv4": "🌐 IPv4: {{ .IPv4 }}\r\n",
@@ -2745,10 +2745,10 @@
   },
   "discord": {
     "test": {
-      "title": "اختبار إشعارات Discord في 3x-ui",
+      "title": "اختبار إشعارات Discord في Manifold",
       "body": "هذا إشعار تجريبي يؤكد أن إشعارات Discord مُعدّة بشكل صحيح."
     },
-    "footer": "لوحة 3x-ui",
+    "footer": "لوحة Manifold",
     "fields": {
       "panelVersion": "إصدار اللوحة",
       "xrayCore": "نواة Xray",
@@ -2783,13 +2783,13 @@
       "loginFailed": "فشل تسجيل الدخول"
     },
     "report": {
-      "title": "📊 تقرير حالة 3x-ui",
+      "title": "📊 تقرير حالة Manifold",
       "summary": "تقرير دوري عن حالة الخادم والوكيل لـ **{{ .Host }}**",
-      "footer": "تقرير 3x-ui المجدول • الجدول: {{ .RunTime }}"
+      "footer": "تقرير Manifold المجدول • الجدول: {{ .RunTime }}"
     },
     "commands": {
-      "helpTitle": "🤖 أوامر بوت Discord في 3x-ui",
-      "helpDescription": "الأوامر المتاحة لمراقبة خادم 3x-ui وإدارته:",
+      "helpTitle": "🤖 أوامر بوت Discord في Manifold",
+      "helpDescription": "الأوامر المتاحة لمراقبة خادم Manifold وإدارته:",
       "helpStatus": "عرض حمل النظام والذاكرة والمعالج والاتصالات والمستخدمين المتصلين",
       "helpReport": "إنشاء تقرير حالة كامل (مع نسخة احتياطية لقاعدة البيانات إن كانت مفعّلة)",
       "helpBackup": "إرسال ملف النسخة الاحتياطية لقاعدة البيانات فورًا",
@@ -2797,10 +2797,10 @@
       "helpInbounds": "عرض كل الواردات المُعدّة مع المنافذ وإحصاءات العملاء",
       "helpRestart": "إعادة تشغيل نواة Xray",
       "helpHelp": "عرض قائمة الأوامر المتاحة هذه",
-      "statusTitle": "⚡ حالة خادم 3x-ui",
+      "statusTitle": "⚡ حالة خادم Manifold",
       "statusDescription": "مقاييس التشغيل الحالية لـ **{{ .Host }}**",
       "backupTitle": "🗄️ نسخة احتياطية لقاعدة البيانات",
-      "backupDescription": "أرشيف النسخة الاحتياطية لـ 3x-ui أُنشئ في `{{ .Time }}`",
+      "backupDescription": "أرشيف النسخة الاحتياطية لـ Manifold أُنشئ في `{{ .Time }}`",
       "backupUnavailable": "❌ خدمة النسخ الاحتياطي غير متاحة",
       "backupFailed": "❌ تعذّرت قراءة النسخة الاحتياطية لقاعدة البيانات: {{ .Error }}",
       "usageHint": "⚠️ الاستخدام: `!usage <email>` أو `/usage <email>`",
