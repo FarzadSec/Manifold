@@ -1,5 +1,5 @@
 import { NativeSelect } from '@/components/form/NativeSelect';
-import { useEffect, useRef, useState, useId } from 'react';
+import { useEffect, useMemo, useRef, useState, useId } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -34,6 +34,7 @@ import {
   canEnableSniffing,
   canEnableStream,
   canEnableTls,
+  inboundProtocolChoices,
   isSS2022,
 } from '@/lib/xray/protocol-capabilities';
 import {
@@ -102,7 +103,6 @@ import SniffingTab from './SniffingTab';
 import type { DBInbound } from '@/models/dbinbound';
 import type { NodeRecord } from '@/api/queries/useNodesQuery';
 
-const PROTOCOL_OPTIONS = Object.values(Protocols).map((p) => ({ value: p, label: p }));
 const SHARE_ADDR_STRATEGIES = ['node', 'listen', 'custom'] as const;
 const SHARE_ADDR_HOSTNAME_RE =
   /^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*$/;
@@ -283,6 +283,14 @@ export default function InboundFormModal({
 
   const selectableNodes = (availableNodes || []).filter((n) => n.enable);
   const protocol = (useWatch({ control, name: 'protocol' }) ?? '') as string;
+  const protocolOptions = useMemo(
+    () =>
+      inboundProtocolChoices(mode === 'edit' ? (dbInbound?.protocol ?? '') : '').map((p) => ({
+        value: p,
+        label: p,
+      })),
+    [mode, dbInbound],
+  );
   const isNodeEligible = !!NODE_ELIGIBLE_PROTOCOLS[protocol];
   /*
    * The `node` share-address strategy only means something when the inbound can
@@ -448,7 +456,12 @@ export default function InboundFormModal({
       const msg = await HttpUtil.get('/panel/api/server/getNewVlessEnc');
       if (!msg?.success) return;
       const obj = msg.obj as {
-        auths?: { decryption: string; encryption: string; label?: string; id?: string }[];
+        auths?: {
+          decryption: string;
+          encryption: string;
+          label?: string;
+          id?: string;
+        }[];
       };
       const block = (obj.auths || []).find((a) => matchesVlessAuth(a, authId));
       if (!block) return;
@@ -714,7 +727,7 @@ export default function InboundFormModal({
       )}
 
       <FormField name="protocol" label={t('pages.inbounds.protocol')}>
-        <NativeSelect id="protocol" disabled={mode === 'edit'} options={PROTOCOL_OPTIONS} />
+        <NativeSelect id="protocol" disabled={mode === 'edit'} options={protocolOptions} />
       </FormField>
 
       <FormField

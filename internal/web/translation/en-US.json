@@ -799,6 +799,11 @@
         "promptCredentialsHint": "Leaves the username and password out of the profile, so the app asks for them. Needed by apps older than OpenVPN 2.6.",
         "keysIssued": "The certificates and keys are created when you save.",
         "keysKept": "This inbound keeps its certificates and keys, so the profiles already handed out stay valid."
+      },
+      "wireguard": {
+        "interface": "Interface name",
+        "interfaceHint": "The network interface this inbound runs on, and the name of its file in /etc/wireguard. Leave it empty to use mfwg followed by the inbound's number.",
+        "interfaceInvalid": "Use 1 to 15 letters, digits or the characters _ = + . -"
       }
     },
     "clients": {

@@ -799,6 +799,11 @@
         "promptCredentialsHint": "Meno a heslo sa do profilu nezapíšu, aplikácia si ich vypýta. Potrebné pre aplikácie staršie ako OpenVPN 2.6.",
         "keysIssued": "Certifikáty a kľúče sa vytvoria pri uložení.",
         "keysKept": "Tento inbound si ponecháva certifikáty a kľúče, takže už vydané profily zostávajú platné."
+      },
+      "wireguard": {
+        "interface": "Názov rozhrania",
+        "interfaceHint": "Sieťové rozhranie, na ktorom tento vstup beží, a názov jeho súboru v /etc/wireguard. Ak pole necháte prázdne, použije sa mfwg a číslo vstupu.",
+        "interfaceInvalid": "Použite 1 až 15 písmen, číslic alebo znakov _ = + . -"
       }
     },
     "clients": {

@@ -52,7 +52,19 @@ export const WireguardClientSchema = z.object({
 });
 export type WireguardClient = z.infer<typeof WireguardClientSchema>;
 
+// The panel refuses the same names on save (internal/wgquick/instance.go).
+export function isWireguardInterface(value: string): boolean {
+  return value === '' || /^[a-zA-Z0-9_=+.-]{1,15}$/.test(value);
+}
+
 export const WireguardInboundSettingsSchema = z.object({
+  // Empty means the panel names the interface after the inbound: mfwg<id>.
+  interface: z
+    .string()
+    .optional()
+    .refine((name) => name === undefined || isWireguardInterface(name), {
+      message: 'pages.inbounds.wireguard.interfaceInvalid',
+    }),
   mtu: optionalClearedInt(z.number().int().min(1)),
   secretKey: z.string().min(1),
   dns: z.string().optional(),
@@ -65,6 +77,7 @@ export const WireguardInboundSettingsSchema = z.object({
   // pre-existing behavior (infer from existing clients' own addresses, else
   // fall back to 10.0.0.0/24 server-side).
   subnetIp: z.string().default(''),
-  subnetCidr: optionalClearedInt(z.number().int().min(1).max(32)),
+  // The server takes the first address, so a subnet needs room for one more.
+  subnetCidr: optionalClearedInt(z.number().int().min(1).max(30)),
 });
 export type WireguardInboundSettings = z.infer<typeof WireguardInboundSettingsSchema>;

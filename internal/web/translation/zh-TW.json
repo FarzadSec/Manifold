@@ -799,6 +799,11 @@
         "promptCredentialsHint": "設定檔中不寫入使用者名稱和密碼，由應用程式詢問。早於 OpenVPN 2.6 的應用程式需要開啟。",
         "keysIssued": "憑證和金鑰會在儲存時建立。",
         "keysKept": "此入站保留其憑證和金鑰，因此已發出的設定檔仍然有效。"
+      },
+      "wireguard": {
+        "interface": "介面名稱",
+        "interfaceHint": "此入站執行所在的網路介面，也是它在 /etc/wireguard 中的檔名。留空則使用 mfwg 加上入站編號。",
+        "interfaceInvalid": "請使用 1 到 15 個字母、數字或 _ = + . - 字元。"
       }
     },
     "clients": {

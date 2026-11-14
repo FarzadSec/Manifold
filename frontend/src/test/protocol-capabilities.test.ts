@@ -7,6 +7,7 @@ import {
   canEnableTlsFlow,
   canEnableStream,
   canEnableVisionSeed,
+  inboundProtocolChoices,
   isSS2022,
 } from '@/lib/xray/protocol-capabilities';
 
@@ -71,4 +72,16 @@ describe('protocol capability predicates', () => {
       });
     }
   }
+});
+
+describe('inbound protocol choices', () => {
+  it('does not offer AmneziaWG for a new inbound', () => {
+    const offered = inboundProtocolChoices('');
+    expect(offered).not.toContain('amneziawg');
+    expect(offered).toEqual(expect.arrayContaining(['vless', 'wireguard', 'openvpn']));
+  });
+
+  it('still names the protocol of an AmneziaWG inbound made before', () => {
+    expect(inboundProtocolChoices('amneziawg')).toContain('amneziawg');
+  });
 });

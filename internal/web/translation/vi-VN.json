@@ -799,6 +799,11 @@
         "promptCredentialsHint": "Không ghi tên người dùng và mật khẩu vào hồ sơ, nên ứng dụng sẽ hỏi. Cần cho các ứng dụng cũ hơn OpenVPN 2.6.",
         "keysIssued": "Chứng chỉ và khóa được tạo khi bạn lưu.",
         "keysKept": "Inbound này giữ nguyên chứng chỉ và khóa, nên các hồ sơ đã cấp vẫn còn hiệu lực."
+      },
+      "wireguard": {
+        "interface": "Tên giao diện",
+        "interfaceHint": "Giao diện mạng mà điểm vào này chạy trên đó, đồng thời là tên tệp của nó trong /etc/wireguard. Để trống để dùng mfwg kèm số của điểm vào.",
+        "interfaceInvalid": "Dùng từ 1 đến 15 chữ cái, chữ số hoặc các ký tự _ = + . -"
       }
     },
     "clients": {

@@ -5,6 +5,8 @@
 // called against a partial-row, a full form value, or a hand-built test
 // fixture without the caller projecting a whole object.
 
+import { Protocols } from '@/schemas/primitives';
+
 const TLS_ELIGIBLE_PROTOCOLS = ['vmess', 'vless', 'trojan', 'shadowsocks'];
 const TLS_NETWORKS = ['tcp', 'ws', 'http', 'grpc', 'httpupgrade', 'xhttp'];
 const REALITY_ELIGIBLE_PROTOCOLS = ['vless', 'trojan'];
@@ -20,7 +22,17 @@ const STREAM_PROTOCOLS = [
   'masque',
 ];
 const VISION_FLOW = 'xtls-rprx-vision';
+// Not part of the product: an inbound made before still opens, a new one cannot be made.
+const RETIRED_INBOUND_PROTOCOLS: readonly string[] = [Protocols.AMNEZIAWG];
 const SS_2022_PREFIX = '2022';
+
+// inboundProtocolChoices lists what the inbound form offers; current is the
+// protocol of the inbound being edited, or '' for a new one.
+export function inboundProtocolChoices(current: string): string[] {
+  return Object.values(Protocols).filter(
+    (protocol) => protocol === current || !RETIRED_INBOUND_PROTOCOLS.includes(protocol),
+  );
+}
 
 export interface CapabilityProtocolSlice {
   protocol: string;
@@ -29,7 +41,11 @@ export interface CapabilityProtocolSlice {
 }
 
 export interface CapabilityVlessSlice extends CapabilityProtocolSlice {
-  settings?: { encryption?: string; decryption?: string; clients?: { flow?: string }[] };
+  settings?: {
+    encryption?: string;
+    decryption?: string;
+    clients?: { flow?: string }[];
+  };
 }
 
 export interface CapabilityShadowsocksSlice extends CapabilityProtocolSlice {
@@ -85,11 +101,10 @@ export function canEnableStream(values: { protocol: string }): boolean {
   return STREAM_PROTOCOLS.includes(values.protocol);
 }
 
-// mtproto and amneziawg are served by an external process/interface, not
-// Xray, so the Xray sniffing block does not apply to either. Every other
-// inbound supports sniffing.
+// These are served by a process or interface of their own, not by Xray, so
+// the Xray sniffing block does not apply. Every other inbound supports it.
 export function canEnableSniffing(values: { protocol: string }): boolean {
-  return !['mtproto', 'amneziawg', 'tuic', 'openvpn'].includes(values.protocol);
+  return !['mtproto', 'amneziawg', 'tuic', 'openvpn', 'wireguard'].includes(values.protocol);
 }
 
 // Vision seed applies only when XTLS Vision (TCP/TLS) flow is selected

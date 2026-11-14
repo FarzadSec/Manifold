@@ -799,6 +799,11 @@
         "promptCredentialsHint": "No incluye el usuario ni la contraseña en el perfil, así que la aplicación los pide. Necesario para aplicaciones anteriores a OpenVPN 2.6.",
         "keysIssued": "Los certificados y las claves se crean al guardar.",
         "keysKept": "Esta entrada conserva sus certificados y claves, así que los perfiles ya entregados siguen siendo válidos."
+      },
+      "wireguard": {
+        "interface": "Nombre de la interfaz",
+        "interfaceHint": "La interfaz de red en la que funciona esta entrada y el nombre de su archivo en /etc/wireguard. Déjalo vacío para usar mfwg seguido del número de la entrada.",
+        "interfaceInvalid": "Usa de 1 a 15 letras, dígitos o los caracteres _ = + . -"
       }
     },
     "clients": {

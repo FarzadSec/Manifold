@@ -21,6 +21,8 @@ interface FixtureCase {
   expectedProtocol: string;
 }
 
+const WG_SECRET = 'cE9mYWtlLXNlY3JldC1rZXktZm9yLXVuaXQtdGVzdA==';
+
 const vlessRow: RawInboundRow = {
   id: 7,
   port: 12345,
@@ -273,6 +275,31 @@ describe('formValuesToWirePayload', () => {
       (issue) => issue.message,
     );
     expect(messages).toEqual(['pages.inbounds.openvpn.subnetInvalid']);
+  });
+
+  it('sends no Xray sniffing block for a WireGuard inbound', () => {
+    const values = rawInboundToFormValues({
+      ...vlessRow,
+      protocol: 'wireguard',
+      settings: { secretKey: WG_SECRET, clients: [] },
+      streamSettings: '',
+    });
+    expect(formValuesToWirePayload(values).sniffing).toBe('');
+  });
+
+  it('refuses a WireGuard interface name the kernel would reject', () => {
+    for (const name of ['wg main', 'interface-name-16', 'wg/0']) {
+      const values = rawInboundToFormValues({
+        ...vlessRow,
+        protocol: 'wireguard',
+        settings: { secretKey: WG_SECRET, interface: name, clients: [] },
+        streamSettings: '',
+      });
+      const messages = InboundFormSchema.safeParse(values).error?.issues.map(
+        (issue) => issue.message,
+      );
+      expect(messages, name).toEqual(['pages.inbounds.wireguard.interfaceInvalid']);
+    }
   });
 
   // xray-core 26.10.31 (#7295): the XHTTP server reads h2Params; the form must not strip it.

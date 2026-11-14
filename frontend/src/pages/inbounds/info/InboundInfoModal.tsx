@@ -17,6 +17,7 @@ import {
   preferPublicHost,
 } from '@/lib/xray/inbound-link';
 import { inboundFromDb } from '@/lib/xray/inbound-from-db';
+import { wireguardInterfaceName } from '@/lib/wireguard';
 import { withHostEndpoints } from '@/lib/hosts/host-link';
 
 import {
@@ -1139,11 +1140,9 @@ export default function InboundInfoModal({
               </dd>
             </div>
             <div className="info-row">
-              <dt>{t('pages.inbounds.info.noKernelTun')}</dt>
+              <dt>{t('pages.inbounds.wireguard.interface')}</dt>
               <dd>
-                <Tag color={inbound.settings.noKernelTun ? 'green' : 'default'}>
-                  {String(inbound.settings.noKernelTun)}
-                </Tag>
+                <Tag>{wireguardInterfaceName(inbound.settings.interface, dbInbound.id)}</Tag>
               </dd>
             </div>
           </dl>

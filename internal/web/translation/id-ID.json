@@ -799,6 +799,11 @@
         "promptCredentialsHint": "Nama pengguna dan kata sandi tidak ditulis di profil, sehingga aplikasi memintanya. Diperlukan untuk aplikasi yang lebih lama dari OpenVPN 2.6.",
         "keysIssued": "Sertifikat dan kunci dibuat saat Anda menyimpan.",
         "keysKept": "Inbound ini mempertahankan sertifikat dan kuncinya, sehingga profil yang sudah dibagikan tetap berlaku."
+      },
+      "wireguard": {
+        "interface": "Nama antarmuka",
+        "interfaceHint": "Antarmuka jaringan tempat inbound ini berjalan, sekaligus nama berkasnya di /etc/wireguard. Kosongkan untuk memakai mfwg diikuti nomor inbound.",
+        "interfaceInvalid": "Gunakan 1 sampai 15 huruf, angka, atau karakter _ = + . -"
       }
     },
     "clients": {
