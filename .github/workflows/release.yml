@@ -153,6 +153,26 @@ jobs:
             exit 1
           fi
           sudo nft list table ip manifold_ovpn1 >/dev/null
+          # A WireGuard inbound is an interface the sandboxed panel brings up from
+          # /etc/wireguard, on the kernel module the sandbox must still let load.
+          wg_body=$(python3 -c 'import json, sys; print(json.dumps({"remark": "smoke-wg", "enable": True, "port": 21196, "protocol": "wireguard", "settings": json.dumps({"secretKey": sys.argv[1], "clients": []})}))' "$(wg genkey)")
+          curl -fsS -b "$jar" -c "$jar" -H "X-CSRF-Token: $token" -H 'Content-Type: application/json' \
+            -d "$wg_body" http://127.0.0.1:20530/smoke/panel/api/inbounds/add > /tmp/wg-inbound.json
+          grep -q '"success":true' /tmp/wg-inbound.json
+          wg_id=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["obj"]["id"])' /tmp/wg-inbound.json)
+          up=no
+          for _ in $(seq 1 20); do
+            if ip link show "mfwg${wg_id}" >/dev/null 2>&1; then up=yes; break; fi
+            sleep 1
+          done
+          if [ "$up" != yes ]; then
+            sudo journalctl -u manifold -n 80 --no-pager
+            echo "the WireGuard inbound has no interface" >&2
+            exit 1
+          fi
+          sudo grep -q "^# Managed by Manifold: inbound ${wg_id}\." "/etc/wireguard/mfwg${wg_id}.conf"
+          test "$(sudo wg show "mfwg${wg_id}" listen-port)" = 21196
+          sudo nft list table ip "manifold_wg${wg_id}" >/dev/null
           # An update must keep the database: the second run is an update in place.
           sudo bash install.sh --package manifold-linux-amd64.tar.gz
           settings=$(sudo manifold settings)

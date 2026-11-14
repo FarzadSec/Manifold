@@ -299,7 +299,7 @@ jobs:
           go-version-file: go.mod
           cache: true
       - name: Install the VPN engines
-        run: sudo apt-get update && sudo apt-get install -y openvpn nftables iptables
+        run: sudo apt-get update && sudo apt-get install -y openvpn nftables iptables wireguard-tools
       - name: Build the panel and fetch Xray
         run: |
           mkdir -p internal/web/dist && touch internal/web/dist/.gitkeep
@@ -314,6 +314,15 @@ jobs:
           if grep -q -- '--- SKIP' /tmp/openvpn-engine.log; then echo "the engine test was skipped"; exit 1; fi
       - name: OpenVPN inbound end to end
         run: sudo deploy/test/openvpn-e2e.sh build/manifold build/bin
+      - name: WireGuard engine with a real interface and peer
+        run: |
+          go test -c -o build/wgquick.test ./internal/wgquick/
+          sudo XUI_WIREGUARD_E2E=1 ./build/wgquick.test -test.run TestRealInterfaceAndPeer -test.v > /tmp/wireguard-engine.log 2>&1 \
+            || { tail -n 80 /tmp/wireguard-engine.log; exit 1; }
+          grep -E '^(---|===|PASS|FAIL|ok)' /tmp/wireguard-engine.log
+          if grep -q -- '--- SKIP' /tmp/wireguard-engine.log; then echo "the engine test was skipped"; exit 1; fi
+      - name: WireGuard inbound end to end, with the takeover of a running interface
+        run: sudo deploy/test/wireguard-e2e.sh build/manifold build/bin
 
   # Brief native-fuzz smoke on the security-/parser-critical decoders. Each runs the
   # generated corpus plus 30s of exploration; a crash here is a real input-handling bug.
