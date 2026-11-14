@@ -10,7 +10,9 @@ on:
       - ".nvmrc"
       - "Makefile"
       - "install.sh"
-      - "deploy/test/installer-panel-port.sh"
+      - "manifold.sh"
+      - "DockerEntrypoint.sh"
+      - "deploy/test/install-functions.sh"
       - ".github/workflows/ci.yml"
   push:
     branches:
@@ -25,7 +27,9 @@ on:
       - ".nvmrc"
       - "Makefile"
       - "install.sh"
-      - "deploy/test/installer-panel-port.sh"
+      - "manifold.sh"
+      - "DockerEntrypoint.sh"
+      - "deploy/test/install-functions.sh"
       - ".github/workflows/ci.yml"
 
 permissions:
@@ -331,18 +335,15 @@ jobs:
           go-version-file: go.mod
           cache: true
       - name: actionlint
-        # The shellcheck integration is off: it reports the stylistic rules
-        # (SC2086, SC2046) that main's own workflows trip. The shell scripts
-        # the panel ships are linted by the shellcheck step below.
+        # The shellcheck integration is off: it reports stylistic rules in workflow
+        # steps. The shell scripts Manifold ships are linted by the step below.
         run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 -color -shellcheck=
       - name: Install shellcheck
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: shellcheck
-        run: |
-          shellcheck --severity=style DockerInit.sh DockerEntrypoint.sh deploy/test/smoke-noninteractive.sh deploy/test/installer-panel-port.sh
-          shellcheck --severity=error install.sh update.sh x-ui.sh
-      - name: Installer panel port regression tests
-        run: bash deploy/test/installer-panel-port.sh
+        run: shellcheck -x --severity=style install.sh manifold.sh DockerInit.sh DockerEntrypoint.sh deploy/test/install-functions.sh
+      - name: Installer function tests
+        run: bash deploy/test/install-functions.sh
 
   frontend:
     runs-on: ubuntu-latest

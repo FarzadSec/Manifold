@@ -28,7 +28,7 @@ COPY --from=frontend /src/internal/web/dist ./internal/web/dist
 
 ENV CGO_ENABLED=1
 ENV CGO_CFLAGS="-D_LARGEFILE64_SOURCE"
-RUN go build -ldflags "-w -s" -o build/x-ui main.go
+RUN go build -ldflags "-w -s" -o build/manifold main.go
 RUN ./DockerInit.sh "$TARGETARCH" "$TARGETVARIANT"
 
 # ========================================================
@@ -48,7 +48,7 @@ RUN apk add --no-cache --update \
 
 COPY --from=builder /app/build/ /app/
 COPY --from=builder /app/DockerEntrypoint.sh /app/
-COPY --from=builder /app/x-ui.sh /usr/bin/x-ui
+COPY --from=builder /app/manifold.sh /usr/bin/manifold
 COPY --from=builder /app/internal/web/translation /app/internal/web/translation
 
 
@@ -61,15 +61,17 @@ RUN rm -f /etc/fail2ban/jail.d/alpine-ssh.conf \
 
 RUN chmod +x \
   /app/DockerEntrypoint.sh \
-  /app/x-ui \
-  /usr/bin/x-ui
+  /app/manifold \
+  /usr/bin/manifold \
+  && mkdir -p /usr/local/manifold \
+  && ln -s /app/manifold /usr/local/manifold/manifold
 
-ENV XUI_IN_DOCKER="true"
-ENV XUI_MAIN_FOLDER="/app"
-ENV XUI_ENABLE_FAIL2BAN="true"
-ENV XUI_DB_TYPE=""
-ENV XUI_DB_DSN=""
+ENV MANIFOLD_IN_DOCKER="true"
+ENV MANIFOLD_MAIN_FOLDER="/app"
+ENV MANIFOLD_ENABLE_FAIL2BAN="true"
+ENV MANIFOLD_DB_TYPE=""
+ENV MANIFOLD_DB_DSN=""
 EXPOSE 2053
-VOLUME [ "/etc/x-ui" ]
-CMD [ "./x-ui" ]
+VOLUME [ "/etc/manifold" ]
+CMD [ "./manifold" ]
 ENTRYPOINT [ "/app/DockerEntrypoint.sh" ]

@@ -1,0 +1,46 @@
+[Unit]
+Description=Manifold panel
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=180
+StartLimitBurst=10
+
+[Service]
+EnvironmentFile=-/etc/default/manifold
+Environment="XRAY_VMESS_AEAD_FORCED=false"
+Type=simple
+WorkingDirectory=/usr/local/manifold/
+ExecStart=/usr/local/manifold/manifold
+ExecReload=/bin/kill -USR1 $MAINPID
+Restart=on-failure
+RestartSec=5s
+KillMode=mixed
+
+# The panel stays root: it supervises the proxy processes, edits netfilter
+# state and reads TLS private keys. These settings bound what a flaw in the
+# panel can reach.
+NoNewPrivileges=yes
+ProtectSystem=full
+# ProtectSystem=full makes /usr and /etc read-only; these are the panel's own
+# stores. The leading '-' keeps the unit startable before a path exists.
+ReadWritePaths=-/etc/manifold -/usr/local/manifold -/var/log/manifold
+ReadWritePaths=-/proc/sys/net
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectClock=yes
+ProtectHostname=yes
+# read-only, not yes: TLS certificates are commonly kept under /root/cert.
+ProtectHome=read-only
+LockPersonality=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+UMask=0077
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+# DAC_OVERRIDE stays so root can read TLS keys owned by another account.
+CapabilityBoundingSet=CAP_DAC_OVERRIDE CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target
