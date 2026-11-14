@@ -2,7 +2,7 @@
 
 One control panel for several VPN protocols. A customer has one account with one quota and one expiry date, and that account works on every protocol the server offers.
 
-**Status:** early development, private project. The base panel runs today; the protocol engines that make it Manifold are being built in phases.
+**Status:** version 0.1, private project. The base panel is complete and installable; the protocol engines that make it Manifold are being built in phases.
 
 ## Protocols
 
@@ -36,16 +36,23 @@ The full plan is in [manifold/ARCHITECTURE.md](manifold/ARCHITECTURE.md).
 
 ## Quick start
 
-Docker is the supported way to run Manifold for now.
+On a Linux server with systemd, as root:
 
 ```bash
-git clone git@github.com:FarzadSec/Manifold.git
-cd Manifold
-docker compose up -d --build
-docker compose logs manifold | grep "Username"
+export MANIFOLD_TOKEN=github_pat_xxx   # read access to this repository
+curl -fsSL -H "Authorization: Bearer $MANIFOLD_TOKEN" -H "Accept: application/vnd.github.raw" \
+  https://api.github.com/repos/FarzadSec/Manifold/contents/install.sh | bash
 ```
 
-The last command prints the login that was generated on first start. Open `http://SERVER-IP:2053/`, sign in, and change the login under Panel Settings.
+The installer downloads the latest release, installs the `manifold` service and prints the panel address and login once. After that the server is managed with the `manifold` command:
+
+```bash
+manifold status
+manifold settings
+manifold help
+```
+
+Docker and offline installs are covered in the [installation guide](manifold/docs/installation.md).
 
 ## Documentation
 
@@ -53,13 +60,6 @@ The last command prints the login that was generated on first start. Open `http:
 - [Using the panel](manifold/docs/usage.md)
 - [Development](manifold/docs/development.md)
 - [Architecture and roadmap](manifold/ARCHITECTURE.md)
-
-## Before the rename is finished
-
-Two things still carry over from the code base Manifold started from, and both are being replaced in the foundation phase:
-
-- The program, its service and its data directory are still named `x-ui`.
-- `install.sh`, `update.sh`, the update entry in the `x-ui` menu and the panel's own update action download another project's release. **Do not use them**: they would replace Manifold with that release.
 
 ## Licence
 

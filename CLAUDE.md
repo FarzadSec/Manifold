@@ -27,16 +27,21 @@ locations when it can answer in one hop.
   falls back to a process restart on older binaries. A client's panel-side
   traffic reset also calls `POST /secrets/{name}/reset-quota` so a renewed client
   is not re-blocked by the sidecar's quota counter.
-- Storage: SQLite by default (`/etc/x-ui/x-ui.db` on Linux; the executable dir on
-  Windows), PostgreSQL optional (`XUI_DB_TYPE` / `XUI_DB_DSN`). The CGo SQLite
+- Storage: SQLite by default (`/etc/manifold/manifold.db` on Linux; the executable
+  dir on Windows), PostgreSQL optional (`XUI_DB_TYPE` / `XUI_DB_DSN`). The CGo SQLite
   driver (`mattn/go-sqlite3`) needs a C compiler — `CGO_ENABLED=0` builds fail.
 - Frontend: React 19 + Ant Design 6 + Vite 8 + TypeScript in `frontend/`,
   built into `internal/web/dist/` (gitignored) and embedded via `embed.FS`.
 
 ## Repo map
-- `main.go` — entry point + `x-ui` CLI (run, migrate, migrate-db, encrypt-tokens, setting, cert).
+- `main.go` — entry point + the `manifold` binary's CLI (run, migrate, migrate-db, encrypt-tokens, setting, cert).
+- `install.sh`, `manifold.sh` (installed as `/usr/bin/manifold`), `manifold.service` — installer,
+  management command and systemd unit. `deploy/test/install-functions.sh` tests the installer's functions.
 - `internal/config/` — env parsing (XUI_DEBUG, XUI_LOG_LEVEL, XUI_LOG_FOLDER,
-  XUI_BIN_FOLDER, XUI_SKIP_HSTS, XUI_PORT, XUI_DB_*).
+  XUI_BIN_FOLDER, XUI_SKIP_HSTS, XUI_PORT, XUI_DB_*). Operators set the same
+  variables as `MANIFOLD_<NAME>`; `AdoptManifoldEnv` copies them onto `XUI_<NAME>`,
+  so code keeps reading `XUI_<NAME>`. `name` is the program name, `product_version`
+  the version people see, `version` the base version nodes are gated on.
 - `internal/database/` + `internal/database/model/` — GORM schema (~24 models;
   Inbound, Client, Setting, User are the core), inbound Protocol enum,
   AutoMigrate + hand-written migrations in `db.go`.

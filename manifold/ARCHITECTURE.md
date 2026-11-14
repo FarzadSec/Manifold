@@ -1,8 +1,13 @@
 # Manifold — Architecture and Roadmap
 
-Version 0.4 · 2026-11-14 · Status: P0 in progress
+Version 0.5 · 2026-11-14 · Status: P0 delivered; see 8.1 for what it leaves open
 
 Decision log:
+
+- 2026-11-14 — The panel never updates itself. The code that downloaded and ran an updater is removed; updates go through `install.sh` (`manifold update`). The update routes and the node fan-out remain and answer with a refusal, so masters and nodes keep one API.
+- 2026-11-14 — Two versions. `product_version` (0.1.0) is what people see and what release tags equal. The base version stays, because a master gates protocols on the version a node reports.
+- 2026-11-14 — Operators use `MANIFOLD_<NAME>` variables; the code keeps reading `XUI_<NAME>` and start-up copies one onto the other. Internal identifiers a user never sees (the Go module path, `XUI_` reads, `window.X_UI_*` globals) are kept to keep upstream merges cheap.
+- 2026-11-14 — Manifold installs natively under systemd from release packages built by CI; Docker remains as a second path. The repository is private, so the installer downloads through the GitHub API with a token, or from a local package file.
 
 - 2026-11-14 — The repository carries only Manifold's own descriptions and guides. The base project's pages, documentation site, media and community files are removed from the product branch and stay readable on `upstream-main`. The same applies to names and links inside the program, which P0 replaces.
 - 2026-11-14 — Project name: Manifold. Repository: `FarzadSec/Manifold`, private, a mirror of `MHSanaei/3x-ui` at commit `5297fd3c`.
@@ -179,7 +184,7 @@ This is the contract Mirza Bot will sync against, so it is frozen before the bot
 
 | Phase | Scope | Done when |
 |---|---|---|
-| P0 Foundation | Private mirror (done); own README and guides, base project's pages removed (done); rename binary, service, paths and install scripts from `x-ui` to `manifold`; remove the sponsor, donate and documentation links and the base project's name from the interface; repoint or disable self-update; CI trimmed to what the fork needs; staging server | Nothing a user sees or runs carries another project's name, a Manifold build installs beside a stock x-ui on one server, and `make verify` passes |
+| P0 Foundation | Private mirror; own README and guides; base project's pages, sponsor feature, links and self-updater removed; program, service, paths, interface and notification texts named Manifold; own installer, management command, systemd unit and release workflow; CI trimmed to one gate | Done 2026-11-14. Open items in 8.1 |
 | P1 WireGuard | Engine 4.3, inbound form, `.conf` and QR in subscriptions, traffic and limits, node support, WGDashboard adoption | An existing WGDashboard server is taken over and its users connect without new configs; a peer and an Xray client on one account draw down the same quota |
 | P2 OpenVPN | Engine 4.4, inbound form, `.ovpn` in subscriptions, traffic and limits, node support | Same shared-quota test with an OpenVPN client, locally and on a remote node |
 | P3 L2TP/IPsec | Engine 4.5, embedded RADIUS, optional IKEv2 | Same test with a native L2TP client |
@@ -225,9 +230,17 @@ What must stay from the base project: the `LICENSE` file and the attribution in 
 - Edits to shared upstream files stay as small as the integration allows.
 - Upstream is merged on a fixed cadence, not ad hoc.
 
-GitHub Actions: two workflows remain. `ci.yml` is the gate: phase branches run the fast jobs (about 20 runner minutes), `main` and pull requests run everything (about 52). `vendor.yml` republishes `go mod vendor` to the `build/vendor` branch whenever dependencies change. The base project's release, Docker, CodeQL, mutation-test and cache-cleanup workflows are removed; Manifold's own release workflow is written with the rename.
+GitHub Actions: three workflows. `ci.yml` is the gate: phase branches run the fast jobs (about 20 runner minutes), `main` and pull requests run everything (about 52). `vendor.yml` republishes `go mod vendor` to the `build/vendor` branch whenever dependencies change. `release.yml` builds, smoke-tests and publishes the Linux packages when a version tag is pushed. The base project's release, Docker, CodeQL, mutation-test and cache-cleanup workflows are removed.
 
 Build verification: the workspace this plan is written from cannot reach the Go module proxy, so it builds and tests offline from `build/vendor`, and CI in this repository is the final word on every change.
+
+### 8.1 Open items after P0
+
+- The Nodes page still shows its update actions. Nodes refuse them with a clear message; the buttons, the bulk selection that only served them and their tests are to be removed.
+- AmneziaWG and the userspace WireGuard inbound are still offered in the inbound form. They are hidden when the kernel WireGuard engine lands in P1.
+- The Nodes page shows each node's base version, not its product version.
+- The release workflow's arm64 package is built but only the amd64 package is installed and exercised on a runner.
+- `inbound-form-modal.test.tsx` ("keeps the persisted node share strategy through the nodes-loading race") timed out once on a runner and passed on the runs before and after; it is a timing-sensitive test inherited from the base code.
 
 ## 9. Assumptions and open decisions
 

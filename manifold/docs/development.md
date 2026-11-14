@@ -6,7 +6,8 @@ The rules an agent or a developer must follow while changing code are in [`CLAUD
 
 | Path | Holds |
 |---|---|
-| `main.go` | Entry point and command line |
+| `main.go` | Entry point and the program's own command line |
+| `install.sh`, `manifold.sh`, `manifold.service` | Installer, management command and systemd unit |
 | `internal/` | The panel: database, web server, subscription server, protocol engines, jobs |
 | `frontend/` | The React interface, built into `internal/web/dist/` and embedded in the binary |
 | `tools/openapigen/` | Generates frontend types and the OpenAPI description from Go structs |
@@ -37,7 +38,7 @@ A change is done when `make verify` passes. Changes to the database layer, node 
 
 ## Where verification runs
 
-`.github/workflows/ci.yml` is the only gate that counts. What it runs depends on where the push lands:
+`.github/workflows/ci.yml` is the gate. What it runs depends on where the push lands:
 
 | Push to | Jobs | Cost per run |
 |---|---|---|
@@ -88,14 +89,24 @@ Expect two kinds of conflict:
 
   ```bash
   git rm -r --ignore-unmatch docs media deploy/README.md deploy/cloud-init deploy/marketplace \
+    deploy/test/installer-panel-port.sh deploy/test/smoke-noninteractive.sh \
     .oss-scanner .github/ISSUE_TEMPLATE .github/claude .github/FUNDING.yml \
-    .github/pull_request_template.md .github/workflows/claude-issue-analyst.yml \
-    .github/workflows/claude-pr-review.yml .github/workflows/docs-ci.yml \
-    .github/workflows/docs-deploy.yml CONTRIBUTING.md SECURITY.md REVIEW.md \
-    bot_context_test.go README.*_*.md
+    .github/pull_request_template.md .github/dependabot.yml \
+    .github/workflows/claude-issue-analyst.yml .github/workflows/claude-pr-review.yml \
+    .github/workflows/docs-ci.yml .github/workflows/docs-deploy.yml \
+    .github/workflows/docker.yml .github/workflows/codeql.yml \
+    .github/workflows/mutation.yml .github/workflows/cleanup_caches.yml \
+    CONTRIBUTING.md SECURITY.md REVIEW.md README.*_*.md bot_context_test.go \
+    scripts_base_path_test.go update.sh x-ui.sh x-ui.rc x-ui.service.arch \
+    x-ui.service.debian x-ui.service.rhel windows_files winres \
+    internal/web/service/panel/sponsor.go internal/web/service/panel/sponsor_test.go \
+    internal/web/service/panel/panel_unix.go internal/web/service/panel/panel_other.go \
+    frontend/src/components/sponsor frontend/src/pages/sponsors \
+    frontend/src/pages/index/PanelUpdateModal.tsx frontend/public/icons/3x-ui-*.png
   ```
 
-- **Files Manifold rewrote** (`README.md`, `CLAUDE.md`, `Makefile`, `docker-compose.yml`): keep Manifold's side, then carry over anything upstream changed that still applies.
+- **Files Manifold rewrote** (`README.md`, `CLAUDE.md`, `Makefile`, `install.sh`, `Dockerfile`, `DockerEntrypoint.sh`, `docker-compose.yml`, `.env.example`, `.github/workflows/ci.yml`, `.github/workflows/release.yml`, `internal/web/service/panel/panel.go`): keep Manifold's side, then carry over anything upstream changed that still applies.
+- **Names** upstream adds in new code (`3x-ui`, `x-ui` in strings a person reads, in any locale file) are renamed to Manifold as part of the merge.
 
 Run `make verify` on the merge branch before it reaches `main`.
 
@@ -107,3 +118,17 @@ They are kept out of `main` but stay readable on `upstream-main`:
 git show upstream-main:docs/architecture.md     # code map: request lifecycle, jobs, layering
 git show upstream-main:CONTRIBUTING.md          # environment variables, test philosophy
 ```
+
+## Names and versions
+
+- The program name is the content of `internal/config/name`. It names the database file.
+- Operators set `MANIFOLD_<NAME>` environment variables. The settings read `XUI_<NAME>`, as upstream does; `config.AdoptManifoldEnv` copies one onto the other at start-up and after every env file load. New code keeps reading `XUI_<NAME>` through `internal/config`.
+- `internal/config/product_version` is Manifold's version: the one the interface, the bots and `manifold -v` show, and the one release tags must equal.
+- `internal/config/version` is the base version. A master decides which protocols a node can take from it, so it follows the code base and is not shown as the product's version.
+
+## Releasing
+
+1. Set the new version in `internal/config/product_version` and merge it to `main`.
+2. Tag that commit `vX.Y.Z` and push the tag.
+
+`.github/workflows/release.yml` builds static amd64 and arm64 packages, installs the amd64 package on the runner with `install.sh`, checks that the panel answers, that the installer's login works and that an update keeps the settings, and only then publishes the release. A failed run publishes nothing; fix the cause, move the tag and push it again.
