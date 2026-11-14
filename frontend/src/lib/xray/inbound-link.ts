@@ -1282,7 +1282,7 @@ export function wireguardConfigFromLink(link: string, fallbackRemark = ''): stri
 // only to pull the remark/port back out for the tag label); duplicated
 // rather than imported since both are tiny, self-contained, and each
 // file already owns the matching encode or decode half of this pair.
-function fromBase64Url(value: string): string {
+export function fromBase64Url(value: string): string {
   const b64 = value.replace(/-/g, '+').replace(/_/g, '/');
   const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
   const binary = atob(padded);

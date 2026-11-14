@@ -786,7 +786,20 @@
         "peerNumberConfig": "تكوين Peer {n}"
       },
       "sniffingDestOverride": "تجاوز الوجهة",
-      "advancedTitle": "الإعدادات المتقدمة"
+      "advancedTitle": "الإعدادات المتقدمة",
+      "openvpn": {
+        "transport": "نوع النقل",
+        "transportHint": "UDP أسرع. TCP يعبر الشبكات التي تحجب UDP أو تبطئه.",
+        "subnet": "شبكة العملاء",
+        "subnetHint": "العناوين التي يحصل عليها العملاء المتصلون. استخدم شبكة IPv4 خاصة بين /16 و /29 لا يستخدمها أي اتصال وارد آخر.",
+        "subnetInvalid": "أدخل شبكة IPv4 بين /16 و /29، مثل 10.8.0.0/24.",
+        "dns": "خوادم DNS",
+        "dnsInvalid": "يجب أن يكون كل خادم DNS عنوان IPv4.",
+        "promptCredentials": "طلب بيانات الدخول",
+        "promptCredentialsHint": "لا يُكتب اسم المستخدم وكلمة المرور في الملف، فيطلبهما التطبيق. مطلوب للتطبيقات الأقدم من OpenVPN 2.6.",
+        "keysIssued": "تُنشأ الشهادات والمفاتيح عند الحفظ.",
+        "keysKept": "يحتفظ هذا الاتصال الوارد بشهاداته ومفاتيحه، فتبقى الملفات التي سلّمتها سابقًا صالحة."
+      }
     },
     "clients": {
       "tabBasics": "أساسي",
@@ -990,6 +1003,7 @@
       "amneziaWgKeepAliveInvalid": "أدخل رقمًا صحيحًا أو نطاقًا من 0 إلى 65535.",
       "tunnelKeepAliveHint": "How often the client sends a keepalive packet. 25 is the usual value: it holds the NAT mapping open and brings an idle peer back on its own after any drop, including a panel restart. 0 disables it — an idle client then stays disconnected until it sends traffic.",
       "amneziaWgConfig": "إعدادات AmneziaWG",
+      "openvpnProfile": "ملف OpenVPN",
       "tuicConfig": "إعدادات TUIC (Clash)",
       "mtprotoSecret": "سر MTProto",
       "mtprotoSecretHint": "سر FakeTLS الخاص بالعميل. أعد التوليد لتغييره.",

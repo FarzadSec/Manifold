@@ -786,7 +786,20 @@
         "peerNumberConfig": "Peer {n} Yapılandırması"
       },
       "sniffingDestOverride": "Hedef geçersiz kılma",
-      "advancedTitle": "Gelişmiş Ayarlar"
+      "advancedTitle": "Gelişmiş Ayarlar",
+      "openvpn": {
+        "transport": "Taşıma",
+        "transportHint": "UDP daha hızlıdır. TCP, UDP'yi engelleyen veya yavaşlatan ağlardan geçer.",
+        "subnet": "İstemci alt ağı",
+        "subnetHint": "Bağlanan istemcilerin aldığı adresler. Başka hiçbir gelen bağlantının kullanmadığı, /16 ile /29 arasında özel bir IPv4 ağı kullanın.",
+        "subnetInvalid": "/16 ile /29 arasında bir IPv4 ağı girin, örneğin 10.8.0.0/24.",
+        "dns": "DNS sunucuları",
+        "dnsInvalid": "Her DNS sunucusu bir IPv4 adresi olmalıdır.",
+        "promptCredentials": "Giriş bilgilerini sor",
+        "promptCredentialsHint": "Kullanıcı adı ve parola profile yazılmaz, uygulama bunları sorar. OpenVPN 2.6'dan eski uygulamalar için gereklidir.",
+        "keysIssued": "Sertifikalar ve anahtarlar kaydettiğinizde oluşturulur.",
+        "keysKept": "Bu gelen bağlantı sertifikalarını ve anahtarlarını korur, bu yüzden daha önce verilen profiller geçerli kalır."
+      }
     },
     "clients": {
       "tabBasics": "Temel",
@@ -990,6 +1003,7 @@
       "amneziaWgKeepAliveInvalid": "0 ile 65535 arasında bir tam sayı veya aralık girin.",
       "tunnelKeepAliveHint": "How often the client sends a keepalive packet. 25 is the usual value: it holds the NAT mapping open and brings an idle peer back on its own after any drop, including a panel restart. 0 disables it — an idle client then stays disconnected until it sends traffic.",
       "amneziaWgConfig": "AmneziaWG Yapılandırması",
+      "openvpnProfile": "OpenVPN profili",
       "tuicConfig": "TUIC Yapılandırması (Clash)",
       "mtprotoSecret": "MTProto sırrı",
       "mtprotoSecretHint": "İstemcinin FakeTLS sırrı. Değiştirmek için yeniden oluşturun.",

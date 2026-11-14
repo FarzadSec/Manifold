@@ -22,6 +22,7 @@ import {
   isAmneziaWGClient,
 } from './amneziawgConfig';
 import { buildTuicClientConfig, findTuicInbound, isTuicClient } from './tuicConfig';
+import { isOpenvpnLink, openvpnProfilesFromLinks } from '@/lib/xray/openvpn-link';
 import { tunnelConfigEndpoints, tunnelEndpointLabel } from './tunnelEndpoints';
 import type { HostRecord } from '@/schemas/api/host';
 
@@ -449,7 +450,31 @@ function ClientQrModalContent({
         children: <QrPanel value={subJsonLink} remark={`${client?.email || ''} — JSON`} />,
       });
     }
+    openvpnProfilesFromLinks(links, client?.email || 'openvpn').forEach((profile) => {
+      out.push({
+        key: profile.key,
+        label: (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Tag color="gold" style={{ margin: 0 }}>
+              {t('pages.clients.openvpnProfile')}
+            </Tag>
+            {profile.remark && (
+              <span style={{ opacity: 0.85, fontSize: 12 }}>{profile.remark}</span>
+            )}
+          </span>
+        ),
+        children: (
+          <QrPanel
+            value={profile.text}
+            remark={profile.remark}
+            downloadName={profile.fileName}
+            showQr={false}
+          />
+        ),
+      });
+    });
     links.forEach((link, idx) => {
+      if (isOpenvpnLink(link)) return;
       const parts = parseLinkParts(link);
       const meta = parts ? linkMetaText(parts) : '';
       const label: React.ReactNode = parts ? (

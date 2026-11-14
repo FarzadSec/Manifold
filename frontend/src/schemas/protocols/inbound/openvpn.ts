@@ -1,0 +1,58 @@
+import { z } from 'zod';
+
+export const OpenvpnClientSchema = z.object({
+  password: z.string().default(''),
+  email: z.string().min(1),
+  limitIp: z.number().int().min(0).default(0),
+  totalGB: z.number().int().min(0).default(0),
+  expiryTime: z.number().int().default(0),
+  enable: z.boolean().default(true),
+  tgId: z
+    .union([z.number(), z.string()])
+    .transform((v) => Number(v) || 0)
+    .default(0),
+  subId: z.string().default(''),
+  comment: z.string().default(''),
+  reset: z.number().int().min(0).default(0),
+  created_at: z.number().int().optional(),
+  updated_at: z.number().int().optional(),
+});
+export type OpenvpnClient = z.infer<typeof OpenvpnClientSchema>;
+
+const IPV4 = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
+
+// The panel refuses the same values on save (internal/openvpn/settings.go).
+export function isOpenvpnSubnet(value: string): boolean {
+  const [address, bits, ...rest] = value.trim().split('/');
+  if (rest.length > 0 || !IPV4.test(address ?? '') || !/^\d{1,2}$/.test(bits ?? '')) return false;
+  const prefix = Number(bits);
+  return prefix >= 16 && prefix <= 29;
+}
+
+export function isOpenvpnDns(value: string): boolean {
+  return IPV4.test(value.trim());
+}
+
+export const OpenvpnServerSchema = z.object({
+  proto: z.enum(['udp', 'tcp']).default('udp'),
+  subnet: z
+    .string()
+    .default('10.8.0.0/24')
+    .refine(isOpenvpnSubnet, { message: 'pages.inbounds.openvpn.subnetInvalid' }),
+  dns: z
+    .array(z.string().refine(isOpenvpnDns, { message: 'pages.inbounds.openvpn.dnsInvalid' }))
+    .default(['1.1.1.1', '8.8.8.8']),
+  promptCredentials: z.boolean().default(false),
+  caCert: z.string().default(''),
+  caKey: z.string().optional(),
+  serverCert: z.string().optional(),
+  serverKey: z.string().optional(),
+  tlsCryptKey: z.string().default(''),
+});
+export type OpenvpnServer = z.infer<typeof OpenvpnServerSchema>;
+
+export const OpenvpnInboundSettingsSchema = z.object({
+  server: OpenvpnServerSchema.optional(),
+  clients: z.array(OpenvpnClientSchema).default([]),
+});
+export type OpenvpnInboundSettings = z.infer<typeof OpenvpnInboundSettingsSchema>;

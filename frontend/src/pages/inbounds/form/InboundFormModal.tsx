@@ -76,6 +76,7 @@ import {
   MasqueStreamFields,
   MixedFields,
   MtprotoFields,
+  OpenvpnFields,
   ShadowsocksFields,
   TuicFields,
   TunFields,
@@ -881,6 +882,8 @@ export default function InboundFormModal({
 
       {protocol === Protocols.TUIC && <TuicFields />}
 
+      {protocol === Protocols.OPENVPN && <OpenvpnFields />}
+
       {protocol === Protocols.MASQUE && <MasqueSettingsFields />}
 
       {protocol === Protocols.TUN && <TunFields />}
@@ -1263,6 +1266,7 @@ export default function InboundFormModal({
                     Protocols.AMNEZIAWG,
                     Protocols.TUIC,
                     Protocols.MASQUE,
+                    Protocols.OPENVPN,
                   ] as string[]
                 ).includes(protocol) ||
                 isFallbackHost ||

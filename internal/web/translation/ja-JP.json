@@ -786,7 +786,20 @@
         "peerNumberConfig": "Peer {n} 設定"
       },
       "sniffingDestOverride": "宛先のオーバーライド",
-      "advancedTitle": "詳細設定"
+      "advancedTitle": "詳細設定",
+      "openvpn": {
+        "transport": "トランスポート",
+        "transportHint": "UDP のほうが高速です。TCP は UDP を遮断または低速化するネットワークでも通ります。",
+        "subnet": "クライアントのサブネット",
+        "subnetHint": "接続したクライアントに割り当てるアドレスです。ほかのインバウンドが使っていない /16 から /29 のプライベート IPv4 ネットワークを指定してください。",
+        "subnetInvalid": "/16 から /29 の IPv4 ネットワークを入力してください（例: 10.8.0.0/24）。",
+        "dns": "DNS サーバー",
+        "dnsInvalid": "DNS サーバーはそれぞれ IPv4 アドレスで指定してください。",
+        "promptCredentials": "ログイン情報を尋ねる",
+        "promptCredentialsHint": "ユーザー名とパスワードをプロファイルに書き込まず、アプリが入力を求めます。OpenVPN 2.6 より古いアプリで必要です。",
+        "keysIssued": "証明書と鍵は保存時に作成されます。",
+        "keysKept": "このインバウンドは証明書と鍵を保持するため、配布済みのプロファイルは引き続き有効です。"
+      }
     },
     "clients": {
       "tabBasics": "基本",
@@ -990,6 +1003,7 @@
       "amneziaWgKeepAliveInvalid": "0〜65535の整数または範囲を入力してください。",
       "tunnelKeepAliveHint": "How often the client sends a keepalive packet. 25 is the usual value: it holds the NAT mapping open and brings an idle peer back on its own after any drop, including a panel restart. 0 disables it — an idle client then stays disconnected until it sends traffic.",
       "amneziaWgConfig": "AmneziaWG 設定",
+      "openvpnProfile": "OpenVPN プロファイル",
       "tuicConfig": "TUIC 設定 (Clash)",
       "mtprotoSecret": "MTProto シークレット",
       "mtprotoSecretHint": "このクライアントの FakeTLS シークレット。変更するには再生成します。",

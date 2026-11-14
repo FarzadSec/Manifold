@@ -6,6 +6,7 @@ import { HysteriaInboundSettingsSchema } from './hysteria';
 import { MasqueInboundSettingsSchema } from './masque';
 import { MixedInboundSettingsSchema } from './mixed';
 import { MtprotoInboundSettingsSchema } from './mtproto';
+import { OpenvpnInboundSettingsSchema } from './openvpn';
 import { ShadowsocksInboundSettingsSchema } from './shadowsocks';
 import { TrojanInboundSettingsSchema } from './trojan';
 import { TuicInboundSettingsSchema } from './tuic';
@@ -21,6 +22,7 @@ export * from './hysteria';
 export * from './masque';
 export * from './mixed';
 export * from './mtproto';
+export * from './openvpn';
 export * from './shadowsocks';
 export * from './trojan';
 export * from './tuic';
@@ -50,5 +52,6 @@ export const InboundSettingsSchema = z.discriminatedUnion('protocol', [
   z.object({ protocol: z.literal('amneziawg'), settings: AmneziawgInboundSettingsSchema }),
   z.object({ protocol: z.literal('tuic'), settings: TuicInboundSettingsSchema }),
   z.object({ protocol: z.literal('masque'), settings: MasqueInboundSettingsSchema }),
+  z.object({ protocol: z.literal('openvpn'), settings: OpenvpnInboundSettingsSchema }),
 ]);
 export type InboundSettings = z.infer<typeof InboundSettingsSchema>;

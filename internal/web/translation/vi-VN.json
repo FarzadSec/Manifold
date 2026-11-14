@@ -786,7 +786,20 @@
         "peerNumberConfig": "Cấu hình Peer {n}"
       },
       "sniffingDestOverride": "Ghi đè đích",
-      "advancedTitle": "Cài đặt nâng cao"
+      "advancedTitle": "Cài đặt nâng cao",
+      "openvpn": {
+        "transport": "Giao thức truyền",
+        "transportHint": "UDP nhanh hơn. TCP đi qua được các mạng chặn hoặc làm chậm UDP.",
+        "subnet": "Mạng con của máy khách",
+        "subnetHint": "Các địa chỉ mà máy khách nhận khi kết nối. Hãy dùng một mạng IPv4 riêng từ /16 đến /29 mà không inbound nào khác sử dụng.",
+        "subnetInvalid": "Nhập một mạng IPv4 từ /16 đến /29, ví dụ 10.8.0.0/24.",
+        "dns": "Máy chủ DNS",
+        "dnsInvalid": "Mỗi máy chủ DNS phải là một địa chỉ IPv4.",
+        "promptCredentials": "Hỏi thông tin đăng nhập",
+        "promptCredentialsHint": "Không ghi tên người dùng và mật khẩu vào hồ sơ, nên ứng dụng sẽ hỏi. Cần cho các ứng dụng cũ hơn OpenVPN 2.6.",
+        "keysIssued": "Chứng chỉ và khóa được tạo khi bạn lưu.",
+        "keysKept": "Inbound này giữ nguyên chứng chỉ và khóa, nên các hồ sơ đã cấp vẫn còn hiệu lực."
+      }
     },
     "clients": {
       "tabBasics": "Cơ bản",
@@ -990,6 +1003,7 @@
       "amneziaWgKeepAliveInvalid": "Nhập số nguyên hoặc khoảng từ 0 đến 65535.",
       "tunnelKeepAliveHint": "How often the client sends a keepalive packet. 25 is the usual value: it holds the NAT mapping open and brings an idle peer back on its own after any drop, including a panel restart. 0 disables it — an idle client then stays disconnected until it sends traffic.",
       "amneziaWgConfig": "Cấu hình AmneziaWG",
+      "openvpnProfile": "Hồ sơ OpenVPN",
       "tuicConfig": "Cấu hình TUIC (Clash)",
       "mtprotoSecret": "Secret MTProto",
       "mtprotoSecretHint": "Secret FakeTLS của client. Tạo lại để thay đổi.",

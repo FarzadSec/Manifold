@@ -786,7 +786,20 @@
         "peerNumber": "Peer {n}",
         "peerNumberConfig": "Konfigurácia peeru {n}"
       },
-      "sniffingDestOverride": "Prepísať cieľ"
+      "sniffingDestOverride": "Prepísať cieľ",
+      "openvpn": {
+        "transport": "Transport",
+        "transportHint": "UDP je rýchlejšie. TCP prejde sieťami, ktoré UDP blokujú alebo spomaľujú.",
+        "subnet": "Podsieť klientov",
+        "subnetHint": "Adresy, ktoré dostanú pripojení klienti. Použite súkromnú sieť IPv4 medzi /16 a /29, ktorú nepoužíva iný inbound.",
+        "subnetInvalid": "Zadajte sieť IPv4 medzi /16 a /29, napríklad 10.8.0.0/24.",
+        "dns": "Servery DNS",
+        "dnsInvalid": "Každý server DNS musí byť adresa IPv4.",
+        "promptCredentials": "Pýtať si prihlásenie",
+        "promptCredentialsHint": "Meno a heslo sa do profilu nezapíšu, aplikácia si ich vypýta. Potrebné pre aplikácie staršie ako OpenVPN 2.6.",
+        "keysIssued": "Certifikáty a kľúče sa vytvoria pri uložení.",
+        "keysKept": "Tento inbound si ponecháva certifikáty a kľúče, takže už vydané profily zostávajú platné."
+      }
     },
     "clients": {
       "tabBasics": "Základné údaje",
@@ -990,6 +1003,7 @@
       "amneziaWgKeepAliveInvalid": "Zadajte celé číslo alebo rozsah od 0 do 65535.",
       "tunnelKeepAliveHint": "Ako často klient posiela paket na udržanie spojenia. Bežná hodnota 25 udrží mapovanie NAT a po výpadku vrátane reštartu panelu znova pripojí nečinný peer. Hodnota 0 funkciu vypne; nečinný klient zostane odpojený, kým neodošle dáta.",
       "amneziaWgConfig": "Konfigurácia AmneziaWG",
+      "openvpnProfile": "Profil OpenVPN",
       "tuicConfig": "Konfigurácia TUIC (Clash)",
       "mtprotoSecret": "Tajný kľúč MTProto",
       "mtprotoSecretHint": "Tajný kľúč FakeTLS tohto klienta. Novým vygenerovaním ho zmeníte.",

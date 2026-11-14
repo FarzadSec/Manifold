@@ -21,7 +21,6 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/mtproto"
-	"github.com/mhsanaei/3x-ui/v3/internal/openvpn"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/maskcompat"
@@ -356,8 +355,6 @@ type InboundOption struct {
 	// per-client .conf without a second round trip.
 	AwgServer  *amneziawg.ServerSettings `json:"awgServer,omitempty"`
 	TuicServer *tuic.TuicServerSettings  `json:"tuicServer,omitempty"`
-	// OvpnServer is what a profile needs of an OpenVPN inbound; it holds no private key.
-	OvpnServer *openvpn.ServerSettings `json:"ovpnServer,omitempty"`
 	// Hosting node; nil for this panel's own inbounds. Lets the clients
 	// page map a node filter onto inbound IDs (#4997).
 	NodeId *int `json:"nodeId,omitempty"`
@@ -425,7 +422,6 @@ func (s *InboundService) GetInboundOptions(userId int) ([]InboundOption, error) 
 			MtprotoDomain:     inboundMtprotoDomain(r.Protocol, r.Settings),
 			AwgServer:         inboundAmneziaWGServer(r.Protocol, r.Settings),
 			TuicServer:        inboundTuicServer(r.Protocol, r.Settings),
-			OvpnServer:        inboundOpenVPNServer(r.Protocol, r.Settings),
 			NodeId:            r.NodeId,
 			NodeAddress:       r.NodeAddress,
 			Listen:            r.Listen,

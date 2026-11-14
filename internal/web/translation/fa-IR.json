@@ -786,7 +786,20 @@
         "peerNumberConfig": "پیکربندی Peer {n}"
       },
       "sniffingDestOverride": "بازنویسی مقصد",
-      "advancedTitle": "تنظیمات پیشرفته"
+      "advancedTitle": "تنظیمات پیشرفته",
+      "openvpn": {
+        "transport": "نوع انتقال",
+        "transportHint": "حالت UDP سریع‌تر است. حالت TCP از شبکه‌هایی که UDP را می‌بندند یا کند می‌کنند عبور می‌کند.",
+        "subnet": "زیرشبکه‌ی کاربران",
+        "subnetHint": "آدرس‌هایی که کاربران متصل می‌گیرند. یک شبکه‌ی خصوصی IPv4 بین /16 و /29 بگذارید که اینباند دیگری از آن استفاده نکند.",
+        "subnetInvalid": "یک شبکه‌ی IPv4 بین /16 و /29 وارد کنید، مثلاً 10.8.0.0/24.",
+        "dns": "سرورهای DNS",
+        "dnsInvalid": "هر سرور DNS باید یک آدرس IPv4 باشد.",
+        "promptCredentials": "پرسیدن نام کاربری و رمز",
+        "promptCredentialsHint": "نام کاربری و رمز در پروفایل نوشته نمی‌شود و برنامه آن را می‌پرسد. برای برنامه‌های قدیمی‌تر از OpenVPN 2.6 لازم است.",
+        "keysIssued": "گواهی‌ها و کلیدها هنگام ذخیره ساخته می‌شوند.",
+        "keysKept": "گواهی‌ها و کلیدهای این اینباند حفظ می‌شوند و پروفایل‌هایی که قبلاً داده‌اید معتبر می‌مانند."
+      }
     },
     "clients": {
       "tabBasics": "پایه",
@@ -990,6 +1003,7 @@
       "amneziaWgKeepAliveInvalid": "یک عدد صحیح یا بازه‌ای از 0 تا 65535 وارد کنید.",
       "tunnelKeepAliveHint": "How often the client sends a keepalive packet. 25 is the usual value: it holds the NAT mapping open and brings an idle peer back on its own after any drop, including a panel restart. 0 disables it — an idle client then stays disconnected until it sends traffic.",
       "amneziaWgConfig": "پیکربندی AmneziaWG",
+      "openvpnProfile": "پروفایل OpenVPN",
       "tuicConfig": "پیکربندی TUIC (Clash)",
       "mtprotoSecret": "سکرت MTProto",
       "mtprotoSecretHint": "سکرت FakeTLS این کلاینت. برای تعویض، دوباره تولید کنید.",

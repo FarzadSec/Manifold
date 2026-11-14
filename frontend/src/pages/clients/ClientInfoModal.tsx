@@ -20,6 +20,8 @@ import { LinkTags, linkMetaText, parseLinkParts } from '@/lib/xray/link-label';
 import { QrPanel } from '@/pages/inbounds/qr';
 import ClientHwidListModal from '@/components/clients/ClientHwidList';
 import ConfigBlock from '@/components/clients/ConfigBlock';
+import OpenvpnProfileBlocks from '@/components/clients/OpenvpnProfileBlocks';
+import { isOpenvpnLink } from '@/lib/xray/openvpn-link';
 import {
   buildWireguardClientConfig,
   findWireguardInbounds,
@@ -47,6 +49,7 @@ const INBOUND_PROTOCOL_COLORS: Record<string, string> = {
   mixed: 'lime',
   tunnel: 'orange',
   tuic: 'orange',
+  openvpn: 'gold',
 };
 
 const INBOUND_CHIP_LIMIT = 1;
@@ -118,6 +121,7 @@ export default function ClientInfoModal({
   const dateLabel = (ts?: number) => (!ts || ts <= 0 ? '-' : IntlUtil.formatDate(ts, datepicker));
   const [messageApi, messageContextHolder] = message.useMessage();
   const [links, setLinks] = useState<string[]>([]);
+  const proxyLinks = useMemo(() => links.filter((link) => !isOpenvpnLink(link)), [links]);
   const [clientIps, setClientIps] = useState<ClientIpInfo[]>([]);
   const [ipsLoading, setIpsLoading] = useState(false);
   const [ipsClearing, setIpsClearing] = useState(false);
@@ -745,10 +749,10 @@ export default function ClientInfoModal({
               </>
             )}
 
-            {links.length > 0 && (
+            {proxyLinks.length > 0 && (
               <>
                 <Divider>{t('pages.inbounds.copyLink')}</Divider>
-                {links.map((link, idx) => {
+                {proxyLinks.map((link, idx) => {
                   const parts = parseLinkParts(link);
                   const fallback = `${t('pages.clients.link')} ${idx + 1}`;
                   const rowTitle = (parts && linkMetaText(parts)) || fallback;
@@ -793,6 +797,13 @@ export default function ClientInfoModal({
                     </div>
                   );
                 })}
+              </>
+            )}
+
+            {links.some(isOpenvpnLink) && (
+              <>
+                <Divider>{t('pages.clients.openvpnProfile')}</Divider>
+                <OpenvpnProfileBlocks links={links} fallbackName={client?.email ?? 'openvpn'} />
               </>
             )}
 

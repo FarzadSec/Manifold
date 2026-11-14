@@ -786,7 +786,20 @@
         "peerNumberConfig": "Konfig Peer {n}"
       },
       "sniffingDestOverride": "Penggantian tujuan",
-      "advancedTitle": "Pengaturan Lanjutan"
+      "advancedTitle": "Pengaturan Lanjutan",
+      "openvpn": {
+        "transport": "Transport",
+        "transportHint": "UDP lebih cepat. TCP dapat melewati jaringan yang memblokir atau memperlambat UDP.",
+        "subnet": "Subnet klien",
+        "subnetHint": "Alamat yang diterima klien yang terhubung. Gunakan jaringan IPv4 privat antara /16 dan /29 yang tidak dipakai inbound lain.",
+        "subnetInvalid": "Masukkan jaringan IPv4 antara /16 dan /29, misalnya 10.8.0.0/24.",
+        "dns": "Server DNS",
+        "dnsInvalid": "Setiap server DNS harus berupa alamat IPv4.",
+        "promptCredentials": "Minta data login",
+        "promptCredentialsHint": "Nama pengguna dan kata sandi tidak ditulis di profil, sehingga aplikasi memintanya. Diperlukan untuk aplikasi yang lebih lama dari OpenVPN 2.6.",
+        "keysIssued": "Sertifikat dan kunci dibuat saat Anda menyimpan.",
+        "keysKept": "Inbound ini mempertahankan sertifikat dan kuncinya, sehingga profil yang sudah dibagikan tetap berlaku."
+      }
     },
     "clients": {
       "tabBasics": "Dasar",
@@ -990,6 +1003,7 @@
       "amneziaWgKeepAliveInvalid": "Masukkan bilangan bulat atau rentang dari 0 hingga 65535.",
       "tunnelKeepAliveHint": "How often the client sends a keepalive packet. 25 is the usual value: it holds the NAT mapping open and brings an idle peer back on its own after any drop, including a panel restart. 0 disables it — an idle client then stays disconnected until it sends traffic.",
       "amneziaWgConfig": "Konfigurasi AmneziaWG",
+      "openvpnProfile": "Profil OpenVPN",
       "tuicConfig": "Konfigurasi TUIC (Clash)",
       "mtprotoSecret": "Secret MTProto",
       "mtprotoSecretHint": "Secret FakeTLS klien. Buat ulang untuk menggantinya.",

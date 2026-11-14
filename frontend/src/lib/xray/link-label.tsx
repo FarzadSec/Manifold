@@ -1,4 +1,5 @@
 import { Tag } from 'antd';
+import { openvpnProfileFromLink, summarizeOpenvpnProfile } from '@/lib/xray/openvpn-link';
 import { Base64 } from '@/utils';
 
 /* Shared parsing + rendering for the "protocol / transport / security"
@@ -28,6 +29,7 @@ const PROTOCOL_LABELS: Record<string, string> = {
   tg: 'MTProto',
   vpn: 'AmneziaWG',
   tuic: 'TUIC',
+  openvpn: 'OpenVPN',
 };
 
 const PROTOCOL_COLORS: Record<string, string> = {
@@ -41,6 +43,7 @@ const PROTOCOL_COLORS: Record<string, string> = {
   MTProto: 'blue',
   AmneziaWG: 'yellow',
   TUIC: 'orange',
+  OpenVPN: 'gold',
 };
 
 const SECURITY_COLORS: Record<string, string> = {
@@ -113,6 +116,12 @@ export function parseLinkParts(link: string): LinkParts | null {
     } catch {
       /* unparseable payload, fall back to protocol only */
     }
+  } else if (scheme === 'openvpn') {
+    const summary = summarizeOpenvpnProfile(openvpnProfileFromLink(trimmed));
+    remark = summary.remark;
+    port = summary.port;
+    network = summary.network;
+    security = 'TLS';
   } else {
     try {
       const url = new URL(trimmed);

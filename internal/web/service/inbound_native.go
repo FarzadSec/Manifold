@@ -101,11 +101,3 @@ func openvpnTransport(settings string) transportBits {
 	}
 	return transportUDP
 }
-
-// inboundOpenVPNServer returns the server block the clients page builds profiles from.
-func inboundOpenVPNServer(protocol string, settings string) *openvpn.ServerSettings {
-	if protocol != string(model.OpenVPN) {
-		return nil
-	}
-	return openvpn.ServerForProfiles(settings)
-}

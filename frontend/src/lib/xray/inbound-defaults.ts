@@ -14,6 +14,7 @@ import type {
   ShadowsocksClient,
   ShadowsocksInboundSettings,
 } from '@/schemas/protocols/inbound/shadowsocks';
+import type { OpenvpnInboundSettings } from '@/schemas/protocols/inbound/openvpn';
 import type { TrojanClient, TrojanInboundSettings } from '@/schemas/protocols/inbound/trojan';
 import type { TuicClient, TuicInboundSettings } from '@/schemas/protocols/inbound/tuic';
 import type { TunInboundSettings } from '@/schemas/protocols/inbound/tun';
@@ -366,6 +367,21 @@ export function createDefaultTuicInboundSettings(): TuicInboundSettings {
   };
 }
 
+// The keys stay empty: the panel issues them when the inbound is saved.
+export function createDefaultOpenvpnInboundSettings(): OpenvpnInboundSettings {
+  return {
+    server: {
+      proto: 'udp',
+      subnet: '10.8.0.0/24',
+      dns: ['1.1.1.1', '8.8.8.8'],
+      promptCredentials: false,
+      caCert: '',
+      tlsCryptKey: '',
+    },
+    clients: [],
+  };
+}
+
 // Protocol-aware dispatch over every inbound-settings factory. Mirrors
 // the legacy `Inbound.Settings.getSettings(protocol)` dispatcher, but
 // returns a plain Zod-parsable object instead of a class instance.
@@ -385,7 +401,8 @@ export type AnyInboundSettings =
   | MtprotoInboundSettings
   | AmneziawgInboundSettings
   | TuicInboundSettings
-  | MasqueInboundSettings;
+  | MasqueInboundSettings
+  | OpenvpnInboundSettings;
 
 export function createDefaultInboundSettings(protocol: string): AnyInboundSettings | null {
   switch (protocol) {
@@ -417,6 +434,8 @@ export function createDefaultInboundSettings(protocol: string): AnyInboundSettin
       return createDefaultTuicInboundSettings();
     case 'masque':
       return createDefaultMasqueInboundSettings();
+    case 'openvpn':
+      return createDefaultOpenvpnInboundSettings();
     default:
       return null;
   }

@@ -22,6 +22,10 @@ function inboundTransports(
   )
     return UDP;
   if (protocol === 'masque') return masqueTransports(streamSettings);
+  if (protocol === 'openvpn') {
+    const server = settings?.server as { proto?: unknown } | undefined;
+    return server?.proto === 'tcp' ? TCP : UDP;
+  }
 
   let bits: TransportBits = 0;
   const network = asString(streamSettings?.network);

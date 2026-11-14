@@ -228,6 +228,53 @@ describe('formValuesToWirePayload', () => {
     expect(payload.sniffing).toBe('');
   });
 
+  // An edit that lost the keys would make the panel issue new ones and break every profile.
+  it('carries an OpenVPN inbound through the form with its keys and passwords', () => {
+    const settings = {
+      server: {
+        proto: 'tcp',
+        subnet: '10.20.0.0/22',
+        dns: ['9.9.9.9'],
+        promptCredentials: true,
+        caCert: 'CA-CERT',
+        caKey: 'CA-KEY',
+        serverCert: 'SERVER-CERT',
+        serverKey: 'SERVER-KEY',
+        tlsCryptKey: 'TLS-CRYPT',
+      },
+      clients: [{ email: 'alice', password: 'alice-pass', enable: true, limitIp: 2 }],
+    };
+    const values = rawInboundToFormValues({
+      ...vlessRow,
+      protocol: 'openvpn',
+      settings,
+      streamSettings: '',
+    });
+    expect(
+      InboundFormSchema.safeParse(values).error?.issues.map((issue) => issue.message),
+    ).toBeUndefined();
+
+    const payload = formValuesToWirePayload(values);
+    const sent = JSON.parse(payload.settings) as typeof settings;
+    expect(sent.server).toEqual(settings.server);
+    expect(sent.clients[0]).toMatchObject({ email: 'alice', password: 'alice-pass', limitIp: 2 });
+    expect(payload.sniffing).toBe('');
+    expect(payload.streamSettings).toBe('');
+  });
+
+  it('refuses an OpenVPN subnet the panel would reject', () => {
+    const values = rawInboundToFormValues({
+      ...vlessRow,
+      protocol: 'openvpn',
+      settings: { server: { subnet: '10.8.0.0/30' }, clients: [] },
+      streamSettings: '',
+    });
+    const messages = InboundFormSchema.safeParse(values).error?.issues.map(
+      (issue) => issue.message,
+    );
+    expect(messages).toEqual(['pages.inbounds.openvpn.subnetInvalid']);
+  });
+
   // xray-core 26.10.31 (#7295): the XHTTP server reads h2Params; the form must not strip it.
   it('keeps an XHTTP inbound h2Params set through JSON', () => {
     const h2Params = { MaxConcurrentStreams: 512, MaxReadFrameSize: 1048576 };

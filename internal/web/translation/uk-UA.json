@@ -786,7 +786,20 @@
         "peerNumberConfig": "Конфіг Peer {n}"
       },
       "sniffingDestOverride": "Перевизначення призначення",
-      "advancedTitle": "Додаткові налаштування"
+      "advancedTitle": "Додаткові налаштування",
+      "openvpn": {
+        "transport": "Транспорт",
+        "transportHint": "UDP швидший. TCP проходить через мережі, які блокують або сповільнюють UDP.",
+        "subnet": "Підмережа клієнтів",
+        "subnetHint": "Адреси, які отримують підключені клієнти. Вкажіть приватну мережу IPv4 від /16 до /29, якою не користується інше вхідне підключення.",
+        "subnetInvalid": "Введіть мережу IPv4 від /16 до /29, наприклад 10.8.0.0/24.",
+        "dns": "DNS-сервери",
+        "dnsInvalid": "Кожен DNS-сервер має бути адресою IPv4.",
+        "promptCredentials": "Запитувати логін",
+        "promptCredentialsHint": "Ім'я користувача й пароль не записуються в профіль, застосунок запитує їх сам. Потрібно для застосунків, старіших за OpenVPN 2.6.",
+        "keysIssued": "Сертифікати й ключі створюються під час збереження.",
+        "keysKept": "Це підключення зберігає свої сертифікати й ключі, тому вже видані профілі залишаються чинними."
+      }
     },
     "clients": {
       "tabBasics": "Основні",
@@ -990,6 +1003,7 @@
       "amneziaWgKeepAliveInvalid": "Введіть ціле число або діапазон від 0 до 65535.",
       "tunnelKeepAliveHint": "How often the client sends a keepalive packet. 25 is the usual value: it holds the NAT mapping open and brings an idle peer back on its own after any drop, including a panel restart. 0 disables it — an idle client then stays disconnected until it sends traffic.",
       "amneziaWgConfig": "Конфігурація AmneziaWG",
+      "openvpnProfile": "Профіль OpenVPN",
       "tuicConfig": "Конфігурація TUIC (Clash)",
       "mtprotoSecret": "Секрет MTProto",
       "mtprotoSecretHint": "Секрет FakeTLS клієнта. Згенеруйте заново, щоб змінити.",

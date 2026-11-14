@@ -4,12 +4,14 @@ import { Button, Tag } from 'antd';
 import { CopyOutlined } from '@ant-design/icons';
 
 import ConfigBlock from '@/components/clients/ConfigBlock';
+import OpenvpnProfileBlocks from '@/components/clients/OpenvpnProfileBlocks';
 import {
   amneziawgConfigFromLink,
   isPostQuantumLink,
   wireguardConfigFromLink,
 } from '@/lib/xray/inbound-link';
 import { LinkTags, parseLinkParts } from '@/lib/xray/link-label';
+import { isOpenvpnLink } from '@/lib/xray/openvpn-link';
 import SubQrButton from './SubQrButton';
 
 interface SubConfigsTabProps {
@@ -17,8 +19,10 @@ interface SubConfigsTabProps {
   onCopy: (value: string, toast?: string) => void;
 }
 
-export default function SubConfigsTab({ links, onCopy }: SubConfigsTabProps) {
+export default function SubConfigsTab({ links: allLinks, onCopy }: SubConfigsTabProps) {
   const { t } = useTranslation();
+  // An OpenVPN profile is a file to download, not a link an app imports.
+  const links = allLinks.filter((link) => !isOpenvpnLink(link));
 
   return (
     <div className="sub-rows">
@@ -76,6 +80,7 @@ export default function SubConfigsTab({ links, onCopy }: SubConfigsTabProps) {
           </Fragment>
         );
       })}
+      <OpenvpnProfileBlocks links={allLinks} fallbackName="openvpn" />
     </div>
   );
 }

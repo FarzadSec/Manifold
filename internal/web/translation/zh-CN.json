@@ -786,7 +786,20 @@
         "peerNumberConfig": "Peer {n} 配置"
       },
       "sniffingDestOverride": "目标覆盖",
-      "advancedTitle": "高级设置"
+      "advancedTitle": "高级设置",
+      "openvpn": {
+        "transport": "传输方式",
+        "transportHint": "UDP 更快。TCP 可以穿过屏蔽或限速 UDP 的网络。",
+        "subnet": "客户端子网",
+        "subnetHint": "已连接的客户端获得的地址。请使用 /16 到 /29 之间、且没有其他入站使用的私有 IPv4 网络。",
+        "subnetInvalid": "请输入 /16 到 /29 之间的 IPv4 网络，例如 10.8.0.0/24。",
+        "dns": "DNS 服务器",
+        "dnsInvalid": "每个 DNS 服务器必须是 IPv4 地址。",
+        "promptCredentials": "询问登录信息",
+        "promptCredentialsHint": "配置文件中不写入用户名和密码，由应用询问。早于 OpenVPN 2.6 的应用需要开启。",
+        "keysIssued": "证书和密钥在保存时创建。",
+        "keysKept": "此入站保留其证书和密钥，因此已发出的配置文件仍然有效。"
+      }
     },
     "clients": {
       "tabBasics": "基本",
@@ -990,6 +1003,7 @@
       "amneziaWgKeepAliveInvalid": "请输入 0 到 65535 之间的整数或范围。",
       "tunnelKeepAliveHint": "How often the client sends a keepalive packet. 25 is the usual value: it holds the NAT mapping open and brings an idle peer back on its own after any drop, including a panel restart. 0 disables it — an idle client then stays disconnected until it sends traffic.",
       "amneziaWgConfig": "AmneziaWG 配置",
+      "openvpnProfile": "OpenVPN 配置文件",
       "tuicConfig": "TUIC 配置 (Clash)",
       "mtprotoSecret": "MTProto 密钥",
       "mtprotoSecretHint": "该客户端的 FakeTLS 密钥。重新生成即可更换。",

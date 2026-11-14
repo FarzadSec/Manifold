@@ -786,7 +786,20 @@
         "peerNumber": "Peer {n}",
         "peerNumberConfig": "Peer {n} config"
       },
-      "sniffingDestOverride": "Destination override"
+      "sniffingDestOverride": "Destination override",
+      "openvpn": {
+        "transport": "Transport",
+        "transportHint": "UDP is faster. TCP gets through networks that block or slow down UDP.",
+        "subnet": "Client subnet",
+        "subnetHint": "The addresses connected clients receive. Use a private IPv4 network between /16 and /29 that no other inbound uses.",
+        "subnetInvalid": "Enter an IPv4 network between /16 and /29, for example 10.8.0.0/24.",
+        "dns": "DNS servers",
+        "dnsInvalid": "Each DNS server must be an IPv4 address.",
+        "promptCredentials": "Ask for the login",
+        "promptCredentialsHint": "Leaves the username and password out of the profile, so the app asks for them. Needed by apps older than OpenVPN 2.6.",
+        "keysIssued": "The certificates and keys are created when you save.",
+        "keysKept": "This inbound keeps its certificates and keys, so the profiles already handed out stay valid."
+      }
     },
     "clients": {
       "tabBasics": "Basics",
@@ -990,6 +1003,7 @@
       "amneziaWgKeepAliveInvalid": "Enter a whole number or range from 0 to 65535.",
       "tunnelKeepAliveHint": "How often the client sends a keepalive packet. 25 is the usual value: it holds the NAT mapping open and brings an idle peer back on its own after any drop, including a panel restart. 0 disables it — an idle client then stays disconnected until it sends traffic.",
       "amneziaWgConfig": "AmneziaWG config",
+      "openvpnProfile": "OpenVPN profile",
       "tuicConfig": "TUIC config (Clash)",
       "mtprotoSecret": "MTProto secret",
       "mtprotoSecretHint": "The client's FakeTLS secret. Regenerate to rotate it.",
