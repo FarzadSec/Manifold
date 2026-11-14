@@ -803,7 +803,25 @@
       "wireguard": {
         "interface": "Arayüz adı",
         "interfaceHint": "Bu gelen bağlantının çalıştığı ağ arayüzü ve /etc/wireguard içindeki dosyasının adı. Boş bırakırsanız mfwg ve gelen bağlantı numarası kullanılır.",
-        "interfaceInvalid": "1 ile 15 arasında harf, rakam veya _ = + . - karakterlerini kullanın."
+        "interfaceInvalid": "1 ile 15 arasında harf, rakam veya _ = + . - karakterlerini kullanın.",
+        "address": "Sunucu adresi",
+        "addressHint": "Arayüzün kendi adresi, örneğin 10.0.0.1/24. Boş bırakırsanız alt ağın ilk adresi kullanılır.",
+        "hooks": "Kancalar",
+        "hooksHint": "Arayüz açılırken veya kapanırken wg-quick'in root olarak çalıştırdığı komutlar; her satıra bir komut. %i arayüz adının yerine geçer.",
+        "importTitle": "WireGuard sunucularını içe aktar",
+        "importIntro": "Her arayüz bir gelen bağlantıya dönüşür. Portu, anahtarları, adresleri ve eşleri aynı kalır; daha önce verdiğiniz yapılandırmalar çalışmaya devam eder. Arayüz bir kez yeniden başlatılır.",
+        "importNone": "Bu sunucuda içe aktarılmayı bekleyen bir WireGuard arayüzü yok.",
+        "importToolsMissing": "wg ve wg-quick komutları bu sunucuda kurulu değil.",
+        "importDashboardDb": "Eş adları, kullanım ve özel anahtarlar {path} konumundan okunur.",
+        "importDashboardRunning": "WGDashboard hâlâ çalışıyor. İçe aktarmadan önce durdurun, yoksa aynı arayüzleri değiştirmeyi sürdürür.",
+        "importPeers": "Eşler",
+        "importRestricted": "Kısıtlı",
+        "importRunning": "Çalışıyor",
+        "importStopped": "Durduruldu",
+        "importDone": "{name}: {clients} kullanıcı içe aktarıldı; {disabled} tanesi devre dışı, {withoutKey} tanesinin özel anahtarı yok.",
+        "importSkipped": "Dışarıda bırakıldı: {list}",
+        "importDropped": "Taşınmadı: {list}",
+        "importWithoutKeyHint": "Özel anahtarı olmayan kullanıcı elindeki yapılandırmayla çalışmaya devam eder, ancak panel o yapılandırmayı yeniden gösteremez."
       },
       "engineMissing": "{package} paketi bu sunucuda kurulu değil, bu yüzden bu gelen bağlantı başlamaz. Paketi kurduğunuzda gelen bağlantı kendiliğinden açılır."
     },

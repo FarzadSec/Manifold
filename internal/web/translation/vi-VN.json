@@ -803,7 +803,25 @@
       "wireguard": {
         "interface": "Tên giao diện",
         "interfaceHint": "Giao diện mạng mà điểm vào này chạy trên đó, đồng thời là tên tệp của nó trong /etc/wireguard. Để trống để dùng mfwg kèm số của điểm vào.",
-        "interfaceInvalid": "Dùng từ 1 đến 15 chữ cái, chữ số hoặc các ký tự _ = + . -"
+        "interfaceInvalid": "Dùng từ 1 đến 15 chữ cái, chữ số hoặc các ký tự _ = + . -",
+        "address": "Địa chỉ máy chủ",
+        "addressHint": "Địa chỉ của chính giao diện, ví dụ 10.0.0.1/24. Để trống để dùng địa chỉ đầu tiên của mạng con.",
+        "hooks": "Hook",
+        "hooksHint": "Các lệnh wg-quick chạy với quyền root khi giao diện được bật hoặc tắt, mỗi dòng một lệnh. %i thay cho tên giao diện.",
+        "importTitle": "Nhập máy chủ WireGuard",
+        "importIntro": "Mỗi giao diện trở thành một điểm vào. Cổng, khóa, địa chỉ và các peer được giữ nguyên, nên những cấu hình bạn đã cấp vẫn hoạt động. Giao diện được khởi động lại một lần.",
+        "importNone": "Không có giao diện WireGuard nào trên máy chủ này đang chờ được nhập.",
+        "importToolsMissing": "Các lệnh wg và wg-quick chưa được cài trên máy chủ này.",
+        "importDashboardDb": "Tên peer, lưu lượng đã dùng và khóa riêng được đọc từ {path}.",
+        "importDashboardRunning": "WGDashboard vẫn đang chạy. Hãy dừng nó trước khi nhập, nếu không nó sẽ tiếp tục thay đổi chính các giao diện đó.",
+        "importPeers": "Peer",
+        "importRestricted": "Bị hạn chế",
+        "importRunning": "Đang chạy",
+        "importStopped": "Đã dừng",
+        "importDone": "{name}: đã nhập {clients} người dùng, trong đó {disabled} bị tắt và {withoutKey} không có khóa riêng.",
+        "importSkipped": "Đã bỏ qua: {list}",
+        "importDropped": "Không được chuyển sang: {list}",
+        "importWithoutKeyHint": "Người dùng không có khóa riêng vẫn dùng được cấu hình đang có, nhưng bảng điều khiển không thể hiển thị lại cấu hình đó."
       },
       "engineMissing": "Gói {package} chưa được cài trên máy chủ này nên điểm vào này sẽ không chạy. Hãy cài gói đó và điểm vào sẽ tự khởi động."
     },

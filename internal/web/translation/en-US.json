@@ -803,7 +803,25 @@
       "wireguard": {
         "interface": "Interface name",
         "interfaceHint": "The network interface this inbound runs on, and the name of its file in /etc/wireguard. Leave it empty to use mfwg followed by the inbound's number.",
-        "interfaceInvalid": "Use 1 to 15 letters, digits or the characters _ = + . -"
+        "interfaceInvalid": "Use 1 to 15 letters, digits or the characters _ = + . -",
+        "address": "Server address",
+        "addressHint": "The interface's own address, for example 10.0.0.1/24. Leave it empty to use the first address of the subnet.",
+        "hooks": "Hooks",
+        "hooksHint": "Commands wg-quick runs as root when the interface goes up or down, one per line. %i stands for the interface name.",
+        "importTitle": "Import WireGuard servers",
+        "importIntro": "Each interface becomes an inbound. Its port, keys, addresses and peers stay the same, so the configs you already handed out keep working. The interface restarts once.",
+        "importNone": "No WireGuard interface on this server is waiting to be imported.",
+        "importToolsMissing": "The wg and wg-quick commands are not installed on this server.",
+        "importDashboardDb": "Peer names, usage and private keys are read from {path}.",
+        "importDashboardRunning": "WGDashboard is still running. Stop it before importing, or it will keep changing the same interfaces.",
+        "importPeers": "Peers",
+        "importRestricted": "Restricted",
+        "importRunning": "Running",
+        "importStopped": "Stopped",
+        "importDone": "{name}: {clients} clients imported, {disabled} of them disabled, {withoutKey} without a private key.",
+        "importSkipped": "Left out: {list}",
+        "importDropped": "Not carried over: {list}",
+        "importWithoutKeyHint": "A client without a private key keeps working with the config it already has, but the panel cannot show that config again."
       },
       "engineMissing": "The {package} package is not installed on this server, so this inbound will not start. Install it and the inbound comes up by itself."
     },

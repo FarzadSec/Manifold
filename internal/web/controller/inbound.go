@@ -84,6 +84,7 @@ func (a *InboundController) initRouter(g *gin.RouterGroup) {
 	g.GET("/:id/fallbacks", a.getFallbacks)
 	g.GET("/amneziawgKernelReadiness", a.getAmneziaWGKernelReadiness)
 	g.GET("/engines", a.getNativeEngines)
+	g.GET("/wireguard/importable", a.getWireGuardImportable)
 
 	g.POST("/add", a.addInbound)
 	g.POST("/del/:id", a.delInbound)
@@ -95,6 +96,7 @@ func (a *InboundController) initRouter(g *gin.RouterGroup) {
 	g.POST("/:id/delAllClients", a.delAllInboundClients)
 	g.POST("/resetAllTraffics", a.resetAllTraffics)
 	g.POST("/import", a.importInbound)
+	g.POST("/wireguard/import", a.importWireGuard)
 	g.POST("/:id/fallbacks", a.setFallbacks)
 	g.POST("/pushClientTraffics", a.pushClientTraffics)
 }
@@ -469,6 +471,34 @@ func (a *InboundController) importInbound(c *gin.Context) {
 // getNativeEngines reports which engines outside Xray this server can run.
 func (a *InboundController) getNativeEngines(c *gin.Context) {
 	jsonObj(c, a.inboundService.NativeEngines(), nil)
+}
+
+// getWireGuardImportable lists the WireGuard interfaces of this server that are not inbounds yet.
+func (a *InboundController) getWireGuardImportable(c *gin.Context) {
+	jsonObj(c, a.inboundService.WireGuardImportSources(strings.TrimSpace(c.Query("dashboardDb"))), nil)
+}
+
+type wireGuardImportRequest struct {
+	Interface   string `json:"interface"`
+	DashboardDB string `json:"dashboardDb"`
+}
+
+// importWireGuard turns an existing WireGuard interface of this server into an inbound.
+func (a *InboundController) importWireGuard(c *gin.Context) {
+	var req wireGuardImportRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	user := session.GetLoginUser(c)
+	result, err := a.inboundService.ImportWireGuard(user.Id, strings.TrimSpace(req.Interface), strings.TrimSpace(req.DashboardDB))
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	jsonMsgObj(c, I18nWeb(c, "pages.inbounds.toasts.inboundCreateSuccess"), result, nil)
+	a.broadcastInboundsUpdate(user.Id)
+	notifyClientsChanged()
 }
 
 // resolveHost mirrors SubService.ResolveRequest's host: trusted X-Forwarded-Host,

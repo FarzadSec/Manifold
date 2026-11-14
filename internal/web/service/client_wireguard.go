@@ -11,6 +11,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	wgutil "github.com/mhsanaei/3x-ui/v3/internal/util/wireguard"
+	"github.com/mhsanaei/3x-ui/v3/internal/wgquick"
 )
 
 const defaultWireguardBase = "10.0.0.0/24"
@@ -48,6 +49,26 @@ func explicitWireguardSubnetBase(settingsJSON string) string {
 		return ""
 	}
 	return base
+}
+
+// wireguardServerHosts returns the addresses the inbound names for its own
+// interface, each as a single host no client may be given.
+func wireguardServerHosts(settingsJSON string) []string {
+	var parsed struct {
+		Address string `json:"address"`
+	}
+	if err := json.Unmarshal([]byte(settingsJSON), &parsed); err != nil {
+		return nil
+	}
+	addresses, err := wgquick.ParseAddresses(parsed.Address)
+	if err != nil {
+		return nil
+	}
+	hosts := make([]string, 0, len(addresses))
+	for _, address := range addresses {
+		hosts = append(hosts, netip.PrefixFrom(address.Addr(), address.Addr().BitLen()).String())
+	}
+	return hosts
 }
 
 func keepAliveStr(seconds int) string {
@@ -291,6 +312,8 @@ func defaultWireguardClients(settingsJSON string, existing, clients []model.Clie
 	for addr := range crossInboundUsed {
 		used = append(used, addr)
 	}
+	// The allocator only steps over the first host; a server named elsewhere needs saying.
+	used = append(used, wireguardServerHosts(settingsJSON)...)
 	for i := range clients {
 		c := &clients[i]
 		if c.PrivateKey == "" && c.PublicKey == "" {

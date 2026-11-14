@@ -45,12 +45,22 @@ func TestServerAddressFollowsTheClientSubnet(t *testing.T) {
 			settings: map[string]any{"subnetIp": "10.66.0.0", "clients": []any{client("alice", aliceKey, true, "172.16.9.4")}},
 			want:     "172.16.9.1/24",
 		},
+		{
+			name:     "addresses named by the inbound win over its subnet",
+			settings: map[string]any{"address": " 10.7.0.254/24 , fd42::1/64", "subnetIp": "10.7.0.0", "subnetCidr": 24},
+			want:     "10.7.0.254/24, fd42::1/64",
+		},
+		{
+			name:     "addresses that cannot be parsed are not half used",
+			settings: map[string]any{"address": "10.7.0.254/24, nonsense", "subnetIp": "10.9.0.0", "subnetCidr": 24},
+			want:     "10.9.0.1/24",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			inst, ok := InstanceFromInbound(wgInbound(t, tt.settings))
-			if !ok || inst.Address != netip.MustParsePrefix(tt.want) {
-				t.Fatalf("address = %v (ok=%v), want %s", inst.Address, ok, tt.want)
+			if got := joinPrefixes(inst.Addresses); !ok || got != tt.want {
+				t.Fatalf("addresses = %s (ok=%v), want %s", got, ok, tt.want)
 			}
 		})
 	}
@@ -107,4 +117,52 @@ func TestInstanceIsRefusedWhenItCannotBeAnInterface(t *testing.T) {
 	if !ok || named.Interface != "DE" {
 		t.Fatalf("interface = %q (ok=%v), want the inbound's own name DE", named.Interface, ok)
 	}
+}
+
+func TestInstanceCarriesTheHooksLineByLine(t *testing.T) {
+	inst, ok := InstanceFromInbound(wgInbound(t, map[string]any{
+		"postUp":  "iptables -A FORWARD -i %i -j ACCEPT\n\n  ip rule add from 10.0.0.0/24 table 100  \r\n",
+		"preDown": "ip rule del from 10.0.0.0/24 table 100",
+	}))
+	if !ok {
+		t.Fatal("InstanceFromInbound refused the inbound")
+	}
+	want := Hooks{
+		PostUp:  []string{"iptables -A FORWARD -i %i -j ACCEPT", "ip rule add from 10.0.0.0/24 table 100"},
+		PreDown: []string{"ip rule del from 10.0.0.0/24 table 100"},
+	}
+	if !slices.Equal(inst.Hooks.PostUp, want.PostUp) || !slices.Equal(inst.Hooks.PreDown, want.PreDown) ||
+		len(inst.Hooks.PreUp) != 0 || len(inst.Hooks.PostDown) != 0 {
+		t.Fatalf("hooks = %+v, want %+v", inst.Hooks, want)
+	}
+}
+
+func TestSettingsAreCheckedBeforeTheyAreSaved(t *testing.T) {
+	tests := []struct {
+		name     string
+		settings string
+		want     string
+	}{
+		{name: "nothing named", settings: `{}`},
+		{name: "two addresses", settings: `{"address": "10.7.0.254/24, fd42::1/64", "interface": "wg0"}`},
+		{name: "interface name", settings: `{"interface": "wg main"}`, want: `wireguard: "wg main" cannot be an interface name: use 1 to 15 letters, digits or _ = + . -`},
+		{name: "address that is no address", settings: `{"address": "10.7.0.300/24"}`, want: `wireguard: "10.7.0.300/24" is not an address like 10.0.0.1/24`},
+		{name: "address without a prefix length", settings: `{"address": "10.7.0.1"}`, want: `wireguard: "10.7.0.1" is not an address like 10.0.0.1/24`},
+		{name: "no IPv4 address", settings: `{"address": "fd42::1/64"}`, want: "wireguard: the interface needs an IPv4 address"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateSettings(tt.settings)
+			if got := errText(err); got != tt.want {
+				t.Fatalf("ValidateSettings = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func errText(err error) string {
+	if err == nil {
+		return ""
+	}
+	return err.Error()
 }

@@ -198,6 +198,11 @@ export default function InboundList({
         icon: <ImportOutlined aria-hidden />,
         label: t('pages.inbounds.importInbound'),
       },
+      {
+        key: 'importWireguard',
+        icon: <ImportOutlined aria-hidden />,
+        label: t('pages.inbounds.wireguard.importTitle'),
+      },
       { key: 'export', icon: <ExportOutlined aria-hidden />, label: t('pages.inbounds.export') },
       ...(subEnable
         ? [

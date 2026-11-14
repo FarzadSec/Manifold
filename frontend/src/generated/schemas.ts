@@ -4890,5 +4890,137 @@ export const SCHEMAS: Record<string, unknown> = {
       "username"
     ],
     "type": "object"
+  },
+  "WireGuardImportResult": {
+    "description": "WireGuardImportResult says what an imported interface became.",
+    "properties": {
+      "clients": {
+        "example": 42,
+        "type": "integer"
+      },
+      "disabled": {
+        "description": "Disabled counts the clients imported switched off, as WGDashboard had restricted them.",
+        "example": 3,
+        "type": "integer"
+      },
+      "dropped": {
+        "description": "Dropped lists the interface settings an inbound does not carry over.",
+        "example": [
+          "FwMark"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "inboundId": {
+        "example": 7,
+        "type": "integer"
+      },
+      "interface": {
+        "example": "wg0",
+        "type": "string"
+      },
+      "skipped": {
+        "description": "Skipped lists the peers left out, each with the reason.",
+        "example": [
+          "old-laptop: has no address in the tunnel"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "withoutKey": {
+        "description": "WithoutKey counts the clients whose private key is unknown, so the panel cannot show their config.",
+        "example": 5,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "clients",
+      "disabled",
+      "dropped",
+      "inboundId",
+      "interface",
+      "skipped",
+      "withoutKey"
+    ],
+    "type": "object"
+  },
+  "WireGuardImportSources": {
+    "description": "WireGuardImportSources is what this server offers to import.",
+    "properties": {
+      "dashboardDb": {
+        "description": "DashboardDB is the WGDashboard database peer names and usage are read from, if one was found.",
+        "example": "/root/WGDashboard/src/db/wgdashboard.db",
+        "type": "string"
+      },
+      "dashboardRunning": {
+        "example": false,
+        "type": "boolean"
+      },
+      "interfaces": {
+        "items": {
+          "$ref": "#/components/schemas/WireGuardImportable"
+        },
+        "type": "array"
+      },
+      "toolsInstalled": {
+        "example": true,
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "dashboardDb",
+      "dashboardRunning",
+      "interfaces",
+      "toolsInstalled"
+    ],
+    "type": "object"
+  },
+  "WireGuardImportable": {
+    "description": "WireGuardImportable is an interface of this server that can become an inbound.",
+    "properties": {
+      "address": {
+        "example": "10.0.0.1/24",
+        "type": "string"
+      },
+      "name": {
+        "example": "wg0",
+        "type": "string"
+      },
+      "peers": {
+        "example": 42,
+        "type": "integer"
+      },
+      "port": {
+        "example": 51820,
+        "type": "integer"
+      },
+      "problem": {
+        "description": "Problem says why the interface cannot be imported; empty when it can.",
+        "type": "string"
+      },
+      "restricted": {
+        "description": "Restricted counts the peers WGDashboard keeps switched off for this interface.",
+        "example": 3,
+        "type": "integer"
+      },
+      "up": {
+        "example": true,
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "address",
+      "name",
+      "peers",
+      "port",
+      "problem",
+      "restricted",
+      "up"
+    ],
+    "type": "object"
   }
 };

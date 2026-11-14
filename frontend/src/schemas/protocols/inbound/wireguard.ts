@@ -65,6 +65,13 @@ export const WireguardInboundSettingsSchema = z.object({
     .refine((name) => name === undefined || isWireguardInterface(name), {
       message: 'pages.inbounds.wireguard.interfaceInvalid',
     }),
+  // The interface's own addresses; empty means the first address of the subnet.
+  address: z.string().optional(),
+  // Commands for wg-quick, one per line.
+  preUp: z.string().optional(),
+  postUp: z.string().optional(),
+  preDown: z.string().optional(),
+  postDown: z.string().optional(),
   mtu: optionalClearedInt(z.number().int().min(1)),
   secretKey: z.string().min(1),
   dns: z.string().optional(),

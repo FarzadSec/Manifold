@@ -115,6 +115,9 @@ func run(root, outDir string) error {
 				"PeerActivity",
 				"HwidSlotStatus",
 				"EngineStatus",
+				"WireGuardImportable",
+				"WireGuardImportSources",
+				"WireGuardImportResult",
 			),
 		},
 		{

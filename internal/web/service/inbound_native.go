@@ -156,18 +156,18 @@ func wireguardInterfaceOf(settings string) string {
 	return strings.TrimSpace(parsed.Interface)
 }
 
-// prepareWireGuardInbound refuses an interface name the kernel would not take
-// or that another inbound on the same server already runs.
+// prepareWireGuardInbound refuses settings that could not become the interface
+// they describe, and an interface another inbound on the same server already runs.
 func prepareWireGuardInbound(db *gorm.DB, inbound *model.Inbound) error {
 	if inbound.Protocol != model.WireGuard {
 		return nil
 	}
+	if err := wgquick.ValidateSettings(inbound.Settings); err != nil {
+		return common.NewError(err.Error())
+	}
 	name := wireguardInterfaceOf(inbound.Settings)
 	if name == "" {
 		return nil
-	}
-	if err := wgquick.ValidateInterface(name); err != nil {
-		return common.NewError(err.Error())
 	}
 	var others []*model.Inbound
 	query := db.Model(model.Inbound{}).Where("protocol = ? AND id <> ?", model.WireGuard, inbound.Id)

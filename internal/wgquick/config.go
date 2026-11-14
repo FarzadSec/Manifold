@@ -37,12 +37,20 @@ func renderConfig(inst Instance) string {
 	line("# Managed by Manifold: inbound %d. Changes made here are overwritten.", inst.Id)
 	line("[Interface]")
 	line("PrivateKey = %s", inst.PrivateKey)
-	line("Address = %s", inst.Address)
+	line("Address = %s", joinPrefixes(inst.Addresses))
 	line("ListenPort = %d", inst.ListenPort)
 	if inst.MTU > 0 {
 		line("MTU = %d", inst.MTU)
 	}
 	line("Table = off")
+	for _, hook := range []struct {
+		key      string
+		commands []string
+	}{{"PreUp", inst.Hooks.PreUp}, {"PostUp", inst.Hooks.PostUp}, {"PreDown", inst.Hooks.PreDown}, {"PostDown", inst.Hooks.PostDown}} {
+		for _, command := range hook.commands {
+			line("%s = %s", hook.key, command)
+		}
+	}
 	for _, p := range inst.Peers {
 		line("")
 		line("# %s", oneLine(p.Name))
@@ -51,7 +59,7 @@ func renderConfig(inst Instance) string {
 		if p.PresharedKey != "" {
 			line("PresharedKey = %s", p.PresharedKey)
 		}
-		line("AllowedIPs = %s", strings.ReplaceAll(p.allowedIPs(), ",", ", "))
+		line("AllowedIPs = %s", joinPrefixes(p.AllowedIPs))
 	}
 	return b.String()
 }

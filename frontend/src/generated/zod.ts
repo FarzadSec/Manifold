@@ -1189,3 +1189,33 @@ export const UserSchema = z.object({
 });
 export type User = z.infer<typeof UserSchema>;
 
+export const WireGuardImportResultSchema = z.object({
+  clients: z.number().int(),
+  disabled: z.number().int(),
+  dropped: z.array(z.string()),
+  inboundId: z.number().int(),
+  interface: z.string(),
+  skipped: z.array(z.string()),
+  withoutKey: z.number().int(),
+});
+export type WireGuardImportResult = z.infer<typeof WireGuardImportResultSchema>;
+
+export const WireGuardImportSourcesSchema = z.object({
+  dashboardDb: z.string(),
+  dashboardRunning: z.boolean(),
+  interfaces: z.array(z.lazy(() => WireGuardImportableSchema)),
+  toolsInstalled: z.boolean(),
+});
+export type WireGuardImportSources = z.infer<typeof WireGuardImportSourcesSchema>;
+
+export const WireGuardImportableSchema = z.object({
+  address: z.string(),
+  name: z.string(),
+  peers: z.number().int(),
+  port: z.number().int(),
+  problem: z.string(),
+  restricted: z.number().int(),
+  up: z.boolean(),
+});
+export type WireGuardImportable = z.infer<typeof WireGuardImportableSchema>;
+

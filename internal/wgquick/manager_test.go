@@ -59,6 +59,16 @@ func (f *fakeSystem) writeFile(path, content string) error {
 	return nil
 }
 
+func (f *fakeSystem) rename(from, to string) error {
+	content, ok := f.files[from]
+	if !ok {
+		return fmt.Errorf("rename %s: no such file", from)
+	}
+	delete(f.files, from)
+	f.files[to] = content
+	return nil
+}
+
 func (f *fakeSystem) readFile(path string) (string, bool) {
 	content, ok := f.files[path]
 	return content, ok
@@ -113,7 +123,7 @@ func testInstance(peers ...Peer) Instance {
 		Interface:  "mfwg3",
 		ListenPort: 51820,
 		PrivateKey: serverKey,
-		Address:    netip.MustParsePrefix("10.0.0.1/24"),
+		Addresses:  []netip.Prefix{netip.MustParsePrefix("10.0.0.1/24")},
 		MTU:        1420,
 		Peers:      peers,
 	}
@@ -239,6 +249,56 @@ func TestEnsureRestartsTheInterfaceOnlyForWhatNeedsIt(t *testing.T) {
 	if !strings.Contains(sys.files["/etc/wireguard/mfwg3.conf"], "ListenPort = 51821\n") {
 		t.Fatal("the interface was restarted from the old config")
 	}
+}
+
+func TestConfigCarriesEveryAddressAndHook(t *testing.T) {
+	m, sys, _ := testManager()
+	inst := testInstance()
+	inst.Addresses = append(inst.Addresses, netip.MustParsePrefix("fd42::1/64"))
+	inst.Hooks = Hooks{
+		PreUp:    []string{"sysctl -w net.ipv4.ip_forward=1"},
+		PostUp:   []string{"iptables -A FORWARD -i %i -j ACCEPT", "ip rule add from 10.0.0.0/24 table 100"},
+		PreDown:  []string{"ip rule del from 10.0.0.0/24 table 100"},
+		PostDown: []string{"iptables -D FORWARD -i %i -j ACCEPT"},
+	}
+	if err := m.Ensure(inst); err != nil {
+		t.Fatalf("Ensure: %v", err)
+	}
+	want := "# Managed by Manifold: inbound 3. Changes made here are overwritten.\n" +
+		"[Interface]\n" +
+		"PrivateKey = " + serverKey + "\n" +
+		"Address = 10.0.0.1/24, fd42::1/64\n" +
+		"ListenPort = 51820\n" +
+		"MTU = 1420\n" +
+		"Table = off\n" +
+		"PreUp = sysctl -w net.ipv4.ip_forward=1\n" +
+		"PostUp = iptables -A FORWARD -i %i -j ACCEPT\n" +
+		"PostUp = ip rule add from 10.0.0.0/24 table 100\n" +
+		"PreDown = ip rule del from 10.0.0.0/24 table 100\n" +
+		"PostDown = iptables -D FORWARD -i %i -j ACCEPT\n"
+	if got := sys.files["/etc/wireguard/mfwg3.conf"]; got != want {
+		t.Fatalf("config:\n%s\nwant:\n%s", got, want)
+	}
+}
+
+// A hook only runs when wg-quick brings the interface up or down.
+func TestEnsureRestartsTheInterfaceForAChangedHook(t *testing.T) {
+	m, sys, _ := testManager()
+	inst := testInstance()
+	if err := m.Ensure(inst); err != nil {
+		t.Fatal(err)
+	}
+	sys.taken()
+
+	inst.Hooks.PostUp = []string{"ip rule add from 10.0.0.0/24 table 100"}
+	if err := m.Ensure(inst); err != nil {
+		t.Fatalf("Ensure: %v", err)
+	}
+	equalCommands(t, sys.taken(), []string{
+		"wg show mfwg3 dump",
+		"wg-quick down /etc/wireguard/mfwg3.conf",
+		"wg-quick up /etc/wireguard/mfwg3.conf",
+	})
 }
 
 // An interface the admin or another tool wrote must never be taken over silently.

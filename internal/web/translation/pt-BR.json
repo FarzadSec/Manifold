@@ -803,7 +803,25 @@
       "wireguard": {
         "interface": "Nome da interface",
         "interfaceHint": "A interface de rede em que este inbound funciona e o nome do arquivo dela em /etc/wireguard. Deixe vazio para usar mfwg seguido do número do inbound.",
-        "interfaceInvalid": "Use de 1 a 15 letras, dígitos ou os caracteres _ = + . -"
+        "interfaceInvalid": "Use de 1 a 15 letras, dígitos ou os caracteres _ = + . -",
+        "address": "Endereço do servidor",
+        "addressHint": "O endereço da própria interface, por exemplo 10.0.0.1/24. Deixe vazio para usar o primeiro endereço da sub-rede.",
+        "hooks": "Hooks",
+        "hooksHint": "Comandos que o wg-quick executa como root quando a interface sobe ou desce, um por linha. %i representa o nome da interface.",
+        "importTitle": "Importar servidores WireGuard",
+        "importIntro": "Cada interface vira um inbound. A porta, as chaves, os endereços e os peers continuam os mesmos, então as configurações já entregues seguem funcionando. A interface é reiniciada uma vez.",
+        "importNone": "Nenhuma interface WireGuard neste servidor está aguardando importação.",
+        "importToolsMissing": "Os comandos wg e wg-quick não estão instalados neste servidor.",
+        "importDashboardDb": "Os nomes dos peers, o consumo e as chaves privadas são lidos de {path}.",
+        "importDashboardRunning": "O WGDashboard ainda está em execução. Pare-o antes de importar, ou ele continuará alterando as mesmas interfaces.",
+        "importPeers": "Peers",
+        "importRestricted": "Restritos",
+        "importRunning": "Em execução",
+        "importStopped": "Parada",
+        "importDone": "{name}: {clients} clientes importados, {disabled} deles desativados e {withoutKey} sem chave privada.",
+        "importSkipped": "Deixados de fora: {list}",
+        "importDropped": "Não foi levado: {list}",
+        "importWithoutKeyHint": "Um cliente sem chave privada continua funcionando com a configuração que já tem, mas o painel não consegue exibi-la de novo."
       },
       "engineMissing": "O pacote {package} não está instalado neste servidor, então este inbound não vai iniciar. Instale-o e o inbound sobe sozinho."
     },

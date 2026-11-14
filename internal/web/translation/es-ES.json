@@ -803,7 +803,25 @@
       "wireguard": {
         "interface": "Nombre de la interfaz",
         "interfaceHint": "La interfaz de red en la que funciona esta entrada y el nombre de su archivo en /etc/wireguard. Déjalo vacío para usar mfwg seguido del número de la entrada.",
-        "interfaceInvalid": "Usa de 1 a 15 letras, dígitos o los caracteres _ = + . -"
+        "interfaceInvalid": "Usa de 1 a 15 letras, dígitos o los caracteres _ = + . -",
+        "address": "Dirección del servidor",
+        "addressHint": "La dirección de la propia interfaz, por ejemplo 10.0.0.1/24. Déjala vacía para usar la primera dirección de la subred.",
+        "hooks": "Hooks",
+        "hooksHint": "Comandos que wg-quick ejecuta como root cuando la interfaz se levanta o se detiene, uno por línea. %i representa el nombre de la interfaz.",
+        "importTitle": "Importar servidores WireGuard",
+        "importIntro": "Cada interfaz se convierte en una entrada. Su puerto, claves, direcciones y peers no cambian, así que las configuraciones ya entregadas siguen funcionando. La interfaz se reinicia una vez.",
+        "importNone": "No hay ninguna interfaz WireGuard en este servidor pendiente de importar.",
+        "importToolsMissing": "Los comandos wg y wg-quick no están instalados en este servidor.",
+        "importDashboardDb": "Los nombres de los peers, el consumo y las claves privadas se leen de {path}.",
+        "importDashboardRunning": "WGDashboard sigue en ejecución. Detenlo antes de importar o seguirá cambiando las mismas interfaces.",
+        "importPeers": "Peers",
+        "importRestricted": "Restringidos",
+        "importRunning": "En ejecución",
+        "importStopped": "Detenida",
+        "importDone": "{name}: {clients} clientes importados, {disabled} de ellos desactivados y {withoutKey} sin clave privada.",
+        "importSkipped": "Omitidos: {list}",
+        "importDropped": "No se ha trasladado: {list}",
+        "importWithoutKeyHint": "Un cliente sin clave privada sigue funcionando con la configuración que ya tiene, pero el panel no puede volver a mostrarla."
       },
       "engineMissing": "El paquete {package} no está instalado en este servidor, así que esta entrada no arrancará. Instálalo y la entrada se levantará sola."
     },

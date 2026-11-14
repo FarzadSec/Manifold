@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/netip"
 	"regexp"
@@ -31,6 +32,11 @@ type Peer struct {
 	AllowedIPs   []netip.Prefix
 }
 
+// Hooks are the commands wg-quick runs around bringing the interface up and down.
+type Hooks struct {
+	PreUp, PostUp, PreDown, PostDown []string
+}
+
 // Instance is the desired state of one WireGuard inbound's interface.
 type Instance struct {
 	Id         int
@@ -38,18 +44,26 @@ type Instance struct {
 	Interface  string
 	ListenPort int
 	PrivateKey string
-	Address    netip.Prefix
-	MTU        int
-	Peers      []Peer
+	// Addresses are the interface's own; one of them is IPv4.
+	Addresses []netip.Prefix
+	MTU       int
+	Hooks     Hooks
+	Peers     []Peer
 }
 
 type inboundSettings struct {
-	SecretKey  string         `json:"secretKey"`
-	MTU        int            `json:"mtu"`
-	SubnetIP   string         `json:"subnetIp"`
-	SubnetCIDR int            `json:"subnetCidr"`
-	Interface  string         `json:"interface"`
-	Clients    []model.Client `json:"clients"`
+	SecretKey  string `json:"secretKey"`
+	MTU        int    `json:"mtu"`
+	SubnetIP   string `json:"subnetIp"`
+	SubnetCIDR int    `json:"subnetCidr"`
+	Interface  string `json:"interface"`
+	// Address overrides the first host of the subnet, for a server taken over with another.
+	Address  string         `json:"address"`
+	PreUp    string         `json:"preUp"`
+	PostUp   string         `json:"postUp"`
+	PreDown  string         `json:"preDown"`
+	PostDown string         `json:"postDown"`
+	Clients  []model.Client `json:"clients"`
 }
 
 // DefaultInterface is the interface of an inbound that names none.
@@ -68,8 +82,66 @@ func validKey(key string) bool {
 	return err == nil && len(raw) == 32
 }
 
-// serverAddress is the interface's own address: the first host of the subnet
-// the inbound names, else of the /24 its first client lives in, else of the default.
+// ParseAddresses reads the interface addresses an inbound names, separated by
+// commas. Nothing named is no addresses; a list needs an IPv4 address.
+func ParseAddresses(list string) ([]netip.Prefix, error) {
+	var out []netip.Prefix
+	hasIPv4 := false
+	for _, entry := range strings.Split(list, ",") {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			continue
+		}
+		prefix, err := netip.ParsePrefix(entry)
+		if err != nil || prefix.Bits() == 0 {
+			return nil, fmt.Errorf("wireguard: %q is not an address like 10.0.0.1/24", entry)
+		}
+		hasIPv4 = hasIPv4 || prefix.Addr().Is4()
+		out = append(out, prefix)
+	}
+	if len(out) > 0 && !hasIPv4 {
+		return nil, errors.New("wireguard: the interface needs an IPv4 address")
+	}
+	return out, nil
+}
+
+// ValidateSettings refuses inbound settings that could not become an interface
+// the way they read; InstanceFromInbound itself falls back instead of failing.
+func ValidateSettings(settings string) error {
+	var parsed inboundSettings
+	if err := json.Unmarshal([]byte(settings), &parsed); err != nil {
+		return nil
+	}
+	if name := strings.TrimSpace(parsed.Interface); name != "" {
+		if err := ValidateInterface(name); err != nil {
+			return err
+		}
+	}
+	_, err := ParseAddresses(parsed.Address)
+	return err
+}
+
+// serverAddresses are the interface's own: the ones the inbound names, else
+// the first host of its subnet.
+func serverAddresses(s inboundSettings) []netip.Prefix {
+	if named, err := ParseAddresses(s.Address); err == nil && len(named) > 0 {
+		return named
+	}
+	return []netip.Prefix{serverAddress(s)}
+}
+
+func hookLines(text string) []string {
+	var out []string
+	for _, line := range strings.Split(text, "\n") {
+		if line = strings.TrimSpace(line); line != "" {
+			out = append(out, line)
+		}
+	}
+	return out
+}
+
+// serverAddress is the first host of the subnet the inbound names, else of
+// the /24 its first client lives in, else of the default.
 func serverAddress(s inboundSettings) netip.Prefix {
 	subnet := netip.MustParsePrefix(defaultSubnet)
 	explicit, err := netip.ParsePrefix(fmt.Sprintf("%s/%d", strings.TrimSpace(s.SubnetIP), s.SubnetCIDR))
@@ -129,8 +201,14 @@ func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 		Interface:  name,
 		ListenPort: ib.Port,
 		PrivateKey: parsed.SecretKey,
-		Address:    serverAddress(parsed),
+		Addresses:  serverAddresses(parsed),
 		MTU:        max(parsed.MTU, 0),
+		Hooks: Hooks{
+			PreUp:    hookLines(parsed.PreUp),
+			PostUp:   hookLines(parsed.PostUp),
+			PreDown:  hookLines(parsed.PreDown),
+			PostDown: hookLines(parsed.PostDown),
+		},
 	}
 	seen := map[string]bool{}
 	for _, c := range parsed.Clients {
@@ -164,11 +242,15 @@ func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 func egressOwner(id int) string { return fmt.Sprintf("wg%d", id) }
 
 func (p Peer) allowedIPs() string {
-	parts := make([]string, 0, len(p.AllowedIPs))
-	for _, prefix := range p.AllowedIPs {
+	return strings.ReplaceAll(joinPrefixes(p.AllowedIPs), ", ", ",")
+}
+
+func joinPrefixes(prefixes []netip.Prefix) string {
+	parts := make([]string, 0, len(prefixes))
+	for _, prefix := range prefixes {
 		parts = append(parts, prefix.String())
 	}
-	return strings.Join(parts, ",")
+	return strings.Join(parts, ", ")
 }
 
 func (p Peer) fingerprint() string {
@@ -182,8 +264,9 @@ func (inst Instance) structuralFingerprint() string {
 		inst.Interface,
 		fmt.Sprint(inst.ListenPort),
 		inst.PrivateKey,
-		inst.Address.String(),
+		joinPrefixes(inst.Addresses),
 		fmt.Sprint(inst.MTU),
+		fmt.Sprintf("%q", inst.Hooks),
 	}, "\x00")))
 	return hex.EncodeToString(sum[:])
 }

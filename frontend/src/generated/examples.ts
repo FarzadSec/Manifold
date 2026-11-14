@@ -1209,5 +1209,43 @@ export const EXAMPLES: Record<string, unknown> = {
     "id": 0,
     "password": "",
     "username": ""
+  },
+  "WireGuardImportResult": {
+    "clients": 42,
+    "disabled": 3,
+    "dropped": [
+      "FwMark"
+    ],
+    "inboundId": 7,
+    "interface": "wg0",
+    "skipped": [
+      "old-laptop: has no address in the tunnel"
+    ],
+    "withoutKey": 5
+  },
+  "WireGuardImportSources": {
+    "dashboardDb": "/root/WGDashboard/src/db/wgdashboard.db",
+    "dashboardRunning": false,
+    "interfaces": [
+      {
+        "address": "10.0.0.1/24",
+        "name": "wg0",
+        "peers": 42,
+        "port": 51820,
+        "problem": "",
+        "restricted": 3,
+        "up": true
+      }
+    ],
+    "toolsInstalled": true
+  },
+  "WireGuardImportable": {
+    "address": "10.0.0.1/24",
+    "name": "wg0",
+    "peers": 42,
+    "port": 51820,
+    "problem": "",
+    "restricted": 3,
+    "up": true
   }
 };

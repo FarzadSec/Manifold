@@ -803,7 +803,25 @@
       "wireguard": {
         "interface": "接口名称",
         "interfaceHint": "此入站运行所在的网络接口，也是它在 /etc/wireguard 中的文件名。留空则使用 mfwg 加入站编号。",
-        "interfaceInvalid": "请使用 1 到 15 个字母、数字或 _ = + . - 字符。"
+        "interfaceInvalid": "请使用 1 到 15 个字母、数字或 _ = + . - 字符。",
+        "address": "服务器地址",
+        "addressHint": "接口自身的地址，例如 10.0.0.1/24。留空则使用子网的第一个地址。",
+        "hooks": "钩子",
+        "hooksHint": "接口启动或停止时 wg-quick 以 root 身份执行的命令，每行一条。%i 代表接口名称。",
+        "importTitle": "导入 WireGuard 服务器",
+        "importIntro": "每个接口会变成一个入站。端口、密钥、地址和对等端保持不变，已发放的配置可以继续使用。接口会重启一次。",
+        "importNone": "此服务器上没有等待导入的 WireGuard 接口。",
+        "importToolsMissing": "此服务器未安装 wg 和 wg-quick 命令。",
+        "importDashboardDb": "对等端名称、用量和私钥从 {path} 读取。",
+        "importDashboardRunning": "WGDashboard 仍在运行。请在导入前将其停止，否则它会继续修改同一批接口。",
+        "importPeers": "对等端",
+        "importRestricted": "已限制",
+        "importRunning": "运行中",
+        "importStopped": "已停止",
+        "importDone": "{name}：已导入 {clients} 个客户，其中 {disabled} 个已禁用，{withoutKey} 个没有私钥。",
+        "importSkipped": "已排除：{list}",
+        "importDropped": "未迁移：{list}",
+        "importWithoutKeyHint": "没有私钥的客户仍可使用手中已有的配置，但面板无法再次显示该配置。"
       },
       "engineMissing": "此服务器未安装 {package} 软件包，因此该入站不会启动。安装后入站会自动启动。"
     },

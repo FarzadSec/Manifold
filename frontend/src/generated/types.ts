@@ -1115,3 +1115,30 @@ export interface User {
   username: string;
 }
 
+export interface WireGuardImportResult {
+  clients: number;
+  disabled: number;
+  dropped: string[];
+  inboundId: number;
+  interface: string;
+  skipped: string[];
+  withoutKey: number;
+}
+
+export interface WireGuardImportSources {
+  dashboardDb: string;
+  dashboardRunning: boolean;
+  interfaces: WireGuardImportable[];
+  toolsInstalled: boolean;
+}
+
+export interface WireGuardImportable {
+  address: string;
+  name: string;
+  peers: number;
+  port: number;
+  problem: string;
+  restricted: number;
+  up: boolean;
+}
+

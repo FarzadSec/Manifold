@@ -391,6 +391,30 @@ export const sections: readonly Section[] = [
           'For each protocol that is served outside Xray (OpenVPN, WireGuard), whether the program it needs is installed on the panel server, and the system package that brings it. An inbound of a protocol whose engine is missing is saved but does not start until the package is installed.',
       },
       {
+        method: 'GET',
+        path: '/panel/api/inbounds/wireguard/importable',
+        responseSchema: 'WireGuardImportSources',
+        summary:
+          'List the WireGuard interfaces in /etc/wireguard on the panel server that are not inbounds yet, such as the ones WGDashboard or wg-quick run. Each entry says whether it is up and, when it cannot be imported, why. Also returns the WGDashboard database peer names and usage would be read from, and whether WGDashboard is still running.',
+        params: [
+          {
+            name: 'dashboardDb',
+            in: 'query',
+            type: 'string',
+            optional: true,
+            desc: 'Path of the WGDashboard database on the server. Leave it out to look in the usual places.',
+          },
+        ],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/inbounds/wireguard/import',
+        responseSchema: 'WireGuardImportResult',
+        summary:
+          'Turn an existing WireGuard interface of the panel server into an inbound. The interface keeps its name, port, keys, addresses and hooks, and every peer becomes a client with its key and address unchanged, so the configs already handed out keep working. With a WGDashboard database, peers also keep their names, their usage and their private keys, and restricted peers are imported disabled. The old config is kept beside the new one as <name>.conf.before-manifold; if the inbound cannot be created the interface is put back as it was.',
+        body: '{\n  "interface": "wg0",\n  "dashboardDb": ""\n}',
+      },
+      {
         method: 'POST',
         path: '/panel/api/inbounds/pushClientTraffics',
         summary:

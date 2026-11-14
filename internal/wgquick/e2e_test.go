@@ -113,7 +113,7 @@ func TestRealInterfaceAndPeer(t *testing.T) {
 		Interface:  "mfwge2e",
 		ListenPort: 51898,
 		PrivateKey: serverPrivate,
-		Address:    netip.MustParsePrefix("10.198.0.1/24"),
+		Addresses:  []netip.Prefix{netip.MustParsePrefix("10.198.0.1/24")},
 		Peers: []Peer{{
 			Name:       "alice",
 			PublicKey:  clientPublic,

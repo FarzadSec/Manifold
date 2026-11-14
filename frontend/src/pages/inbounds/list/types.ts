@@ -63,7 +63,7 @@ export type RowAction =
   | 'delAllClients'
   | 'clone';
 
-export type GeneralAction = 'import' | 'export' | 'subs' | 'resetInbounds';
+export type GeneralAction = 'import' | 'importWireguard' | 'export' | 'subs' | 'resetInbounds';
 
 export interface InboundListProps {
   dbInbounds: DBInboundRecord[];

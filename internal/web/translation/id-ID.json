@@ -803,7 +803,25 @@
       "wireguard": {
         "interface": "Nama antarmuka",
         "interfaceHint": "Antarmuka jaringan tempat inbound ini berjalan, sekaligus nama berkasnya di /etc/wireguard. Kosongkan untuk memakai mfwg diikuti nomor inbound.",
-        "interfaceInvalid": "Gunakan 1 sampai 15 huruf, angka, atau karakter _ = + . -"
+        "interfaceInvalid": "Gunakan 1 sampai 15 huruf, angka, atau karakter _ = + . -",
+        "address": "Alamat server",
+        "addressHint": "Alamat antarmuka itu sendiri, misalnya 10.0.0.1/24. Kosongkan untuk memakai alamat pertama subnet.",
+        "hooks": "Hook",
+        "hooksHint": "Perintah yang dijalankan wg-quick sebagai root saat antarmuka dinyalakan atau dimatikan, satu per baris. %i mewakili nama antarmuka.",
+        "importTitle": "Impor server WireGuard",
+        "importIntro": "Setiap antarmuka menjadi satu inbound. Port, kunci, alamat, dan peer-nya tetap sama, sehingga konfigurasi yang sudah dibagikan tetap berfungsi. Antarmuka dimulai ulang satu kali.",
+        "importNone": "Tidak ada antarmuka WireGuard di server ini yang menunggu untuk diimpor.",
+        "importToolsMissing": "Perintah wg dan wg-quick belum terpasang di server ini.",
+        "importDashboardDb": "Nama peer, pemakaian, dan kunci privat dibaca dari {path}.",
+        "importDashboardRunning": "WGDashboard masih berjalan. Hentikan sebelum mengimpor, atau ia akan terus mengubah antarmuka yang sama.",
+        "importPeers": "Peer",
+        "importRestricted": "Dibatasi",
+        "importRunning": "Berjalan",
+        "importStopped": "Berhenti",
+        "importDone": "{name}: {clients} klien diimpor, {disabled} di antaranya dinonaktifkan, {withoutKey} tanpa kunci privat.",
+        "importSkipped": "Dilewati: {list}",
+        "importDropped": "Tidak ikut dipindahkan: {list}",
+        "importWithoutKeyHint": "Klien tanpa kunci privat tetap berfungsi dengan konfigurasi yang sudah dimilikinya, tetapi panel tidak dapat menampilkan konfigurasi itu lagi."
       },
       "engineMissing": "Paket {package} belum terpasang di server ini, sehingga inbound ini tidak akan berjalan. Pasang paketnya dan inbound akan menyala sendiri."
     },

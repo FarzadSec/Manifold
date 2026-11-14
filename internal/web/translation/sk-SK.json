@@ -803,7 +803,25 @@
       "wireguard": {
         "interface": "Názov rozhrania",
         "interfaceHint": "Sieťové rozhranie, na ktorom tento vstup beží, a názov jeho súboru v /etc/wireguard. Ak pole necháte prázdne, použije sa mfwg a číslo vstupu.",
-        "interfaceInvalid": "Použite 1 až 15 písmen, číslic alebo znakov _ = + . -"
+        "interfaceInvalid": "Použite 1 až 15 písmen, číslic alebo znakov _ = + . -",
+        "address": "Adresa servera",
+        "addressHint": "Vlastná adresa rozhrania, napríklad 10.0.0.1/24. Ak pole necháte prázdne, použije sa prvá adresa podsiete.",
+        "hooks": "Hooky",
+        "hooksHint": "Príkazy, ktoré wg-quick spúšťa ako root pri zapnutí alebo vypnutí rozhrania, jeden na riadok. %i zastupuje názov rozhrania.",
+        "importTitle": "Importovať servery WireGuard",
+        "importIntro": "Z každého rozhrania sa stane vstup. Port, kľúče, adresy aj peery zostávajú rovnaké, takže už odovzdané konfigurácie fungujú ďalej. Rozhranie sa raz reštartuje.",
+        "importNone": "Na tomto serveri nečaká na import žiadne rozhranie WireGuard.",
+        "importToolsMissing": "Príkazy wg a wg-quick nie sú na tomto serveri nainštalované.",
+        "importDashboardDb": "Názvy peerov, spotreba a súkromné kľúče sa načítajú z {path}.",
+        "importDashboardRunning": "WGDashboard stále beží. Pred importom ho zastavte, inak bude ďalej meniť tie isté rozhrania.",
+        "importPeers": "Peery",
+        "importRestricted": "Obmedzené",
+        "importRunning": "Beží",
+        "importStopped": "Zastavené",
+        "importDone": "{name}: importovaných klientov: {clients}, z toho vypnutých: {disabled}, bez súkromného kľúča: {withoutKey}.",
+        "importSkipped": "Vynechané: {list}",
+        "importDropped": "Neprenesené: {list}",
+        "importWithoutKeyHint": "Klient bez súkromného kľúča funguje ďalej s konfiguráciou, ktorú už má, ale panel mu ju nedokáže znova zobraziť."
       },
       "engineMissing": "Balík {package} nie je na tomto serveri nainštalovaný, preto sa tento vstup nespustí. Nainštalujte ho a vstup sa spustí sám."
     },

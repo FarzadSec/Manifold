@@ -113,4 +113,7 @@ func TestWireGuardInterfaceNamesAreCheckedOnSave(t *testing.T) {
 	if err := add(48022, `,"interface":"DE"`); err == nil || !strings.Contains(err.Error(), "already uses the interface DE") {
 		t.Fatalf("error = %v, want the duplicate interface refusal", err)
 	}
+	if err := add(48023, `,"address":"fd42::1/64"`); err == nil || !strings.Contains(err.Error(), "the interface needs an IPv4 address") {
+		t.Fatalf("error = %v, want the refusal of a server without an IPv4 address", err)
+	}
 }

@@ -49,6 +49,7 @@ type system interface {
 	readFile(path string) (string, bool)
 	writeFile(path, content string) error
 	removeFile(path string)
+	rename(from, to string) error
 	configs(dir string) []string
 }
 
@@ -465,6 +466,8 @@ func (osSystem) writeFile(path, content string) error {
 }
 
 func (osSystem) removeFile(path string) { _ = os.Remove(path) }
+
+func (osSystem) rename(from, to string) error { return os.Rename(from, to) }
 
 func (osSystem) configs(dir string) []string {
 	paths, _ := filepath.Glob(filepath.Join(dir, "*.conf"))

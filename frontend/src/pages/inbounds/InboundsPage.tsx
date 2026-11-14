@@ -47,9 +47,11 @@ const PromptModal = lazy(() => import('@/components/feedback/PromptModal'));
 
 import { useInbounds } from './useInbounds';
 import { InboundList } from './list';
+import type { GeneralAction } from './list/types';
 import { LazyMount } from '@/components/utility';
 const InboundFormModal = lazy(() => import('./form/InboundFormModal'));
 const CloneInboundModal = lazy(() => import('./CloneInboundModal'));
+const ImportWireguardModal = lazy(() => import('./ImportWireguardModal'));
 const InboundInfoModal = lazy(() => import('./info/InboundInfoModal'));
 const AttachClientsModal = lazy(() => import('./clients/AttachClientsModal'));
 const AttachExistingClientsModal = lazy(() => import('./clients/AttachExistingClientsModal'));
@@ -70,8 +72,6 @@ type RowAction =
   | 'detachClients'
   | 'addToGroup'
   | 'clone';
-
-type GeneralAction = 'import' | 'export' | 'subs' | 'resetInbounds';
 
 interface ClientMatchTarget {
   id?: string;
@@ -176,6 +176,7 @@ export default function InboundsPage() {
   const [groupSource, setGroupSource] = useState<DBInbound | null>(null);
 
   const [cloneOpen, setCloneOpen] = useState(false);
+  const [wireguardImportOpen, setWireguardImportOpen] = useState(false);
   const [cloneSource, setCloneSource] = useState<DBInbound | null>(null);
 
   const [textOpen, setTextOpen] = useState(false);
@@ -296,7 +297,9 @@ export default function InboundsPage() {
         if (candidate.id === dbInbound.id) continue;
         if ((candidate.nodeId ?? 0) !== (dbInbound.nodeId ?? 0)) continue;
         if (!['trojan', 'vless'].includes(candidate.protocol)) continue;
-        const candStream = coerceInboundJsonField(candidate.streamSettings) as { network?: string };
+        const candStream = coerceInboundJsonField(candidate.streamSettings) as {
+          network?: string;
+        };
         if (candStream.network !== 'tcp') continue;
         const candSettings = coerceInboundJsonField(candidate.settings) as {
           fallbacks?: { dest?: string }[];
@@ -425,7 +428,9 @@ export default function InboundsPage() {
     );
     const out: string[] = [];
     for (const ib of hydrated) {
-      const settings = coerceInboundJsonField(ib.settings) as { clients?: { subId?: string }[] };
+      const settings = coerceInboundJsonField(ib.settings) as {
+        clients?: { subId?: string }[];
+      };
       const clients = settings.clients || [];
       for (const c of clients) {
         if (c.subId && subSettings.subURI) {
@@ -599,6 +604,9 @@ export default function InboundsPage() {
       switch (key) {
         case 'import':
           importInbound();
+          break;
+        case 'importWireguard':
+          setWireguardImportOpen(true);
           break;
         case 'export':
           exportAllLinks();
@@ -871,6 +879,13 @@ export default function InboundsPage() {
             onClose={() => setGroupOpen(false)}
             onAdded={refresh}
             source={groupSource}
+          />
+        </LazyMount>
+        <LazyMount when={wireguardImportOpen}>
+          <ImportWireguardModal
+            open={wireguardImportOpen}
+            onClose={() => setWireguardImportOpen(false)}
+            onImported={refresh}
           />
         </LazyMount>
         <LazyMount when={cloneOpen}>
