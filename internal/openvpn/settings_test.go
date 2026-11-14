@@ -185,13 +185,20 @@ func TestInstanceHoldsOnlyAccountsThatCanLogIn(t *testing.T) {
 	}
 }
 
+// A switched-off account must be refused by a live server, not time out against a closed port.
+func TestInstanceWithoutAnEnabledClientStillRuns(t *testing.T) {
+	inst, ok := InstanceFromInbound(inboundWith(t, nil, model.Client{Email: "alice", Password: "pw"}))
+	if !ok || len(inst.Users) != 0 {
+		t.Fatalf("instance = %+v ok=%v, want a server that accepts nobody", inst.Users, ok)
+	}
+}
+
 func TestInstanceIsRefusedWhenNothingCouldRun(t *testing.T) {
 	alice := model.Client{Email: "alice", Password: "pw", Enable: true}
 	tests := []struct {
 		name string
 		ib   *model.Inbound
 	}{
-		{name: "no enabled client", ib: inboundWith(t, nil, model.Client{Email: "alice", Password: "pw"})},
 		{name: "keys missing", ib: inboundWith(t, func(s *InboundSettings) { s.Server.ServerKey = "" }, alice)},
 		{name: "unix socket as listen address", ib: func() *model.Inbound {
 			ib := inboundWith(t, nil, alice)

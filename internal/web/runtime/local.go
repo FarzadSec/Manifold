@@ -65,6 +65,9 @@ func (l *Local) withAPI(fn func(api *xray.XrayAPI) error) error {
 }
 
 func (l *Local) AddInbound(_ context.Context, ib *model.Inbound) error {
+	if engine, ok := nativeEngines[ib.Protocol]; ok {
+		return addNativeInbound(engine, ib)
+	}
 	if ib.Protocol == model.MTProto {
 		inst, ok := mtproto.InstanceFromInbound(ib)
 		if !ok {
@@ -109,6 +112,10 @@ func (l *Local) AddInbound(_ context.Context, ib *model.Inbound) error {
 }
 
 func (l *Local) DelInbound(_ context.Context, ib *model.Inbound) error {
+	if engine, ok := nativeEngines[ib.Protocol]; ok {
+		engine.remove(ib.Id)
+		return nil
+	}
 	if ib.Protocol == model.MTProto {
 		mtproto.GetManager().Remove(ib.Id)
 		return nil
@@ -136,6 +143,9 @@ func (l *Local) DelInbound(_ context.Context, ib *model.Inbound) error {
 }
 
 func (l *Local) UpdateInbound(ctx context.Context, oldIb, newIb *model.Inbound) error {
+	if IsNativeProtocol(oldIb.Protocol) || IsNativeProtocol(newIb.Protocol) {
+		return l.updateNativeInbound(ctx, oldIb, newIb)
+	}
 	if oldIb.Protocol == model.MTProto || newIb.Protocol == model.MTProto {
 		return l.updateMtprotoInbound(ctx, oldIb, newIb)
 	}
@@ -280,7 +290,7 @@ func (l *Local) AddUser(_ context.Context, ib *model.Inbound, userMap map[string
 		}
 		return nil
 	}
-	if ib.Protocol == model.MTProto || ib.Protocol == model.AmneziaWG {
+	if ib.Protocol == model.MTProto || ib.Protocol == model.AmneziaWG || IsNativeProtocol(ib.Protocol) {
 		return nil
 	}
 	return l.withAPI(func(api *xray.XrayAPI) error {
@@ -295,7 +305,7 @@ func (l *Local) RemoveUser(_ context.Context, ib *model.Inbound, email string) e
 		}
 		return nil
 	}
-	if ib.Protocol == model.MTProto || ib.Protocol == model.AmneziaWG {
+	if ib.Protocol == model.MTProto || ib.Protocol == model.AmneziaWG || IsNativeProtocol(ib.Protocol) {
 		return nil
 	}
 	return l.withAPI(func(api *xray.XrayAPI) error {

@@ -19,6 +19,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/openvpn"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/random"
@@ -494,6 +495,16 @@ func (s *ClientService) fillProtocolDefaultsAgainstExisting(c *model.Client, ib 
 	case model.MTProto:
 		if c.Secret == "" {
 			c.Secret = model.GenerateFakeTLSSecret(mtprotoDomainFromSettings(ib.Settings))
+		}
+	case model.OpenVPN:
+		if err := openvpn.ValidateUsername(c.Email); err != nil {
+			return common.NewError(err.Error())
+		}
+		if c.Password == "" {
+			c.Password = random.Seq(16)
+		}
+		if err := openvpn.ValidatePassword(c.Password); err != nil {
+			return common.NewError(err.Error())
 		}
 	case model.TUIC:
 		if err := tuic.ValidateRelayEmail(c.Email); err != nil {

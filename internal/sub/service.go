@@ -1022,6 +1022,8 @@ func (s *SubService) GetLink(inbound *model.Inbound, email string) string {
 		return s.genAmneziaWGLink(inbound, email)
 	case "tuic":
 		return s.genTuicLink(inbound, email)
+	case "openvpn":
+		return s.genOpenVPNLink(inbound, email)
 	}
 	return ""
 }

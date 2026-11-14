@@ -1,6 +1,7 @@
 package openvpn
 
 import (
+	"encoding/base64"
 	"fmt"
 	"strings"
 )
@@ -68,4 +69,13 @@ func (p Profile) Render() string {
 	inlineBlock(&b, "ca", p.Server.CACert)
 	inlineBlock(&b, "tls-crypt", p.Server.TLSCryptKey)
 	return b.String()
+}
+
+// ShareLinkScheme marks a profile carried as a link, the form the panel and
+// the subscription page pass around; no OpenVPN app reads it.
+const ShareLinkScheme = "openvpn://"
+
+// ShareLink wraps a rendered profile as one link line.
+func ShareLink(profile string) string {
+	return ShareLinkScheme + base64.RawURLEncoding.EncodeToString([]byte(profile))
 }

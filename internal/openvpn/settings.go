@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/util/random"
 )
 
 const (
@@ -197,14 +198,42 @@ func NormalizeSettings(settings, previousSettings string) (string, error) {
 		return "", err
 	}
 	root["server"] = raw
-	if _, ok := root["clients"]; !ok {
-		root["clients"] = json.RawMessage("[]")
+	clients, err := normalizeClients(root["clients"])
+	if err != nil {
+		return "", err
 	}
+	root["clients"] = clients
 	out, err := json.MarshalIndent(root, "", "  ")
 	if err != nil {
 		return "", err
 	}
 	return string(out), nil
+}
+
+// normalizeClients checks every client's login name and gives a password to
+// the ones saved without one, keeping the fields this package does not know.
+func normalizeClients(raw json.RawMessage) (json.RawMessage, error) {
+	clients := []map[string]any{}
+	if len(raw) > 0 && string(raw) != "null" {
+		if err := json.Unmarshal(raw, &clients); err != nil {
+			return nil, fmt.Errorf("openvpn: invalid clients: %w", err)
+		}
+	}
+	for _, client := range clients {
+		email, _ := client["email"].(string)
+		if err := ValidateUsername(email); err != nil {
+			return nil, err
+		}
+		password, _ := client["password"].(string)
+		if password == "" {
+			password = random.Seq(16)
+			client["password"] = password
+		}
+		if err := ValidatePassword(password); err != nil {
+			return nil, err
+		}
+	}
+	return json.Marshal(clients)
 }
 
 func serverOf(settings string) *ServerSettings {

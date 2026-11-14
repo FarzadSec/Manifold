@@ -31,6 +31,8 @@ func inboundTransports(protocol model.Protocol, streamSettings, settings string)
 		return transportUDP
 	case model.MTProto:
 		return transportTCP
+	case model.OpenVPN:
+		return openvpnTransport(settings)
 	case model.MASQUE:
 		return masqueTransports(streamSettings)
 	}

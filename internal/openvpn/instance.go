@@ -39,8 +39,8 @@ type Instance struct {
 }
 
 // InstanceFromInbound derives the server to run from an OpenVPN inbound, with
-// one user per enabled client. It reports false when there is nothing to run:
-// another protocol, unusable settings, or no client that can log in.
+// one user per enabled client. An inbound without such a client is still run,
+// so that a switched-off account is told so instead of meeting a dead port.
 func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 	if ib == nil || ib.Protocol != model.OpenVPN {
 		return Instance{}, false
@@ -71,9 +71,6 @@ func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 			continue
 		}
 		users = append(users, User{Name: c.Email, Password: c.Password, MaxSessions: max(c.LimitIP, 0)})
-	}
-	if len(users) == 0 {
-		return Instance{}, false
 	}
 	return Instance{
 		Id:          ib.Id,
