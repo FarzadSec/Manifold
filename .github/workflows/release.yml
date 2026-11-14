@@ -1,0 +1,141 @@
+name: Release
+
+# A version tag builds the Linux packages, installs the amd64 one on the runner
+# as a smoke test, and publishes the release only if that install works.
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: true
+      matrix:
+        platform:
+          - amd64
+          - arm64
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check the tag against the product version
+        run: |
+          want="v$(tr -d '[:space:]' < internal/config/product_version)"
+          if [ "$GITHUB_REF_NAME" != "$want" ]; then
+            echo "tag $GITHUB_REF_NAME does not match internal/config/product_version ($want)" >&2
+            exit 1
+          fi
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      # go:embed needs internal/web/dist, which only the interface build creates.
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build the interface
+        run: |
+          npm ci
+          npm run build
+        working-directory: frontend
+
+      - name: Build the panel
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          set -euo pipefail
+          # A static musl build runs on every distribution, whatever its libc version.
+          case "$PLATFORM" in
+            amd64) BOOTLIN_ARCH="x86-64" ;;
+            arm64) BOOTLIN_ARCH="aarch64" ;;
+          esac
+          base="https://toolchains.bootlin.com/downloads/releases/toolchains/$BOOTLIN_ARCH/tarballs/"
+          tarball=$(curl -fsSL --retry 5 --retry-all-errors --retry-delay 3 "$base" | grep -oE "${BOOTLIN_ARCH}--musl--stable-[^\"]+\.tar\.xz" | sort -r | head -n1)
+          [ -n "$tarball" ] || { echo "no musl toolchain found for $BOOTLIN_ARCH" >&2; exit 1; }
+          curl -fsSL --retry 5 --retry-all-errors --retry-delay 3 -o "/tmp/$tarball" "$base$tarball"
+          tar -xf "/tmp/$tarball" -C /tmp
+          toolchain=$(find /tmp -maxdepth 1 -type d -name "${BOOTLIN_ARCH}--musl--stable-*" | head -n1)
+          CC=$(find "$toolchain/bin" -name '*-gcc.br_real' -type f -executable | head -n1)
+          [ -n "$CC" ] || { echo "no compiler in $toolchain" >&2; exit 1; }
+          export CC PATH="$toolchain/bin:$PATH"
+          export CGO_ENABLED=1 GOOS=linux GOARCH="$PLATFORM"
+          mkdir -p build
+          go build -buildvcs=true -ldflags "-w -s -linkmode external -extldflags '-static'" -o build/manifold .
+          file build/manifold
+
+      - name: Assemble the package
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          set -euo pipefail
+          ./DockerInit.sh "$PLATFORM"
+          mkdir -p package/manifold
+          cp -r build/manifold build/bin package/manifold/
+          cp install.sh manifold.sh manifold.service LICENSE NOTICE package/manifold/
+          tar -C package -czf "manifold-linux-$PLATFORM.tar.gz" manifold
+          sha256sum "manifold-linux-$PLATFORM.tar.gz" > "manifold-linux-$PLATFORM.tar.gz.sha256"
+          tar -tzf "manifold-linux-$PLATFORM.tar.gz"
+
+      - name: Install the package on this runner
+        if: matrix.platform == 'amd64'
+        run: |
+          set -euo pipefail
+          sudo bash install.sh --package manifold-linux-amd64.tar.gz \
+            --port 20530 --path /smoke/ --username smoke --password smoke-pass-123
+          systemctl is-active manifold
+          code=000
+          for _ in $(seq 1 20); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:20530/smoke/ || true)
+            [ "$code" = "200" ] && break
+            sleep 1
+          done
+          if [ "$code" != "200" ]; then
+            sudo journalctl -u manifold -n 80 --no-pager
+            echo "the panel did not answer on its port (last status $code)" >&2
+            exit 1
+          fi
+          jar=$(mktemp)
+          token=$(curl -fsS -c "$jar" http://127.0.0.1:20530/smoke/csrf-token | sed -E 's/.*"obj":"([^"]+)".*/\1/')
+          curl -fsS -b "$jar" -c "$jar" -H "X-CSRF-Token: $token" \
+            -d 'username=smoke&password=smoke-pass-123' http://127.0.0.1:20530/smoke/login | tee /tmp/login.json
+          grep -q '"success":true' /tmp/login.json
+          test "$(sudo manifold version)" = "${GITHUB_REF_NAME#v}"
+          sudo manifold settings
+          # An update must keep the database: the second run is an update in place.
+          sudo bash install.sh --package manifold-linux-amd64.tar.gz
+          sudo manifold settings | grep -q 'port: 20530'
+          sudo manifold uninstall --purge
+          test ! -e /usr/local/manifold
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: manifold-linux-${{ matrix.platform }}
+          path: |
+            manifold-linux-${{ matrix.platform }}.tar.gz
+            manifold-linux-${{ matrix.platform }}.tar.gz.sha256
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          path: packages
+          merge-multiple: true
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+            --title "Manifold $GITHUB_REF_NAME" \
+            --notes "Install or update with install.sh. See manifold/docs/installation.md." \
+            --latest packages/*
