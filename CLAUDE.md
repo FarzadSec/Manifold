@@ -37,7 +37,7 @@ locations when it can answer in one hop.
 - `main.go` — entry point + the `manifold` binary's CLI (run, migrate, migrate-db, encrypt-tokens, setting, cert).
 - `install.sh`, `manifold.sh` (installed as `/usr/bin/manifold`), `manifold.service` — installer,
   management command and systemd unit. `deploy/test/install-functions.sh` tests the installer's functions;
-  `deploy/test/openvpn-e2e.sh` drives a real panel, OpenVPN server and clients (root).
+  `deploy/test/openvpn-e2e.sh` and `wireguard-e2e.sh` drive a real panel, server and clients (root).
 - `internal/config/` — env parsing (XUI_DEBUG, XUI_LOG_LEVEL, XUI_LOG_FOLDER,
   XUI_BIN_FOLDER, XUI_SKIP_HSTS, XUI_PORT, XUI_DB_*). Operators set the same
   variables as `MANIFOLD_<NAME>`; `AdoptManifoldEnv` copies them onto `XUI_<NAME>`,
@@ -53,6 +53,9 @@ locations when it can answer in one hop.
 - `internal/openvpn/` — OpenVPN inbounds: one `openvpn` server per inbound, every
   login decided by the panel over the management interface, per-inbound PKI,
   `.ovpn` profiles, per-account traffic. Real-daemon test: `XUI_OPENVPN_E2E=1` as root.
+- `internal/wgquick/` — WireGuard inbounds on the kernel: a `wg-quick` config per inbound in
+  `/etc/wireguard`, peers applied with `wg set`, billing from `wg show`, and the takeover of
+  interfaces other tools set up (`foreign.go`, `dashboard.go`). Real test: `XUI_WIREGUARD_E2E=1` as root.
 - `internal/egress/` — NAT and forwarding for a tunnel subnet, in a table of its own.
 - `internal/tuic/` — TUIC v5 inbounds: `tuic-server` sidecar supervisor, native Go UDP relay traffic metering.
 - `internal/amneziawg/` — AmneziaWG protocol shape: instance/peer derivation

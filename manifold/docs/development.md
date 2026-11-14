@@ -42,9 +42,13 @@ Changes to a VPN engine also need its real-daemon tests, which need root, the en
 go test -c -o /tmp/openvpn.test ./internal/openvpn/
 sudo XUI_OPENVPN_E2E=1 /tmp/openvpn.test -test.run TestRealServerAndClient -test.v   # the engine alone
 sudo deploy/test/openvpn-e2e.sh build/manifold build/bin                              # panel, server and clients
+
+go test -c -o /tmp/wgquick.test ./internal/wgquick/
+sudo XUI_WIREGUARD_E2E=1 /tmp/wgquick.test -test.run TestRealInterfaceAndPeer -test.v # the engine alone
+sudo deploy/test/wireguard-e2e.sh build/manifold build/bin                            # panel, interface, peers, takeover
 ```
 
-Both start a real server and real clients in a network namespace of their own. Without `XUI_OPENVPN_E2E` the engine test is skipped, so a green `make test-go` does not mean it ran.
+Each starts a real server and real clients in a network namespace of their own; the two scripts share `deploy/test/vpn-e2e-lib.sh`. Without its `XUI_…_E2E` variable an engine test is skipped, so a green `make test-go` does not mean it ran. On a kernel without the WireGuard module `wg-quick` falls back to `wireguard-go` if it is installed; the commands the panel runs are the same, but only a run on the module, as in CI, exercises the kernel.
 
 ## Where verification runs
 

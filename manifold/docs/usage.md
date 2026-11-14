@@ -1,6 +1,6 @@
 # Using Manifold
 
-This guide covers what the panel does today. Sections for L2TP, kernel WireGuard and resellers are added here as each phase lands.
+This guide covers what the panel does today. Sections for L2TP and resellers are added here as each phase lands.
 
 ## Sign in
 
@@ -55,6 +55,48 @@ The certificates and keys are created when you save and stay with the inbound. O
 **Limits.** Quota, expiry and disabling work as for every protocol and take effect on a connected client within seconds: its session is cut and the app is told access is denied. "IP limit" on an OpenVPN client is the number of devices that may be connected at once; a further device is refused.
 
 Not supported yet: IPv6 inside the tunnel, logins by client certificate, and sending OpenVPN traffic through the routing rules and outbounds of Xray Configs.
+
+## WireGuard
+
+A WireGuard inbound is a WireGuard interface of the server itself: the standard kernel WireGuard that `wg-quick` and WGDashboard run. It needs the `wireguard-tools` package, which the installer installs.
+
+**Create the inbound.** On the Inbounds page choose the protocol `wireguard` and a UDP port, then on the protocol tab:
+
+| Field | Meaning |
+|---|---|
+| Secret Key, Public Key | The server's key pair. Every client config carries the public key, so a new key invalidates the configs already handed out |
+| Interface name | The name of the interface and of its file in `/etc/wireguard`. Empty: `mfwg` followed by the inbound's number |
+| Subnet, Subnet CIDR | The network new clients get their addresses from. The server takes its first address |
+| Server address | Only for a server whose address is not the first of the subnet, or that has more than one, for example `10.0.0.254/24, fd42::1/64` |
+| MTU, DNS | The interface's MTU, and the DNS servers written into client configs |
+| Hooks | Commands `wg-quick` runs as root before and after the interface goes up or down, one per line; `%i` stands for the interface name |
+
+The panel writes `/etc/wireguard/<name>.conf`, brings the interface up and gives its clients internet access through NAT. The file belongs to the panel and is rewritten on every change, so change the inbound, not the file. A config in that directory that the panel did not write is never touched; an inbound cannot take its name until you import it.
+
+**Add clients** on the Clients page as for any other inbound. Each gets its own key pair and tunnel address. The client's information and QR windows show the `.conf` and the QR code that the WireGuard apps import.
+
+**Limits.** A client that is disabled, expired or out of quota is taken off the interface within seconds and put back when it is renewed. Usage is read from the interface's own counters. One WireGuard key connects from one place at a time, so "IP limit" adds nothing here.
+
+**While the panel is stopped its WireGuard interfaces are down**, because nothing would count traffic or enforce a limit. They come back when the panel starts.
+
+### Taking over a server that already runs
+
+Inbounds → General Actions → **Import WireGuard servers** lists the interfaces in `/etc/wireguard` that are not inbounds yet. Importing one turns it into an inbound under the same name. Its port, server key, addresses, hooks and every peer's key and address stay as they are, so the configs your users already have keep working. The interface restarts once, and the previous config is kept beside the new one as `<name>.conf.before-manifold`.
+
+If the server ran WGDashboard, its database is found on its own and adds what the config file does not hold:
+
+- peer names, which become the clients' names
+- usage so far
+- the clients' private keys, so the panel can show their configs again
+- restricted peers, which arrive as disabled clients
+
+Stop WGDashboard before importing (`systemctl disable --now wg-dashboard`); two programs managing one interface undo each other's changes. A WGDashboard that keeps its data in PostgreSQL or MySQL is not read; the import then works from the config file alone.
+
+A client imported without a private key keeps connecting with the config it has, and quota, expiry and disabling apply to it like to any other client. The panel only cannot show that config again.
+
+**Coming from 0.2.** WireGuard inbounds made before 0.3 ran inside Xray. From 0.3 they run on a kernel interface with the same keys and addresses, so their clients need no new config.
+
+Not supported yet: NAT for IPv6 inside the tunnel (IPv6 addresses are carried over; routing them is left to your hooks), importing the interfaces of a node, and sending WireGuard traffic through the routing rules and outbounds of Xray Configs.
 
 ## Subscriptions
 

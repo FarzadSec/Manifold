@@ -1,8 +1,16 @@
 # Manifold — Architecture and Roadmap
 
-Version 0.6 · 2026-11-14 · Status: P0 and OpenVPN delivered; see 8.1 and 8.2 for what they leave open
+Version 0.7 · 2026-11-14 · Status: P0, OpenVPN and WireGuard delivered; see 8.1 to 8.3 for what they leave open
 
 Decision log:
+
+- 2026-11-14 — Engine order changed once more: kernel WireGuard is built before L2TP/IPsec. It could be run end to end where the code is written, while L2TP needs kernel PPP that only the CI runners have; and it retires the two WireGuard implementations the product does not want.
+- 2026-11-14 — The existing `wireguard` protocol became the kernel engine; no second protocol name. Inbounds, clients, links and subscriptions made before keep their keys and addresses. A node says it runs this engine with the `wireguard` capability.
+- 2026-11-14 — The panel adds one route per peer and writes `Table = off`. `wg-quick` only adds routes when an interface comes up, so a peer set later would have none.
+- 2026-11-14 — WireGuard interfaces go down when the panel stops. An interface left up would serve accounts nobody bills or cuts off.
+- 2026-11-14 — A config in `/etc/wireguard` that the panel did not write is never changed. It becomes an inbound only through an explicit import, which keeps the old file as `<name>.conf.before-manifold` and puts the interface back if the inbound cannot be created.
+- 2026-11-14 — An imported server keeps its hooks and its own addresses. `PostUp` and its siblings are therefore inbound settings, run by `wg-quick` as root; the panel's own NAT is added beside whatever they set up.
+- 2026-11-14 — AmneziaWG is no longer offered for a new inbound. An inbound made before still opens and runs, and the API still accepts the protocol, so upstream's code and tests stay untouched.
 
 - 2026-11-14 — Engine order changed to OpenVPN, L2TP/IPsec, then kernel WireGuard. The owner looked for the first two in the installed panel and did not find them, while the inbound form already offers a WireGuard (Xray's own, and AmneziaWG) that keeps working until the kernel engine replaces it.
 - 2026-11-14 — OpenVPN accounts log in with the client's email and password, and the panel decides every login over the management interface. No client certificates: one account then has the same identity on every protocol, and disabling it needs no revocation list and no restart.
@@ -66,7 +74,7 @@ Manifold (Go, fork of 3x-ui)
 │   ├─ WireGuard (kernel, wg-quick) system tools       NEW  internal/wgquick
 │   ├─ OpenVPN                      child process      NEW  internal/openvpn
 │   ├─ L2TP/IPsec                   child processes    NEW  internal/l2tp + internal/radius
-│   └─ AmneziaWG, Xray WireGuard    upstream code      switched off and hidden
+│   └─ AmneziaWG, Xray WireGuard    upstream code      not offered, not used
 ├─ Access model                     roles, admins, resellers, plans, audit   NEW
 ├─ Event bus → webhook outbox       NEW (bus exists, webhooks do not)
 └─ runtime.Runtime                  Local | Remote node over mTLS   existing, extended
@@ -92,33 +100,36 @@ Since OpenVPN, an engine does not add its own branches to those files. `internal
 
 The rules in `CLAUDE.md` keep applying to fork code: every new route is registered in `frontend/src/pages/api-docs/endpoints.ts`, model changes need a migration in `db.go`, and state-changing operations go through `runtime.Runtime`.
 
-### 4.3 WireGuard engine — standard kernel WireGuard, the WGDashboard way
+### 4.3 WireGuard engine (built, 0.3.0) — standard kernel WireGuard, the WGDashboard way
 
-What WGDashboard v4.3.5 does, read from its source (`WireguardConfiguration.py`, `Peer.py`):
+What WGDashboard v4.3.5 does, read from its source (`WireguardConfiguration.py`, `Peer.py`): one interface per configuration in `/etc/wireguard/<name>.conf`, brought up and down with `wg-quick`; peers applied live with `wg set <name> peer <key> allowed-ips …` and removed with `… remove`; usage and handshakes read from `wg show`; a restricted peer removed from the interface and parked in a `<name>_restrict_access` table.
 
-- One interface per configuration, stored at `/etc/wireguard/<name>.conf`.
-- Interfaces are brought up and down with `wg-quick up|down <name>`; live state is written back with `wg-quick save <name>`.
-- Peers are applied live with `wg set <name> peer <public-key> allowed-ips … preshared-key …` and removed with `wg set <name> peer <public-key> remove`.
-- Usage, handshakes and endpoints are read from `wg show <name> transfer`, `latest-handshakes` and `endpoints`.
-- A restricted peer is removed from the interface and parked in a `<name>_restrict_access` table; allowing it again re-adds it.
-- Interface settings it manages: `Address`, `ListenPort`, `PrivateKey`, `DNS`, `MTU`, `Table`, `PreUp`, `PostUp`, `PreDown`, `PostDown`, `SaveConfig`.
+The engine (`internal/wgquick`) drives the same files with the same tools:
 
-Our engine (`internal/wgquick`) does the same thing with the same files and the same `wg` and `wg-quick` tools:
+- A `wireguard` inbound is an interface. Its config is `/etc/wireguard/<name>.conf`, where the name is the inbound's own or `mfwg<id>`. The first line marks the file as the panel's; a file without it is foreign and is not touched.
+- A changed client set is applied to the live interface with `wg set`, a preshared key passed on standard input. Only a changed port, key, address, MTU or hook brings the interface down and up.
+- Each peer belongs to a panel account. Disabled, expired or out of quota means off the interface; renewed means back on. This is WGDashboard's restrict mechanism with the account model deciding.
+- Billing reads `wg show <name> dump` every ten seconds and before any peer is removed, into the same traffic pipeline as every other protocol. A handshake in the last three minutes counts as online.
+- Routes: one per peer prefix, added and removed by the panel (`Table = off`). NAT: `internal/egress`, keyed on the interface, so peers outside the server's own subnet are covered too.
+- The interface's addresses are the first host of the inbound's subnet unless the inbound names them. The allocator never hands a named server address to a client.
+- Hooks (`PreUp`, `PostUp`, `PreDown`, `PostDown`) are inbound settings and are written into the config.
+- Under the systemd unit the engine needs `/etc/wireguard` writable, which the unit grants; the kernel loads the module on the first interface.
+- On a node, the node's own panel runs the engine; operations reach it through `runtime.Runtime`.
 
-- Several interfaces per server, each an inbound.
-- Each peer belongs to a panel account, so quota and expiry are shared with the account's other protocols. Enforcement is WGDashboard's restrict mechanism: remove the peer on disable, expiry or exhausted quota; re-add it on renewal.
-- Carried over from WGDashboard: scheduled peer jobs, share links with expiry, session and endpoint history, per-interface backup and restore, raw config editing, hook editing.
-- Output: the standard `.conf` and QR code per peer.
-- On a node, the node's own panel instance runs the engine locally; operations reach it through `runtime.Runtime`.
+Taking over an existing server (`foreign.go`, `dashboard.go`, service `wireguard_import.go`):
 
-Adopting an existing WGDashboard server: because the files and commands are identical, the panel takes over the existing `/etc/wireguard/*.conf` in place and imports peer names, restricted peers and usage totals from WGDashboard's database. Server and peer keys do not change, so users keep their current configs.
+- The import reads the foreign config the way `wg-quick` does, and peer names from the comments WGDashboard, wireguard-install, wg-easy and PiVPN write.
+- From WGDashboard's SQLite database it adds names, usage, private keys and restricted peers. A private key is kept only if it derives the peer's public key.
+- The interface is taken down, its config moved aside, and the inbound created under the same name with the same port, keys, addresses and hooks. Peers become clients; names that the panel cannot use as emails, or that are taken, are adjusted and the original kept as the comment.
+
+Not carried over from WGDashboard: scheduled peer jobs (an account's expiry and quota do this), share links with an expiry, endpoint history, per-interface backup and restore, and raw config editing.
 
 Not used:
 
-- **AmneziaWG.** Upstream's code stays in the tree, switched off and hidden, so upstream merges stay cheap.
-- **Xray's WireGuard inbound.** Upstream's `wireguard` protocol runs inside Xray in userspace, not through `wg-quick`. It is not offered as the WireGuard product.
+- **AmneziaWG.** Upstream's code stays in the tree. The inbound form no longer offers it for a new inbound.
+- **Xray's WireGuard inbound.** The protocol name now means the kernel engine; the Xray config no longer receives these inbounds.
 
-Requirement: root and the kernel WireGuard module on the host (`NET_ADMIN` under Docker).
+Requirement: root, the `wireguard-tools` package and the kernel WireGuard module on the host (`NET_ADMIN` under Docker).
 
 ### 4.4 OpenVPN engine (built, 0.2.0)
 
@@ -169,9 +180,9 @@ This is the contract Mirza Bot will sync against, so it is frozen before the bot
 | Feature | 3x-ui today | Asked for by | Work |
 |---|---|---|---|
 | Xray protocols (VLESS, VMess, Trojan, Shadowsocks, Hysteria, TUIC, MTProto) | Present | 3x-ui | None |
-| Standard kernel WireGuard (`wg-quick`) | Absent; its WireGuard inbound runs inside Xray in userspace | User, WGDashboard | New engine (4.3) |
-| AmneziaWG | Present | Not wanted | Switch off and hide |
-| OpenVPN | Absent | User, NX | New engine (4.4) |
+| Standard kernel WireGuard (`wg-quick`) | Absent; its WireGuard inbound runs inside Xray in userspace | User, WGDashboard | Built in 0.3.0 (4.3) |
+| AmneziaWG | Present | Not wanted | No longer offered for new inbounds (0.3.0) |
+| OpenVPN | Absent | User, NX | Built in 0.2.0 (4.4) |
 | L2TP/IPsec | Absent | User | New engine (4.5) |
 | Multi-node over mTLS, node health | Present | NX | Extend to new engines |
 | Roles, admins, resellers, ownership, ledger | Absent | NX | Build (4.6) |
@@ -199,8 +210,8 @@ This is the contract Mirza Bot will sync against, so it is frozen before the bot
 |---|---|---|
 | P0 Foundation | Private mirror; own README and guides; base project's pages, sponsor feature, links and self-updater removed; program, service, paths, interface and notification texts named Manifold; own installer, management command, systemd unit and release workflow; CI trimmed to one gate | Done 2026-11-14. Open items in 8.1 |
 | P2 OpenVPN | Engine 4.4, inbound form, `.ovpn` in the client pages and the subscription page, traffic and limits, node support | Done 2026-11-14 (0.2.0). A real client connects, is billed, is held to its device limit and is cut off when disabled or out of quota, on this server. Open items in 8.2 |
+| P1 WireGuard | Engine 4.3, inbound form, `.conf` and QR in the client pages, traffic and limits, node support, takeover of existing servers | Done 2026-11-14 (0.3.0). A real peer connects, is billed, loses its peer when disabled or out of quota, and an interface `wg-quick` already runs is taken over with its WGDashboard names and usage while its peer keeps connecting. Open items in 8.3 |
 | P3 L2TP/IPsec | Engine 4.5, embedded RADIUS, optional IKEv2 | A native L2TP client connects and draws down the account's quota |
-| P1 WireGuard | Engine 4.3, inbound form, `.conf` and QR in subscriptions, traffic and limits, node support, WGDashboard adoption | An existing WGDashboard server is taken over and its users connect without new configs; a peer and an Xray client on one account draw down the same quota |
 | P4 Access model | Items in 4.6 | A reseller can create accounts only within its limits and sees only its own |
 | P5 Events and API freeze | Items in 4.7; OpenAPI v1 for accounts, plans, resellers, usage | A test receiver gets signed events for every account state change, including after downtime |
 | P6 NX-parity operations | Setup wizard, backup upgrades, OIDC, managed tunnels, subscription themes, usage CSV | Checked against the gap table |
@@ -251,7 +262,7 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 
 - Fixed in 0.2.0: the installer reported success for a panel that died right after starting. It now waits until the service's own process holds the panel port.
 - The Nodes page still shows its update actions. Nodes refuse them with a clear message; the buttons, the bulk selection that only served them and their tests are to be removed.
-- AmneziaWG and the userspace WireGuard inbound are still offered in the inbound form. They are hidden when the kernel WireGuard engine lands in P1.
+- Done in 0.3.0: AmneziaWG is no longer offered for a new inbound, and `wireguard` is the kernel engine.
 - The Nodes page shows each node's base version, not its product version.
 - The release workflow's arm64 package is built but only the amd64 package is installed and exercised on a runner.
 - The container image is not built or started in CI. The Dockerfile, entrypoint and compose file were changed together with the installer and are checked only by the shell linter.
@@ -266,12 +277,23 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - After the panel is killed (not stopped), the NAT table of an OpenVPN inbound stays until the next start cleans it up. `manifold uninstall` right after such a kill leaves it behind.
 - The container image now carries OpenVPN but, like the rest of the image, is not built or run in CI.
 
+### 8.3 Open items after WireGuard
+
+- The engine's tests on the development machine ran against `wireguard-go`, which `wg-quick` falls back to on a kernel without the module. The kernel module itself is exercised only on the CI runners (`vpn-e2e`, and the release smoke test under the systemd unit).
+- WireGuard on a remote node is covered by a unit test of the capability check only, like OpenVPN.
+- An inbound made before 0.3.0 switches from Xray to the kernel interface on update. No test updates a real 0.2.0 server with such an inbound; a client that was given the first address of the subnet would collide with the server's.
+- NAT covers IPv4 only. IPv6 addresses of an imported server are carried over; forwarding and NAT for them is left to the server's own hooks.
+- The import reads WGDashboard's SQLite database only, and only on the panel's own server. Peers of an interface that lives on a node cannot be imported.
+- The branches of `internal/web/service/xray.go` that built Xray's WireGuard peer list are no longer reached. They stay to keep upstream merges cheap.
+- Saving a WireGuard inbound on a server without `wireguard-tools` succeeds; the form warns and the inbound starts once the package is there. OpenVPN refuses the save instead. One of the two behaviours should become the rule.
+- The container image carries the WireGuard tools but, like the rest of the image, is not built or run in CI.
+
 ## 9. Assumptions and open decisions
 
 Assumptions made where no answer was given:
 
 - **NX Panel**: features are re-implemented from its public docs; nothing of its code or UI is reused.
-- **WGDashboard**: its Python codebase is not forked; its WireGuard mechanism is reproduced exactly in Go (4.3) and existing servers are taken over in P1. Until then the current servers keep running as they are.
+- **WGDashboard**: its Python codebase is not forked; its WireGuard mechanism is reproduced in Go (4.3), and an existing server is taken over through the import in the Inbounds page.
 - **Phase one** is the panel only, starting with the protocol engines.
 
 Open decisions:

@@ -7,7 +7,8 @@ Manifold installs from a release package as a systemd service. The server downlo
 - A Linux server with systemd, on x86-64 or ARM64
 - Root access
 - An open TCP port for the panel and one for every inbound you create
-- For OpenVPN inbounds: the `openvpn`, `nftables` and `iptables` packages. The installer installs them on Debian, Ubuntu, Fedora, RHEL and its rebuilds, openSUSE and Arch; elsewhere install them yourself
+- For OpenVPN and WireGuard inbounds: the `openvpn`, `wireguard-tools`, `nftables` and `iptables` packages. The installer installs them on Debian, Ubuntu, Fedora, RHEL and its rebuilds, openSUSE and Arch; elsewhere install them yourself
+- For WireGuard inbounds: a kernel with WireGuard, which every mainstream distribution has had since Linux 5.6
 
 ## Install
 
@@ -46,7 +47,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/FarzadSec/Manifold/main/instal
 | `--version vX.Y.Z` | Install this release instead of the latest |
 | `--package FILE` | Install from a package file instead of downloading |
 | `--no-start` | Install without starting the service |
-| `--no-deps` | Do not install system packages; OpenVPN inbounds then need `openvpn` and `nftables` installed by hand |
+| `--no-deps` | Do not install system packages; OpenVPN and WireGuard inbounds then need `openvpn`, `wireguard-tools` and `nftables` installed by hand |
 
 These first-install options are ignored when a database already exists.
 
@@ -137,7 +138,7 @@ docker compose logs manifold | grep "Username"
 
 - The login is generated on first start and written to the log once. To set a new one: `docker compose exec manifold manifold login`, then `docker compose restart manifold`.
 - `docker-compose.yml` publishes only the panel port (2053). Add every inbound port, and the subscription port (2096) if you use subscriptions, under `ports:`.
-- OpenVPN inbounds need the `NET_ADMIN` capability and the `/dev/net/tun` device, both set in `docker-compose.yml`. The container path is not exercised by the project's tests.
+- OpenVPN inbounds need the `NET_ADMIN` capability and the `/dev/net/tun` device, both set in `docker-compose.yml`. WireGuard inbounds need `NET_ADMIN` and the host's own WireGuard kernel module; their configs live inside the container, so mount `/etc/wireguard` if they should outlive it. The container path is not exercised by the project's tests.
 - Data is in `./db/`, certificates in `./cert/`.
 - Update with `git pull` and `docker compose up -d --build`.
 

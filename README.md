@@ -2,7 +2,7 @@
 
 One control panel for several VPN protocols. A customer has one account with one quota and one expiry date, and that account works on every protocol the server offers.
 
-**Status:** version 0.2. The base panel and OpenVPN are complete and installable; the other protocol engines are being built in phases.
+**Status:** version 0.3. The base panel, OpenVPN and WireGuard are complete and installable; L2TP/IPsec is next.
 
 ## Protocols
 
@@ -10,13 +10,15 @@ One control panel for several VPN protocols. A customer has one account with one
 |---|---|
 | VLESS, VMess, Trojan, Shadowsocks, Hysteria, TUIC, MTProto | Working |
 | OpenVPN (UDP or TCP, login by username and password) | Working since 0.2 |
+| WireGuard (standard kernel WireGuard, `wg-quick`) | Working since 0.3 |
 | L2TP/IPsec | Next |
-| WireGuard (standard kernel WireGuard, `wg-quick`) | After L2TP |
 
 ## What works today
 
 - Inbounds and clients, with traffic quota, expiry date and periodic traffic reset per client
 - OpenVPN inbounds: the panel runs the server, hands each client a ready `.ovpn` profile, counts its traffic and enforces its quota, expiry and device limit
+- WireGuard inbounds: each is an interface of the server in `/etc/wireguard`, with a `.conf` and QR code per client, usage read from the interface, and clients taken off it when they are disabled, expired or out of quota
+- Taking over a WireGuard server that already runs, WGDashboard's included: users keep their configs, names and usage
 - One client attached to several inbounds, and client groups
 - Subscription server: share links, JSON and Clash output
 - Several servers managed from one panel (nodes over mutual TLS)
@@ -28,7 +30,7 @@ One control panel for several VPN protocols. A customer has one account with one
 
 ## What is planned
 
-- The two remaining protocol engines, sharing quota and expiry with every other protocol on the account
+- The L2TP/IPsec engine, sharing quota and expiry with every other protocol on the account
 - Roles, administrators and resellers with their own limits
 - Plans, an audit log, and webhooks for every account event
 - A Telegram sales bot that stays in sync with the panel
