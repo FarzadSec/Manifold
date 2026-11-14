@@ -59,6 +59,16 @@ check "the release name is not mistaken for an asset" \
 check "a missing asset is reported, not guessed" \
     "$(asset_api_url "$release_json" manifold-linux-riscv64.tar.gz || echo none)" "none"
 
+VERSION=""
+check "the latest release is downloaded from its fixed address" \
+    "$(release_file_url manifold-linux-amd64.tar.gz)" \
+    "https://github.com/FarzadSec/Manifold/releases/latest/download/manifold-linux-amd64.tar.gz"
+VERSION="v0.2.0"
+check "a pinned version is downloaded from that release" \
+    "$(release_file_url manifold-linux-arm64.tar.gz.sha256)" \
+    "https://github.com/FarzadSec/Manifold/releases/download/v0.2.0/manifold-linux-arm64.tar.gz.sha256"
+VERSION=""
+
 check "x86_64 maps to amd64" "$(package_arch x86_64)" "amd64"
 check "aarch64 maps to arm64" "$(package_arch aarch64)" "arm64"
 check "an unsupported machine is refused" "$(package_arch mips || echo refused)" "refused"

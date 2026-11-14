@@ -38,9 +38,8 @@ The database and settings in /etc/manifold are kept on update.
   -h, --help         Show this help
 
 Environment:
-  MANIFOLD_TOKEN     GitHub token with read access to the repository.
-                     Needed to download a release while the repository is private.
   MANIFOLD_REPO      owner/name of the repository (default: FarzadSec/Manifold)
+  MANIFOLD_TOKEN     GitHub token, only for a private copy of the repository
 USAGE
 }
 
@@ -120,23 +119,44 @@ github_curl() {
     fi
 }
 
-# Downloads the package for $1 (arch) into $2 (directory) and verifies its checksum.
-download_package() {
-    local arch="$1" dir="$2" asset release_url release url sum_url
-    asset="manifold-linux-${arch}.tar.gz"
+# Prints the public download URL of the release file named $1.
+release_file_url() {
+    if [ -n "$VERSION" ]; then
+        echo "https://github.com/${REPO}/releases/download/${VERSION}/$1"
+    else
+        echo "https://github.com/${REPO}/releases/latest/download/$1"
+    fi
+}
+
+# A private copy can only be read through the API, which needs the token.
+download_with_token() {
+    local asset="$1" dir="$2" release_url release url sum_url
     if [ -n "$VERSION" ]; then
         release_url="https://api.github.com/repos/${REPO}/releases/tags/${VERSION}"
     else
         release_url="https://api.github.com/repos/${REPO}/releases/latest"
     fi
-    info "Reading release information"
     release=$(github_curl -H "Accept: application/vnd.github+json" "$release_url") ||
-        die "cannot read ${release_url}. If the repository is private, set MANIFOLD_TOKEN."
+        die "cannot read ${release_url} with MANIFOLD_TOKEN. Unset it for a public repository."
     url=$(asset_api_url "$release" "$asset") || die "the release has no package named ${asset}"
     sum_url=$(asset_api_url "$release" "${asset}.sha256") || die "the release has no checksum for ${asset}"
-    info "Downloading ${asset}"
     github_curl -H "Accept: application/octet-stream" -o "${dir}/${asset}" "$url"
     github_curl -H "Accept: application/octet-stream" -o "${dir}/${asset}.sha256" "$sum_url"
+}
+
+# Downloads the package for $1 (arch) into $2 (directory) and verifies its checksum.
+download_package() {
+    local arch="$1" dir="$2" asset
+    asset="manifold-linux-${arch}.tar.gz"
+    info "Downloading ${asset}"
+    if [ -n "${MANIFOLD_TOKEN:-}" ]; then
+        download_with_token "$asset" "$dir"
+    else
+        curl -fsSL -o "${dir}/${asset}" "$(release_file_url "$asset")" ||
+            die "cannot download $(release_file_url "$asset")"
+        curl -fsSL -o "${dir}/${asset}.sha256" "$(release_file_url "${asset}.sha256")" ||
+            die "cannot download the checksum of ${asset}"
+    fi
     (cd "$dir" && sha256sum -c "${asset}.sha256" >/dev/null) || die "checksum mismatch for ${asset}"
     PACKAGE="${dir}/${asset}"
 }

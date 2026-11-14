@@ -13,7 +13,7 @@ Manifold installs from a release package as a systemd service. The server downlo
 As root on the server:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/FarzadSec/Manifold/main/install.sh | bash
+bash <(curl -Ls https://raw.githubusercontent.com/FarzadSec/Manifold/main/install.sh)
 ```
 
 The installer:
@@ -27,10 +27,11 @@ The login is shown once. Sign in, then change it under Panel Settings. Replace `
 
 ### Choosing the port and login yourself
 
-Pass options after `bash -s --`:
+Options go after the command:
 
 ```bash
-curl ... | bash -s -- --port 8443 --path /panel/ --username admin --password 'a-long-password'
+bash <(curl -Ls https://raw.githubusercontent.com/FarzadSec/Manifold/main/install.sh) \
+  --port 8443 --path /panel/ --username admin --password 'a-long-password'
 ```
 
 | Option | Effect |

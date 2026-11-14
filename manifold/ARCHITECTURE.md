@@ -4,6 +4,7 @@ Version 0.5 · 2026-11-14 · Status: P0 delivered; see 8.1 for what it leaves op
 
 Decision log:
 
+- 2026-11-14 — Installing works like other panels: one `bash <(curl …/install.sh)` command that downloads the latest release from its public address. A release is cut by changing `product_version` on `main`; the workflow builds, test-installs and publishes it, then installs the published release once more on a clean machine.
 - 2026-11-14 — The repository is public. The installer needs no token; `MANIFOLD_TOKEN` remains for a private copy.
 - 2026-11-14 — The panel never updates itself. The code that downloaded and ran an updater is removed; updates go through `install.sh` (`manifold update`). The update routes and the node fan-out remain and answer with a refusal, so masters and nodes keep one API.
 - 2026-11-14 — Two versions. `product_version` (0.1.0) is what people see and what release tags equal. The base version stays, because a master gates protocols on the version a node reports.
@@ -231,7 +232,7 @@ What must stay from the base project: the `LICENSE` file and the attribution in 
 - Edits to shared upstream files stay as small as the integration allows.
 - Upstream is merged on a fixed cadence, not ad hoc.
 
-GitHub Actions: three workflows. `ci.yml` is the gate: phase branches run the fast jobs (about 20 runner minutes), `main` and pull requests run everything (about 52). `vendor.yml` republishes `go mod vendor` to the `build/vendor` branch whenever dependencies change. `release.yml` builds, smoke-tests and publishes the Linux packages when a version tag is pushed. The base project's release, Docker, CodeQL, mutation-test and cache-cleanup workflows are removed.
+GitHub Actions: three workflows. `ci.yml` is the gate: phase branches run the fast jobs (about 20 runner minutes), `main` and pull requests run everything (about 52). `vendor.yml` republishes `go mod vendor` to the `build/vendor` branch whenever dependencies change. `release.yml` builds, smoke-tests and publishes the Linux packages when `product_version` on `main` names a version with no release yet, or when a version tag is pushed. The base project's release, Docker, CodeQL, mutation-test and cache-cleanup workflows are removed.
 
 Build verification: the workspace this plan is written from cannot reach the Go module proxy, so it builds and tests offline from `build/vendor`, and CI in this repository is the final word on every change.
 

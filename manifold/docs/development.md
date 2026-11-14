@@ -128,7 +128,8 @@ git show upstream-main:CONTRIBUTING.md          # environment variables, test ph
 
 ## Releasing
 
-1. Set the new version in `internal/config/product_version` and merge it to `main`.
-2. Create the tag `vX.Y.Z` on that commit: either push it with git, or draft a release on GitHub that creates the tag. The repository owner does this step.
+Set the new version in `internal/config/product_version` and merge it to `main`. Nothing else is needed.
 
-`.github/workflows/release.yml` builds static amd64 and arm64 packages, installs the amd64 package on the runner with `install.sh`, checks that the panel answers, that the installer's login works and that an update keeps the settings, and only then publishes the release. A failed run publishes nothing; fix the cause, move the tag and push it again.
+`.github/workflows/release.yml` then builds static amd64 and arm64 packages, installs the amd64 package on the runner with `install.sh`, checks that the panel answers, that the installer's login works and that an update keeps the settings. If all of that passes and no release named `v<product_version>` exists, it publishes one and creates its tag. A last job installs the published release on a clean runner with the command from the README.
+
+Packaging changes that do not change the version run the same build and install and publish nothing. A `vX.Y.Z` tag pushed by hand publishes that version too, as long as it equals `product_version`.

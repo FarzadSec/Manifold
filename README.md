@@ -39,7 +39,7 @@ The full plan is in [manifold/ARCHITECTURE.md](manifold/ARCHITECTURE.md).
 On a Linux server with systemd, as root:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/FarzadSec/Manifold/main/install.sh | bash
+bash <(curl -Ls https://raw.githubusercontent.com/FarzadSec/Manifold/main/install.sh)
 ```
 
 The installer downloads the latest release, installs the `manifold` service and prints the panel address and login once. After that the server is managed with the `manifold` command:
