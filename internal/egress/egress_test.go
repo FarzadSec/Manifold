@@ -88,6 +88,34 @@ func TestApplyReplacesOnlyTheOwnersRules(t *testing.T) {
 	}
 }
 
+func TestApplyDeviceMatchesByInterface(t *testing.T) {
+	f := &fakeSystem{commands: map[string]bool{"nft": true, "iptables": true}}
+	useFake(t, f)
+
+	if err := ApplyDevice("wg7", "mfwg7"); err != nil {
+		t.Fatalf("ApplyDevice: %v", err)
+	}
+	wantNAT := "add table ip manifold_wg7\ndelete table ip manifold_wg7\n" +
+		"table ip manifold_wg7 {\n\tchain postrouting {\n" +
+		"\t\ttype nat hook postrouting priority 100; policy accept;\n" +
+		"\t\tiifname \"mfwg7\" oifname != \"mfwg7\" masquerade\n\t}\n}\n"
+	if got := f.calls[0].stdin; got != wantNAT {
+		t.Fatalf("NAT transaction = %q, want %q", got, wantNAT)
+	}
+	want := []string{
+		"iptables -w 5 -S FORWARD",
+		"iptables -w 5 -I FORWARD 1 -i mfwg7 -m comment --comment manifold:wg7 -j ACCEPT",
+		"iptables -w 5 -I FORWARD 1 -o mfwg7 -m conntrack --ctstate RELATED,ESTABLISHED -m comment --comment manifold:wg7 -j ACCEPT",
+	}
+	if got := f.argvs()[1:]; !slices.Equal(got, want) {
+		t.Fatalf("forward commands = %q, want %q", got, want)
+	}
+
+	if err := ApplyDevice("wg7", `wg0"; flush ruleset; "`); err == nil {
+		t.Fatal("a device name that breaks out of the nft string was accepted")
+	}
+}
+
 func TestApplyRefusesWhatItCannotInstallSafely(t *testing.T) {
 	subnet := netip.MustParsePrefix("10.8.0.0/24")
 	tests := []struct {

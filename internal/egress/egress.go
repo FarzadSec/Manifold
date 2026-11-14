@@ -32,27 +32,69 @@ type system interface {
 
 var host system = osSystem{}
 
+// The device ends up inside a quoted nft string; this is wg-quick's own rule for a name.
+var devicePattern = regexp.MustCompile(`^[a-zA-Z0-9_=+.-]{1,15}$`)
+
+// traffic says which packets belong to a tunnel: by source subnet when its
+// interfaces come and go (ppp), by interface when it has one of its own.
+type traffic struct {
+	nat     string
+	forward [][]string
+}
+
+func fromSubnet(subnet netip.Prefix) traffic {
+	return traffic{
+		nat: fmt.Sprintf("ip saddr %s ip daddr != %s masquerade", subnet, subnet),
+		forward: [][]string{
+			{"-s", subnet.String()},
+			{"-d", subnet.String(), "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED"},
+		},
+	}
+}
+
+func fromDevice(device string) traffic {
+	return traffic{
+		nat: fmt.Sprintf("iifname %q oifname != %q masquerade", device, device),
+		forward: [][]string{
+			{"-i", device},
+			{"-o", device, "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED"},
+		},
+	}
+}
+
 // Apply masquerades what leaves subnet and accepts its forwarding. Calling it
 // again for the same owner replaces that owner's previous rules.
 func Apply(owner string, subnet netip.Prefix) error {
-	if !ownerPattern.MatchString(owner) {
-		return fmt.Errorf("egress: invalid owner %q", owner)
-	}
 	if !subnet.IsValid() || !subnet.Addr().Is4() {
 		return fmt.Errorf("egress: %q is not an IPv4 subnet", subnet)
+	}
+	return apply(owner, fromSubnet(subnet.Masked()))
+}
+
+// ApplyDevice is Apply for a tunnel with an interface of its own: whatever
+// enters through device is masqueraded, whichever address it carries.
+func ApplyDevice(owner, device string) error {
+	if !devicePattern.MatchString(device) {
+		return fmt.Errorf("egress: invalid device %q", device)
+	}
+	return apply(owner, fromDevice(device))
+}
+
+func apply(owner string, t traffic) error {
+	if !ownerPattern.MatchString(owner) {
+		return fmt.Errorf("egress: invalid owner %q", owner)
 	}
 	if !host.has("nft") {
 		return ErrNoNftables
 	}
-	subnet = subnet.Masked()
-	if out, err := host.run(natTransaction(owner, &subnet), "nft", "-f", "-"); err != nil {
+	if out, err := host.run(natTransaction(owner, t.nat), "nft", "-f", "-"); err != nil {
 		return fmt.Errorf("egress: applying NAT for %s: %w (%s)", owner, err, out)
 	}
 	if err := host.enableIPv4Forwarding(); err != nil {
 		return fmt.Errorf("egress: enabling IPv4 forwarding: %w", err)
 	}
 	removeForwardRules(owner)
-	addForwardRules(owner, subnet)
+	addForwardRules(owner, t.forward)
 	return nil
 }
 
@@ -62,7 +104,7 @@ func Remove(owner string) {
 		return
 	}
 	if host.has("nft") {
-		if out, err := host.run(natTransaction(owner, nil), "nft", "-f", "-"); err != nil {
+		if out, err := host.run(natTransaction(owner, ""), "nft", "-f", "-"); err != nil {
 			logger.Warning("egress: removing NAT for ", owner, ": ", err, " ", out)
 		}
 	}
@@ -73,37 +115,30 @@ func tableName(owner string) string { return "manifold_" + owner }
 
 func forwardTag(owner string) string { return "manifold:" + owner }
 
-// natTransaction replaces the owner's table atomically; a nil subnet only
+// natTransaction replaces the owner's table atomically; an empty rule only
 // deletes it, and "add" first keeps the delete valid when the table is absent.
-func natTransaction(owner string, subnet *netip.Prefix) string {
+func natTransaction(owner, rule string) string {
 	table := tableName(owner)
 	tx := fmt.Sprintf("add table ip %s\ndelete table ip %s\n", table, table)
-	if subnet == nil {
+	if rule == "" {
 		return tx
 	}
 	return tx + fmt.Sprintf("table ip %s {\n"+
 		"\tchain postrouting {\n"+
 		"\t\ttype nat hook postrouting priority 100; policy accept;\n"+
-		"\t\tip saddr %s ip daddr != %s masquerade\n"+
-		"\t}\n}\n", table, subnet, subnet)
-}
-
-func forwardRules(owner string, subnet netip.Prefix) [][]string {
-	tag := []string{"-m", "comment", "--comment", forwardTag(owner), "-j", "ACCEPT"}
-	return [][]string{
-		append([]string{"-s", subnet.String()}, tag...),
-		append([]string{"-d", subnet.String(), "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED"}, tag...),
-	}
+		"\t\t%s\n"+
+		"\t}\n}\n", table, rule)
 }
 
 // addForwardRules is best effort: with a FORWARD policy of ACCEPT the rules
 // are redundant, so a host without iptables still forwards.
-func addForwardRules(owner string, subnet netip.Prefix) {
+func addForwardRules(owner string, matches [][]string) {
 	if !host.has("iptables") {
 		return
 	}
-	for _, rule := range forwardRules(owner, subnet) {
-		args := append([]string{"-w", "5", "-I", "FORWARD", "1"}, rule...)
+	for _, match := range matches {
+		args := append([]string{"-w", "5", "-I", "FORWARD", "1"}, match...)
+		args = append(args, "-m", "comment", "--comment", forwardTag(owner), "-j", "ACCEPT")
 		if out, err := host.run("", "iptables", args...); err != nil {
 			logger.Warning("egress: adding FORWARD accept for ", owner, ": ", err, " ", out)
 		}
