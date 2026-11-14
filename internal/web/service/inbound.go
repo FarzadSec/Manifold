@@ -1351,6 +1351,9 @@ func (s *InboundService) AddInbound(inbound *model.Inbound) (*model.Inbound, boo
 	if err := prepareOpenVPNInbound(inbound, ""); err != nil {
 		return inbound, false, err
 	}
+	if err := prepareWireGuardInbound(database.GetDB(), inbound); err != nil {
+		return inbound, false, err
+	}
 	if inbound.NodeID != nil {
 		if err := checkNodeCanHostProtocol(database.GetDB(), *inbound.NodeID, inbound.Protocol); err != nil {
 			return inbound, false, err
@@ -2071,6 +2074,9 @@ func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, 
 		return inbound, false, err
 	}
 	if err := prepareOpenVPNInbound(inbound, oldInbound.Settings); err != nil {
+		return inbound, false, err
+	}
+	if err := prepareWireGuardInbound(database.GetDB(), inbound); err != nil {
 		return inbound, false, err
 	}
 	inbound.SubSortIndex = normalizeSubSortIndex(inbound.SubSortIndex)

@@ -40,6 +40,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/panel"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/tgbot"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/websocket"
+	"github.com/mhsanaei/3x-ui/v3/internal/wgquick"
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 
 	"github.com/gin-contrib/gzip"
@@ -308,6 +309,7 @@ const (
 	cadenceAmneziaWG     = "@every 10s"
 	cadenceTuic          = "@every 10s"
 	cadenceOpenVPN       = "@every 10s"
+	cadenceWireGuard     = "@every 10s"
 	cadenceClientIPScan  = "@every 10s"
 	cadenceNodeHeartbeat = "@every 5s"
 	cadenceNodeTraffic   = "@every 5s"
@@ -361,6 +363,10 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	openvpnJob := job.NewOpenVPNJob()
 	_, _ = s.cron.AddJob(cadenceOpenVPN, openvpnJob)
 	go openvpnJob.Run()
+
+	wireguardJob := job.NewWireGuardJob()
+	_, _ = s.cron.AddJob(cadenceWireGuard, wireguardJob)
+	go wireguardJob.Run()
 
 	// check client ips from log file every 10 sec
 	_, _ = s.cron.AddJob(cadenceClientIPScan, job.NewCheckClientIpJob())
@@ -812,6 +818,8 @@ func (s *Server) stop(stopXray bool, stopTgBot bool) error {
 		mtproto.GetManager().StopAll()
 		job.NewOpenVPNJob().StoreStoppedTraffic()
 		openvpn.GetManager().StopAll()
+		wgquick.GetManager().StopAll()
+		job.NewWireGuardJob().StoreStoppedTraffic()
 		amneziawgnet.GetManager().StopAll()
 		job.NewAmneziaWGJob().FlushKernelTraffic()
 		amneziawgkern.GetManager().StopAll()

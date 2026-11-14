@@ -5,6 +5,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/openvpn"
+	"github.com/mhsanaei/3x-ui/v3/internal/wgquick"
 )
 
 // nativeEngine serves a protocol with a daemon the panel manages, outside Xray.
@@ -15,7 +16,8 @@ type nativeEngine interface {
 }
 
 var nativeEngines = map[model.Protocol]nativeEngine{
-	model.OpenVPN: openvpnEngine{},
+	model.OpenVPN:   openvpnEngine{},
+	model.WireGuard: wireguardEngine{},
 }
 
 // IsNativeProtocol reports whether a protocol is served outside Xray by an
@@ -36,6 +38,18 @@ func (openvpnEngine) apply(ib *model.Inbound) (bool, error) {
 }
 
 func (openvpnEngine) remove(inboundID int) { openvpn.GetManager().Remove(inboundID) }
+
+type wireguardEngine struct{}
+
+func (wireguardEngine) apply(ib *model.Inbound) (bool, error) {
+	inst, ok := wgquick.InstanceFromInbound(ib)
+	if !ok {
+		return false, nil
+	}
+	return true, wgquick.GetManager().Ensure(inst)
+}
+
+func (wireguardEngine) remove(inboundID int) { wgquick.GetManager().Remove(inboundID) }
 
 func addNativeInbound(engine nativeEngine, ib *model.Inbound) error {
 	served, err := engine.apply(ib)

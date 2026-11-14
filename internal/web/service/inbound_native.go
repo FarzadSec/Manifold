@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"encoding/json"
+	"strings"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
@@ -9,6 +11,9 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/openvpn"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/runtime"
+	"github.com/mhsanaei/3x-ui/v3/internal/wgquick"
+
+	"gorm.io/gorm"
 )
 
 // isNativeProtocol reports whether a panel-managed daemon, not Xray, serves the protocol.
@@ -100,4 +105,88 @@ func openvpnTransport(settings string) transportBits {
 		return transportTCP
 	}
 	return transportUDP
+}
+
+// DesiredWireGuardInstances returns the interfaces this panel should be
+// running: its own enabled WireGuard inbounds, without the peers of accounts a
+// limit switched off.
+func (s *InboundService) DesiredWireGuardInstances() ([]wgquick.Instance, error) {
+	db := database.GetDB()
+	var inbounds []*model.Inbound
+	err := db.Model(model.Inbound{}).
+		Where("protocol = ? AND enable = ? AND node_id IS NULL", model.WireGuard, true).
+		Find(&inbounds).Error
+	if err != nil || len(inbounds) == 0 {
+		return nil, err
+	}
+	instances := make([]wgquick.Instance, 0, len(inbounds))
+	var emails []string
+	for _, ib := range inbounds {
+		inst, ok := wgquick.InstanceFromInbound(ib)
+		if !ok {
+			continue
+		}
+		instances = append(instances, inst)
+		for _, peer := range inst.Peers {
+			emails = append(emails, peer.Name)
+		}
+	}
+	disabled, err := trafficDisabledEmails(db, emails)
+	if err != nil {
+		return nil, err
+	}
+	for i := range instances {
+		kept := make([]wgquick.Peer, 0, len(instances[i].Peers))
+		for _, peer := range instances[i].Peers {
+			if _, off := disabled[peer.Name]; !off {
+				kept = append(kept, peer)
+			}
+		}
+		instances[i].Peers = kept
+	}
+	return instances, nil
+}
+
+// wireguardInterfaceOf returns the interface an inbound's settings name, or "".
+func wireguardInterfaceOf(settings string) string {
+	var parsed struct {
+		Interface string `json:"interface"`
+	}
+	_ = json.Unmarshal([]byte(settings), &parsed)
+	return strings.TrimSpace(parsed.Interface)
+}
+
+// prepareWireGuardInbound refuses an interface name the kernel would not take
+// or that another inbound on the same server already runs.
+func prepareWireGuardInbound(db *gorm.DB, inbound *model.Inbound) error {
+	if inbound.Protocol != model.WireGuard {
+		return nil
+	}
+	name := wireguardInterfaceOf(inbound.Settings)
+	if name == "" {
+		return nil
+	}
+	if err := wgquick.ValidateInterface(name); err != nil {
+		return common.NewError(err.Error())
+	}
+	var others []*model.Inbound
+	query := db.Model(model.Inbound{}).Where("protocol = ? AND id <> ?", model.WireGuard, inbound.Id)
+	if inbound.NodeID == nil {
+		query = query.Where("node_id IS NULL")
+	} else {
+		query = query.Where("node_id = ?", *inbound.NodeID)
+	}
+	if err := query.Find(&others).Error; err != nil {
+		return err
+	}
+	for _, other := range others {
+		taken := wireguardInterfaceOf(other.Settings)
+		if taken == "" {
+			taken = wgquick.DefaultInterface(other.Id)
+		}
+		if taken == name {
+			return common.NewErrorf("inbound %q already uses the interface %s", other.Remark, name)
+		}
+	}
+	return nil
 }

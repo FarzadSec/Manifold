@@ -29,8 +29,11 @@ const (
 	// CapOpenVPN marks a node that serves OpenVPN inbounds; a native engine's
 	// capability is always its protocol name.
 	CapOpenVPN = "openvpn"
+	// CapWireGuard marks a node that runs WireGuard inbounds on the kernel
+	// interface; an older node would run them inside Xray instead.
+	CapWireGuard = "wireguard"
 	// NodeCaps is the full CapsHeader value this build advertises.
-	NodeCaps = CapZstd + "," + CapAmneziaWGKernel + "," + CapOpenVPN
+	NodeCaps = CapZstd + "," + CapAmneziaWGKernel + "," + CapOpenVPN + "," + CapWireGuard
 
 	// maxDecodeBytes bounds in-memory decompression to defuse a zstd bomb from
 	// an (authenticated) node-API caller.
