@@ -18,6 +18,9 @@ PANEL_PATH=""
 PANEL_USERNAME=""
 PANEL_PASSWORD=""
 START_SERVICE=1
+INSTALL_DEPS=1
+DEFAULT_SUB_PORT=2096
+SUB_PORT=""
 FIRST_INSTALL=0
 WORK_DIR=""
 
@@ -35,6 +38,7 @@ The database and settings in /etc/manifold are kept on update.
   --username NAME    Panel login for a first install (default: random)
   --password PASS    Panel password for a first install (default: random)
   --no-start         Install the files but do not start the service
+  --no-deps          Do not install the system packages the VPN engines need
   -h, --help         Show this help
 
 Environment:
@@ -91,8 +95,22 @@ random_string() {
     LC_ALL=C tr -dc 'a-zA-Z0-9' </dev/urandom | head -c "$1" || true
 }
 
-random_port() {
-    shuf -i 20000-60000 -n 1
+# port_in_use PORT: some program already listens on the TCP port.
+port_in_use() {
+    command_exists ss || return 1
+    [ -n "$(ss -H -ltn "sport = :$1" 2>/dev/null)" ]
+}
+
+# free_port: a random port nothing listens on, other than the panel's own.
+free_port() {
+    local candidate
+    for candidate in $(shuf -i 20000-60000 -n 20); do
+        [ "$candidate" = "$PANEL_PORT" ] && continue
+        port_in_use "$candidate" && continue
+        echo "$candidate"
+        return 0
+    done
+    return 1
 }
 
 parse_args() {
@@ -105,6 +123,7 @@ parse_args() {
             --username) PANEL_USERNAME="${2:?--username needs a value}"; shift 2 ;;
             --password) PANEL_PASSWORD="${2:?--password needs a value}"; shift 2 ;;
             --no-start) START_SERVICE=0; shift ;;
+            --no-deps) INSTALL_DEPS=0; shift ;;
             -h | --help) usage; exit 0 ;;
             *) die "unknown option: $1 (see --help)" ;;
         esac
@@ -190,17 +209,82 @@ first_setup() {
     FIRST_INSTALL=0
     [ -f "${DATA_DIR}/manifold.db" ] && return 0
     FIRST_INSTALL=1
-    [ -n "$PANEL_PORT" ] || PANEL_PORT=$(random_port)
+    [ -n "$PANEL_PORT" ] || PANEL_PORT=$(free_port) || die "found no free port for the panel"
+    # Another panel on the server usually holds the default subscription port,
+    # and the subscription server could not start next to it.
+    local sub_args=()
+    if port_in_use "$DEFAULT_SUB_PORT"; then
+        SUB_PORT=$(free_port) || die "found no free port for the subscription server"
+        sub_args=(-subPort "$SUB_PORT")
+    fi
     [ -n "$PANEL_PATH" ] || PANEL_PATH="/$(random_string 18)/"
     [ -n "$PANEL_USERNAME" ] || PANEL_USERNAME=$(random_string 10)
     [ -n "$PANEL_PASSWORD" ] || PANEL_PASSWORD=$(random_string 16)
     info "Creating the panel database"
     local out
     out=$("${INSTALL_DIR}/manifold" setting -port "$PANEL_PORT" -webBasePath "$PANEL_PATH" \
-        -username "$PANEL_USERNAME" -password "$PANEL_PASSWORD" 2>&1) || die "first setup failed: ${out}"
+        -username "$PANEL_USERNAME" -password "$PANEL_PASSWORD" "${sub_args[@]}" 2>&1) || die "first setup failed: ${out}"
     case "$out" in
         *Failed*) die "first setup failed: ${out}" ;;
     esac
+}
+
+command_exists() { command -v "$1" >/dev/null 2>&1; }
+
+# missing_dependencies: the packages to install for the VPN engines, by the
+# commands they provide.
+missing_dependencies() {
+    local missing=()
+    command_exists openvpn || missing+=(openvpn)
+    command_exists nft || missing+=(nftables)
+    command_exists iptables || missing+=(iptables)
+    echo "${missing[*]}"
+}
+
+# install_dependencies never fails the install: the Xray protocols run without
+# these packages, and only the engines that need one say so in the panel.
+install_dependencies() {
+    [ "$INSTALL_DEPS" -eq 1 ] || return 0
+    local missing
+    missing=$(missing_dependencies)
+    [ -n "$missing" ] || return 0
+    info "Installing system packages: ${missing}"
+    local -a packages
+    read -r -a packages <<<"$missing"
+    local ok=0
+    if command_exists apt-get; then
+        export DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a
+        apt-get update -qq >/dev/null 2>&1 || true
+        apt-get install -y -qq "${packages[@]}" >/dev/null 2>&1 && ok=1
+    elif command_exists dnf; then
+        # On RHEL and its rebuilds openvpn comes from EPEL.
+        dnf install -y -q epel-release >/dev/null 2>&1 || true
+        dnf install -y -q "${packages[@]}" >/dev/null 2>&1 && ok=1
+    elif command_exists yum; then
+        yum install -y -q epel-release >/dev/null 2>&1 || true
+        yum install -y -q "${packages[@]}" >/dev/null 2>&1 && ok=1
+    elif command_exists zypper; then
+        zypper --non-interactive --quiet install "${packages[@]}" >/dev/null 2>&1 && ok=1
+    elif command_exists pacman; then
+        pacman -Sy --noconfirm --needed "${packages[@]}" >/dev/null 2>&1 && ok=1
+    fi
+    if [ "$ok" -ne 1 ] || [ -n "$(missing_dependencies)" ]; then
+        echo "warning: could not install: $(missing_dependencies)" >&2
+        echo "         OpenVPN inbounds will not start until these packages are installed." >&2
+    fi
+}
+
+# port_from_settings reads the panel port out of "manifold setting -show".
+port_from_settings() {
+    awk -F': *' '$1 == "port" { print $2; exit }'
+}
+
+# service_listens_on PORT: the service's own process holds the port.
+service_listens_on() {
+    local pid
+    pid=$(systemctl show manifold --property MainPID --value 2>/dev/null)
+    [ -n "$pid" ] && [ "$pid" != 0 ] || return 1
+    ss -H -ltnp "sport = :$1" 2>/dev/null | grep -q "pid=${pid},"
 }
 
 start_service() {
@@ -208,6 +292,18 @@ start_service() {
     info "Starting the service"
     systemctl enable --quiet manifold
     systemctl restart manifold
+    local port
+    port=$("${INSTALL_DIR}/manifold" setting -show 2>/dev/null | port_from_settings)
+    # A panel that cannot serve still counts as "active" for its first second,
+    # so the proof is its own process holding the panel port.
+    if [ -n "$port" ] && command_exists ss; then
+        for _ in $(seq 1 30); do
+            service_listens_on "$port" && return 0
+            sleep 1
+        done
+        journalctl -u manifold -n 30 --no-pager >&2 || true
+        die "the panel is not listening on port ${port}; its last log lines are above"
+    fi
     for _ in 1 2 3 4 5 6 7 8 9 10; do
         systemctl is-active --quiet manifold && return 0
         sleep 1
@@ -230,6 +326,9 @@ print_summary() {
 This is shown once. Sign in, then change the login under Panel Settings.
 Open port ${PANEL_PORT}/tcp in your firewall if the page does not load.
 SUMMARY
+        if [ -n "$SUB_PORT" ]; then
+            echo "Subscriptions use port ${SUB_PORT}: port ${DEFAULT_SUB_PORT} is taken by another program on this server."
+        fi
     else
         echo "The existing database and settings were kept."
     fi
@@ -256,6 +355,7 @@ main() {
     fi
 
     install_files "$WORK_DIR"
+    install_dependencies
     first_setup
     start_service
     print_summary

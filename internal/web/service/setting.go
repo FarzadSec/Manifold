@@ -717,6 +717,10 @@ func (s *SettingService) SetPort(port int) error {
 	return s.setInt("webPort", port)
 }
 
+func (s *SettingService) SetSubPort(port int) error {
+	return s.setInt("subPort", port)
+}
+
 func (s *SettingService) SetCertFile(webCertFile string) error {
 	return s.setString("webCertFile", webCertFile)
 }

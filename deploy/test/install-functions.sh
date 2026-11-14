@@ -82,5 +82,52 @@ check "parsed package and version" "${PACKAGE} ${VERSION}" "/tmp/p.tar.gz v0.2.0
 
 check "random string has the requested length" "$(random_string 18 | wc -c | tr -d ' ')" "18"
 
+parse_args --no-deps
+check "parsed no-deps" "$INSTALL_DEPS" "0"
+
+settings_output='current panel settings as follows:
+Warning: Panel is not secure with SSL
+hasDefaultCredential: false
+port: 23456
+webBasePath: /abc/'
+check "port read from the settings output" "$(port_from_settings <<<"$settings_output")" "23456"
+check "no port when the settings could not be read" "$(port_from_settings <<<"open database failed")" ""
+
+# service_listens_on must only accept the service's own process: a panel that
+# cannot bind its port leaves whoever holds the port answering on it.
+systemctl() { echo "$FAKE_MAIN_PID"; }
+ss() { echo "$FAKE_SS"; }
+listens() { if service_listens_on 23456; then echo yes; else echo no; fi; }
+
+FAKE_MAIN_PID=4242
+FAKE_SS='LISTEN 0 4096 *:23456 *:* users:(("manifold",pid=4242,fd=9))'
+check "the service holds its port" "$(listens)" "yes"
+FAKE_SS='LISTEN 0 511 0.0.0.0:23456 0.0.0.0:* users:(("nginx",pid=42421,fd=6),("nginx",pid=900,fd=6))'
+check "another program holds the port" "$(listens)" "no"
+FAKE_SS=''
+check "nothing listens on the port" "$(listens)" "no"
+FAKE_MAIN_PID=0
+FAKE_SS='LISTEN 0 4096 *:23456 *:* users:(("manifold",pid=0,fd=9))'
+check "the service has no running process" "$(listens)" "no"
+unset -f systemctl ss
+
+command_exists() { case " $FAKE_COMMANDS " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
+FAKE_COMMANDS="openvpn nft"
+check "missing packages are named" "$(missing_dependencies)" "iptables"
+FAKE_COMMANDS="iptables"
+check "the nft command comes from the nftables package" "$(missing_dependencies)" "openvpn nftables"
+FAKE_COMMANDS="openvpn nft iptables"
+check "nothing to install when every command exists" "$(missing_dependencies)" ""
+
+# Another panel on the server usually holds the default subscription port.
+FAKE_COMMANDS="ss"
+ss() { [ "$3" = "sport = :2096" ] && echo 'LISTEN 0 4096 *:2096 *:*'; return 0; }
+in_use() { if port_in_use "$1"; then echo yes; else echo no; fi; }
+check "a port another program listens on" "$(in_use 2096)" "yes"
+check "a free port" "$(in_use 2097)" "no"
+PANEL_PORT=2097
+check "a free port is neither taken nor the panel's own" "$(shuf() { printf '2096\n2097\n31337\n'; }; free_port)" "31337"
+unset -f ss
+
 [ "$failures" -eq 0 ] || exit 1
 echo "all installer function tests passed"

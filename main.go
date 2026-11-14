@@ -135,9 +135,9 @@ func runWebServer() {
 	sub.SetDistFS(web.EmbeddedDist())
 	subServer := sub.NewServer()
 	global.SetSubServer(subServer)
-	err = subServer.Start()
-	if err != nil {
-		log.Fatalf("Error starting sub server: %v", err)
+	// The panel is where the subscription port is changed, so it stays up without it.
+	if err = subServer.Start(); err != nil {
+		logger.Errorf("The subscription server is not running: %v. Change its port under Panel Settings.", err)
 	}
 
 	sigCh := make(chan os.Signal, 8)
@@ -197,11 +197,11 @@ func runWebServer() {
 			sub.SetDistFS(web.EmbeddedDist())
 			subServer = sub.NewServer()
 			global.SetSubServer(subServer)
-			err = subServer.Start()
-			if err != nil {
-				log.Fatalf("Error restarting sub server: %v", err)
+			if err = subServer.Start(); err != nil {
+				logger.Errorf("The subscription server is not running: %v. Change its port under Panel Settings.", err)
+			} else {
+				log.Println("Sub server restarted successfully.")
 			}
-			log.Println("Sub server restarted successfully.")
 		case sys.SIGUSR1:
 			logger.Info("Received USR1 signal, restarting xray-core...")
 			err := server.RestartXray()
@@ -285,6 +285,9 @@ func showSetting(show bool) {
 
 		fmt.Println("hasDefaultCredential:", hasDefaultCredential)
 		fmt.Println("port:", port)
+		if subPort, err := settingService.GetSubPort(); err == nil {
+			fmt.Println("subPort:", subPort)
+		}
 		fmt.Println("webBasePath:", webBasePath)
 	}
 }
@@ -427,6 +430,16 @@ func updateSetting(port int, username string, password string, webBasePath strin
 	}
 
 	return nil
+}
+
+// updateSubPort runs after updateSetting, which has opened the database.
+func updateSubPort(port int) {
+	settingService := service.SettingService{}
+	if err := settingService.SetSubPort(port); err != nil {
+		fmt.Println("Failed to set subscription port:", err)
+		return
+	}
+	fmt.Printf("Subscription port set successfully: %v\n", port)
 }
 
 // updateCert updates the SSL certificate files for the panel.
@@ -610,6 +623,7 @@ func main() {
 
 	settingCmd := flag.NewFlagSet("setting", flag.ExitOnError)
 	var port int
+	var subPort int
 	var username string
 	var password string
 	var webBasePath string
@@ -631,6 +645,7 @@ func main() {
 	settingCmd.BoolVar(&reset, "reset", false, "Reset all settings")
 	settingCmd.BoolVar(&show, "show", false, "Display current settings")
 	settingCmd.IntVar(&port, "port", 0, "Set panel port number")
+	settingCmd.IntVar(&subPort, "subPort", 0, "Set subscription server port number")
 	settingCmd.StringVar(&username, "username", "", "Set login username")
 	settingCmd.StringVar(&password, "password", "", "Set login password")
 	settingCmd.StringVar(&webBasePath, "webBasePath", "", "Set base path for Panel")
@@ -726,6 +741,9 @@ func main() {
 		} else {
 			if err = updateSetting(port, username, password, webBasePath, listenIP, resetTwoFactor); err != nil {
 				return
+			}
+			if subPort > 0 {
+				updateSubPort(subPort)
 			}
 		}
 		if webCertFile != "" || webKeyFile != "" {
