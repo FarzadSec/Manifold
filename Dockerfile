@@ -32,7 +32,7 @@ RUN go build -ldflags "-w -s" -o build/x-ui main.go
 RUN ./DockerInit.sh "$TARGETARCH" "$TARGETVARIANT"
 
 # ========================================================
-# Stage: Final Image of 3x-ui
+# Stage: Final image
 # ========================================================
 FROM alpine
 ENV TZ=Asia/Tehran
