@@ -25,6 +25,8 @@ ProtectSystem=full
 # stores. The leading '-' keeps the unit startable before a path exists.
 ReadWritePaths=-/etc/manifold -/usr/local/manifold -/var/log/manifold
 ReadWritePaths=-/proc/sys/net
+# WireGuard inbounds are wg-quick configs, kept where every WireGuard tool looks.
+ReadWritePaths=-/etc/wireguard
 ProtectKernelTunables=yes
 ProtectKernelModules=yes
 ProtectKernelLogs=yes

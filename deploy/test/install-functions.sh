@@ -112,11 +112,11 @@ check "the service has no running process" "$(listens)" "no"
 unset -f systemctl ss
 
 command_exists() { case " $FAKE_COMMANDS " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
-FAKE_COMMANDS="openvpn nft"
+FAKE_COMMANDS="openvpn nft wg-quick"
 check "missing packages are named" "$(missing_dependencies)" "iptables"
 FAKE_COMMANDS="iptables"
-check "the nft command comes from the nftables package" "$(missing_dependencies)" "openvpn nftables"
-FAKE_COMMANDS="openvpn nft iptables"
+check "a command is named by the package that brings it" "$(missing_dependencies)" "openvpn nftables wireguard-tools"
+FAKE_COMMANDS="openvpn nft iptables wg-quick"
 check "nothing to install when every command exists" "$(missing_dependencies)" ""
 
 # Another panel on the server usually holds the default subscription port.

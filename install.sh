@@ -192,6 +192,8 @@ install_files() {
     fi
 
     mkdir -p "${INSTALL_DIR}/bin" "$DATA_DIR" "$LOG_DIR"
+    # The unit can only open for writing a directory that exists when it starts.
+    [ -d /etc/wireguard ] || install -d -m 700 /etc/wireguard
     chmod 700 "$DATA_DIR"
     install -m 755 "${src}/manifold" "${INSTALL_DIR}/manifold"
     cp -f "${src}"/bin/* "${INSTALL_DIR}/bin/"
@@ -238,6 +240,7 @@ missing_dependencies() {
     command_exists openvpn || missing+=(openvpn)
     command_exists nft || missing+=(nftables)
     command_exists iptables || missing+=(iptables)
+    command_exists wg-quick || missing+=(wireguard-tools)
     echo "${missing[*]}"
 }
 
@@ -270,7 +273,7 @@ install_dependencies() {
     fi
     if [ "$ok" -ne 1 ] || [ -n "$(missing_dependencies)" ]; then
         echo "warning: could not install: $(missing_dependencies)" >&2
-        echo "         OpenVPN inbounds will not start until these packages are installed." >&2
+        echo "         OpenVPN and WireGuard inbounds will not start until these packages are installed." >&2
     fi
 }
 

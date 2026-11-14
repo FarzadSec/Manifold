@@ -11,7 +11,8 @@ services:
     # The bundled Fail2ban (MANIFOLD_ENABLE_FAIL2BAN below) enforces the IP limit
     # with iptables, which needs NET_ADMIN. Without these caps a ban is logged
     # and shown in fail2ban status but never actually applied. NET_RAW covers
-    # ip6tables. OpenVPN inbounds need NET_ADMIN as well.
+    # ip6tables. OpenVPN and WireGuard inbounds need NET_ADMIN as well; WireGuard
+    # runs on the host kernel's module, which the host must have.
     cap_add:
       - NET_ADMIN
       - NET_RAW

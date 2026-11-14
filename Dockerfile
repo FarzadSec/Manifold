@@ -47,7 +47,9 @@ RUN apk add --no-cache --update \
   openssl \
   openvpn \
   nftables \
-  iptables
+  iptables \
+  iproute2 \
+  wireguard-tools
 
 COPY --from=builder /app/build/ /app/
 COPY --from=builder /app/DockerEntrypoint.sh /app/
