@@ -19,6 +19,7 @@ PANEL_USERNAME=""
 PANEL_PASSWORD=""
 START_SERVICE=1
 FIRST_INSTALL=0
+WORK_DIR=""
 
 usage() {
     cat <<'USAGE'
@@ -46,6 +47,11 @@ USAGE
 die() {
     echo "error: $*" >&2
     exit 1
+}
+
+# The EXIT trap runs after main has returned, so the directory cannot be a local of main.
+cleanup() {
+    [ -z "$WORK_DIR" ] || rm -rf "$WORK_DIR"
 }
 
 info() {
@@ -217,19 +223,19 @@ main() {
     command -v systemctl >/dev/null || die "systemd is required"
     command -v tar >/dev/null || die "tar is required"
 
-    local arch work
+    local arch
     arch=$(package_arch "$(uname -m)") || die "unsupported architecture: $(uname -m)"
-    work=$(mktemp -d)
-    trap 'rm -rf "$work"' EXIT
+    WORK_DIR=$(mktemp -d)
+    trap cleanup EXIT
 
     if [ -z "$PACKAGE" ]; then
         command -v curl >/dev/null || die "curl is required to download a release"
-        download_package "$arch" "$work"
+        download_package "$arch" "$WORK_DIR"
     else
         [ -f "$PACKAGE" ] || die "package not found: ${PACKAGE}"
     fi
 
-    install_files "$work"
+    install_files "$WORK_DIR"
     first_setup
     start_service
     print_summary
