@@ -29,6 +29,8 @@ jobs:
           - amd64
           - arm64
     runs-on: ubuntu-latest
+    # A stalled toolchain download must not hold a runner for the default six hours.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
 
