@@ -631,6 +631,10 @@ func (s *SubService) getSubs(subId string) ([]string, []string, int64, xray.Clie
 			if !s.hostsFirst && s.keepLink(link) {
 				result = append(result, link)
 			}
+			// An account whose protocols a proxy app cannot import still exists: an empty list, not a 404.
+			if result == nil {
+				result = []string{}
+			}
 			emails = append(emails, client.Email)
 			seenEmails[client.Email] = struct{}{}
 		}
@@ -843,9 +847,9 @@ func (s *SubService) loadInboundsBySubId(subId string) ([]*model.Inbound, error)
 		JOIN client_inbounds ON client_inbounds.inbound_id = inbounds.id
 		JOIN clients ON clients.id = client_inbounds.client_id
 		WHERE
-			inbounds.protocol in ('vmess','vless','trojan','shadowsocks','hysteria','wireguard','amneziawg','mtproto','tuic','masque')
+			inbounds.protocol in ?
 			AND clients.sub_id = ? AND inbounds.enable = ?
-	)`, subId, true).Order("sub_sort_index ASC").Order("id ASC")
+	)`, subscriptionProtocols(), subId, true).Order("sub_sort_index ASC").Order("id ASC")
 	if cached {
 		query = query.Omit("settings")
 	}
@@ -1003,31 +1007,35 @@ func (s *SubService) GetLink(inbound *model.Inbound, email string) string {
 	if network, _ := unmarshalStreamSettings(inbound.StreamSettings)["network"].(string); network == "xdrive" {
 		return ""
 	}
-	switch inbound.Protocol {
-	case "vmess":
-		return s.genVmessLink(inbound, email)
-	case "vless":
-		return s.genVlessLink(inbound, email)
-	case "trojan":
-		return s.genTrojanLink(inbound, email)
-	case "shadowsocks":
-		return s.genShadowsocksLink(inbound, email)
-	case "hysteria":
-		return s.genHysteriaLink(inbound, email)
-	case "mtproto":
-		return s.genMtprotoLink(inbound, email)
-	case "wireguard":
-		return s.genWireguardLink(inbound, email)
-	case "amneziawg":
-		return s.genAmneziaWGLink(inbound, email)
-	case "tuic":
-		return s.genTuicLink(inbound, email)
-	case "openvpn":
-		return s.genOpenVPNLink(inbound, email)
-	case "l2tp":
-		return s.genL2TPLink(inbound, email)
+	if build, ok := linkBuilders[inbound.Protocol]; ok {
+		return build(s, inbound, email)
 	}
 	return ""
+}
+
+// linkBuilders renders what a client is handed for an inbound of each protocol.
+var linkBuilders = map[model.Protocol]func(*SubService, *model.Inbound, string) string{
+	model.VMESS:       (*SubService).genVmessLink,
+	model.VLESS:       (*SubService).genVlessLink,
+	model.Trojan:      (*SubService).genTrojanLink,
+	model.Shadowsocks: (*SubService).genShadowsocksLink,
+	model.Hysteria:    (*SubService).genHysteriaLink,
+	model.MTProto:     (*SubService).genMtprotoLink,
+	model.WireGuard:   (*SubService).genWireguardLink,
+	model.AmneziaWG:   (*SubService).genAmneziaWGLink,
+	model.TUIC:        (*SubService).genTuicLink,
+	model.OpenVPN:     (*SubService).genOpenVPNLink,
+	model.L2TP:        (*SubService).genL2TPLink,
+}
+
+// subscriptionProtocols is what a subscription looks up: every protocol with a
+// link, so the two cannot drift apart, and MASQUE, which only JSON and Clash describe.
+func subscriptionProtocols() []string {
+	protocols := []string{string(model.MASQUE)}
+	for protocol := range linkBuilders {
+		protocols = append(protocols, string(protocol))
+	}
+	return protocols
 }
 
 func (s *SubService) genTuicLink(inbound *model.Inbound, email string) string {

@@ -36,7 +36,7 @@ func (b *renderBudget) spent() bool {
 
 // keepLink books a rendered raw link, and its line break, against the request's budget.
 func (s *SubService) keepLink(link string) bool {
-	return s.rendered.take(len(link) + 1)
+	return link != "" && s.rendered.take(len(link)+1)
 }
 
 // budgetedConfig renders a client's JSON configs, keeping those the request's budget admits.

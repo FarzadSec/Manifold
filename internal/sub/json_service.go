@@ -745,7 +745,8 @@ func (s *SubJsonService) getConfig(subReq *SubService, inbound *model.Inbound, c
 				continue
 			}
 			newOutbounds = append(newOutbounds, wgOutbound)
-		case "amneziawg", "tuic":
+		default:
+			// No Xray outbound dials this protocol; a config would only go direct.
 			continue
 		}
 
