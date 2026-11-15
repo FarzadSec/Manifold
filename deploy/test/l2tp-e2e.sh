@@ -213,19 +213,24 @@ client_diagnosis() {
     tail -n 15 "$WORK/$1-xl2tpd.log" 2>/dev/null || true
     echo "--- server: pppd"
     tail -n 25 "$WORK"/bin/l2tp/*/ppp.log 2>/dev/null || true
+    echo "--- the kernel's L2TP sessions, server then client"
+    ip l2tp show session 2>/dev/null || true
+    in_client ip l2tp show session 2>/dev/null || true
 }
 
-# wait_for_link SECONDS NAME: like wait_until, with both ends' logs when the link does not come up.
-wait_for_link() {
-    local i
-    for ((i = 0; i < $1; i++)); do
-        if link_up "$2"; then
+# wait_for SECONDS NAME DESCRIPTION COMMAND...: like wait_until, with the logs
+# of client NAME and of the server when the time runs out.
+wait_for() {
+    local seconds="$1" name="$2" what="$3" i
+    shift 3
+    for ((i = 0; i < seconds; i++)); do
+        if "$@" >/dev/null 2>&1; then
             return 0
         fi
         sleep 1
     done
-    client_diagnosis "$2" >&2
-    fail "timed out after ${1}s waiting for $2's L2TP link"
+    client_diagnosis "$name" >&2
+    fail "timed out after ${seconds}s waiting for $what"
 }
 
 log "kernel and programs"
@@ -270,7 +275,7 @@ l2tp_disconnect plain
 log "alice connects through IPsec, reaches the internet through the tunnel, and is billed"
 start_client_ipsec
 l2tp_connect alice alice 1701
-wait_for_link 40 alice
+wait_for 40 alice "alice's L2TP link" link_up alice
 prints "encap type espinudp" in_client ip xfrm state || fail "alice's session is up without IPsec through NAT: $(in_client ip xfrm state | head -n 4)"
 if [ "${EXPECT_KERNEL_L2TP:-0}" = 1 ]; then
     prints "^Tunnel " ip l2tp show tunnel || fail "alice's session is relayed by xl2tpd instead of being the kernel's"
@@ -283,23 +288,23 @@ wait_until 40 "alice's traffic to be stored" traffic_at_least alice 20000
 log "a second device on alice's account is refused"
 l2tp_connect alice2 alice 1712
 refused() { grep -qi "authentication failed" "$WORK/alice2-ppp.log"; }
-wait_until 40 "the second device to be refused" refused
+wait_for 40 alice2 "the second device to be refused" refused
 link_down alice2 || fail "the second device has a link"
 l2tp_disconnect alice2
 
 log "disabling alice cuts her session"
 must_succeed "$(api POST /panel/api/clients/bulkDisable '{"emails":["alice"]}')" "disabling alice"
-wait_until 40 "alice's link to go down" link_down alice
+wait_for 40 alice "alice's link to go down" link_down alice
 l2tp_disconnect alice
 
 log "bob runs out of quota and is cut off"
 l2tp_connect bob bob 1713
-wait_for_link 40 bob
+wait_for 40 bob "bob's L2TP link" link_up bob
 through_tunnel bob
 wait_until 20 "bob to reach the internet through the tunnel" reaches_internet
 use_traffic 40 || fail "bob: no answer through the tunnel"
 wait_until 60 "bob's account to be switched off" account_switched_off bob
-wait_until 40 "bob's link to go down" link_down bob
+wait_for 40 bob "bob's link to go down" link_down bob
 l2tp_disconnect bob
 
 log "deleting the inbound stops its server"
