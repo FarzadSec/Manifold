@@ -1,9 +1,11 @@
 # Manifold — Architecture and Roadmap
 
-Version 0.8 · 2026-11-15 · Status: P0, OpenVPN, WireGuard and L2TP/IPsec delivered; see 8.1 to 8.4 for what they leave open
+Version 0.9 · 2026-11-15 · Status: P0, OpenVPN, WireGuard and L2TP/IPsec delivered; see 8.1 to 8.4 for what they leave open
 
 Decision log:
 
+- 2026-11-15 — What a subscription looks up and what a client can be handed come from one table of protocols (`linkBuilders` in `internal/sub`). They were two lists kept by hand, and OpenVPN and L2TP were only in one: from 0.2.0 to 0.4.0 the client's windows and the subscription page showed nothing for them, and the address of an account with no other protocol answered 404. The end-to-end scripts had asked for links by email, a route no page uses; they now ask by subscription ID, as the windows do.
+- 2026-11-15 — A subscription format only describes what it can: the raw body leaves out an empty link instead of a blank line, the JSON format skips every protocol Xray has no outbound for (it used to emit a config with only "direct" and "block" for MTProto), and an account with nothing a proxy app can import gets an empty list, not a 404.
 - 2026-11-15 — L2TP logins are decided by the panel itself, without the embedded RADIUS server of the first proposal. pppd's `winbind` plugin starts a helper for every login and talks to it over a pipe; the helper is the panel's own program, which relays to the running panel over a unix socket, and the panel verifies MS-CHAPv2 against the account's password. No dictionary files, no second listening port, and the same account table that every other decision uses.
 - 2026-11-15 — A server holds one L2TP inbound, on UDP port 1701. No L2TP client can be given another port, so a second inbound could never be reached; both are refused on save with that reason.
 - 2026-11-15 — IPsec for L2TP is the server's own strongSwan, given one connection through `swanctl`. The panel runs no IKE daemon. The installer installs and starts strongSwan only where no IPsec service exists; next to an older `ipsec` setup it installs nothing, because two IKE daemons cannot share ports 500 and 4500.
@@ -306,6 +308,8 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 
 ### 8.4 Open items after L2TP/IPsec
 
+- No test opens the panel's pages in a browser against a running panel. Component tests render the blocks from links they are handed, and the end-to-end scripts call the API; what an admin sees after creating an inbound and a client through the forms was checked by hand with a headless browser for 0.4.1, for the three engines, and is not repeated by CI.
+- The first tab of the subscription page offers the subscription address and its QR code to every account, also to one that has only OpenVPN or L2TP, where a proxy app would import nothing from it.
 - The only client that has connected is the test's own: strongSwan, xl2tpd and pppd on Linux, behind a NAT router. No Windows, macOS, iOS or Android device has. The IKE and ESP offers for them come from their documentation, and Android versions 6 and 7 are known to mishandle the SHA-256 ESP offer that the server prefers.
 - No session has run for longer than about a minute. strongSwan rekeys a session after an hour and re-authenticates after four with its defaults; whether the built-in clients stay connected across both has to be seen on real devices. Leaving rekeying to the client (`rekey_time = 0` for the connection and its child) is the usual remedy if they do not.
 - Two devices behind one public address may not stay connected together. strongSwan's `connmark` plugin is the known answer and is not used.
