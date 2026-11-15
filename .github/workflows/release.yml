@@ -231,6 +231,7 @@ jobs:
           # Where the kernel can carry L2TP sessions itself, the sandbox must let it.
           kernel_l2tp=0
           if sudo modinfo l2tp_ppp >/dev/null 2>&1; then kernel_l2tp=1; fi
+          echo "kernel $(uname -r), L2TP sessions in the kernel: $kernel_l2tp"
           sudo env $INSTALLED_PANEL EXPECT_KERNEL_L2TP="$kernel_l2tp" deploy/test/l2tp-e2e.sh /usr/local/manifold/manifold
 
       - name: Update in place, then uninstall
