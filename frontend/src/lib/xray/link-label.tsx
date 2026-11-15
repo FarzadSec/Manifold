@@ -1,4 +1,5 @@
 import { Tag } from 'antd';
+import { l2tpAccountFromLink } from '@/lib/xray/l2tp-link';
 import { openvpnProfileFromLink, summarizeOpenvpnProfile } from '@/lib/xray/openvpn-link';
 import { Base64 } from '@/utils';
 
@@ -30,6 +31,7 @@ const PROTOCOL_LABELS: Record<string, string> = {
   vpn: 'AmneziaWG',
   tuic: 'TUIC',
   openvpn: 'OpenVPN',
+  l2tp: 'L2TP',
 };
 
 const PROTOCOL_COLORS: Record<string, string> = {
@@ -44,6 +46,7 @@ const PROTOCOL_COLORS: Record<string, string> = {
   AmneziaWG: 'yellow',
   TUIC: 'orange',
   OpenVPN: 'gold',
+  L2TP: 'green',
 };
 
 const SECURITY_COLORS: Record<string, string> = {
@@ -51,6 +54,7 @@ const SECURITY_COLORS: Record<string, string> = {
   XTLS: 'green',
   REALITY: 'purple',
   FAKETLS: 'green',
+  IPSEC: 'green',
 };
 
 const TRANSPORT_COLOR = 'gold';
@@ -122,6 +126,12 @@ export function parseLinkParts(link: string): LinkParts | null {
     port = summary.port;
     network = summary.network;
     security = 'TLS';
+  } else if (scheme === 'l2tp') {
+    const account = l2tpAccountFromLink(trimmed);
+    remark = account?.remark ?? '';
+    port = '1701';
+    network = 'udp';
+    security = account?.requiresIpsec ? 'ipsec' : '';
   } else {
     try {
       const url = new URL(trimmed);

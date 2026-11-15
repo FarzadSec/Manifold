@@ -19,4 +19,5 @@ export const NODE_ELIGIBLE_PROTOCOLS: Readonly<Record<string, true>> = {
   [Protocols.TUIC]: true,
   [Protocols.MASQUE]: true,
   [Protocols.OPENVPN]: true,
+  [Protocols.L2TP]: true,
 };

@@ -23,6 +23,12 @@ import {
 } from './amneziawgConfig';
 import { buildTuicClientConfig, findTuicInbound, isTuicClient } from './tuicConfig';
 import { isOpenvpnLink, openvpnProfilesFromLinks } from '@/lib/xray/openvpn-link';
+import {
+  isL2tpLink,
+  l2tpAccountFileName,
+  l2tpAccountText,
+  l2tpAccountsFromLinks,
+} from '@/lib/xray/l2tp-link';
 import { tunnelConfigEndpoints, tunnelEndpointLabel } from './tunnelEndpoints';
 import type { HostRecord } from '@/schemas/api/host';
 
@@ -473,8 +479,38 @@ function ClientQrModalContent({
         ),
       });
     });
+    // An account is typed in by hand, so it is shown as text to copy, not as a code to scan.
+    l2tpAccountsFromLinks(links).forEach(({ key, account }) => {
+      out.push({
+        key,
+        label: (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Tag color="green" style={{ margin: 0 }}>
+              {t('pages.clients.l2tpAccount')}
+            </Tag>
+            {account.remark && (
+              <span style={{ opacity: 0.85, fontSize: 12 }}>{account.remark}</span>
+            )}
+          </span>
+        ),
+        children: (
+          <QrPanel
+            value={l2tpAccountText(account, {
+              protocol: t('protocol'),
+              server: t('pages.clients.l2tpServer'),
+              username: t('username'),
+              password: t('password'),
+              psk: t('pages.inbounds.l2tp.psk'),
+            })}
+            remark={account.remark}
+            downloadName={l2tpAccountFileName(account.remark, client?.email || 'l2tp')}
+            showQr={false}
+          />
+        ),
+      });
+    });
     links.forEach((link, idx) => {
-      if (isOpenvpnLink(link)) return;
+      if (isOpenvpnLink(link) || isL2tpLink(link)) return;
       const parts = parseLinkParts(link);
       const meta = parts ? linkMetaText(parts) : '';
       const label: React.ReactNode = parts ? (

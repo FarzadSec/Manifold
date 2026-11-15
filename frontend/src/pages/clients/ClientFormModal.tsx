@@ -73,6 +73,7 @@ const MULTI_CLIENT_PROTOCOLS = new Set([
   'tuic',
   'masque',
   'openvpn',
+  'l2tp',
 ]);
 
 const CLIENT_FORM_MODAL_Z_INDEX = 1000;

@@ -41,6 +41,7 @@ const MULTI_CLIENT_PROTOCOLS = new Set([
   'tuic',
   'masque',
   'openvpn',
+  'l2tp',
 ]);
 
 const EMPTY: ClientBulkAddFormValues = {

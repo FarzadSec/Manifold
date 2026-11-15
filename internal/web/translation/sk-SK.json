@@ -823,7 +823,16 @@
         "importDropped": "Neprenesené: {list}",
         "importWithoutKeyHint": "Klient bez súkromného kľúča funguje ďalej s konfiguráciou, ktorú už má, ale panel mu ju nedokáže znova zobraziť."
       },
-      "engineMissing": "Balík {package} nie je na tomto serveri nainštalovaný, preto sa tento vstup nespustí. Nainštalujte ho a vstup sa spustí sám."
+      "engineMissing": "Balík {package} nie je na tomto serveri nainštalovaný, preto sa tento vstup nespustí. Nainštalujte ho a vstup sa spustí sám.",
+      "l2tp": {
+        "portFixed": "Každý klient L2TP sa pripája na UDP port 1701 a žiadnemu nemožno nastaviť iný, preto je port pevný a server má jediný vstup L2TP. IPsec potrebuje aj otvorené UDP porty 500 a 4500.",
+        "ipsec": "Vyžadovať IPsec",
+        "ipsecHint": "Zapnuté: prijímajú sa iba relácie šifrované cez IPsec. Vypnuté: prijímajú sa aj nešifrované relácie, pre zariadenia, ktoré IPsec nepodporujú.",
+        "psk": "Kľúč IPsec (PSK)",
+        "pskHint": "Zadáva sa raz na každom zariadení spolu s menom a heslom účtu. Nový kľúč odpojí všetky zariadenia, kým ho na nich nezadáte. Ak pole necháte prázdne, panel kľúč vygeneruje alebo ponechá ten, ktorý má.",
+        "pskInvalid": "Použite 8 až 64 písmen, číslic alebo znakov ! @ # $ % ^ & * ( ) _ + = . , : ; ~ -",
+        "dnsTooMany": "L2TP odovzdá zariadeniu najviac dva servery DNS."
+      }
     },
     "clients": {
       "tabBasics": "Základné údaje",
@@ -1086,7 +1095,9 @@
       "renewsUsed": "Použité obnovenia",
       "bulkAdTagHint": "Zadajte 32-znakovú hexadecimálnu značku alebo 'none' na odstránenie sponzorovaného kanála zo vstupov MTProto.",
       "renewIntervalDesc": "Po skončení platnosti pridá nastavený počet 24-hodinových dní k predchádzajúcemu koncu platnosti a vynuluje spotrebu klienta. Samostatné nulovanie spotreby nechajte vypnuté, ak nechcete ďalšie nulovanie navyše.",
-      "renewWeeklyDesc": "Kalendárne obnovenie prebieha o polnoci v časovom pásme panelu a vynuluje aj spotrebu klienta. Samostatné nulovanie spotreby nechajte vypnuté, ak nechcete ďalšie nulovanie navyše."
+      "renewWeeklyDesc": "Kalendárne obnovenie prebieha o polnoci v časovom pásme panelu a vynuluje aj spotrebu klienta. Samostatné nulovanie spotreby nechajte vypnuté, ak nechcete ďalšie nulovanie navyše.",
+      "l2tpAccount": "Účet L2TP",
+      "l2tpServer": "Server"
     },
     "groups": {
       "name": "Názov",

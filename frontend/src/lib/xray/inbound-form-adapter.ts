@@ -8,6 +8,7 @@ import type { InboundSettings } from '@/schemas/protocols/inbound';
 import {
   AmneziawgClientSchema,
   HysteriaClientSchema,
+  L2tpClientSchema,
   MasqueClientSchema,
   MtprotoClientSchema,
   ShadowsocksClientSchema,
@@ -296,6 +297,8 @@ function clientSchemaForProtocol(protocol: string): z.ZodType | null {
       return TuicClientSchema;
     case 'openvpn':
       return OpenvpnClientSchema;
+    case 'l2tp':
+      return L2tpClientSchema;
     case 'masque':
       return MasqueClientSchema;
     default:

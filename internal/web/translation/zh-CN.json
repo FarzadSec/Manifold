@@ -823,7 +823,16 @@
         "importDropped": "未迁移：{list}",
         "importWithoutKeyHint": "没有私钥的客户仍可使用手中已有的配置，但面板无法再次显示该配置。"
       },
-      "engineMissing": "此服务器未安装 {package} 软件包，因此该入站不会启动。安装后入站会自动启动。"
+      "engineMissing": "此服务器未安装 {package} 软件包，因此该入站不会启动。安装后入站会自动启动。",
+      "l2tp": {
+        "portFixed": "所有 L2TP 客户端都连接 UDP 1701 端口，且无法改用其他端口，因此端口固定，每台服务器只能有一个 L2TP 入站。IPsec 还需要开放 UDP 500 和 4500 端口。",
+        "ipsec": "要求 IPsec",
+        "ipsecHint": "开启：只接受经 IPsec 加密的会话。关闭：也接受未加密的会话，供不支持 IPsec 的设备使用。",
+        "psk": "IPsec 密钥（PSK）",
+        "pskHint": "在每台设备上与账户的用户名和密码一起输入一次。更换密钥后，所有设备在输入新密钥前都会断开。留空则由面板生成密钥，或保留现有密钥。",
+        "pskInvalid": "请使用 8 到 64 个字母、数字或 ! @ # $ % ^ & * ( ) _ + = . , : ; ~ - 字符。",
+        "dnsTooMany": "L2TP 最多向设备下发两个 DNS 服务器。"
+      }
     },
     "clients": {
       "tabBasics": "基本",
@@ -1086,7 +1095,9 @@
       "renewsUsed": "已用续期次数",
       "bulkAdTagHint": "输入 32 位十六进制标签以设置，或输入 'none' 清除 MTProto 赞助频道。",
       "renewIntervalDesc": "到期后从上次截止时间增加指定天数（每天 24 小时），并重置客户端流量。若不需要额外重置，请关闭独立的流量重置。",
-      "renewWeeklyDesc": "日历续期按面板时区的午夜执行，并重置客户端流量。若不需要额外重置，请关闭独立的流量重置。"
+      "renewWeeklyDesc": "日历续期按面板时区的午夜执行，并重置客户端流量。若不需要额外重置，请关闭独立的流量重置。",
+      "l2tpAccount": "L2TP 账户",
+      "l2tpServer": "服务器"
     },
     "groups": {
       "name": "名称",

@@ -12,6 +12,8 @@ import {
 } from '@/lib/xray/inbound-link';
 import { LinkTags, parseLinkParts } from '@/lib/xray/link-label';
 import { isOpenvpnLink } from '@/lib/xray/openvpn-link';
+import L2tpAccountBlocks from '@/components/clients/L2tpAccountBlocks';
+import { isL2tpLink } from '@/lib/xray/l2tp-link';
 import SubQrButton from './SubQrButton';
 
 interface SubConfigsTabProps {
@@ -21,8 +23,8 @@ interface SubConfigsTabProps {
 
 export default function SubConfigsTab({ links: allLinks, onCopy }: SubConfigsTabProps) {
   const { t } = useTranslation();
-  // An OpenVPN profile is a file to download, not a link an app imports.
-  const links = allLinks.filter((link) => !isOpenvpnLink(link));
+  // An OpenVPN profile is a file to download and an L2TP account is typed in by hand; neither is a link an app imports.
+  const links = allLinks.filter((link) => !isOpenvpnLink(link) && !isL2tpLink(link));
 
   return (
     <div className="sub-rows">
@@ -81,6 +83,7 @@ export default function SubConfigsTab({ links: allLinks, onCopy }: SubConfigsTab
         );
       })}
       <OpenvpnProfileBlocks links={allLinks} fallbackName="openvpn" />
+      <L2tpAccountBlocks links={allLinks} fallbackName="l2tp" />
     </div>
   );
 }

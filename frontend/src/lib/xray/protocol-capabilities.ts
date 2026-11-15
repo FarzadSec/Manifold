@@ -27,7 +27,11 @@ const RETIRED_INBOUND_PROTOCOLS: readonly string[] = [Protocols.AMNEZIAWG];
 const SS_2022_PREFIX = '2022';
 
 // Protocols the panel serves with a system program of their own, which may not be installed.
-const NATIVE_ENGINE_PROTOCOLS: readonly string[] = [Protocols.OPENVPN, Protocols.WIREGUARD];
+const NATIVE_ENGINE_PROTOCOLS: readonly string[] = [
+  Protocols.OPENVPN,
+  Protocols.WIREGUARD,
+  Protocols.L2TP,
+];
 
 export function hasNativeEngine(protocol: string): boolean {
   return NATIVE_ENGINE_PROTOCOLS.includes(protocol);
@@ -111,7 +115,9 @@ export function canEnableStream(values: { protocol: string }): boolean {
 // These are served by a process or interface of their own, not by Xray, so
 // the Xray sniffing block does not apply. Every other inbound supports it.
 export function canEnableSniffing(values: { protocol: string }): boolean {
-  return !['mtproto', 'amneziawg', 'tuic', 'openvpn', 'wireguard'].includes(values.protocol);
+  return !['mtproto', 'amneziawg', 'tuic', 'openvpn', 'wireguard', 'l2tp'].includes(
+    values.protocol,
+  );
 }
 
 // Vision seed applies only when XTLS Vision (TCP/TLS) flow is selected

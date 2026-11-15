@@ -49,6 +49,7 @@ const INBOUND_PROTOCOL_COLORS: Record<string, string> = {
   tunnel: 'orange',
   tuic: 'orange',
   openvpn: 'gold',
+  l2tp: 'green',
   masque: 'red',
 };
 

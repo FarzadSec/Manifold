@@ -823,7 +823,16 @@
         "importDropped": "Taşınmadı: {list}",
         "importWithoutKeyHint": "Özel anahtarı olmayan kullanıcı elindeki yapılandırmayla çalışmaya devam eder, ancak panel o yapılandırmayı yeniden gösteremez."
       },
-      "engineMissing": "{package} paketi bu sunucuda kurulu değil, bu yüzden bu gelen bağlantı başlamaz. Paketi kurduğunuzda gelen bağlantı kendiliğinden açılır."
+      "engineMissing": "{package} paketi bu sunucuda kurulu değil, bu yüzden bu gelen bağlantı başlamaz. Paketi kurduğunuzda gelen bağlantı kendiliğinden açılır.",
+      "l2tp": {
+        "portFixed": "Bütün L2TP istemcileri UDP 1701 portuna bağlanır ve hiçbirine başka port verilemez; bu yüzden port sabittir ve bir sunucuda tek bir L2TP gelen bağlantısı olur. IPsec için UDP 500 ve 4500 portlarının da açık olması gerekir.",
+        "ipsec": "IPsec zorunlu olsun",
+        "ipsecHint": "Açık: yalnızca IPsec ile şifrelenmiş oturumlar kabul edilir. Kapalı: IPsec yapamayan cihazlar için şifresiz oturumlar da kabul edilir.",
+        "psk": "IPsec anahtarı (PSK)",
+        "pskHint": "Her cihaza, hesabın kullanıcı adı ve parolasıyla birlikte bir kez girilir. Yeni bir anahtar, oraya girilene kadar bütün cihazların bağlantısını keser. Boş bırakırsanız panel bir anahtar üretir ya da elindekini korur.",
+        "pskInvalid": "8 ile 64 arasında harf, rakam veya ! @ # $ % ^ & * ( ) _ + = . , : ; ~ - karakterlerini kullanın.",
+        "dnsTooMany": "L2TP bir cihaza en fazla iki DNS sunucusu verir."
+      }
     },
     "clients": {
       "tabBasics": "Temel",
@@ -1086,7 +1095,9 @@
       "renewsUsed": "Kullanılan yenileme",
       "bulkAdTagHint": "Aramak için 32 karakterlik onaltılık etiket girin veya MTProto üzerinde temizlemek için 'none' yazın.",
       "renewIntervalDesc": "Süre dolduktan sonra önceki bitiş zamanına belirlenen sayıda 24 saatlik gün ekler ve istemci trafiğini sıfırlar. Ek bir sıfırlama istemiyorsanız bağımsız trafik sıfırlamalarını devre dışı bırakın.",
-      "renewWeeklyDesc": "Takvim yenilemesi panelin saat diliminde gece yarısı gerçekleşir ve istemci trafiğini de sıfırlar. Ek bir sıfırlama istemiyorsanız bağımsız trafik sıfırlamalarını devre dışı bırakın."
+      "renewWeeklyDesc": "Takvim yenilemesi panelin saat diliminde gece yarısı gerçekleşir ve istemci trafiğini de sıfırlar. Ek bir sıfırlama istemiyorsanız bağımsız trafik sıfırlamalarını devre dışı bırakın.",
+      "l2tpAccount": "L2TP hesabı",
+      "l2tpServer": "Sunucu"
     },
     "groups": {
       "name": "İsim",

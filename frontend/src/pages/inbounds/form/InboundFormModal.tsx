@@ -79,6 +79,7 @@ import {
   MixedFields,
   MtprotoFields,
   OpenvpnFields,
+  L2tpFields,
   ShadowsocksFields,
   TuicFields,
   TunFields,
@@ -106,6 +107,7 @@ import type { DBInbound } from '@/models/dbinbound';
 import type { NodeRecord } from '@/api/queries/useNodesQuery';
 
 const SHARE_ADDR_STRATEGIES = ['node', 'listen', 'custom'] as const;
+const L2TP_PORT = 1701;
 const SHARE_ADDR_HOSTNAME_RE =
   /^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*$/;
 
@@ -582,6 +584,10 @@ export default function InboundFormModal({
       if (next !== Protocols.VLESS) {
         setV('disableFlow', false);
       }
+      // Every L2TP client dials this port; none can be told another.
+      if (next === Protocols.L2TP) {
+        setV('port', L2TP_PORT);
+      }
       if (next === Protocols.HYSTERIA) {
         setV('streamSettings', {
           network: 'hysteria',
@@ -808,7 +814,7 @@ export default function InboundFormModal({
         label={t('pages.inbounds.port')}
         rules={{ validate: rhfZodValidate(InboundFormBaseSchema.shape.port) }}
       >
-        <InputNumber min={isUdsListen ? 0 : 1} max={65535} />
+        <InputNumber min={isUdsListen ? 0 : 1} max={65535} disabled={protocol === Protocols.L2TP} />
       </FormField>
 
       <Form.Item
@@ -899,6 +905,8 @@ export default function InboundFormModal({
       {protocol === Protocols.TUIC && <TuicFields />}
 
       {protocol === Protocols.OPENVPN && <OpenvpnFields />}
+
+      {protocol === Protocols.L2TP && <L2tpFields />}
 
       {protocol === Protocols.MASQUE && <MasqueSettingsFields />}
 
@@ -1283,6 +1291,7 @@ export default function InboundFormModal({
                     Protocols.TUIC,
                     Protocols.MASQUE,
                     Protocols.OPENVPN,
+                    Protocols.L2TP,
                   ] as string[]
                 ).includes(protocol) ||
                 isFallbackHost ||

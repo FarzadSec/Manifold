@@ -823,7 +823,16 @@
         "importDropped": "No se ha trasladado: {list}",
         "importWithoutKeyHint": "Un cliente sin clave privada sigue funcionando con la configuración que ya tiene, pero el panel no puede volver a mostrarla."
       },
-      "engineMissing": "El paquete {package} no está instalado en este servidor, así que esta entrada no arrancará. Instálalo y la entrada se levantará sola."
+      "engineMissing": "El paquete {package} no está instalado en este servidor, así que esta entrada no arrancará. Instálalo y la entrada se levantará sola.",
+      "l2tp": {
+        "portFixed": "Todos los clientes L2TP se conectan al puerto UDP 1701 y ninguno admite otro, así que el puerto es fijo y cada servidor tiene una sola entrada L2TP. IPsec necesita además los puertos UDP 500 y 4500 abiertos.",
+        "ipsec": "Exigir IPsec",
+        "ipsecHint": "Activado: solo se aceptan sesiones cifradas con IPsec. Desactivado: también se aceptan sesiones sin cifrar, para dispositivos que no admiten IPsec.",
+        "psk": "Clave IPsec (PSK)",
+        "pskHint": "Se introduce una vez en cada dispositivo, junto al usuario y la contraseña de la cuenta. Una clave nueva desconecta todos los dispositivos hasta que se introduzca en ellos. Déjala vacía y el panel genera una o conserva la que tiene.",
+        "pskInvalid": "Usa de 8 a 64 letras, dígitos o los caracteres ! @ # $ % ^ & * ( ) _ + = . , : ; ~ -",
+        "dnsTooMany": "L2TP entrega a un dispositivo como máximo dos servidores DNS."
+      }
     },
     "clients": {
       "tabBasics": "Básico",
@@ -1086,7 +1095,9 @@
       "renewsUsed": "Renovaciones usadas",
       "bulkAdTagHint": "Introduce una etiqueta hexadecimal de 32 caracteres para asignar, o 'none' para borrarla en MTProto.",
       "renewIntervalDesc": "Tras expirar, añade el número configurado de días de 24 horas al vencimiento anterior y reinicia el tráfico del cliente. Mantén desactivados los reinicios de tráfico independientes salvo que quieras un reinicio adicional.",
-      "renewWeeklyDesc": "La renovación por calendario se realiza a medianoche en la zona horaria del panel y también reinicia el tráfico del cliente. Mantén desactivados los reinicios de tráfico independientes salvo que quieras un reinicio adicional."
+      "renewWeeklyDesc": "La renovación por calendario se realiza a medianoche en la zona horaria del panel y también reinicia el tráfico del cliente. Mantén desactivados los reinicios de tráfico independientes salvo que quieras un reinicio adicional.",
+      "l2tpAccount": "Cuenta L2TP",
+      "l2tpServer": "Servidor"
     },
     "groups": {
       "name": "Nombre",

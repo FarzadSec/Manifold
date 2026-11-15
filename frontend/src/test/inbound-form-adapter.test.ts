@@ -277,6 +277,46 @@ describe('formValuesToWirePayload', () => {
     expect(messages).toEqual(['pages.inbounds.openvpn.subnetInvalid']);
   });
 
+  it('refuses L2TP settings the server would not run', () => {
+    const cases: [Record<string, unknown>, string][] = [
+      [{ psk: 'short' }, 'pages.inbounds.l2tp.pskInvalid'],
+      [{ psk: 'has "quotes" inside' }, 'pages.inbounds.l2tp.pskInvalid'],
+      [{ subnet: '10.9.0.0/30' }, 'pages.inbounds.openvpn.subnetInvalid'],
+      [{ dns: ['1.1.1.1', '8.8.8.8', '9.9.9.9'] }, 'pages.inbounds.l2tp.dnsTooMany'],
+    ];
+    for (const [server, message] of cases) {
+      const values = rawInboundToFormValues({
+        ...vlessRow,
+        protocol: 'l2tp',
+        port: 1701,
+        settings: { server, clients: [] },
+        streamSettings: '',
+      });
+      const messages = InboundFormSchema.safeParse(values).error?.issues.map(
+        (issue) => issue.message,
+      );
+      expect(messages, JSON.stringify(server)).toEqual([message]);
+    }
+  });
+
+  // An empty key is how the form asks the panel to generate one, or to keep the stored one.
+  it('sends an L2TP inbound with no Xray parts and lets the key stay empty', () => {
+    const values = rawInboundToFormValues({
+      ...vlessRow,
+      protocol: 'l2tp',
+      port: 1701,
+      settings: { server: { psk: '', subnet: '10.9.0.0/24' }, clients: [] },
+      streamSettings: '',
+    });
+    expect(
+      InboundFormSchema.safeParse(values).error?.issues.map((issue) => issue.message),
+    ).toBeUndefined();
+    const payload = formValuesToWirePayload(values);
+    expect(payload.streamSettings).toBe('');
+    expect(payload.sniffing).toBe('');
+    expect(JSON.parse(payload.settings).server).toEqual({ psk: '', subnet: '10.9.0.0/24' });
+  });
+
   it('sends no Xray sniffing block for a WireGuard inbound', () => {
     const values = rawInboundToFormValues({
       ...vlessRow,

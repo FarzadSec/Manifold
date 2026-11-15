@@ -823,7 +823,16 @@
         "importDropped": "Not carried over: {list}",
         "importWithoutKeyHint": "A client without a private key keeps working with the config it already has, but the panel cannot show that config again."
       },
-      "engineMissing": "The {package} package is not installed on this server, so this inbound will not start. Install it and the inbound comes up by itself."
+      "engineMissing": "The {package} package is not installed on this server, so this inbound will not start. Install it and the inbound comes up by itself.",
+      "l2tp": {
+        "portFixed": "Every L2TP client dials UDP port 1701 and none can be given another, so the port is fixed and a server has one L2TP inbound. IPsec also needs UDP ports 500 and 4500 open.",
+        "ipsec": "Require IPsec",
+        "ipsecHint": "On: only sessions encrypted with IPsec are accepted. Off: sessions without encryption are accepted too, for devices that cannot do IPsec.",
+        "psk": "IPsec key (PSK)",
+        "pskHint": "Entered once on every device, next to the account's username and password. A new key disconnects every device until it is entered there. Leave it empty and the panel generates one, or keeps the one it has.",
+        "pskInvalid": "Use 8 to 64 letters, digits or the characters ! @ # $ % ^ & * ( ) _ + = . , : ; ~ -",
+        "dnsTooMany": "L2TP gives a device at most two DNS servers."
+      }
     },
     "clients": {
       "tabBasics": "Basics",
@@ -1086,7 +1095,9 @@
       "renewsUsed": "Renewals used",
       "bulkAdTagHint": "Enter a 32-character hex tag to set, or 'none' to clear sponsor channel on MTProto inbounds.",
       "renewIntervalDesc": "Adds the configured number of 24-hour days to the previous cutoff after expiry and resets the client's traffic. Keep independent traffic resets disabled unless an additional reset is intended.",
-      "renewWeeklyDesc": "Calendar renewal uses midnight in the panel timezone and also resets the client's traffic. Keep independent traffic resets disabled unless an additional reset is intended."
+      "renewWeeklyDesc": "Calendar renewal uses midnight in the panel timezone and also resets the client's traffic. Keep independent traffic resets disabled unless an additional reset is intended.",
+      "l2tpAccount": "L2TP account",
+      "l2tpServer": "Server"
     },
     "groups": {
       "name": "Name",

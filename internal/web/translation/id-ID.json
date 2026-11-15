@@ -823,7 +823,16 @@
         "importDropped": "Tidak ikut dipindahkan: {list}",
         "importWithoutKeyHint": "Klien tanpa kunci privat tetap berfungsi dengan konfigurasi yang sudah dimilikinya, tetapi panel tidak dapat menampilkan konfigurasi itu lagi."
       },
-      "engineMissing": "Paket {package} belum terpasang di server ini, sehingga inbound ini tidak akan berjalan. Pasang paketnya dan inbound akan menyala sendiri."
+      "engineMissing": "Paket {package} belum terpasang di server ini, sehingga inbound ini tidak akan berjalan. Pasang paketnya dan inbound akan menyala sendiri.",
+      "l2tp": {
+        "portFixed": "Semua klien L2TP terhubung ke port UDP 1701 dan tidak ada yang menerima port lain, sehingga port ini tetap dan satu server hanya punya satu inbound L2TP. IPsec juga memerlukan port UDP 500 dan 4500 terbuka.",
+        "ipsec": "Wajibkan IPsec",
+        "ipsecHint": "Aktif: hanya sesi yang dienkripsi dengan IPsec yang diterima. Nonaktif: sesi tanpa enkripsi juga diterima, untuk perangkat yang tidak mendukung IPsec.",
+        "psk": "Kunci IPsec (PSK)",
+        "pskHint": "Dimasukkan sekali di setiap perangkat, bersama nama pengguna dan kata sandi akun. Kunci baru memutus semua perangkat sampai kunci itu dimasukkan di sana. Kosongkan agar panel membuat kunci atau mempertahankan yang sudah ada.",
+        "pskInvalid": "Gunakan 8 sampai 64 huruf, angka, atau karakter ! @ # $ % ^ & * ( ) _ + = . , : ; ~ -",
+        "dnsTooMany": "L2TP memberi perangkat paling banyak dua server DNS."
+      }
     },
     "clients": {
       "tabBasics": "Dasar",
@@ -1086,7 +1095,9 @@
       "renewsUsed": "Perpanjangan terpakai",
       "bulkAdTagHint": "Masukkan tag heksadesimal 32 karakter untuk mengatur, atau 'none' untuk menghapus pada MTProto.",
       "renewIntervalDesc": "Setelah kedaluwarsa, menambahkan jumlah hari yang ditentukan (24 jam per hari) ke batas waktu sebelumnya dan mereset trafik klien. Nonaktifkan reset trafik terpisah kecuali Anda menginginkan reset tambahan.",
-      "renewWeeklyDesc": "Perpanjangan kalender dilakukan pada tengah malam menurut zona waktu panel dan juga mereset trafik klien. Nonaktifkan reset trafik terpisah kecuali Anda menginginkan reset tambahan."
+      "renewWeeklyDesc": "Perpanjangan kalender dilakukan pada tengah malam menurut zona waktu panel dan juga mereset trafik klien. Nonaktifkan reset trafik terpisah kecuali Anda menginginkan reset tambahan.",
+      "l2tpAccount": "Akun L2TP",
+      "l2tpServer": "Server"
     },
     "groups": {
       "name": "Nama",

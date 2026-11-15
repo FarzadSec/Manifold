@@ -823,7 +823,16 @@
         "importDropped": "Não foi levado: {list}",
         "importWithoutKeyHint": "Um cliente sem chave privada continua funcionando com a configuração que já tem, mas o painel não consegue exibi-la de novo."
       },
-      "engineMissing": "O pacote {package} não está instalado neste servidor, então este inbound não vai iniciar. Instale-o e o inbound sobe sozinho."
+      "engineMissing": "O pacote {package} não está instalado neste servidor, então este inbound não vai iniciar. Instale-o e o inbound sobe sozinho.",
+      "l2tp": {
+        "portFixed": "Todo cliente L2TP se conecta à porta UDP 1701 e nenhum aceita outra, por isso a porta é fixa e cada servidor tem um único inbound L2TP. O IPsec também precisa das portas UDP 500 e 4500 abertas.",
+        "ipsec": "Exigir IPsec",
+        "ipsecHint": "Ligado: só são aceitas sessões criptografadas com IPsec. Desligado: sessões sem criptografia também são aceitas, para aparelhos que não suportam IPsec.",
+        "psk": "Chave IPsec (PSK)",
+        "pskHint": "Digitada uma vez em cada aparelho, junto com o usuário e a senha da conta. Uma chave nova desconecta todos os aparelhos até ser digitada neles. Deixe vazio e o painel gera uma ou mantém a que já tem.",
+        "pskInvalid": "Use de 8 a 64 letras, dígitos ou os caracteres ! @ # $ % ^ & * ( ) _ + = . , : ; ~ -",
+        "dnsTooMany": "O L2TP entrega no máximo dois servidores DNS a um aparelho."
+      }
     },
     "clients": {
       "tabBasics": "Básico",
@@ -1086,7 +1095,9 @@
       "renewsUsed": "Renovações usadas",
       "bulkAdTagHint": "Insira uma tag hexadecimal de 32 caracteres para definir ou 'none' para limpar no MTProto.",
       "renewIntervalDesc": "Após a expiração, adiciona o número configurado de dias de 24 horas ao prazo anterior e redefine o tráfego do cliente. Mantenha as redefinições independentes de tráfego desativadas, a menos que queira uma redefinição adicional.",
-      "renewWeeklyDesc": "A renovação por calendário ocorre à meia-noite no fuso horário do painel e também redefine o tráfego do cliente. Mantenha as redefinições independentes de tráfego desativadas, a menos que queira uma redefinição adicional."
+      "renewWeeklyDesc": "A renovação por calendário ocorre à meia-noite no fuso horário do painel e também redefine o tráfego do cliente. Mantenha as redefinições independentes de tráfego desativadas, a menos que queira uma redefinição adicional.",
+      "l2tpAccount": "Conta L2TP",
+      "l2tpServer": "Servidor"
     },
     "groups": {
       "name": "Nome",

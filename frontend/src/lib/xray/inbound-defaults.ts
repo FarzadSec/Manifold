@@ -14,6 +14,7 @@ import type {
   ShadowsocksClient,
   ShadowsocksInboundSettings,
 } from '@/schemas/protocols/inbound/shadowsocks';
+import type { L2tpInboundSettings } from '@/schemas/protocols/inbound/l2tp';
 import type { OpenvpnInboundSettings } from '@/schemas/protocols/inbound/openvpn';
 import type { TrojanClient, TrojanInboundSettings } from '@/schemas/protocols/inbound/trojan';
 import type { TuicClient, TuicInboundSettings } from '@/schemas/protocols/inbound/tuic';
@@ -382,6 +383,20 @@ export function createDefaultOpenvpnInboundSettings(): OpenvpnInboundSettings {
   };
 }
 
+// The key stays empty: the panel generates one when the inbound is saved.
+export function createDefaultL2tpInboundSettings(): L2tpInboundSettings {
+  return {
+    server: {
+      ipsec: true,
+      psk: '',
+      subnet: '10.9.0.0/24',
+      dns: ['1.1.1.1', '8.8.8.8'],
+      mtu: 1280,
+    },
+    clients: [],
+  };
+}
+
 // Protocol-aware dispatch over every inbound-settings factory. Mirrors
 // the legacy `Inbound.Settings.getSettings(protocol)` dispatcher, but
 // returns a plain Zod-parsable object instead of a class instance.
@@ -402,7 +417,8 @@ export type AnyInboundSettings =
   | AmneziawgInboundSettings
   | TuicInboundSettings
   | MasqueInboundSettings
-  | OpenvpnInboundSettings;
+  | OpenvpnInboundSettings
+  | L2tpInboundSettings;
 
 export function createDefaultInboundSettings(protocol: string): AnyInboundSettings | null {
   switch (protocol) {
@@ -436,6 +452,8 @@ export function createDefaultInboundSettings(protocol: string): AnyInboundSettin
       return createDefaultMasqueInboundSettings();
     case 'openvpn':
       return createDefaultOpenvpnInboundSettings();
+    case 'l2tp':
+      return createDefaultL2tpInboundSettings();
     default:
       return null;
   }

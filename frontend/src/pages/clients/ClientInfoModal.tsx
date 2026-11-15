@@ -22,6 +22,8 @@ import ClientHwidListModal from '@/components/clients/ClientHwidList';
 import ConfigBlock from '@/components/clients/ConfigBlock';
 import OpenvpnProfileBlocks from '@/components/clients/OpenvpnProfileBlocks';
 import { isOpenvpnLink } from '@/lib/xray/openvpn-link';
+import L2tpAccountBlocks from '@/components/clients/L2tpAccountBlocks';
+import { isL2tpLink } from '@/lib/xray/l2tp-link';
 import {
   buildWireguardClientConfig,
   findWireguardInbounds,
@@ -50,6 +52,7 @@ const INBOUND_PROTOCOL_COLORS: Record<string, string> = {
   tunnel: 'orange',
   tuic: 'orange',
   openvpn: 'gold',
+  l2tp: 'green',
 };
 
 const INBOUND_CHIP_LIMIT = 1;
@@ -121,7 +124,11 @@ export default function ClientInfoModal({
   const dateLabel = (ts?: number) => (!ts || ts <= 0 ? '-' : IntlUtil.formatDate(ts, datepicker));
   const [messageApi, messageContextHolder] = message.useMessage();
   const [links, setLinks] = useState<string[]>([]);
-  const proxyLinks = useMemo(() => links.filter((link) => !isOpenvpnLink(link)), [links]);
+  // OpenVPN profiles and L2TP accounts are shown in blocks of their own, not as links an app imports.
+  const proxyLinks = useMemo(
+    () => links.filter((link) => !isOpenvpnLink(link) && !isL2tpLink(link)),
+    [links],
+  );
   const [clientIps, setClientIps] = useState<ClientIpInfo[]>([]);
   const [ipsLoading, setIpsLoading] = useState(false);
   const [ipsClearing, setIpsClearing] = useState(false);
@@ -804,6 +811,13 @@ export default function ClientInfoModal({
               <>
                 <Divider>{t('pages.clients.openvpnProfile')}</Divider>
                 <OpenvpnProfileBlocks links={links} fallbackName={client?.email ?? 'openvpn'} />
+              </>
+            )}
+
+            {links.some(isL2tpLink) && (
+              <>
+                <Divider>{t('pages.clients.l2tpAccount')}</Divider>
+                <L2tpAccountBlocks links={links} fallbackName={client?.email ?? 'l2tp'} />
               </>
             )}
 
