@@ -46,9 +46,23 @@ sudo deploy/test/openvpn-e2e.sh build/manifold build/bin                        
 go test -c -o /tmp/wgquick.test ./internal/wgquick/
 sudo XUI_WIREGUARD_E2E=1 /tmp/wgquick.test -test.run TestRealInterfaceAndPeer -test.v # the engine alone
 sudo deploy/test/wireguard-e2e.sh build/manifold build/bin                            # panel, interface, peers, takeover
+
+sudo deploy/test/l2tp-e2e.sh build/manifold build/bin                                 # panel, xl2tpd, pppd, IPsec, a client behind NAT
 ```
 
-Each starts a real server and real clients in a network namespace of their own; the two scripts share `deploy/test/vpn-e2e-lib.sh`. Without its `XUI_…_E2E` variable an engine test is skipped, so a green `make test-go` does not mean it ran. On a kernel without the WireGuard module `wg-quick` falls back to `wireguard-go` if it is installed; the commands the panel runs are the same, but only a run on the module, as in CI, exercises the kernel.
+Each starts a real server and real clients in a network namespace of their own; the three scripts share `deploy/test/vpn-e2e-lib.sh`. Without its `XUI_…_E2E` variable an engine test is skipped, so a green `make test-go` does not mean it ran. On a kernel without the WireGuard module `wg-quick` falls back to `wireguard-go` if it is installed; the commands the panel runs are the same, but only a run on the module, as in CI, exercises the kernel.
+
+L2TP has no engine-only test with a real daemon: its pieces are unit-tested, and the script is the one place where pppd, the kernel's PPP and IPsec, and strongSwan meet. It needs a kernel with PPP and IPsec, so it cannot run in a container that lacks them; the script says so and stops. The server's strongSwan must run as a service (`strongswan`), and the client side starts a second one of its own.
+
+The same three scripts can drive a panel that already runs instead of starting one, which is how the installed service is checked under its unit:
+
+```bash
+sudo env PANEL_URL=http://192.168.251.1:PORT/PATH PANEL_USER=… PANEL_PASSWORD=… deploy/test/openvpn-e2e.sh /usr/local/manifold/manifold
+```
+
+`192.168.251.1` is the address the scripts give the host; the panel must listen on every address. Afterwards a script removes the accounts it made. `EXPECT_KERNEL_L2TP=1` makes the L2TP script require that sessions are carried by the kernel instead of relayed by xl2tpd, which a sandbox that forbids `AF_PPPOX` silently prevents.
+
+The shell functions of the installer and of the `manifold` command have their own tests, which need nothing installed: `bash deploy/test/install-functions.sh` and `bash deploy/test/manifold-functions.sh`.
 
 ## Where verification runs
 
@@ -144,6 +158,8 @@ git show upstream-main:CONTRIBUTING.md          # environment variables, test ph
 
 Set the new version in `internal/config/product_version` and merge it to `main`. Nothing else is needed.
 
-`.github/workflows/release.yml` then builds static amd64 and arm64 packages, installs the amd64 package on the runner with `install.sh`, checks that the panel answers, that the installer's login works and that an update keeps the settings. If all of that passes and no release named `v<product_version>` exists, it publishes one and creates its tag. A last job installs the published release on a clean runner with the command from the README.
+`.github/workflows/release.yml` then builds static amd64 and arm64 packages and installs the amd64 package with `install.sh` on Ubuntu 22.04, 24.04 and 26.04. On each it checks that the panel answers, that the installer's login works and that the installer set up the services L2TP needs; runs the three VPN end-to-end scripts against the installed service, so every engine carries real sessions under the unit's sandbox; and checks that an update keeps the settings and that an uninstall leaves nothing in `/etc/wireguard`. If all three pass and no release named `v<product_version>` exists, it publishes one and creates its tag. A last job installs the published release on a clean runner with the command from the README.
 
-Packaging changes that do not change the version run the same build and install and publish nothing. A `vX.Y.Z` tag pushed by hand publishes that version too, as long as it equals `product_version`.
+Changes to the packaging, to a VPN engine or to its script run the same build and installs on a phase branch and publish nothing. A `vX.Y.Z` tag pushed by hand publishes that version too, as long as it equals `product_version`.
+
+The unit's sandbox is the reason for the three versions: a setting can be harmless on one systemd or AppArmor and fatal on another, and only a session shows it. `manifold.service` records each case next to the setting it concerns.

@@ -54,6 +54,8 @@ The certificates and keys are created when you save and stay with the inbound. O
 
 **Limits.** Quota, expiry and disabling work as for every protocol and take effect on a connected client within seconds: its session is cut and the app is told access is denied. "IP limit" on an OpenVPN client is the number of devices that may be connected at once; a further device is refused.
 
+**Coming from 0.2 or 0.3.** On Ubuntu 22.04, Debian 11 and other systems with a systemd older than 252, OpenVPN inbounds did not start under the installed service ("Cannot open TUN/TAP dev" in the log). Updating to 0.4 fixes it; nothing else has to be done.
+
 Not supported yet: IPv6 inside the tunnel, logins by client certificate, and sending OpenVPN traffic through the routing rules and outbounds of Xray Configs.
 
 ## WireGuard
@@ -99,6 +101,43 @@ A client imported without a private key keeps connecting with the config it has,
 **Coming from 0.2.** WireGuard inbounds made before 0.3 ran inside Xray. From 0.3 they run on a kernel interface with the same keys and addresses, so their clients need no new config.
 
 Not supported yet: NAT for IPv6 inside the tunnel (IPv6 addresses are carried over; routing them is left to your hooks), importing the interfaces of a node, and sending WireGuard traffic through the routing rules and outbounds of Xray Configs.
+
+## L2TP/IPsec
+
+An L2TP inbound makes the panel run an L2TP server with IPsec in front of it. This is the VPN type that Windows, macOS, iOS and Android have built in, so a customer needs no app: only a server address, a username, a password and one shared key. It needs the `xl2tpd`, `ppp` and strongSwan packages on the server, which the installer installs.
+
+**Create the inbound.** On the Inbounds page choose the protocol `l2tp`. The port is fixed: every L2TP client dials UDP port 1701 and none can be told another. For the same reason a server has one L2TP inbound; to offer more, add a node. On the protocol tab:
+
+| Field | Meaning |
+|---|---|
+| Require IPsec | On: only sessions encrypted with IPsec are accepted. Off: sessions without encryption are accepted too, for the few devices that cannot do IPsec; devices that can still use it with the same key |
+| IPsec key (PSK) | The shared key every device enters once, next to the account's username and password. Leave it empty and the panel generates one. A new key disconnects every device until it is entered there |
+| Client subnet | The private IPv4 network connected devices get their addresses from, between /16 and /29 |
+| DNS servers | Given to devices while they are connected, two at most |
+| MTU | The largest packet inside the tunnel. 1280 fits through every network; raise it only if you know the path |
+
+Open UDP ports 500, 4500 and 1701 in the firewall. A server behind NAT needs all three forwarded to it. Port 1701 can be open to everyone: with "Require IPsec" on, the panel itself drops whatever reaches it without having come through IPsec.
+
+**Add clients** on the Clients page as for any other inbound. The client's email is the L2TP username and its password is the L2TP password, so an email used for L2TP may only hold letters, digits and `_ . @ : / = -`.
+
+**Hand over the account.** There is no file or QR code a device imports. A client's information window shows an "L2TP account" block with the four values to type in, each with a copy button, and the QR window offers the same as text to send. On the device:
+
+- **Windows**: Settings → Network & internet → VPN → Add VPN. VPN type "L2TP/IPsec with pre-shared key".
+- **macOS**: System Settings → VPN → Add VPN Configuration → L2TP over IPSec. The key goes in "Shared Secret".
+- **iOS**: Settings → General → VPN & Device Management → VPN → Add VPN Configuration → Type L2TP. The key goes in "Secret".
+- **Android** up to version 11: Settings → Network → VPN → add, type "L2TP/IPSec PSK". Android 12 and later removed L2TP from the built-in VPN settings; such a device needs another protocol.
+
+If the server itself sits behind NAT, as with cloud providers that map a public address onto a private one, Windows refuses it until the DWORD value `AssumeUDPEncapsulationContextOnSendRule` under `HKLM\SYSTEM\CurrentControlSet\Services\PolicyAgent` is set to 2 on the device and the device is restarted. This is a default of Windows, not a setting of the panel.
+
+**Limits.** Quota, expiry and disabling work as for every protocol and take effect on a connected device within seconds: its session is cut and its next login is refused. "IP limit" on an L2TP client is the number of devices that may be connected at once; a further device is refused.
+
+**Several devices behind one address.** Two devices that share one public address, such as two phones on the same home router, may not stay connected to the L2TP server at the same time: IPsec tells sessions apart by address, and theirs is the same. Offer such customers WireGuard or OpenVPN.
+
+**IPsec belongs to the server, not to the panel.** The panel adds one connection, named `manifold-l2tp`, to the server's strongSwan and reloads it. A server that already runs IPsec through the older `ipsec` command is left as it is: the installer adds no second service, and an L2TP inbound that requires IPsec does not start there until strongSwan with `swanctl` is installed by hand.
+
+**While the panel is stopped its L2TP server is down**, as for OpenVPN and WireGuard.
+
+Not supported yet: IPv6 inside the tunnel, logins that use certificates instead of the shared key, a key per customer (every device of one inbound shares one), and sending L2TP traffic through the routing rules and outbounds of Xray Configs.
 
 ## Subscriptions
 

@@ -36,8 +36,9 @@ locations when it can answer in one hop.
 ## Repo map
 - `main.go` — entry point + the `manifold` binary's CLI (run, migrate, migrate-db, encrypt-tokens, setting, cert).
 - `install.sh`, `manifold.sh` (installed as `/usr/bin/manifold`), `manifold.service` — installer,
-  management command and systemd unit. `deploy/test/install-functions.sh` tests the installer's functions;
-  `deploy/test/openvpn-e2e.sh` and `wireguard-e2e.sh` drive a real panel, server and clients (root).
+  management command and systemd unit. `deploy/test/install-functions.sh` and `manifold-functions.sh`
+  test their shell functions; `deploy/test/openvpn-e2e.sh`, `wireguard-e2e.sh` and `l2tp-e2e.sh` drive a
+  real panel, server and clients (root), their own or, with `PANEL_URL`, the installed service.
 - `internal/config/` — env parsing (XUI_DEBUG, XUI_LOG_LEVEL, XUI_LOG_FOLDER,
   XUI_BIN_FOLDER, XUI_SKIP_HSTS, XUI_PORT, XUI_DB_*). Operators set the same
   variables as `MANIFOLD_<NAME>`; `AdoptManifoldEnv` copies them onto `XUI_<NAME>`,
@@ -56,7 +57,11 @@ locations when it can answer in one hop.
 - `internal/wgquick/` — WireGuard inbounds on the kernel: a `wg-quick` config per inbound in
   `/etc/wireguard`, peers applied with `wg set`, billing from `wg show`, and the takeover of
   interfaces other tools set up (`foreign.go`, `dashboard.go`). Real test: `XUI_WIREGUARD_E2E=1` as root.
-- `internal/egress/` — NAT and forwarding for a tunnel subnet, in a table of its own.
+- `internal/l2tp/` — L2TP/IPsec inbounds: one `xl2tpd` per server on UDP 1701, every pppd login
+  (MS-CHAPv2) decided by the panel through its own helper commands (`manifold l2tp-auth`, `l2tp-hook`),
+  IPsec as one `swanctl` connection of the system's strongSwan. Real test: `deploy/test/l2tp-e2e.sh`.
+- `internal/egress/` — NAT and forwarding for a tunnel subnet, in a table of its own, and the rule
+  that drops what reached a port without IPsec.
 - `internal/tuic/` — TUIC v5 inbounds: `tuic-server` sidecar supervisor, native Go UDP relay traffic metering.
 - `internal/amneziawg/` — AmneziaWG protocol shape: instance/peer derivation
   from an inbound, 3.1 obfuscation param generation + validation, port-forward
@@ -217,6 +222,12 @@ you touch DB/dialect, node sync or parser code. Node sync has two layers: every
 `runtime.Remote` call gets a cell in `internal/web/node_contract_test.go` (fast,
 in `make test-go`; a method without one fails it), and a multi-tick flow (cron,
 adopt, node down) gets one in `internal/nodee2e/node_sync_test.go`.
+
+The VPN engines have a gate of their own that no local run replaces: `release.yml`
+installs the package on Ubuntu 22.04, 24.04 and 26.04 and runs the three
+`deploy/test/*-e2e.sh` scripts against the installed service. A change to
+`manifold.service`, `install.sh` or an engine is not verified until that job is
+green on all three: the sandbox behaves differently per systemd and AppArmor version.
 
 Common targets: `make gen` (regenerate Zod/OpenAPI), `make lint` (Go + frontend),
 `make test` (Go `-shuffle=on` + frontend), `make race`, `make build`. See `Makefile`.

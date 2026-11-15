@@ -1,9 +1,18 @@
 # Manifold — Architecture and Roadmap
 
-Version 0.7 · 2026-11-14 · Status: P0, OpenVPN and WireGuard delivered; see 8.1 to 8.3 for what they leave open
+Version 0.8 · 2026-11-15 · Status: P0, OpenVPN, WireGuard and L2TP/IPsec delivered; see 8.1 to 8.4 for what they leave open
 
 Decision log:
 
+- 2026-11-15 — L2TP logins are decided by the panel itself, without the embedded RADIUS server of the first proposal. pppd's `winbind` plugin starts a helper for every login and talks to it over a pipe; the helper is the panel's own program, which relays to the running panel over a unix socket, and the panel verifies MS-CHAPv2 against the account's password. No dictionary files, no second listening port, and the same account table that every other decision uses.
+- 2026-11-15 — A server holds one L2TP inbound, on UDP port 1701. No L2TP client can be given another port, so a second inbound could never be reached; both are refused on save with that reason.
+- 2026-11-15 — IPsec for L2TP is the server's own strongSwan, given one connection through `swanctl`. The panel runs no IKE daemon. The installer installs and starts strongSwan only where no IPsec service exists; next to an older `ipsec` setup it installs nothing, because two IKE daemons cannot share ports 500 and 4500.
+- 2026-11-15 — "Require IPsec" is on by default and enforced by a packet filter rule that is installed before the L2TP server listens: UDP 1701 takes only what arrived through IPsec. If the rule cannot be installed the server does not start. Off means sessions without IPsec are accepted as well, while IPsec stays on offer with the same key.
+- 2026-11-15 — The L2TP server assigns both addresses of a link. The `ipcp-accept-*` options of the usual xl2tpd examples are left out: with them a Linux client or a router that proposes its own address was accepted and then disconnected.
+- 2026-11-15 — The systemd unit no longer sets `ProtectClock`. From systemd 245 to 251 (Ubuntu 22.04, Debian 11) that setting closes every device node but a few pseudo ones to the service, so OpenVPN could not open `/dev/net/tun` under the unit in 0.2.0 and 0.3.0 on those systems. The capability bounding set already withholds `CAP_SYS_TIME`.
+- 2026-11-15 — A release is installed on Ubuntu 22.04, 24.04 and 26.04 before it is published, and on each the three VPN end-to-end scripts drive the installed service under its unit with real clients. The two sandbox faults found so far (`NoNewPrivileges`, `ProtectClock`) each showed on one of these versions only, and only with a session.
+- 2026-11-15 — `manifold uninstall` removes what the panel wrote into `/etc/wireguard` and `/etc/swanctl`. Those files are rendered from the database; left behind, a WireGuard config kept a private key and a name `wg-quick` would still bring up.
+- 2026-11-15 — The installer installs each dependency on its own, so a package one distribution lacks costs only the protocol that needs it.
 - 2026-11-15 — The systemd unit no longer sets `NoNewPrivileges`. Ubuntu 26.04 confines `wg-quick` with AppArmor; the profile runs `ip` and `wg` in profiles of their own, and the kernel refuses a change of profile to a process started with that flag, so no WireGuard interface came up under the unit. The capability bounding set stays and already limits what any child can hold.
 - 2026-11-14 — Engine order changed once more: kernel WireGuard is built before L2TP/IPsec. It could be run end to end where the code is written, while L2TP needs kernel PPP that only the CI runners have; and it retires the two WireGuard implementations the product does not want.
 - 2026-11-14 — The existing `wireguard` protocol became the kernel engine; no second protocol name. Inbounds, clients, links and subscriptions made before keep their keys and addresses. A node says it runs this engine with the `wireguard` capability.
@@ -144,14 +153,17 @@ Requirement: root, the `wireguard-tools` package and the kernel WireGuard module
 - The profile embeds the login by default (`<auth-user-pass>`, read by OpenVPN 2.6 and OpenVPN Connect). Per inbound it can be left out for older apps, which then ask for it.
 - Not built: IPv6 inside the tunnel, client-certificate logins, static addresses per account, and steering tunnel traffic into Xray routing (WARP, outbound rules).
 
-### 4.5 L2TP/IPsec engine (proposal, to validate in a spike)
+### 4.5 L2TP/IPsec engine (built, 0.4.0)
 
-- Daemons: strongSwan (IPsec, PSK) + xl2tpd + pppd, written and supervised by the panel.
-- AAA: a small RADIUS server embedded in the panel; pppd authenticates and reports interim accounting through its RADIUS plugin. Fallback if that proves fragile: generated `chap-secrets`, `ip-up`/`ip-down` hooks and interface counters.
-- Per inbound: PSK, address pool, DNS.
-- Output: server address, PSK, username and password on the subscription page; optional `.mobileconfig` for Apple devices.
-- Known weaknesses to accept or mitigate: fixed ports (UDP 500, 4500, 1701) and no obfuscation, so it is easy to block; newer Android versions dropped L2TP from the built-in client (to verify). IKEv2 from the same strongSwan install is a cheap add-on.
-- The embedded RADIUS can later serve IKEv2-EAP, SSTP or OpenConnect (ocserv) without a new accounting design.
+- One `xl2tpd` per server (`internal/l2tp`), started by the panel on files of the inbound's own under the bin folder, so it shares nothing with an xl2tpd service of the distribution. xl2tpd starts one `pppd` per session. Port 1701/udp is fixed and a server holds one L2TP inbound.
+- Logins: pppd requires MS-CHAPv2, which every built-in client offers, and its `winbind` plugin starts `manifold l2tp-auth <socket>` for each one. That short-lived command relays the challenge and response to the running panel over a unix socket; the panel verifies them against the account's password and returns the session key. The account's email is the user name.
+- Sessions: pppd runs `manifold l2tp-hook up|down` when a link comes up or goes down, which tells the panel the interface, the tunnel address and the pppd process. The panel counts sessions and logins still under way against the account's `limitIp`, reads usage from the interface's counters every ten seconds plus the totals pppd reports at the end, and cuts the sessions of an account it no longer serves by signalling their pppd.
+- IPsec: one `swanctl` connection, `manifold-l2tp`, in `/etc/swanctl/conf.d/`: IKEv1 with the inbound's pre-shared key, transport mode, limited to UDP 1701, with the IKE and ESP offers of Windows, macOS, iOS and Android. strongSwan itself is the server's service.
+- The guard: with "Require IPsec" a rule in a table of its own drops what reaches UDP 1701 without having arrived through IPsec (`egress.RequireIPsec`). It is installed before xl2tpd starts, and a failure to install it stops the start.
+- Clients reach the internet through the same kernel NAT as OpenVPN (`internal/egress`).
+- An account is handed out as an `l2tp://user:password@host?ipsec=…&psk=…` link, rendered in Go. The client pages show it as the four values a device asks for; the subscription body that proxy apps import leaves it out.
+- The unit allows `AF_PPPOX`, so that xl2tpd hands sessions to the kernel, and lets the panel write `/etc/swanctl`.
+- Not built: IKEv2 from the same strongSwan, a `.mobileconfig` for Apple devices, a key per account, IPv6 inside the tunnel, several devices behind one public address (strongSwan's `connmark` plugin is the known answer), L2TP in the container image, and steering tunnel traffic into Xray routing.
 
 ### 4.6 Access model
 
@@ -184,7 +196,7 @@ This is the contract Mirza Bot will sync against, so it is frozen before the bot
 | Standard kernel WireGuard (`wg-quick`) | Absent; its WireGuard inbound runs inside Xray in userspace | User, WGDashboard | Built in 0.3.0 (4.3) |
 | AmneziaWG | Present | Not wanted | No longer offered for new inbounds (0.3.0) |
 | OpenVPN | Absent | User, NX | Built in 0.2.0 (4.4) |
-| L2TP/IPsec | Absent | User | New engine (4.5) |
+| L2TP/IPsec | Absent | User | Built in 0.4.0 (4.5) |
 | Multi-node over mTLS, node health | Present | NX | Extend to new engines |
 | Roles, admins, resellers, ownership, ledger | Absent | NX | Build (4.6) |
 | Plans | Absent | NX | Build |
@@ -212,7 +224,7 @@ This is the contract Mirza Bot will sync against, so it is frozen before the bot
 | P0 Foundation | Private mirror; own README and guides; base project's pages, sponsor feature, links and self-updater removed; program, service, paths, interface and notification texts named Manifold; own installer, management command, systemd unit and release workflow; CI trimmed to one gate | Done 2026-11-14. Open items in 8.1 |
 | P2 OpenVPN | Engine 4.4, inbound form, `.ovpn` in the client pages and the subscription page, traffic and limits, node support | Done 2026-11-14 (0.2.0). A real client connects, is billed, is held to its device limit and is cut off when disabled or out of quota, on this server. Open items in 8.2 |
 | P1 WireGuard | Engine 4.3, inbound form, `.conf` and QR in the client pages, traffic and limits, node support, takeover of existing servers | Done 2026-11-14 (0.3.0). A real peer connects, is billed, loses its peer when disabled or out of quota, and an interface `wg-quick` already runs is taken over with its WGDashboard names and usage while its peer keeps connecting. Open items in 8.3 |
-| P3 L2TP/IPsec | Engine 4.5, embedded RADIUS, optional IKEv2 | A native L2TP client connects and draws down the account's quota |
+| P3 L2TP/IPsec | Engine 4.5, inbound form, the account's four values in the client pages, traffic and limits, node support, installer and unit | Done 2026-11-15 (0.4.0). A real L2TP client behind NAT connects through IPsec, is billed, is held to its device limit and is cut off when disabled or out of quota, under the installed service on Ubuntu 22.04, 24.04 and 26.04. No phone or Windows machine has connected yet. Open items in 8.4 |
 | P4 Access model | Items in 4.6 | A reseller can create accounts only within its limits and sees only its own |
 | P5 Events and API freeze | Items in 4.7; OpenAPI v1 for accounts, plans, resellers, usage | A test receiver gets signed events for every account state change, including after downtime |
 | P6 NX-parity operations | Setup wizard, backup upgrades, OIDC, managed tunnels, subscription themes, usage CSV | Checked against the gap table |
@@ -271,6 +283,7 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 
 ### 8.2 Open items after OpenVPN
 
+- Fixed in 0.4.0: under the installed service no OpenVPN inbound started on systemd 245 to 251 (Ubuntu 22.04, Debian 11), because `ProtectClock` closed `/dev/net/tun`. The engine had only been run with clients outside the unit.
 - OpenVPN on a remote node is covered by a unit test of the capability check only. No test runs a master, a node and an OpenVPN client together.
 - Shared quota across protocols rests on the one traffic row per account that every engine writes to. It is not exercised by a test that uses an OpenVPN client and an Xray client on the same account.
 - The online mark of an OpenVPN account is recorded through the Xray process's online set, as the other side engines do, so it is missing while Xray is down. Traffic and limits do not depend on it.
@@ -280,7 +293,8 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 
 ### 8.3 Open items after WireGuard
 
-- The engine's tests on the development machine ran against `wireguard-go`, which `wg-quick` falls back to on a kernel without the module. The kernel module itself is exercised only on the CI runners (`vpn-e2e`, and the release smoke test under the systemd unit), which run Ubuntu 26.04 with its AppArmor profile for `wg-quick`. No other distribution is tested.
+- The engine's tests on the development machine ran against `wireguard-go`, which `wg-quick` falls back to on a kernel without the module. The kernel module itself is exercised only on the CI runners: `vpn-e2e` on Ubuntu 26.04 with its AppArmor profile for `wg-quick`, and since 0.4.0 the release smoke test under the systemd unit on Ubuntu 22.04, 24.04 and 26.04. No other distribution is tested.
+- Fixed in 0.4.0: `manifold uninstall` left the inbounds' configs, private keys included, in `/etc/wireguard`.
 - Under that AppArmor profile a hook can run `ip`, `wg`, `nft`, `iptables` and little else. An imported server whose hooks need more keeps failing to start until the admin extends the profile; the import does not check for this.
 - WireGuard on a remote node is covered by a unit test of the capability check only, like OpenVPN.
 - An inbound made before 0.3.0 switches from Xray to the kernel interface on update. No test updates a real 0.2.0 server with such an inbound; a client that was given the first address of the subnet would collide with the server's.
@@ -289,6 +303,20 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - The branches of `internal/web/service/xray.go` that built Xray's WireGuard peer list are no longer reached. They stay to keep upstream merges cheap.
 - Saving a WireGuard inbound on a server without `wireguard-tools` succeeds; the form warns and the inbound starts once the package is there. OpenVPN refuses the save instead. One of the two behaviours should become the rule.
 - The container image carries the WireGuard tools but, like the rest of the image, is not built or run in CI.
+
+### 8.4 Open items after L2TP/IPsec
+
+- The only client that has connected is the test's own: strongSwan, xl2tpd and pppd on Linux, behind a NAT router. No Windows, macOS, iOS or Android device has. The IKE and ESP offers for them come from their documentation, and Android versions 6 and 7 are known to mishandle the SHA-256 ESP offer that the server prefers.
+- No session has run for longer than about a minute. strongSwan rekeys a session after an hour and re-authenticates after four with its defaults; whether the built-in clients stay connected across both has to be seen on real devices. Leaving rekeying to the client (`rekey_time = 0` for the connection and its child) is the usual remedy if they do not.
+- Two devices behind one public address may not stay connected together. strongSwan's `connmark` plugin is the known answer and is not used.
+- A server behind NAT (a cloud address mapped onto a private one) is not tested. Windows needs a registry change for such a server, and whether strongSwan's default identity is accepted there by every client is unknown.
+- Dead sessions are found by PPP's own echo after about two minutes; their IPsec state stays until strongSwan's lifetime ends, because the connection sets no dead peer detection.
+- On Ubuntu 24.04 with a cloud kernel the module that lets the kernel carry L2TP sessions is in `linux-modules-extra`. Without it xl2tpd relays every packet itself, which works and is slower; the installer does not install that package.
+- The installer's package names for strongSwan outside Debian and Ubuntu, and the service name it starts there, are taken from those distributions' documentation and have not been run.
+- L2TP on a remote node is covered by a unit test of the capability check only, like the other two engines.
+- An account that is disabled is cut off at the next ten-second tick, not at once, and a new login in that window still succeeds.
+- The L2TP and OpenVPN engines each carry their own process supervisor and their own validators for subnets, DNS lists and user names. They are the same in substance and should become one.
+- L2TP is not available in the container image.
 
 ## 9. Assumptions and open decisions
 
