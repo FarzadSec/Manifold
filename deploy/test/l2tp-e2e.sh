@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # End-to-end check of L2TP inbounds: a real panel, the xl2tpd and pppd it
 # runs, the system's strongSwan, and a real L2TP/IPsec client in a network
-# namespace of its own.
+# namespace of its own. The client sits behind a NAT router, like nearly every
+# device that will ever connect.
 #
 #   sudo deploy/test/l2tp-e2e.sh /path/to/manifold [/path/to/bin-folder]
 #
@@ -23,12 +24,44 @@ source "$(dirname "$0")/vpn-e2e-lib.sh"
 PSK="e2e-Shared-key-1"
 CLIENT_VICI="$WORK/client.vici"
 CLIENT_IKE_PID=""
+ROUTER_NS=""
+DEVICE_NS=mfe2edevice
 
 engine_cleanup() {
     pkill -f "xl2tpd -D -c $WORK/" 2>/dev/null || true
     if [ -n "$CLIENT_IKE_PID" ]; then
         kill "$CLIENT_IKE_PID" 2>/dev/null || true
     fi
+    if [ -n "$ROUTER_NS" ]; then
+        ip netns del "$ROUTER_NS" 2>/dev/null || true
+    fi
+}
+
+# behind_nat: turn the client namespace into a home router and make the client
+# a device behind it. IPsec through NAT is wrapped in UDP, a path of its own.
+behind_nat() {
+    ROUTER_NS="$CLIENT_NS"
+    ip netns add "$DEVICE_NS"
+    ip link add mfe2ed0 type veth peer name mfe2ed1
+    ip link set mfe2ed0 netns "$ROUTER_NS"
+    ip link set mfe2ed1 netns "$DEVICE_NS"
+    ip netns exec "$ROUTER_NS" ip addr add 10.77.0.1/24 dev mfe2ed0
+    ip netns exec "$ROUTER_NS" ip link set mfe2ed0 up
+    ip netns exec "$ROUTER_NS" sysctl -qw net.ipv4.ip_forward=1
+    ip netns exec "$ROUTER_NS" nft -f - <<'NFT'
+table ip mfe2enat {
+    chain postrouting {
+        type nat hook postrouting priority 100;
+        oifname "mfe2ec1" masquerade
+    }
+}
+NFT
+    ip netns exec "$DEVICE_NS" ip addr add 10.77.0.2/24 dev mfe2ed1
+    ip netns exec "$DEVICE_NS" ip link set mfe2ed1 up
+    ip netns exec "$DEVICE_NS" ip link set lo up
+    ip netns exec "$DEVICE_NS" ip route add default via 10.77.0.1
+    # From here on the harness's client is the device.
+    CLIENT_NS="$DEVICE_NS"
 }
 
 in_client() { ip netns exec "$CLIENT_NS" "$@"; }
@@ -124,6 +157,8 @@ CONF
 
 # l2tp_connect NAME USER LOCAL_PORT: dial the server as the L2TP client NAME.
 # Each client needs a source port of its own; the link comes up as mfe2e<NAME>.
+# Without "noipdefault" this pppd proposes the device's own address, as Linux
+# clients and routers do; the server has to answer with the one it assigned.
 l2tp_connect() {
     local name="$1" user="$2" port="$3"
     cat >"$WORK/$name-ppp" <<OPT
@@ -205,6 +240,7 @@ systemctl stop xl2tpd >/dev/null 2>&1 || true
 
 log "network"
 network
+behind_nat
 log "panel"
 start_panel
 engine_seen="$(field "$(api GET /panel/api/inbounds/engines)" "[e['installed'] for e in r['obj'] if e['protocol'] == 'l2tp']")"
@@ -235,7 +271,7 @@ log "alice connects through IPsec, reaches the internet through the tunnel, and 
 start_client_ipsec
 l2tp_connect alice alice 1701
 wait_for_link 40 alice
-prints "proto esp" in_client ip xfrm state || fail "alice's session is up without an IPsec state in her namespace"
+prints "encap type espinudp" in_client ip xfrm state || fail "alice's session is up without IPsec through NAT: $(in_client ip xfrm state | head -n 4)"
 if [ "${EXPECT_KERNEL_L2TP:-0}" = 1 ]; then
     prints "^Tunnel " ip l2tp show tunnel || fail "alice's session is relayed by xl2tpd instead of being the kernel's"
 fi

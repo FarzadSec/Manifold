@@ -7,6 +7,7 @@
 #
 # With PANEL_URL, PANEL_USER and PANEL_PASSWORD set it drives a panel that
 # already runs instead of starting one: the installed service, under its unit.
+# Pass them with "sudo env NAME=value ..."; not every sudo has -E.
 
 [ "$(id -u)" -eq 0 ] || { echo "run as root" >&2; exit 1; }
 
