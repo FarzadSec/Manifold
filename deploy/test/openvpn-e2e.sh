@@ -29,7 +29,43 @@ payload = sys.argv[1][len("openvpn://"):]
 sys.stdout.write(base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)).decode())
 PY
     grep -q "^remote ${HOST_ADDR} ${VPN_PORT}\$" "$WORK/$1.ovpn" || fail "profile of $1 has the wrong remote: $(grep '^remote' "$WORK/$1.ovpn")"
+    if client_before_2_6; then
+        login_from_file "$WORK/$1.ovpn" "$WORK/$1.auth"
+    fi
     ip netns exec "$CLIENT_NS" openvpn --config "$WORK/$1.ovpn" >"$WORK/$1.log" 2>&1 &
+}
+
+# OpenVPN before 2.6, as on Ubuntu 22.04, does not read a login embedded in the
+# profile. Such a client is given it in a file, where its user would type it in.
+client_before_2_6() {
+    local version major minor
+    version="$(openvpn --version | sed -n '1s/^OpenVPN \([0-9]*\)\.\([0-9]*\).*/\1 \2/p')"
+    read -r major minor <<<"$version"
+    [ "$major" -lt 2 ] || { [ "$major" -eq 2 ] && [ "$minor" -lt 6 ]; }
+}
+
+login_from_file() {
+    python3 - "$1" "$2" <<'PY'
+import re, sys
+profile = open(sys.argv[1]).read()
+block = re.search(r"<auth-user-pass>\n(.*?)\n</auth-user-pass>\n", profile, re.S)
+open(sys.argv[2], "w").write(block.group(1) + "\n")
+open(sys.argv[1], "w").write(profile.replace(block.group(0), "auth-user-pass %s\n" % sys.argv[2]))
+PY
+}
+
+# wait_connected NAME: like wait_until, with the client's own words when it does not connect.
+wait_connected() {
+    local i
+    for ((i = 0; i < 40; i++)); do
+        if grep -q "Initialization Sequence Completed" "$WORK/$1.log"; then
+            return 0
+        fi
+        sleep 1
+    done
+    echo "--- $1: openvpn client" >&2
+    tail -n 25 "$WORK/$1.log" >&2 || true
+    fail "timed out after 40s waiting for $1 to connect"
 }
 
 client_gone() { ! pgrep -f "openvpn --config $WORK/$1.ovpn" >/dev/null; }
@@ -52,7 +88,7 @@ wait_until 30 "the OpenVPN server to listen" server_listening
 
 log "alice connects, reaches the internet through the tunnel, and is billed"
 connect alice
-wait_until 40 "alice to connect" grep -q "Initialization Sequence Completed" "$WORK/alice.log"
+wait_connected alice
 use_traffic 20 || fail "no answer through the tunnel and NAT"
 wait_until 40 "alice's traffic to be stored" traffic_at_least alice 20000
 
@@ -69,7 +105,7 @@ grep -q "AUTH_FAILED" "$WORK/alice.log" || fail "alice was not refused: $(tail -
 
 log "bob runs out of quota and is cut off"
 connect bob
-wait_until 40 "bob to connect" grep -q "Initialization Sequence Completed" "$WORK/bob.log"
+wait_connected bob
 use_traffic 40 || fail "bob: no answer through the tunnel"
 wait_until 60 "bob's account to be switched off" account_switched_off bob
 wait_until 40 "bob's client to be refused" client_gone bob
