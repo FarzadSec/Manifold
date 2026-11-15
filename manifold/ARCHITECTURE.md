@@ -83,7 +83,7 @@ Manifold (Go, fork of 3x-ui)
 │   ├─ TUIC                         in-process         existing
 │   ├─ WireGuard (kernel, wg-quick) system tools       NEW  internal/wgquick
 │   ├─ OpenVPN                      child process      NEW  internal/openvpn
-│   ├─ L2TP/IPsec                   child processes    NEW  internal/l2tp + internal/radius
+│   ├─ L2TP/IPsec                   child processes    NEW  internal/l2tp, with the server's strongSwan
 │   └─ AmneziaWG, Xray WireGuard    upstream code      not offered, not used
 ├─ Access model                     roles, admins, resellers, plans, audit   NEW
 ├─ Event bus → webhook outbox       NEW (bus exists, webhooks do not)
@@ -262,12 +262,12 @@ What must stay from the base project: the `LICENSE` file and the attribution in 
 
 3x-ui moves fast (4,011 commits; last upstream commit 2026-11-13). To keep merges cheap:
 
-- New work lives in new packages: `internal/wgquick`, `internal/openvpn`, `internal/l2tp`, `internal/radius`, `internal/rbac`, `internal/webhook`.
+- New work lives in new packages: `internal/wgquick`, `internal/openvpn`, `internal/l2tp`, `internal/egress`, and later `internal/rbac` and `internal/webhook`.
 - Upstream features the product does not use (AmneziaWG, Xray's WireGuard inbound) are switched off and hidden, not deleted.
 - Edits to shared upstream files stay as small as the integration allows.
 - Upstream is merged on a fixed cadence, not ad hoc.
 
-GitHub Actions: three workflows. `ci.yml` is the gate: phase branches run the fast jobs (about 20 runner minutes), `main` and pull requests run everything (about 52). `vendor.yml` republishes `go mod vendor` to the `build/vendor` branch whenever dependencies change. `release.yml` builds, smoke-tests and publishes the Linux packages when `product_version` on `main` names a version with no release yet, or when a version tag is pushed. The base project's release, Docker, CodeQL, mutation-test and cache-cleanup workflows are removed.
+GitHub Actions: three workflows. `ci.yml` is the gate: phase branches run the fast jobs (about 20 runner minutes), `main` and pull requests run everything (about 52). `vendor.yml` republishes `go mod vendor` to the `build/vendor` branch whenever dependencies change. `release.yml` builds the Linux packages, installs and exercises them on three Ubuntu versions, and publishes them when `product_version` on `main` names a version with no release yet, or when a version tag is pushed. The base project's release, Docker, CodeQL, mutation-test and cache-cleanup workflows are removed.
 
 Build verification: the workspace this plan is written from cannot reach the Go module proxy, so it builds and tests offline from `build/vendor`, and CI in this repository is the final word on every change.
 
@@ -311,7 +311,7 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - Two devices behind one public address may not stay connected together. strongSwan's `connmark` plugin is the known answer and is not used.
 - A server behind NAT (a cloud address mapped onto a private one) is not tested. Windows needs a registry change for such a server, and whether strongSwan's default identity is accepted there by every client is unknown.
 - Dead sessions are found by PPP's own echo after about two minutes; their IPsec state stays until strongSwan's lifetime ends, because the connection sets no dead peer detection.
-- On Ubuntu 24.04 with a cloud kernel the module that lets the kernel carry L2TP sessions is in `linux-modules-extra`. Without it xl2tpd relays every packet itself, which works and is slower; the installer does not install that package.
+- The module that lets the kernel carry L2TP sessions (`l2tp_ppp`) is in `linux-modules-extra` for the kernels Ubuntu 22.04 and 24.04 started with. Without it xl2tpd relays every packet itself, which works and is slower; the installer does not install that package. Both ways are exercised by the release smoke test: the 22.04 runner (kernel 6.8) has no module, the 24.04 and 26.04 runners (kernel 7.0) do.
 - The installer's package names for strongSwan outside Debian and Ubuntu, and the service name it starts there, are taken from those distributions' documentation and have not been run.
 - L2TP on a remote node is covered by a unit test of the capability check only, like the other two engines.
 - An account that is disabled is cut off at the next ten-second tick, not at once, and a new login in that window still succeeds.
@@ -330,4 +330,4 @@ Open decisions:
 
 1. **"Same UI"**: assumed to mean 3x-ui's React and Ant Design interface, extended consistently for the new protocols and pages. NX's interface cannot be copied.
 2. **sing-box-only protocols** from NX (constraint 3): excluded from the MVP unless required.
-3. **L2TP**: confirm it is needed given the weaknesses in 4.5, and whether IKEv2 should ship with it.
+3. **IKEv2**: whether it should be offered next to L2TP from the same strongSwan. Android from version 12 on has no L2TP in its own VPN settings and does have IKEv2, so today such a phone can only be served by another protocol's app.

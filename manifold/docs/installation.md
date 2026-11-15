@@ -9,7 +9,7 @@ Manifold installs from a release package as a systemd service. The server downlo
 - An open TCP port for the panel and one for every inbound you create
 - For OpenVPN, WireGuard and L2TP inbounds: the `openvpn`, `wireguard-tools`, `xl2tpd`, `ppp`, strongSwan, `nftables` and `iptables` packages. The installer installs them on Debian, Ubuntu, Fedora, RHEL and its rebuilds, openSUSE and Arch; elsewhere install them yourself. Each is installed on its own, so one that a distribution does not carry costs only the protocol that needs it, and the installer names it
 - For WireGuard inbounds: a kernel with WireGuard, which every mainstream distribution has had since Linux 5.6
-- For L2TP inbounds: a kernel with PPP and IPsec, which every mainstream distribution has. UDP ports 500, 4500 and 1701 must reach the server
+- For L2TP inbounds: a kernel with PPP and IPsec, which every mainstream distribution has. UDP ports 500, 4500 and 1701 must reach the server. L2TP is faster when the kernel carries the sessions itself; if `modinfo l2tp_ppp` finds no module, as on Ubuntu 22.04 and 24.04 with their original kernels, `apt install linux-modules-extra-$(uname -r)` adds it. Restart the panel afterwards (`manifold restart`): the L2TP server looks for the module once, when it starts
 
 Releases are installed and exercised with real VPN clients on Ubuntu 22.04, 24.04 and 26.04 before they are published. Other distributions get the same package but are not tested this way.
 
