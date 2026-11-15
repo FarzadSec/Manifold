@@ -39,6 +39,8 @@ locations when it can answer in one hop.
   management command and systemd unit. `deploy/test/install-functions.sh` and `manifold-functions.sh`
   test their shell functions; `deploy/test/openvpn-e2e.sh`, `wireguard-e2e.sh` and `l2tp-e2e.sh` drive a
   real panel, server and clients (root), their own or, with `PANEL_URL`, the installed service.
+  `deploy/test/panel-ui.cjs` drives the panel's forms and windows in a real browser: a link the API
+  returns is not yet one an admin sees.
 - `internal/config/` — env parsing (XUI_DEBUG, XUI_LOG_LEVEL, XUI_LOG_FOLDER,
   XUI_BIN_FOLDER, XUI_SKIP_HSTS, XUI_PORT, XUI_DB_*). Operators set the same
   variables as `MANIFOLD_<NAME>`; `AdoptManifoldEnv` copies them onto `XUI_<NAME>`,

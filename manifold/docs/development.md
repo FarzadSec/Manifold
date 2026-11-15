@@ -62,6 +62,14 @@ sudo env PANEL_URL=http://192.168.251.1:PORT/PATH PANEL_USER=… PANEL_PASSWORD=
 
 `192.168.251.1` is the address the scripts give the host; the panel must listen on every address. Afterwards a script removes the accounts it made. `EXPECT_KERNEL_L2TP=1` makes the L2TP script require that sessions are carried by the kernel instead of relayed by xl2tpd, which a sandbox that forbids `AF_PPPOX` silently prevents.
 
+What an admin sees is checked in a real browser by `deploy/test/panel-ui.cjs`: it creates an OpenVPN, a WireGuard and an L2TP inbound and a client through the panel's forms, then requires the client's information and QR windows and its subscription page to show something to hand out for each. It needs `npm ci` in `frontend/`, a Chromium for Playwright and a running panel with the three engines' programs:
+
+```bash
+PANEL_URL=http://127.0.0.1:PORT/PATH PANEL_USER=… PANEL_PASSWORD=… node deploy/test/panel-ui.cjs
+```
+
+The API passing does not replace it: from 0.2.0 to 0.4.0 the route the scripts used returned every link while the route the windows use returned none.
+
 The shell functions of the installer and of the `manifold` command have their own tests, which need nothing installed: `bash deploy/test/install-functions.sh` and `bash deploy/test/manifold-functions.sh`.
 
 ## Where verification runs
@@ -158,7 +166,7 @@ git show upstream-main:CONTRIBUTING.md          # environment variables, test ph
 
 Set the new version in `internal/config/product_version` and merge it to `main`. Nothing else is needed.
 
-`.github/workflows/release.yml` then builds static amd64 and arm64 packages and installs the amd64 package with `install.sh` on Ubuntu 22.04, 24.04 and 26.04. On each it checks that the panel answers, that the installer's login works and that the installer set up the services L2TP needs; runs the three VPN end-to-end scripts against the installed service, so every engine carries real sessions under the unit's sandbox; and checks that an update keeps the settings and that an uninstall leaves nothing in `/etc/wireguard`. If all three pass and no release named `v<product_version>` exists, it publishes one and creates its tag. A last job installs the published release on a clean runner with the command from the README.
+`.github/workflows/release.yml` then builds static amd64 and arm64 packages and installs the amd64 package with `install.sh` on Ubuntu 22.04, 24.04 and 26.04. On each it checks that the panel answers, that the installer's login works and that the installer set up the services L2TP needs; runs the three VPN end-to-end scripts against the installed service, so every engine carries real sessions under the unit's sandbox; opens the panel in a browser on one of the three and creates inbounds and a client through its forms; and checks that an update keeps the settings and that an uninstall leaves nothing in `/etc/wireguard`. If all three pass and no release named `v<product_version>` exists, it publishes one and creates its tag. A last job installs the published release on a clean runner with the command from the README.
 
 Changes to the packaging, to a VPN engine or to its script run the same build and installs on a phase branch and publish nothing. A `vX.Y.Z` tag pushed by hand publishes that version too, as long as it equals `product_version`.
 

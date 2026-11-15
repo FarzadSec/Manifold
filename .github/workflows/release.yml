@@ -21,8 +21,12 @@ on:
       - "manifold.sh"
       - "manifold.service"
       - "DockerInit.sh"
-      # What the smoke test drives under the unit: the engines and their scripts.
+      # What the smoke test drives under the unit: the engines and their scripts,
+      # and what its browser opens: the pages and the links they are given.
       - "deploy/test/*e2e*.sh"
+      - "deploy/test/panel-ui.cjs"
+      - "frontend/src/**"
+      - "internal/sub/**"
       - "internal/openvpn/**"
       - "internal/wgquick/**"
       - "internal/l2tp/**"
@@ -233,6 +237,20 @@ jobs:
           if sudo modinfo l2tp_ppp >/dev/null 2>&1; then kernel_l2tp=1; fi
           echo "kernel $(uname -r), L2TP sessions in the kernel: $kernel_l2tp"
           sudo env $INSTALLED_PANEL EXPECT_KERNEL_L2TP="$kernel_l2tp" deploy/test/l2tp-e2e.sh /usr/local/manifold/manifold
+
+      # The pages are the same on every system, so one of the three opens them.
+      - uses: actions/setup-node@v7
+        if: matrix.os == 'ubuntu-26.04'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: What an admin sees after creating inbounds and a client, in a browser
+        if: matrix.os == 'ubuntu-26.04'
+        run: |
+          set -euo pipefail
+          (cd frontend && npm ci && npx playwright install --with-deps chromium)
+          PANEL_URL=http://127.0.0.1:20530/smoke PANEL_USER=smoke PANEL_PASSWORD=smoke-pass-123 node deploy/test/panel-ui.cjs
 
       - name: Update in place, then uninstall
         run: |
