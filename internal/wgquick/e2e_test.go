@@ -103,7 +103,11 @@ func TestRealInterfaceAndPeer(t *testing.T) {
 		t.Fatal("XUI_WIREGUARD_E2E is set but the test is not running as root")
 	}
 	clientNS := e2eNetwork(t)
-	dir := t.TempDir()
+	// The real directory: where AppArmor confines wg-quick, it reads configs nowhere else.
+	dir := configDir
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
 
 	serverPrivate, serverPublic := keypair(t)
 	clientPrivate, clientPublic := keypair(t)
@@ -132,8 +136,11 @@ func TestRealInterfaceAndPeer(t *testing.T) {
 	if err := os.WriteFile(clientConf, []byte(conf), 0o600); err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() {
+		_ = quiet("ip", "netns", "exec", clientNS, "wg-quick", "down", clientConf)
+		_ = os.Remove(clientConf)
+	})
 	sh(t, "ip", "netns", "exec", clientNS, "wg-quick", "up", clientConf)
-	t.Cleanup(func() { _ = quiet("ip", "netns", "exec", clientNS, "wg-quick", "down", clientConf) })
 
 	eventually(t, "the peer to reach the internet through the tunnel and the NAT", func() bool { return reaches(clientNS) })
 	sh(t, "ip", "netns", "exec", clientNS, "ping", "-c", "20", "-i", "0.05", "-s", "1000", "-W", "3", e2eInternetAddr)

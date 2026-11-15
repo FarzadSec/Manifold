@@ -9,7 +9,8 @@
 #
 # Needs root, wireguard-tools, nft, iproute2, curl and python3. It uses ports
 # 51897/udp and 51898/udp and the interface mfe2eold besides what
-# vpn-e2e-lib.sh uses.
+# vpn-e2e-lib.sh uses. Every config, the clients' too, lives in /etc/wireguard:
+# where AppArmor confines wg-quick, as on Ubuntu 26.04, it reads them nowhere else.
 set -euo pipefail
 
 BIN="$(readlink -f "${1:?usage: wireguard-e2e.sh /path/to/manifold [/path/to/bin-folder]}")"
@@ -24,10 +25,14 @@ OLD_IFACE=mfe2eold
 OLD_CONF="/etc/wireguard/${OLD_IFACE}.conf"
 CONNECTED=""
 
+# client_conf NAME: the config of a client interface.
+client_conf() { echo "/etc/wireguard/mfe2e$1.conf"; }
+
 engine_cleanup() {
     if [ -n "$CONNECTED" ]; then
-        ip netns exec "$CLIENT_NS" wg-quick down "$WORK/$CONNECTED.conf" >/dev/null 2>&1 || true
+        ip netns exec "$CLIENT_NS" wg-quick down "$(client_conf "$CONNECTED")" >/dev/null 2>&1 || true
     fi
+    rm -f "$(client_conf alice)" "$(client_conf bob)" "$(client_conf dave)"
     if ip link show "$OLD_IFACE" >/dev/null 2>&1; then
         wg-quick down "$OLD_CONF" >/dev/null 2>&1 || ip link del "$OLD_IFACE" 2>/dev/null || true
     fi
@@ -40,7 +45,7 @@ connect() {
     local link
     link="$(client_link "$1" wireguard://)"
     # The file name is the interface name, which holds at most 15 characters.
-    python3 - "$link" >"$WORK/mfe2e$1.conf" <<'PY'
+    python3 - "$link" >"$(client_conf "$1")" <<'PY'
 import sys, urllib.parse
 u = urllib.parse.urlsplit(sys.argv[1])
 q = dict(urllib.parse.parse_qsl(u.query))
@@ -53,13 +58,14 @@ print("Endpoint = %s:%d" % (u.hostname, u.port))
 print("AllowedIPs = 198.18.0.0/24")
 print("PersistentKeepalive = 1")
 PY
-    grep -q "^Endpoint = ${HOST_ADDR}:${WG_PORT}\$" "$WORK/mfe2e$1.conf" || fail "config of $1 has the wrong endpoint: $(grep '^Endpoint' "$WORK/mfe2e$1.conf")"
-    ip netns exec "$CLIENT_NS" wg-quick up "$WORK/mfe2e$1.conf" >"$WORK/$1.log" 2>&1 || fail "peer $1 did not come up: $(tail -n 3 "$WORK/$1.log")"
-    CONNECTED="mfe2e$1"
+    chmod 600 "$(client_conf "$1")"
+    grep -q "^Endpoint = ${HOST_ADDR}:${WG_PORT}\$" "$(client_conf "$1")" || fail "config of $1 has the wrong endpoint: $(grep '^Endpoint' "$(client_conf "$1")")"
+    ip netns exec "$CLIENT_NS" wg-quick up "$(client_conf "$1")" >"$WORK/$1.log" 2>&1 || fail "peer $1 did not come up: $(tail -n 3 "$WORK/$1.log")"
+    CONNECTED="$1"
 }
 
 disconnect() {
-    ip netns exec "$CLIENT_NS" wg-quick down "$WORK/$CONNECTED.conf" >/dev/null 2>&1 || true
+    ip netns exec "$CLIENT_NS" wg-quick down "$(client_conf "$CONNECTED")" >/dev/null 2>&1 || true
     CONNECTED=""
 }
 
@@ -112,12 +118,13 @@ dave_key="$(wg genkey)"
 dave_public="$(printf '%s' "$dave_key" | wg pubkey)"
 erin_public="$(wg genkey | wg pubkey)"
 # The server sits on the last address of its subnet and has no NAT of its own.
+# Its hook is one a confined wg-quick may run: ip, with a result that can be read back.
 cat >"$OLD_CONF" <<CONF
 [Interface]
 PrivateKey = ${old_server_key}
 Address = 10.197.0.254/24
 ListenPort = ${OLD_PORT}
-PostUp = touch ${WORK}/hook-ran
+PostUp = ip link set dev %i txqueuelen 777
 
 #Name# = from the config
 [Peer]
@@ -126,7 +133,7 @@ AllowedIPs = 10.197.0.2/32
 CONF
 chmod 600 "$OLD_CONF"
 wg-quick up "$OLD_CONF" >"$WORK/old-up.log" 2>&1 || fail "the old interface did not come up: $(tail -n 3 "$WORK/old-up.log")"
-cat >"$WORK/mfe2edave.conf" <<CONF
+cat >"$(client_conf dave)" <<CONF
 [Interface]
 PrivateKey = ${dave_key}
 Address = 10.197.0.2/32
@@ -136,8 +143,9 @@ Endpoint = ${HOST_ADDR}:${OLD_PORT}
 AllowedIPs = 198.18.0.0/24, 10.197.0.254/32
 PersistentKeepalive = 1
 CONF
-ip netns exec "$CLIENT_NS" wg-quick up "$WORK/mfe2edave.conf" >"$WORK/dave.log" 2>&1 || fail "dave did not come up: $(tail -n 3 "$WORK/dave.log")"
-CONNECTED=mfe2edave
+chmod 600 "$(client_conf dave)"
+ip netns exec "$CLIENT_NS" wg-quick up "$(client_conf dave)" >"$WORK/dave.log" 2>&1 || fail "dave did not come up: $(tail -n 3 "$WORK/dave.log")"
+CONNECTED=dave
 reaches_old_server() { ip netns exec "$CLIENT_NS" ping -c 2 -i 0.2 -W 2 10.197.0.254; }
 wait_until 20 "dave to reach the old server" reaches_old_server
 if reaches_internet >/dev/null 2>&1; then
@@ -166,7 +174,6 @@ sources="$(api GET "/panel/api/inbounds/wireguard/importable?dashboardDb=${WORK}
 found="$(field "$sources" "[(i['name'], i['port'], i['peers'], i['restricted'], i['up'], i['problem']) for i in r['obj']['interfaces'] if i['name'] == '${OLD_IFACE}']")"
 [ "$found" = "[('${OLD_IFACE}', ${OLD_PORT}, 1, 1, True, '')]" ] || fail "the old interface is not offered for import as it is: $found"
 
-rm -f "$WORK/hook-ran"
 imported="$(api POST /panel/api/inbounds/wireguard/import "{\"interface\": \"${OLD_IFACE}\", \"dashboardDb\": \"${WORK}/wgd.db\"}")"
 must_succeed "$imported" "importing the old interface"
 summary="$(field "$imported" "(r['obj']['clients'], r['obj']['disabled'], r['obj']['withoutKey'])")"
@@ -176,7 +183,8 @@ old_inbound_id="$(field "$imported" 'r["obj"]["inboundId"]')"
 old_is_managed() { grep -q "^# Managed by Manifold: inbound ${old_inbound_id}\." "$OLD_CONF"; }
 wait_until 20 "the panel to run the interface from its own config" old_is_managed
 [ -f "${OLD_CONF}.before-manifold" ] || fail "the old config was not kept"
-[ -f "$WORK/hook-ran" ] || fail "the interface came back without running its PostUp hook"
+# The import brought up a new interface; only the hook gives it this queue length.
+ip -o link show "$OLD_IFACE" | grep -q "qlen 777" || fail "the interface came back without running its PostUp hook: $(ip -o link show "$OLD_IFACE")"
 grep -q "^Address = 10.197.0.254/24\$" "$OLD_CONF" || fail "the server lost its address: $(grep '^Address' "$OLD_CONF")"
 
 # dave's config is untouched: same key, same server address, and now NAT from the panel.
