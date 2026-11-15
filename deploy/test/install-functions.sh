@@ -129,10 +129,13 @@ check "other package managers get the names as they are" "$(packages_for dnf ope
 
 # The services of freshly installed L2TP packages: xl2tpd's own would take the
 # panel's port, strongSwan's has to run. An admin's existing setup is not touched.
+# Stopping is a call of its own: for a service that is an init script, as xl2tpd
+# is up to Ubuntu 24.04, "disable --now" disables and leaves it running.
 SYSTEMCTL_CALLS=""
 systemctl() { SYSTEMCTL_CALLS="${SYSTEMCTL_CALLS}[$*]"; }
 prepare_l2tp_services "openvpn xl2tpd ppp strongswan"
-check "a new xl2tpd is kept off the port and a new strongSwan is started" "$SYSTEMCTL_CALLS" "[disable --now xl2tpd][enable --now strongswan]"
+check "a new xl2tpd is kept off the port and a new strongSwan is started" "$SYSTEMCTL_CALLS" \
+    "[stop xl2tpd][disable xl2tpd][enable strongswan][start strongswan]"
 SYSTEMCTL_CALLS=""
 prepare_l2tp_services "openvpn wireguard-tools"
 check "services that were already there are left as they are" "$SYSTEMCTL_CALLS" ""
@@ -151,7 +154,7 @@ info() { :; }
 INSTALL_DEPS=1
 install_dependencies 2>/dev/null
 check "each engine's packages are installed on their own" "$APT_CALLS" "[xl2tpd][strongswan-swanctl charon-systemd libstrongswan-standard-plugins]"
-check "only an installed package has its service set up" "$SYSTEMCTL_CALLS" "[enable --now strongswan]"
+check "only an installed package has its service set up" "$SYSTEMCTL_CALLS" "[enable strongswan][start strongswan]"
 unset -f systemctl apt-get
 
 # Another panel on the server usually holds the default subscription port.

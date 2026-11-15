@@ -267,13 +267,15 @@ packages_for() {
 # prepare_l2tp_services INSTALLED: set up the services of the L2TP packages this
 # run installed. What was on the server before belongs to its admin.
 prepare_l2tp_services() {
+    local action
     case " $1 " in
         # The distribution's own xl2tpd service would hold port 1701, which the panel's server needs.
-        *" xl2tpd "*) systemctl disable --now xl2tpd >/dev/null 2>&1 || true ;;
+        # Two calls: "disable --now" leaves a service that is an init script running.
+        *" xl2tpd "*) for action in stop disable; do systemctl "$action" xl2tpd >/dev/null 2>&1 || true; done ;;
     esac
     case " $1 " in
         # The panel only hands strongSwan a connection; the daemon itself has to be running.
-        *" strongswan "*) systemctl enable --now strongswan >/dev/null 2>&1 || true ;;
+        *" strongswan "*) for action in enable start; do systemctl "$action" strongswan >/dev/null 2>&1 || true; done ;;
     esac
 }
 
