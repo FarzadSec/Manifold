@@ -71,6 +71,8 @@ A WireGuard inbound is a WireGuard interface of the server itself: the standard 
 | MTU, DNS | The interface's MTU, and the DNS servers written into client configs |
 | Hooks | Commands `wg-quick` runs as root before and after the interface goes up or down, one per line; `%i` stands for the interface name |
 
+On a system that confines `wg-quick` with AppArmor, as Ubuntu 26.04 does, a hook can only run what that profile allows: `ip`, `wg`, `nft`, `iptables` and a few basic tools. A hook that runs anything else fails, and the interface with it; `/etc/apparmor.d/local/wg-quick` is where such a system lets you allow more.
+
 The panel writes `/etc/wireguard/<name>.conf`, brings the interface up and gives its clients internet access through NAT. The file belongs to the panel and is rewritten on every change, so change the inbound, not the file. A config in that directory that the panel did not write is never touched; an inbound cannot take its name until you import it.
 
 **Add clients** on the Clients page as for any other inbound. Each gets its own key pair and tunnel address. The client's information and QR windows show the `.conf` and the QR code that the WireGuard apps import.

@@ -4,6 +4,7 @@ Version 0.7 · 2026-11-14 · Status: P0, OpenVPN and WireGuard delivered; see 8.
 
 Decision log:
 
+- 2026-11-15 — The systemd unit no longer sets `NoNewPrivileges`. Ubuntu 26.04 confines `wg-quick` with AppArmor; the profile runs `ip` and `wg` in profiles of their own, and the kernel refuses a change of profile to a process started with that flag, so no WireGuard interface came up under the unit. The capability bounding set stays and already limits what any child can hold.
 - 2026-11-14 — Engine order changed once more: kernel WireGuard is built before L2TP/IPsec. It could be run end to end where the code is written, while L2TP needs kernel PPP that only the CI runners have; and it retires the two WireGuard implementations the product does not want.
 - 2026-11-14 — The existing `wireguard` protocol became the kernel engine; no second protocol name. Inbounds, clients, links and subscriptions made before keep their keys and addresses. A node says it runs this engine with the `wireguard` capability.
 - 2026-11-14 — The panel adds one route per peer and writes `Table = off`. `wg-quick` only adds routes when an interface comes up, so a peer set later would have none.
@@ -279,7 +280,8 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 
 ### 8.3 Open items after WireGuard
 
-- The engine's tests on the development machine ran against `wireguard-go`, which `wg-quick` falls back to on a kernel without the module. The kernel module itself is exercised only on the CI runners (`vpn-e2e`, and the release smoke test under the systemd unit).
+- The engine's tests on the development machine ran against `wireguard-go`, which `wg-quick` falls back to on a kernel without the module. The kernel module itself is exercised only on the CI runners (`vpn-e2e`, and the release smoke test under the systemd unit), which run Ubuntu 26.04 with its AppArmor profile for `wg-quick`. No other distribution is tested.
+- Under that AppArmor profile a hook can run `ip`, `wg`, `nft`, `iptables` and little else. An imported server whose hooks need more keeps failing to start until the admin extends the profile; the import does not check for this.
 - WireGuard on a remote node is covered by a unit test of the capability check only, like OpenVPN.
 - An inbound made before 0.3.0 switches from Xray to the kernel interface on update. No test updates a real 0.2.0 server with such an inbound; a client that was given the first address of the subnet would collide with the server's.
 - NAT covers IPv4 only. IPv6 addresses of an imported server are carried over; forwarding and NAT for them is left to the server's own hooks.

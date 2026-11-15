@@ -20,9 +20,9 @@ KillMode=mixed
 # state and reads TLS private keys. These settings bound what a flaw in the
 # panel can reach.
 #
-# NoNewPrivileges is left off on purpose. Where AppArmor confines wg-quick
-# (Ubuntu 25.04 and later), wg-quick moves into narrower profiles to run ip
-# and wg, and the kernel refuses any such move once that flag is set: the
+# NoNewPrivileges is left off on purpose. Where AppArmor confines wg-quick,
+# as Ubuntu 26.04 does, wg-quick moves into narrower profiles to run ip and
+# wg, and the kernel refuses any such move once that flag is set: the
 # interface fails with "/usr/bin/ip: Operation not permitted". The capability
 # bounding set below already caps what a setuid program could gain.
 ProtectSystem=full
