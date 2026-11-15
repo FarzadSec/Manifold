@@ -1,7 +1,7 @@
 name: Release
 
-# Builds the Linux packages, installs the amd64 one on the runner as a smoke
-# test, and publishes a release only if that install works.
+# Builds the Linux packages, installs the amd64 one on every Ubuntu LTS in use
+# as a smoke test, and publishes a release only if those installs work.
 #
 # main: publishes v<product_version> when no such release exists yet, so a
 #       release is cut by changing internal/config/product_version.
@@ -21,6 +21,12 @@ on:
       - "manifold.sh"
       - "manifold.service"
       - "DockerInit.sh"
+      # What the smoke test drives under the unit: the engines and their scripts.
+      - "deploy/test/*e2e*.sh"
+      - "internal/openvpn/**"
+      - "internal/wgquick/**"
+      - "internal/l2tp/**"
+      - "internal/egress/**"
       - "internal/config/product_version"
 
 permissions:
@@ -103,8 +109,40 @@ jobs:
           sha256sum "manifold-linux-$PLATFORM.tar.gz" > "manifold-linux-$PLATFORM.tar.gz.sha256"
           tar -tzf "manifold-linux-$PLATFORM.tar.gz"
 
-      - name: Install the package on this runner
-        if: matrix.platform == 'amd64'
+      - uses: actions/upload-artifact@v7
+        with:
+          name: manifold-linux-${{ matrix.platform }}
+          path: |
+            manifold-linux-${{ matrix.platform }}.tar.gz
+            manifold-linux-${{ matrix.platform }}.tar.gz.sha256
+          if-no-files-found: error
+
+  # Installs the package the way a server owner does, on every Ubuntu LTS in
+  # use, and drives each engine with real clients while the panel runs under
+  # its unit: what the sandbox forbids only shows there.
+  smoke:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-22.04
+          - ubuntu-24.04
+          - ubuntu-26.04
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    # The installed panel, for the scripts that drive it instead of one of their own.
+    env:
+      PANEL_URL: http://192.168.251.1:20530/smoke
+      PANEL_USER: smoke
+      PANEL_PASSWORD: smoke-pass-123
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v7
+        with:
+          name: manifold-linux-amd64
+
+      - name: Install the package
         run: |
           set -euo pipefail
           # Another panel's subscription server usually holds port 2096: the
@@ -173,6 +211,32 @@ jobs:
           sudo grep -q "^# Managed by Manifold: inbound ${wg_id}\." "/etc/wireguard/mfwg${wg_id}.conf"
           test "$(sudo wg show "mfwg${wg_id}" listen-port)" = 21196
           sudo nft list table ip "manifold_wg${wg_id}" >/dev/null
+
+      - name: The installer set up the services L2TP needs
+        run: |
+          systemctl is-active strongswan
+          if systemctl is-active --quiet xl2tpd; then
+            echo "the distribution's xl2tpd service still holds the L2TP port" >&2
+            exit 1
+          fi
+
+      - name: OpenVPN clients against the installed service
+        run: sudo -E deploy/test/openvpn-e2e.sh /usr/local/manifold/manifold
+
+      - name: WireGuard peers against the installed service, with a takeover
+        run: sudo -E deploy/test/wireguard-e2e.sh /usr/local/manifold/manifold
+
+      - name: An L2TP client through IPsec against the installed service
+        run: |
+          # Where the kernel can carry L2TP sessions itself, the sandbox must let it.
+          kernel_l2tp=0
+          if sudo modinfo l2tp_ppp >/dev/null 2>&1; then kernel_l2tp=1; fi
+          sudo -E EXPECT_KERNEL_L2TP="$kernel_l2tp" deploy/test/l2tp-e2e.sh /usr/local/manifold/manifold
+
+      - name: Update in place, then uninstall
+        run: |
+          set -euo pipefail
+          wg_id=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["obj"]["id"])' /tmp/wg-inbound.json)
           # An update must keep the database: the second run is an update in place.
           sudo bash install.sh --package manifold-linux-amd64.tar.gz
           settings=$(sudo manifold settings)
@@ -180,6 +244,11 @@ jobs:
           grep -q 'webBasePath: /smoke/' <<<"$settings"
           sudo manifold uninstall --purge
           test ! -e /usr/local/manifold
+          # The interface's config held a private key in a folder that is not the panel's.
+          if sudo test -e "/etc/wireguard/mfwg${wg_id}.conf"; then
+            echo "the uninstall left the WireGuard inbound's config behind" >&2
+            exit 1
+          fi
           # With the panel port held by another program the installer must fail
           # instead of printing an address nobody can reach.
           python3 -m http.server 20531 >/dev/null 2>&1 &
@@ -194,16 +263,8 @@ jobs:
           kill "$squatter"
           sudo manifold uninstall --purge
 
-      - uses: actions/upload-artifact@v7
-        with:
-          name: manifold-linux-${{ matrix.platform }}
-          path: |
-            manifold-linux-${{ matrix.platform }}.tar.gz
-            manifold-linux-${{ matrix.platform }}.tar.gz.sha256
-          if-no-files-found: error
-
   publish:
-    needs: build
+    needs: [build, smoke]
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     outputs:
