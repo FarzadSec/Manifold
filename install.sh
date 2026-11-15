@@ -241,40 +241,98 @@ missing_dependencies() {
     command_exists nft || missing+=(nftables)
     command_exists iptables || missing+=(iptables)
     command_exists wg-quick || missing+=(wireguard-tools)
+    command_exists xl2tpd || missing+=(xl2tpd)
+    command_exists pppd || missing+=(ppp)
+    # "ipsec" is an IKE daemon set up another way; a second one would take its ports.
+    command_exists swanctl || command_exists ipsec || missing+=(strongswan)
     echo "${missing[*]}"
+}
+
+# packages_for MANAGER PACKAGE...: the names that package manager knows the packages by.
+packages_for() {
+    local manager="$1" package
+    local -a names=()
+    shift
+    for package in "$@"; do
+        # Debian and Ubuntu split strongSwan: the daemon, swanctl and the ciphers old clients offer.
+        if [ "$manager" = apt-get ] && [ "$package" = strongswan ]; then
+            names+=(strongswan-swanctl charon-systemd libstrongswan-standard-plugins)
+        else
+            names+=("$package")
+        fi
+    done
+    echo "${names[*]}"
+}
+
+# prepare_l2tp_services INSTALLED: set up the services of the L2TP packages this
+# run installed. What was on the server before belongs to its admin.
+prepare_l2tp_services() {
+    case " $1 " in
+        # The distribution's own xl2tpd service would hold port 1701, which the panel's server needs.
+        *" xl2tpd "*) systemctl disable --now xl2tpd >/dev/null 2>&1 || true ;;
+    esac
+    case " $1 " in
+        # The panel only hands strongSwan a connection; the daemon itself has to be running.
+        *" strongswan "*) systemctl enable --now strongswan >/dev/null 2>&1 || true ;;
+    esac
+}
+
+# package_manager prints the package manager of this distribution.
+package_manager() {
+    local manager
+    for manager in apt-get dnf yum zypper pacman; do
+        if command_exists "$manager"; then
+            echo "$manager"
+            return 0
+        fi
+    done
+    return 1
+}
+
+# install_package MANAGER NAME...: install the packages of one dependency.
+install_package() {
+    local manager="$1"
+    shift
+    case "$manager" in
+        apt-get) apt-get install -y -qq "$@" ;;
+        dnf | yum) "$manager" install -y -q "$@" ;;
+        zypper) zypper --non-interactive --quiet install "$@" ;;
+        pacman) pacman -Sy --noconfirm --needed "$@" ;;
+    esac >/dev/null 2>&1
 }
 
 # install_dependencies never fails the install: the Xray protocols run without
 # these packages, and only the engines that need one say so in the panel.
 install_dependencies() {
     [ "$INSTALL_DEPS" -eq 1 ] || return 0
-    local missing
+    local missing manager package
+    local -a names installed=()
     missing=$(missing_dependencies)
     [ -n "$missing" ] || return 0
     info "Installing system packages: ${missing}"
-    local -a packages
-    read -r -a packages <<<"$missing"
-    local ok=0
-    if command_exists apt-get; then
-        export DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a
-        apt-get update -qq >/dev/null 2>&1 || true
-        apt-get install -y -qq "${packages[@]}" >/dev/null 2>&1 && ok=1
-    elif command_exists dnf; then
-        # On RHEL and its rebuilds openvpn comes from EPEL.
-        dnf install -y -q epel-release >/dev/null 2>&1 || true
-        dnf install -y -q "${packages[@]}" >/dev/null 2>&1 && ok=1
-    elif command_exists yum; then
-        yum install -y -q epel-release >/dev/null 2>&1 || true
-        yum install -y -q "${packages[@]}" >/dev/null 2>&1 && ok=1
-    elif command_exists zypper; then
-        zypper --non-interactive --quiet install "${packages[@]}" >/dev/null 2>&1 && ok=1
-    elif command_exists pacman; then
-        pacman -Sy --noconfirm --needed "${packages[@]}" >/dev/null 2>&1 && ok=1
+    if manager=$(package_manager); then
+        case "$manager" in
+            apt-get)
+                export DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a
+                apt-get update -qq >/dev/null 2>&1 || true
+                ;;
+            # On RHEL and its rebuilds openvpn and xl2tpd come from EPEL.
+            dnf | yum) "$manager" install -y -q epel-release >/dev/null 2>&1 || true ;;
+        esac
+        # One at a time: a package this distribution lacks must not keep the others out.
+        for package in $missing; do
+            read -r -a names <<<"$(packages_for "$manager" "$package")"
+            if install_package "$manager" "${names[@]}"; then
+                installed+=("$package")
+            fi
+        done
     fi
-    if [ "$ok" -ne 1 ] || [ -n "$(missing_dependencies)" ]; then
-        echo "warning: could not install: $(missing_dependencies)" >&2
-        echo "         OpenVPN and WireGuard inbounds will not start until these packages are installed." >&2
+    missing=$(missing_dependencies)
+    if [ -n "$missing" ]; then
+        echo "warning: could not install: ${missing}" >&2
+        echo "         OpenVPN, WireGuard and L2TP inbounds will not start until these packages are installed." >&2
     fi
+    prepare_l2tp_services "${installed[*]}"
 }
 
 # port_from_settings reads the panel port out of "manifold setting -show".

@@ -32,6 +32,8 @@ ReadWritePaths=-/etc/manifold -/usr/local/manifold -/var/log/manifold
 ReadWritePaths=-/proc/sys/net
 # WireGuard inbounds are wg-quick configs, kept where every WireGuard tool looks.
 ReadWritePaths=-/etc/wireguard
+# The IPsec side of L2TP is one file among strongSwan's own.
+ReadWritePaths=-/etc/swanctl
 ProtectKernelTunables=yes
 ProtectKernelModules=yes
 ProtectKernelLogs=yes
@@ -44,7 +46,9 @@ RestrictRealtime=yes
 RestrictSUIDSGID=yes
 RestrictNamespaces=yes
 UMask=0077
-RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+# AF_PPPOX is how xl2tpd hands an L2TP session to the kernel; without it
+# every session is relayed through xl2tpd itself.
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK AF_PPPOX
 # DAC_OVERRIDE stays so root can read TLS keys owned by another account.
 CapabilityBoundingSet=CAP_DAC_OVERRIDE CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
 SystemCallArchitectures=native

@@ -112,12 +112,47 @@ check "the service has no running process" "$(listens)" "no"
 unset -f systemctl ss
 
 command_exists() { case " $FAKE_COMMANDS " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
-FAKE_COMMANDS="openvpn nft wg-quick"
+FAKE_COMMANDS="openvpn nft wg-quick xl2tpd pppd swanctl"
 check "missing packages are named" "$(missing_dependencies)" "iptables"
-FAKE_COMMANDS="iptables"
-check "a command is named by the package that brings it" "$(missing_dependencies)" "openvpn nftables wireguard-tools"
-FAKE_COMMANDS="openvpn nft iptables wg-quick"
+FAKE_COMMANDS="iptables pppd"
+check "a command is named by the package that brings it" "$(missing_dependencies)" "openvpn nftables wireguard-tools xl2tpd strongswan"
+FAKE_COMMANDS="openvpn nft iptables wg-quick xl2tpd pppd swanctl"
 check "nothing to install when every command exists" "$(missing_dependencies)" ""
+# A second IKE daemon would take ports 500 and 4500 from the one an admin already runs.
+FAKE_COMMANDS="openvpn nft iptables wg-quick xl2tpd pppd ipsec"
+check "an IPsec service of another kind is not joined by a second one" "$(missing_dependencies)" ""
+
+# Debian and Ubuntu ship strongSwan in pieces; everywhere else it is one package.
+check "apt gets the strongSwan daemon and swanctl by their own names" \
+    "$(packages_for apt-get openvpn strongswan ppp)" "openvpn strongswan-swanctl charon-systemd libstrongswan-standard-plugins ppp"
+check "other package managers get the names as they are" "$(packages_for dnf openvpn strongswan ppp)" "openvpn strongswan ppp"
+
+# The services of freshly installed L2TP packages: xl2tpd's own would take the
+# panel's port, strongSwan's has to run. An admin's existing setup is not touched.
+SYSTEMCTL_CALLS=""
+systemctl() { SYSTEMCTL_CALLS="${SYSTEMCTL_CALLS}[$*]"; }
+prepare_l2tp_services "openvpn xl2tpd ppp strongswan"
+check "a new xl2tpd is kept off the port and a new strongSwan is started" "$SYSTEMCTL_CALLS" "[disable --now xl2tpd][enable --now strongswan]"
+SYSTEMCTL_CALLS=""
+prepare_l2tp_services "openvpn wireguard-tools"
+check "services that were already there are left as they are" "$SYSTEMCTL_CALLS" ""
+
+# One package a distribution does not have must not keep the others out, and
+# only what really was installed gets its service set up.
+FAKE_COMMANDS="apt-get openvpn nft iptables wg-quick pppd"
+APT_CALLS=""
+apt-get() {
+    [ "$1" = install ] || return 0
+    shift 3
+    APT_CALLS="${APT_CALLS}[$*]"
+    case " $* " in *" xl2tpd "*) return 1 ;; esac
+}
+info() { :; }
+INSTALL_DEPS=1
+install_dependencies 2>/dev/null
+check "each engine's packages are installed on their own" "$APT_CALLS" "[xl2tpd][strongswan-swanctl charon-systemd libstrongswan-standard-plugins]"
+check "only an installed package has its service set up" "$SYSTEMCTL_CALLS" "[enable --now strongswan]"
+unset -f systemctl apt-get
 
 # Another panel on the server usually holds the default subscription port.
 FAKE_COMMANDS="ss"
