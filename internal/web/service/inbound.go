@@ -1351,6 +1351,9 @@ func (s *InboundService) AddInbound(inbound *model.Inbound) (*model.Inbound, boo
 	if err := prepareOpenVPNInbound(inbound, ""); err != nil {
 		return inbound, false, err
 	}
+	if err := prepareL2TPInbound(database.GetDB(), inbound, ""); err != nil {
+		return inbound, false, err
+	}
 	if err := prepareWireGuardInbound(database.GetDB(), inbound); err != nil {
 		return inbound, false, err
 	}
@@ -1436,7 +1439,7 @@ func (s *InboundService) AddInbound(inbound *model.Inbound) (*model.Inbound, boo
 	// Secure client ID
 	for _, client := range clients {
 		switch inbound.Protocol {
-		case "trojan", "masque", "openvpn":
+		case "trojan", "masque", "openvpn", "l2tp":
 			if client.Password == "" {
 				return inbound, false, common.NewError("empty client ID")
 			}
@@ -2074,6 +2077,9 @@ func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, 
 		return inbound, false, err
 	}
 	if err := prepareOpenVPNInbound(inbound, oldInbound.Settings); err != nil {
+		return inbound, false, err
+	}
+	if err := prepareL2TPInbound(database.GetDB(), inbound, oldInbound.Settings); err != nil {
 		return inbound, false, err
 	}
 	if err := prepareWireGuardInbound(database.GetDB(), inbound); err != nil {

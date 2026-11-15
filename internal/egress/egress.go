@@ -98,7 +98,32 @@ func apply(owner string, t traffic) error {
 	return nil
 }
 
-// Remove withdraws everything Apply installed for owner.
+// RequireIPsec drops packets for a UDP port of this host that did not arrive
+// through IPsec. Remove, with the same owner, lifts it.
+func RequireIPsec(owner string, port int) error {
+	if !ownerPattern.MatchString(owner) {
+		return fmt.Errorf("egress: invalid owner %q", owner)
+	}
+	if port < 1 || port > 65535 {
+		return fmt.Errorf("egress: %d is not a UDP port", port)
+	}
+	if !host.has("nft") {
+		return ErrNoNftables
+	}
+	table := tableName(owner)
+	guard := fmt.Sprintf("add table ip %[1]s\ndelete table ip %[1]s\n"+
+		"table ip %[1]s {\n"+
+		"\tchain input {\n"+
+		"\t\ttype filter hook input priority 0; policy accept;\n"+
+		"\t\tudp dport %[2]d meta ipsec missing drop\n"+
+		"\t}\n}\n", table, port)
+	if out, err := host.run(guard, "nft", "-f", "-"); err != nil {
+		return fmt.Errorf("egress: requiring IPsec for UDP port %d: %w (%s)", port, err, out)
+	}
+	return nil
+}
+
+// Remove withdraws everything Apply or RequireIPsec installed for owner.
 func Remove(owner string) {
 	if !ownerPattern.MatchString(owner) {
 		return

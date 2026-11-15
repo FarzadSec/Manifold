@@ -18,6 +18,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/l2tp"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/openvpn"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
@@ -504,6 +505,16 @@ func (s *ClientService) fillProtocolDefaultsAgainstExisting(c *model.Client, ib 
 			c.Password = random.Seq(16)
 		}
 		if err := openvpn.ValidatePassword(c.Password); err != nil {
+			return common.NewError(err.Error())
+		}
+	case model.L2TP:
+		if err := l2tp.ValidateUsername(c.Email); err != nil {
+			return common.NewError(err.Error())
+		}
+		if c.Password == "" {
+			c.Password = random.Seq(16)
+		}
+		if err := l2tp.ValidatePassword(c.Password); err != nil {
 			return common.NewError(err.Error())
 		}
 	case model.TUIC:

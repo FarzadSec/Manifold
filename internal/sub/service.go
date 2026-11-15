@@ -1024,6 +1024,8 @@ func (s *SubService) GetLink(inbound *model.Inbound, email string) string {
 		return s.genTuicLink(inbound, email)
 	case "openvpn":
 		return s.genOpenVPNLink(inbound, email)
+	case "l2tp":
+		return s.genL2TPLink(inbound, email)
 	}
 	return ""
 }

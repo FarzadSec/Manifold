@@ -62,6 +62,7 @@ var nodeEligibleProtocols = map[model.Protocol]bool{
 	model.TUIC:        true,
 	model.MASQUE:      true,
 	model.OpenVPN:     true,
+	model.L2TP:        true,
 }
 
 // nodeProtocolFirstRelease is the panel release that introduced each protocol

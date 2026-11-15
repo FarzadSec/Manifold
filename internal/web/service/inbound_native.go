@@ -7,6 +7,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/l2tp"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/openvpn"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
@@ -105,6 +106,83 @@ func openvpnTransport(settings string) transportBits {
 		return transportTCP
 	}
 	return transportUDP
+}
+
+// DesiredL2TPInstances returns the server this panel should be running: its
+// own enabled L2TP inbound, without the accounts a limit switched off.
+func (s *InboundService) DesiredL2TPInstances() ([]l2tp.Instance, error) {
+	db := database.GetDB()
+	var inbounds []*model.Inbound
+	err := db.Model(model.Inbound{}).
+		Where("protocol = ? AND enable = ? AND node_id IS NULL", model.L2TP, true).
+		Order("id").
+		Find(&inbounds).Error
+	if err != nil || len(inbounds) == 0 {
+		return nil, err
+	}
+	instances := make([]l2tp.Instance, 0, len(inbounds))
+	var emails []string
+	for _, ib := range inbounds {
+		inst, ok := l2tp.InstanceFromInbound(ib)
+		if !ok {
+			continue
+		}
+		instances = append(instances, inst)
+		for _, user := range inst.Users {
+			emails = append(emails, user.Name)
+		}
+	}
+	disabled, err := trafficDisabledEmails(db, emails)
+	if err != nil {
+		return nil, err
+	}
+	for i := range instances {
+		kept := make([]l2tp.User, 0, len(instances[i].Users))
+		for _, user := range instances[i].Users {
+			if _, off := disabled[user.Name]; !off {
+				kept = append(kept, user)
+			}
+		}
+		instances[i].Users = kept
+	}
+	return instances, nil
+}
+
+// prepareL2TPInbound completes and validates an L2TP inbound before it is
+// stored; oldSettings is the stored row's settings on an update.
+func prepareL2TPInbound(db *gorm.DB, inbound *model.Inbound, oldSettings string) error {
+	if inbound.Protocol != model.L2TP {
+		return nil
+	}
+	if inbound.Port != l2tp.Port {
+		return common.NewErrorf("L2TP clients always dial UDP port %d; an inbound on another port could not be reached", l2tp.Port)
+	}
+	settings, err := l2tp.NormalizeSettings(inbound.Settings, oldSettings)
+	if err != nil {
+		return common.NewError(err.Error())
+	}
+	inbound.Settings = settings
+	// With one port for everyone, a second inbound on the same server would never see a client.
+	query := db.Model(model.Inbound{}).Where("protocol = ? AND id <> ?", model.L2TP, inbound.Id)
+	if inbound.NodeID == nil {
+		query = query.Where("node_id IS NULL")
+	} else {
+		query = query.Where("node_id = ?", *inbound.NodeID)
+	}
+	var other model.Inbound
+	if err := query.Limit(1).Find(&other).Error; err != nil {
+		return err
+	}
+	if other.Id != 0 {
+		return common.NewErrorf("inbound %q already serves L2TP on this server; a server has one L2TP port", other.Remark)
+	}
+	if inbound.NodeID == nil && inbound.Enable {
+		server := l2tp.ServerOf(settings)
+		if missing := l2tp.MissingPrograms(server != nil && server.RequiresIPsec()); len(missing) > 0 {
+			return common.NewErrorf("L2TP cannot run on this server: %s are not installed. Install the xl2tpd, ppp and strongswan packages, then save again.", strings.Join(missing, ", "))
+		}
+	}
+	return nil
 }
 
 // DesiredWireGuardInstances returns the interfaces this panel should be
@@ -207,5 +285,6 @@ func (s *InboundService) NativeEngines() []EngineStatus {
 	return []EngineStatus{
 		{Protocol: model.OpenVPN, Installed: openvpnErr == nil, Package: "openvpn"},
 		{Protocol: model.WireGuard, Installed: wgquick.GetManager().Available(), Package: "wireguard-tools"},
+		{Protocol: model.L2TP, Installed: len(l2tp.MissingPrograms(true)) == 0, Package: "xl2tpd, ppp, strongswan"},
 	}
 }

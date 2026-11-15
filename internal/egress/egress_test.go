@@ -169,3 +169,33 @@ func TestRemoveWithdrawsTableAndForwardRules(t *testing.T) {
 		t.Fatalf("commands = %q, want %q", got, want)
 	}
 }
+
+func TestRequireIPsecDropsWhatDidNotArriveEncrypted(t *testing.T) {
+	f := &fakeSystem{commands: map[string]bool{"nft": true}}
+	useFake(t, f)
+
+	if err := RequireIPsec("l2tp4g", 1701); err != nil {
+		t.Fatalf("RequireIPsec: %v", err)
+	}
+	want := "add table ip manifold_l2tp4g\ndelete table ip manifold_l2tp4g\n" +
+		"table ip manifold_l2tp4g {\n\tchain input {\n" +
+		"\t\ttype filter hook input priority 0; policy accept;\n" +
+		"\t\tudp dport 1701 meta ipsec missing drop\n\t}\n}\n"
+	if len(f.calls) != 1 || f.calls[0].argv != "nft -f -" || f.calls[0].stdin != want {
+		t.Fatalf("calls = %+v, want one nft transaction:\n%s", f.calls, want)
+	}
+}
+
+// Without the rule the port would take sessions in plain text, so nothing may start.
+func TestRequireIPsecFailsWhereItCannotBeEnforced(t *testing.T) {
+	useFake(t, &fakeSystem{commands: map[string]bool{"iptables": true}})
+	if err := RequireIPsec("l2tp4g", 1701); !errors.Is(err, ErrNoNftables) {
+		t.Fatalf("error = %v, want ErrNoNftables", err)
+	}
+	useFake(t, &fakeSystem{commands: map[string]bool{"nft": true}})
+	for _, port := range []int{0, 65536} {
+		if err := RequireIPsec("l2tp4g", port); err == nil || !strings.Contains(err.Error(), "not a UDP port") {
+			t.Fatalf("port %d: error = %v", port, err)
+		}
+	}
+}

@@ -32,8 +32,10 @@ const (
 	// CapWireGuard marks a node that runs WireGuard inbounds on the kernel
 	// interface; an older node would run them inside Xray instead.
 	CapWireGuard = "wireguard"
+	// CapL2TP marks a node that serves L2TP inbounds with xl2tpd and pppd.
+	CapL2TP = "l2tp"
 	// NodeCaps is the full CapsHeader value this build advertises.
-	NodeCaps = CapZstd + "," + CapAmneziaWGKernel + "," + CapOpenVPN + "," + CapWireGuard
+	NodeCaps = CapZstd + "," + CapAmneziaWGKernel + "," + CapOpenVPN + "," + CapWireGuard + "," + CapL2TP
 
 	// maxDecodeBytes bounds in-memory decompression to defuse a zstd bomb from
 	// an (authenticated) node-API caller.

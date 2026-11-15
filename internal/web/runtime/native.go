@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/l2tp"
 	"github.com/mhsanaei/3x-ui/v3/internal/openvpn"
 	"github.com/mhsanaei/3x-ui/v3/internal/wgquick"
 )
@@ -18,6 +19,7 @@ type nativeEngine interface {
 var nativeEngines = map[model.Protocol]nativeEngine{
 	model.OpenVPN:   openvpnEngine{},
 	model.WireGuard: wireguardEngine{},
+	model.L2TP:      l2tpEngine{},
 }
 
 // IsNativeProtocol reports whether a protocol is served outside Xray by an
@@ -50,6 +52,18 @@ func (wireguardEngine) apply(ib *model.Inbound) (bool, error) {
 }
 
 func (wireguardEngine) remove(inboundID int) { wgquick.GetManager().Remove(inboundID) }
+
+type l2tpEngine struct{}
+
+func (l2tpEngine) apply(ib *model.Inbound) (bool, error) {
+	inst, ok := l2tp.InstanceFromInbound(ib)
+	if !ok {
+		return false, nil
+	}
+	return true, l2tp.GetManager().Ensure(inst)
+}
+
+func (l2tpEngine) remove(inboundID int) { l2tp.GetManager().Remove(inboundID) }
 
 func addNativeInbound(engine nativeEngine, ib *model.Inbound) error {
 	served, err := engine.apply(ib)

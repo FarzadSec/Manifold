@@ -21,6 +21,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/config"
 	"github.com/mhsanaei/3x-ui/v3/internal/crypto/nodetoken"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
+	"github.com/mhsanaei/3x-ui/v3/internal/l2tp"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/sub"
 	"github.com/mhsanaei/3x-ui/v3/internal/tunnelmonitor"
@@ -596,7 +597,28 @@ func loadServiceEnvFile() {
 
 // main is the entry point of the 3x-ui application.
 // It parses command-line arguments to run the web server, migrate database, or update settings.
+// runL2TPHelper serves the two short-lived jobs pppd starts the panel's own
+// program for: answering a login and reporting a session. Both only relay to the panel.
+func runL2TPHelper(args []string) (code int, handled bool) {
+	if len(args) < 3 {
+		return 0, false
+	}
+	switch args[1] {
+	case "l2tp-auth":
+		return l2tp.RunAuthHelper(args[2], os.Stdin, os.Stdout), true
+	case "l2tp-hook":
+		if len(args) < 4 {
+			return 2, true
+		}
+		return l2tp.RunHook(args[2], args[3], args[4:], os.Getenv), true
+	}
+	return 0, false
+}
+
 func main() {
+	if code, handled := runL2TPHelper(os.Args); handled {
+		os.Exit(code)
+	}
 	loadServiceEnvFile()
 
 	if len(os.Args) < 2 {
