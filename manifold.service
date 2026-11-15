@@ -19,7 +19,12 @@ KillMode=mixed
 # The panel stays root: it supervises the proxy processes, edits netfilter
 # state and reads TLS private keys. These settings bound what a flaw in the
 # panel can reach.
-NoNewPrivileges=yes
+#
+# NoNewPrivileges is left off on purpose. Where AppArmor confines wg-quick
+# (Ubuntu 25.04 and later), wg-quick moves into narrower profiles to run ip
+# and wg, and the kernel refuses any such move once that flag is set: the
+# interface fails with "/usr/bin/ip: Operation not permitted". The capability
+# bounding set below already caps what a setuid program could gain.
 ProtectSystem=full
 # ProtectSystem=full makes /usr and /etc read-only; these are the panel's own
 # stores. The leading '-' keeps the unit startable before a path exists.
