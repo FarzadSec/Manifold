@@ -47,8 +47,6 @@ func TestServerFilesTellEachDaemonItsPart(t *testing.T) {
 		"require-mschap-v2\n" +
 		"noccp\n" +
 		"nodefaultroute\n" +
-		"ipcp-accept-local\n" +
-		"ipcp-accept-remote\n" +
 		"ms-dns 1.1.1.1\n" +
 		"ms-dns 8.8.8.8\n" +
 		"mtu 1280\n" +

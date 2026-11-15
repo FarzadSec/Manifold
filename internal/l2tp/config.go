@@ -86,9 +86,9 @@ func renderPPPOptions(inst Instance, f files, exe string, debug bool) (string, e
 	line("require-mschap-v2")
 	// IPsec encrypts the session; PPP's own compression and encryption stay off.
 	line("noccp")
+	// No ipcp-accept-*: both addresses are the server's to give. A client that
+	// proposes its own, as Linux and routers do, is answered with the one it gets.
 	line("nodefaultroute")
-	line("ipcp-accept-local")
-	line("ipcp-accept-remote")
 	for _, server := range inst.DNS {
 		line("ms-dns %s", server)
 	}
