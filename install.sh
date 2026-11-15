@@ -192,8 +192,10 @@ install_files() {
     fi
 
     mkdir -p "${INSTALL_DIR}/bin" "$DATA_DIR" "$LOG_DIR"
-    # The unit can only open for writing a directory that exists when it starts.
+    # The unit can only open for writing a directory that exists when it starts,
+    # and strongSwan may be installed after the panel.
     [ -d /etc/wireguard ] || install -d -m 700 /etc/wireguard
+    [ -d /etc/swanctl/conf.d ] || install -d -m 755 /etc/swanctl/conf.d
     chmod 700 "$DATA_DIR"
     install -m 755 "${src}/manifold" "${INSTALL_DIR}/manifold"
     cp -f "${src}"/bin/* "${INSTALL_DIR}/bin/"
