@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -57,8 +58,13 @@ func (w *fakeWorld) unload() {
 
 func testManager(t *testing.T) (*Manager, *fakeWorld) {
 	t.Helper()
+	return testManagerIn(t, t.TempDir())
+}
+
+func testManagerIn(t *testing.T, baseDir string) (*Manager, *fakeWorld) {
+	t.Helper()
 	w := &fakeWorld{}
-	m := newManager(t.TempDir(), testExe)
+	m := newManager(baseDir, testExe)
 	m.ipsec = w
 	m.missingPrograms = func(bool) []string { return w.missing }
 	m.startDaemon = func(f files) (daemon, error) {
@@ -109,6 +115,25 @@ func TestEnsureStartsAServerThatOnlyTakesEncryptedSessions(t *testing.T) {
 	}
 	if !m.HasRunning() {
 		t.Fatal("HasRunning is false with a server up")
+	}
+}
+
+// An installed panel's bin folder is "bin", relative to its working directory,
+// while pppd starts the login helper and the hooks from "/".
+func TestRelativeBinFolder(t *testing.T) {
+	dir := t.TempDir()
+	t.Chdir(dir)
+	m, _ := testManagerIn(t, "bin/l2tp")
+	if err := m.Ensure(testInstance(User{Name: "alice", Password: "clientPass"})); err != nil {
+		t.Fatalf("Ensure with the bin folder of an installed panel: %v", err)
+	}
+	options, err := os.ReadFile(filepath.Join(dir, "bin/l2tp/4/ppp-options"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "ntlm_auth-helper \"" + testExe + " l2tp-auth " + dir + "/bin/l2tp/4/control.sock\"\n"
+	if !strings.Contains(string(options), want) {
+		t.Fatalf("pppd is given:\n%s\nwant the line:\n%s", options, want)
 	}
 }
 

@@ -59,14 +59,18 @@ func GetManager() *Manager {
 		if err != nil {
 			logger.Warning("l2tp: cannot tell the panel's own path: ", err)
 		}
-		baseDir := filepath.Join(config.GetBinFolderPath(), "l2tp")
-		reapOrphans(baseDir)
-		manager = newManager(baseDir, exe)
+		manager = newManager(filepath.Join(config.GetBinFolderPath(), "l2tp"), exe)
+		reapOrphans(manager.baseDir)
 	})
 	return manager
 }
 
 func newManager(baseDir, exe string) *Manager {
+	// pppd starts the login helper and the hooks from "/": the paths it is given
+	// must not depend on the panel's working directory, as the default "bin" does.
+	if abs, err := filepath.Abs(baseDir); err == nil {
+		baseDir = abs
+	}
 	return &Manager{
 		baseDir:         baseDir,
 		exe:             exe,
