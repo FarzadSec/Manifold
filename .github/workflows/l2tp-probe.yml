@@ -1,0 +1,49 @@
+name: L2TP probe
+
+# Temporary: repeats the L2TP end-to-end script on Ubuntu 24.04 to catch a
+# session that failed there once. Removed before the branch is merged.
+on:
+  push:
+    branches:
+      - "p3/l2tp"
+    paths:
+      - ".github/workflows/l2tp-probe.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    strategy:
+      fail-fast: false
+      matrix:
+        run: [1, 2, 3]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Install the L2TP programs
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nftables xl2tpd ppp strongswan-swanctl charon-systemd libstrongswan-standard-plugins
+          uname -r
+          dpkg -l xl2tpd ppp strongswan-swanctl | tail -n 3
+      - name: Build the panel
+        run: |
+          mkdir -p internal/web/dist && touch internal/web/dist/.gitkeep
+          go build -o build/manifold .
+      - name: Repeat the script
+        run: |
+          for i in $(seq 1 10); do
+            echo "##### run $i"
+            if ! sudo deploy/test/l2tp-e2e.sh build/manifold > /tmp/l2tp-run.log 2>&1; then
+              cat /tmp/l2tp-run.log
+              sudo journalctl -n 60 --no-pager -t pppd -t xl2tpd || true
+              exit 1
+            fi
+            tail -n 1 /tmp/l2tp-run.log
+          done
