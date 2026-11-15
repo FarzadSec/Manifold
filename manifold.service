@@ -37,7 +37,11 @@ ReadWritePaths=-/etc/swanctl
 ProtectKernelTunables=yes
 ProtectKernelModules=yes
 ProtectKernelLogs=yes
-ProtectClock=yes
+# ProtectClock is left off on purpose. Before systemd 252, which covers Ubuntu
+# 22.04 and Debian 11, it closes every device but a few pseudo ones to the
+# service, so OpenVPN cannot open /dev/net/tun and pppd cannot open /dev/ppp.
+# The capability bounding set below already withholds CAP_SYS_TIME, without
+# which neither the system clock nor /dev/rtc can be set.
 ProtectHostname=yes
 # read-only, not yes: TLS certificates are commonly kept under /root/cert.
 ProtectHome=read-only
