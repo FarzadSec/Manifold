@@ -4,6 +4,9 @@
 # Source it after setting BIN and, optionally, XRAY_DIR.
 #
 # It uses port 20541 for the panel and the names prefixed "mfe2e".
+#
+# With PANEL_URL, PANEL_USER and PANEL_PASSWORD set it drives a panel that
+# already runs instead of starting one: the installed service, under its unit.
 
 [ "$(id -u)" -eq 0 ] || { echo "run as root" >&2; exit 1; }
 
@@ -19,6 +22,8 @@ WORK="$(mktemp -d /tmp/mfe2e.XXXXXX)"
 JAR="$WORK/cookies"
 PANEL_PID=""
 TOKEN=""
+# The accounts add_client made: a panel the script did not start is left without them.
+ACCOUNTS=()
 # What the panel log calls the engine under test; set by the script for failure output.
 ENGINE_LOG_WORD="${ENGINE_LOG_WORD:-}"
 
@@ -26,7 +31,10 @@ log() { printf '== %s\n' "$*"; }
 
 fail() {
     printf 'FAIL: %s\n' "$*" >&2
-    if [ -f "$WORK/panel.log" ]; then
+    if [ -n "${PANEL_URL:-}" ]; then
+        echo "--- last lines of the service's log" >&2
+        journalctl -u manifold -n 80 --no-pager >&2 || true
+    elif [ -f "$WORK/panel.log" ]; then
         if [ -n "$ENGINE_LOG_WORD" ]; then
             echo "--- last panel log lines about ${ENGINE_LOG_WORD}" >&2
             grep -i "$ENGINE_LOG_WORD" "$WORK/panel.log" | grep -v "peer info" | tail -n 60 >&2 || true
@@ -42,6 +50,10 @@ engine_cleanup() { :; }
 
 cleanup() {
     engine_cleanup
+    if [ -n "${PANEL_URL:-}" ] && [ "${#ACCOUNTS[@]}" -gt 0 ]; then
+        api POST /panel/api/clients/bulkDel \
+            "$(python3 -c 'import json, sys; print(json.dumps({"emails": sys.argv[1:]}))' "${ACCOUNTS[@]}")" >/dev/null 2>&1 || true
+    fi
     if [ -n "$PANEL_PID" ]; then
         kill "$PANEL_PID" 2>/dev/null || true
         wait "$PANEL_PID" 2>/dev/null || true
@@ -110,19 +122,24 @@ network() {
 }
 
 start_panel() {
-    export MANIFOLD_DB_FOLDER="$WORK/db" MANIFOLD_LOG_FOLDER="$WORK/log" MANIFOLD_BIN_FOLDER="$WORK/bin"
-    export MANIFOLD_LOG_LEVEL=debug
-    mkdir -p "$WORK/db" "$WORK/log" "$WORK/bin"
-    if [ -n "${XRAY_DIR:-}" ]; then
-        cp -r "$XRAY_DIR"/. "$WORK/bin/"
+    local user=e2e password=e2e-pass-123
+    if [ -n "${PANEL_URL:-}" ]; then
+        BASE="${PANEL_URL%/}" user="$PANEL_USER" password="$PANEL_PASSWORD"
+    else
+        export MANIFOLD_DB_FOLDER="$WORK/db" MANIFOLD_LOG_FOLDER="$WORK/log" MANIFOLD_BIN_FOLDER="$WORK/bin"
+        export MANIFOLD_LOG_LEVEL=debug
+        mkdir -p "$WORK/db" "$WORK/log" "$WORK/bin"
+        if [ -n "${XRAY_DIR:-}" ]; then
+            cp -r "$XRAY_DIR"/. "$WORK/bin/"
+        fi
+        "$BIN" setting -port "$PANEL_PORT" -webBasePath /e2e/ -username "$user" -password "$password" >/dev/null
+        "$BIN" >"$WORK/panel.log" 2>&1 &
+        PANEL_PID=$!
     fi
-    "$BIN" setting -port "$PANEL_PORT" -webBasePath /e2e/ -username e2e -password e2e-pass-123 >/dev/null
-    "$BIN" >"$WORK/panel.log" 2>&1 &
-    PANEL_PID=$!
     wait_until 40 "the panel to answer" curl -fsS -o /dev/null "$BASE/csrf-token"
     TOKEN="$(field "$(curl -fsS -c "$JAR" "$BASE/csrf-token")" 'r["obj"]')"
     must_succeed "$(curl -fsS -b "$JAR" -c "$JAR" -H "X-CSRF-Token: $TOKEN" \
-        -d 'username=e2e&password=e2e-pass-123' "$BASE/login")" "login"
+        --data-urlencode "username=$user" --data-urlencode "password=$password" "$BASE/login")" "login"
     # Logging in starts a new session, and the token belongs to the session.
     TOKEN="$(field "$(curl -fsS -b "$JAR" -c "$JAR" "$BASE/csrf-token")" 'r["obj"]')"
 }
@@ -141,6 +158,7 @@ PY
 
 # add_client EMAIL QUOTA_BYTES INBOUND_ID [DEVICE_LIMIT]
 add_client() {
+    ACCOUNTS+=("$1")
     must_succeed "$(api POST /panel/api/clients/add "$(python3 - "$1" "$2" "$3" "${4:-0}" <<'PY'
 import json, sys
 email, total, inbound, limit = sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4])

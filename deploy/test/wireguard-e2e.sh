@@ -179,6 +179,7 @@ must_succeed "$imported" "importing the old interface"
 summary="$(field "$imported" "(r['obj']['clients'], r['obj']['disabled'], r['obj']['withoutKey'])")"
 [ "$summary" = "(2, 1, 1)" ] || fail "import result: $imported"
 old_inbound_id="$(field "$imported" 'r["obj"]["inboundId"]')"
+ACCOUNTS+=(Dave-Phone erin)
 
 old_is_managed() { grep -q "^# Managed by Manifold: inbound ${old_inbound_id}\." "$OLD_CONF"; }
 wait_until 20 "the panel to run the interface from its own config" old_is_managed

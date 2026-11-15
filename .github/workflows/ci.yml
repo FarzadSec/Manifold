@@ -299,7 +299,10 @@ jobs:
           go-version-file: go.mod
           cache: true
       - name: Install the VPN engines
-        run: sudo apt-get update && sudo apt-get install -y openvpn nftables iptables wireguard-tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openvpn nftables iptables wireguard-tools \
+            xl2tpd ppp strongswan-swanctl charon-systemd libstrongswan-standard-plugins
       - name: Build the panel and fetch Xray
         run: |
           mkdir -p internal/web/dist && touch internal/web/dist/.gitkeep
@@ -323,6 +326,8 @@ jobs:
           if grep -q -- '--- SKIP' /tmp/wireguard-engine.log; then echo "the engine test was skipped"; exit 1; fi
       - name: WireGuard inbound end to end, with the takeover of a running interface
         run: sudo deploy/test/wireguard-e2e.sh build/manifold build/bin
+      - name: L2TP inbound end to end, with a client that connects through IPsec
+        run: sudo deploy/test/l2tp-e2e.sh build/manifold build/bin
 
   # Brief native-fuzz smoke on the security-/parser-critical decoders. Each runs the
   # generated corpus plus 30s of exploration; a crash here is a real input-handling bug.
@@ -379,7 +384,10 @@ jobs:
       - name: Install shellcheck
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: shellcheck
-        run: shellcheck -x --severity=style install.sh manifold.sh DockerInit.sh DockerEntrypoint.sh deploy/test/install-functions.sh deploy/test/openvpn-e2e.sh
+        run: |
+          shellcheck -x --severity=style install.sh manifold.sh DockerInit.sh DockerEntrypoint.sh \
+            deploy/test/install-functions.sh \
+            deploy/test/openvpn-e2e.sh deploy/test/wireguard-e2e.sh deploy/test/l2tp-e2e.sh
       - name: Installer function tests
         run: bash deploy/test/install-functions.sh
 
