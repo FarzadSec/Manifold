@@ -159,6 +159,13 @@ CONF
 # Each client needs a source port of its own; the link comes up as mfe2e<NAME>.
 # Without "noipdefault" this pppd proposes the device's own address, as Linux
 # clients and routers do; the server has to answer with the one it assigned.
+#
+# "nomagic" is for this test alone. pppd seeds its random numbers from the
+# host, the time and its process number, and here the client's pppd and the
+# server's start on one host within the same moment: now and then both draw
+# the same numbers for good, each takes the other's LCP magic number for its
+# own, and both give up with "Serial line is looped back". A device is another
+# machine and cannot do that.
 l2tp_connect() {
     local name="$1" user="$2" port="$3"
     cat >"$WORK/$name-ppp" <<OPT
@@ -168,6 +175,7 @@ refuse-chap
 refuse-mschap
 refuse-eap
 noccp
+nomagic
 nodefaultroute
 ipcp-accept-local
 ipcp-accept-remote
