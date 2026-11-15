@@ -132,10 +132,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     # The installed panel, for the scripts that drive it instead of one of their own.
+    # They get it through "sudo env": sudo on Ubuntu 26.04 has no -E.
     env:
-      PANEL_URL: http://192.168.251.1:20530/smoke
-      PANEL_USER: smoke
-      PANEL_PASSWORD: smoke-pass-123
+      INSTALLED_PANEL: PANEL_URL=http://192.168.251.1:20530/smoke PANEL_USER=smoke PANEL_PASSWORD=smoke-pass-123
     steps:
       - uses: actions/checkout@v7
       - uses: actions/download-artifact@v7
@@ -216,22 +215,23 @@ jobs:
         run: |
           systemctl is-active strongswan
           if systemctl is-active --quiet xl2tpd; then
+            systemctl status xl2tpd --no-pager || true
             echo "the distribution's xl2tpd service still holds the L2TP port" >&2
             exit 1
           fi
 
       - name: OpenVPN clients against the installed service
-        run: sudo -E deploy/test/openvpn-e2e.sh /usr/local/manifold/manifold
+        run: sudo env $INSTALLED_PANEL deploy/test/openvpn-e2e.sh /usr/local/manifold/manifold
 
       - name: WireGuard peers against the installed service, with a takeover
-        run: sudo -E deploy/test/wireguard-e2e.sh /usr/local/manifold/manifold
+        run: sudo env $INSTALLED_PANEL deploy/test/wireguard-e2e.sh /usr/local/manifold/manifold
 
       - name: An L2TP client through IPsec against the installed service
         run: |
           # Where the kernel can carry L2TP sessions itself, the sandbox must let it.
           kernel_l2tp=0
           if sudo modinfo l2tp_ppp >/dev/null 2>&1; then kernel_l2tp=1; fi
-          sudo -E EXPECT_KERNEL_L2TP="$kernel_l2tp" deploy/test/l2tp-e2e.sh /usr/local/manifold/manifold
+          sudo env $INSTALLED_PANEL EXPECT_KERNEL_L2TP="$kernel_l2tp" deploy/test/l2tp-e2e.sh /usr/local/manifold/manifold
 
       - name: Update in place, then uninstall
         run: |
