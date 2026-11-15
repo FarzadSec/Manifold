@@ -179,12 +179,30 @@ iplimit() {
     esac
 }
 
+# remove_engine_files WIREGUARD_DIR IPSEC_CONFIG: delete what the panel wrote
+# into folders it shares with other programs. All of it is rendered from the
+# database, so a panel that is installed again writes it again.
+remove_engine_files() {
+    local config
+    for config in "$1"/*.conf; do
+        [ -f "$config" ] || continue
+        if head -n 1 "$config" | grep -q '^# Managed by Manifold: inbound [0-9]*\.'; then
+            rm -f "$config"
+        fi
+    done
+    if [ -f "$2" ]; then
+        rm -f "$2"
+        swanctl --load-all --noprompt >/dev/null 2>&1 || true
+    fi
+}
+
 uninstall() {
     need_root
     systemctl disable --now manifold 2>/dev/null || true
     rm -f /etc/systemd/system/manifold.service /usr/bin/manifold
     systemctl daemon-reload
     rm -rf "$INSTALL_DIR"
+    remove_engine_files /etc/wireguard /etc/swanctl/conf.d/manifold-l2tp.conf
     if [ "${1:-}" = "--purge" ]; then
         rm -rf "$DATA_DIR" /var/log/manifold /etc/default/manifold
         echo "Manifold and its data are removed."

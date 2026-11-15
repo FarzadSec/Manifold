@@ -386,10 +386,12 @@ jobs:
       - name: shellcheck
         run: |
           shellcheck -x --severity=style install.sh manifold.sh DockerInit.sh DockerEntrypoint.sh \
-            deploy/test/install-functions.sh \
+            deploy/test/install-functions.sh deploy/test/manifold-functions.sh \
             deploy/test/openvpn-e2e.sh deploy/test/wireguard-e2e.sh deploy/test/l2tp-e2e.sh
       - name: Installer function tests
         run: bash deploy/test/install-functions.sh
+      - name: Management command function tests
+        run: bash deploy/test/manifold-functions.sh
 
   frontend:
     runs-on: ubuntu-latest
