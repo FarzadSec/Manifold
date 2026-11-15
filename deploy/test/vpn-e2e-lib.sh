@@ -168,9 +168,13 @@ PY
 )")" "adding client $1"
 }
 
-# client_link EMAIL SCHEME: print the client's one link of that scheme.
+# client_link EMAIL SCHEME: print the client's one link of that scheme, asked
+# for by subscription ID as the client's windows in the panel ask. A link the
+# panel only gives out by email is one no admin ever sees.
 client_link() {
-    python3 - "$(api GET "/panel/api/clients/links/$1")" "$2" <<'PY'
+    local sub
+    sub="$(field "$(api GET "/panel/api/clients/get/$1")" 'r["obj"]["client"]["subId"]')"
+    python3 - "$(api GET "/panel/api/clients/subLinks/$sub")" "$2" <<'PY'
 import json, sys
 links = json.loads(sys.argv[1])["obj"]
 found = [l for l in links if l.startswith(sys.argv[2])]
