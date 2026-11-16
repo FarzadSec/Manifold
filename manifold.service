@@ -51,8 +51,9 @@ RestrictSUIDSGID=yes
 RestrictNamespaces=yes
 UMask=0077
 # AF_PPPOX is how xl2tpd hands an L2TP session to the kernel; without it
-# every session is relayed through xl2tpd itself.
-RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK AF_PPPOX
+# every session is relayed through xl2tpd itself. AF_PACKET is how BackPack's
+# pck and sni carriers write their own TCP segments.
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK AF_PPPOX AF_PACKET
 # DAC_OVERRIDE stays so root can read TLS keys owned by another account.
 CapabilityBoundingSet=CAP_DAC_OVERRIDE CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
 SystemCallArchitectures=native

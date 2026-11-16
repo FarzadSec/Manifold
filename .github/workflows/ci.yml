@@ -313,7 +313,7 @@ jobs:
       - name: OpenVPN engine with a real server and client
         run: |
           go test -c -o build/openvpn.test ./internal/openvpn/
-          sudo XUI_OPENVPN_E2E=1 ./build/openvpn.test -test.run TestRealServerAndClient -test.v > /tmp/openvpn-engine.log 2>&1 \
+          sudo XUI_OPENVPN_E2E=1 ./build/openvpn.test -test.run 'TestRealServer' -test.v > /tmp/openvpn-engine.log 2>&1 \
             || { tail -n 80 /tmp/openvpn-engine.log; exit 1; }
           grep -E '^(---|===|PASS|FAIL|ok)' /tmp/openvpn-engine.log
           if grep -q -- '--- SKIP' /tmp/openvpn-engine.log; then echo "the engine test was skipped"; exit 1; fi
@@ -330,6 +330,14 @@ jobs:
         run: sudo deploy/test/wireguard-e2e.sh build/manifold build/bin
       - name: L2TP inbound end to end, with a client that connects through IPsec
         run: sudo deploy/test/l2tp-e2e.sh build/manifold build/bin
+      - name: Tunnels, a kernel GRE link and a BackPack reverse tunnel, each forwarding a port
+        run: |
+          go test -c -o build/tunnel.test ./internal/tunnel/
+          sudo XUI_TUNNEL_E2E=1 XUI_BACKPACK_BIN="$PWD/build/bin/backpack-linux-amd64" ./build/tunnel.test \
+            -test.run 'TestReal' -test.v > /tmp/tunnel-engine.log 2>&1 \
+            || { tail -n 80 /tmp/tunnel-engine.log; exit 1; }
+          grep -E '^(---|===|PASS|FAIL|ok)' /tmp/tunnel-engine.log
+          if grep -q -- '--- SKIP' /tmp/tunnel-engine.log; then echo "a tunnel test was skipped"; exit 1; fi
 
   # Brief native-fuzz smoke on the security-/parser-critical decoders. Each runs the
   # generated corpus plus 30s of exploration; a crash here is a real input-handling bug.

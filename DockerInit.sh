@@ -39,12 +39,16 @@ case $PLATFORM in
     armv7 | armv6)
         XRAY_BIN="xray-linux-arm32"
         MTG_BIN="mtg-linux-arm"
+        BACKPACK_BIN="backpack-linux-arm"
         ;;
     *)
         XRAY_BIN="xray-linux-${PLATFORM}"
         MTG_BIN="mtg-linux-${PLATFORM}"
+        BACKPACK_BIN="backpack-linux-${PLATFORM}"
         ;;
 esac
+# BackPack runs the BackPack tunnels unmodified; the panel writes its configs for this release.
+BACKPACK_VER="v1.8.5"
 # The tag comes from the release page's redirect, not the API: unauthenticated
 # API calls are rate-limited per address and fail on shared build machines.
 MTG_MULTI_VER=$(curl -sf -o /dev/null -w '%{redirect_url}' "https://github.com/mhsanaei/mtg-multi/releases/latest" | sed -n 's#.*/releases/tag/##p')
@@ -66,6 +70,17 @@ tar -xzf "${MTG_PKG}.tar.gz"
 mv "${MTG_PKG}/mtg-multi" "${MTG_BIN}"
 rm -rf "${MTG_PKG}" "${MTG_PKG}.tar.gz"
 chmod +x "${MTG_BIN}"
+BACKPACK_PKG="backpack_linux_${PLATFORM}.tar.gz"
+curl -sfLRO "https://github.com/AminMGMT/BackPack/releases/download/${BACKPACK_VER}/${BACKPACK_PKG}"
+curl -sfLRo backpack.sums "https://github.com/AminMGMT/BackPack/releases/download/${BACKPACK_VER}/SHA256SUMS"
+grep -E "[[:space:]]\*?${BACKPACK_PKG}\$" backpack.sums | sha256sum -c - >/dev/null || {
+    echo "DockerInit: ${BACKPACK_PKG} does not match BackPack's published checksum" >&2
+    exit 1
+}
+tar -xzf "${BACKPACK_PKG}" backpack
+mv backpack "${BACKPACK_BIN}"
+chmod +x "${BACKPACK_BIN}"
+rm -f "${BACKPACK_PKG}" backpack.sums
 curl -sfLRO https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
 curl -sfLRO https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
 curl -sfLRo geoip_IR.dat https://github.com/chocolate4u/Iran-v2ray-rules/releases/latest/download/geoip.dat

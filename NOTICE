@@ -11,3 +11,18 @@ Copyright (C) the 3x-ui authors, which is licensed under the GNU General Public
 License, version 3. Modification began on 2026-11-14 from upstream commit
 5297fd3c8495d80fab97ae511553fa545c69e913. The 3x-ui authors do not endorse
 Manifold and are not responsible for it.
+
+Release packages of Manifold also carry, unmodified and as a separate program,
+the BackPack binary that runs BackPack tunnels:
+
+  BackPack by Amin Mohammadi (AminMGMT)
+  https://github.com/AminMGMT/BackPack
+
+BackPack is licensed under the GNU Affero General Public License, version 3,
+with the additional terms in its own NOTICE file; its source for the version a
+package carries is at https://github.com/AminMGMT/BackPack/releases. Manifold
+does not include or link BackPack's code: it writes BackPack's configuration
+files and starts the program. "BackPack" is a mark of its author and names
+that program only. Manifold's own GRE, GRETAP, IP6GRE, IP6GRETAP, IPIP and SIT
+tunnels are its own code; the pairing idea follows DrSaeedHub's Tunnel-Panel
+(https://github.com/DrSaeedHub/Tunnel-Panel), whose code is not used.

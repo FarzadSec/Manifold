@@ -199,7 +199,7 @@ install_files() {
     chmod 700 "$DATA_DIR"
     install -m 755 "${src}/manifold" "${INSTALL_DIR}/manifold"
     cp -f "${src}"/bin/* "${INSTALL_DIR}/bin/"
-    chmod 755 "${INSTALL_DIR}"/bin/xray-linux-* "${INSTALL_DIR}"/bin/mtg-linux-* 2>/dev/null || true
+    chmod 755 "${INSTALL_DIR}"/bin/xray-linux-* "${INSTALL_DIR}"/bin/mtg-linux-* "${INSTALL_DIR}"/bin/backpack-linux-* 2>/dev/null || true
     install -m 755 "${src}/manifold.sh" "${INSTALL_DIR}/manifold.sh"
     install -m 755 "${src}/install.sh" "${INSTALL_DIR}/install.sh"
     install -m 755 "${src}/manifold.sh" "$COMMAND"
