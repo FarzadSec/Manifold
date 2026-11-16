@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -24,7 +25,7 @@ func TestPageNamesTheTunnelEditionOnlyOnARelay(t *testing.T) {
 		engine.Use(sessions.Sessions("manifold", cookie.NewStore([]byte("edition-test-secret"))))
 		engine.GET("/", func(c *gin.Context) { serveDistPage(c, "index.html") })
 		w := httptest.NewRecorder()
-		engine.ServeHTTP(w, httptest.NewRequest("GET", "/", nil))
+		engine.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/", nil))
 		return w.Body.String()
 	}
 	if body := serve(); strings.Contains(body, "X_UI_EDITION") {

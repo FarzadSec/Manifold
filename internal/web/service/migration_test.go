@@ -52,10 +52,14 @@ func seedServer(t *testing.T) (cert string) {
 		t.Fatal(err)
 	}
 	ends := []model.TunnelEnd{
-		{PairId: "aaaaaaaaaaaaaaaaaaaaaaaa", Name: "relayed", Kind: tunnel.KindReverse, Role: tunnel.RoleClient, Enable: true, RelayId: 1,
-			Settings: `{"transport":"tcpmux","port":8443,"remoteAddr":"relay.example.com"}`},
-		{PairId: "bbbbbbbbbbbbbbbbbbbbbbbb", Name: "paired", Kind: tunnel.KindGRE, Role: tunnel.RoleClient, Enable: true,
-			Settings: `{"remoteAddr":"198.51.100.7","localAddr":"192.0.2.77","localIp":"10.80.0.2/30","peerIp":"10.80.0.1","ttl":255}`},
+		{
+			PairId: "aaaaaaaaaaaaaaaaaaaaaaaa", Name: "relayed", Kind: tunnel.KindReverse, Role: tunnel.RoleClient, Enable: true, RelayId: 1,
+			Settings: `{"transport":"tcpmux","port":8443,"remoteAddr":"relay.example.com"}`,
+		},
+		{
+			PairId: "bbbbbbbbbbbbbbbbbbbbbbbb", Name: "paired", Kind: tunnel.KindGRE, Role: tunnel.RoleClient, Enable: true,
+			Settings: `{"remoteAddr":"198.51.100.7","localAddr":"192.0.2.77","localIp":"10.80.0.2/30","peerIp":"10.80.0.1","ttl":255}`,
+		},
 	}
 	for i := range ends {
 		if err := db.Create(&ends[i]).Error; err != nil {

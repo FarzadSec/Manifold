@@ -2,6 +2,7 @@ package service
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"context"
 	"crypto/sha256"
@@ -228,7 +229,7 @@ func (s *ServerService) FullBackup() ([]byte, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	var buf strings.Builder
+	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
 	tw := tar.NewWriter(gz)
 	if err := addTarEntry(tw, backupManifestName, 0o600, rawManifest); err != nil {
@@ -248,7 +249,7 @@ func (s *ServerService) FullBackup() ([]byte, string, error) {
 	if err := gz.Close(); err != nil {
 		return nil, "", err
 	}
-	return []byte(buf.String()), backupFilename(time.Now()), nil
+	return buf.Bytes(), backupFilename(time.Now()), nil
 }
 
 // unpackedBackup is a full backup read into a directory of its own.
@@ -750,7 +751,7 @@ func restoreFile(from string, f BackupFile) error {
 		return err
 	}
 	if existing, err := os.ReadFile(f.Path); err == nil {
-		if string(existing) == string(data) {
+		if bytes.Equal(existing, data) {
 			return nil
 		}
 		if err := os.WriteFile(f.Path+".before-restore", existing, 0o600); err != nil {
