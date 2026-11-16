@@ -37,6 +37,18 @@ A package you install by hand later is found without a reinstall or a restart: t
 
 The login is shown once. Sign in, then change it under Panel Settings. Replace `SERVER-IP` in the printed address with the server's address, and open the printed port in the firewall.
 
+### The tunnel edition, for a relay
+
+A relay that users connect to and that forwards their ports through tunnels to the main panel needs no Xray, inbounds or subscriptions. Install it as the tunnel edition:
+
+```bash
+bash <(curl -Ls https://raw.githubusercontent.com/FarzadSec/Manifold/main/install.sh) --edition tunnel
+```
+
+It is the same package. The edition is recorded as `MANIFOLD_EDITION=tunnel` in `/etc/default/manifold`, so `manifold update` keeps it; it installs only `nftables`, `iptables` and `iproute2`, and its panel shows the overview, the tunnels, the settings and the API. To let the main panel manage the relay's tunnels, create an API token with the tunnel scope on the relay (Panel Settings → Security, or `manifold setting -getApiToken -tokenName owner -tokenScope tunnel`) and add the relay under Tunnels → Relays on the main panel. See [Tunnels](usage.md#tunnels).
+
+Running the installer again with `--edition full` turns a relay into a full panel.
+
 ### Choosing the port and login yourself
 
 Options go after the command:

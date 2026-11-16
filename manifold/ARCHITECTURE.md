@@ -1,8 +1,18 @@
 # Manifold — Architecture and Roadmap
 
-Version 0.9 · 2026-11-15 · Status: P0, OpenVPN, WireGuard and L2TP/IPsec delivered; see 8.1 to 8.4 for what they leave open
+Version 0.10 · 2026-11-16 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnels and full backups delivered; see 8.1 to 8.5 for what they leave open
 
 Decision log:
+
+- 2026-11-16 — Tunnels are a subsystem of their own (`internal/tunnel`, tables `tunnel_ends` and `tunnel_relays`), not an inbound protocol: a tunnel carries no accounts, and the relay end has no inbounds at all. The panel that serves the accounts runs the client end; the relay users connect to runs the server end and forwards its ports to the client end.
+- 2026-11-16 — Kernel links (GRE, GRETAP, IP6GRE, IP6GRETAP, IPIP, SIT) are Manifold's own code driving `ip` and nftables. DrSaeedHub's Tunnel-Panel, which the owner pointed to, is AGPL-3.0; none of its code is used, only the idea of a pairing code with the sides swapped.
+- 2026-11-16 — BackPack tunnels run the unmodified BackPack release binary (v1.8.5, checked against its published checksums) as a child process per end, on a TOML file the panel writes, and are read through the snapshot BackPack writes beside it. BackPack is AGPL-3.0 and asks a modified copy to carry another name; linking or forking it would bind the panel to both, a separate program binds it to neither. NOTICE and README credit it.
+- 2026-11-16 — A kernel link outlives a panel restart: its alias records a fingerprint of what it was made from, and a restarted panel that finds the same fingerprint leaves the link up. Tearing it down on every update would cut every user who crosses it. `manifold uninstall` removes the links, their tables and rules.
+- 2026-11-16 — A relay masquerades the forwarded ports by default, which always works. Keeping each user's address is offered too, because the device limit and the IP log need it: the client end marks connections that came in through the tunnel and routes their replies back by a table of its own, with loose reverse-path filtering on the link.
+- 2026-11-16 — The relay's end is set up either by a pairing code imported there, or by this panel itself through the relay's API with a token of a new scope, `tunnel`, which reaches nothing but the relay's tunnel ends. An end is identified by a pair id, so importing a newer code updates it in place.
+- 2026-11-16 — The relay is the same package installed as the tunnel edition (`MANIFOLD_EDITION=tunnel`): no Xray, no subscription server, no account jobs, and an interface limited to the overview, tunnels, settings and API. One code base and one release keep the two ends' versions in step.
+- 2026-11-16 — A full backup is a `.tar.gz` of the database (SQLite, also exported from a PostgreSQL panel), the certificates and keys the settings and inbounds point at, and a manifest with the version and public address. A restore first reports, changing nothing, what the move does to every address users' configs carry; whether a config keeps working depends only on that address, because accounts keep their keys and passwords.
+- 2026-11-16 — An OpenVPN inbound's certificates are the admin's to choose: issued with a key type (ECDSA or RSA, for routers without ECDSA), lifetime and names, or brought in. Profiles verify the server certificate's own name, stored with the inbound; inbounds saved before keep verifying the old fixed name, which their certificates carry.
 
 - 2026-11-15 — What a subscription looks up and what a client can be handed come from one table of protocols (`linkBuilders` in `internal/sub`). They were two lists kept by hand, and OpenVPN and L2TP were only in one: from 0.2.0 to 0.4.0 the client's windows and the subscription page showed nothing for them, and the address of an account with no other protocol answered 404. The end-to-end scripts had asked for links by email, a route no page uses; they now ask by subscription ID, as the windows do.
 - 2026-11-15 — A subscription format only describes what it can: the raw body leaves out an empty link instead of a blank line, the JSON format skips every protocol Xray has no outbound for (it used to emit a config with only "direct" and "block" for MTProto), and an account with nothing a proxy app can import gets an empty list, not a 404.
@@ -87,6 +97,8 @@ Manifold (Go, fork of 3x-ui)
 │   ├─ OpenVPN                      child process      NEW  internal/openvpn
 │   ├─ L2TP/IPsec                   child processes    NEW  internal/l2tp, with the server's strongSwan
 │   └─ AmneziaWG, Xray WireGuard    upstream code      not offered, not used
+├─ Tunnels to relays                internal/tunnel    NEW  kernel links (ip, nftables), BackPack child processes
+├─ Full backup and restore          internal/web/service/migration.go   NEW
 ├─ Access model                     roles, admins, resellers, plans, audit   NEW
 ├─ Event bus → webhook outbox       NEW (bus exists, webhooks do not)
 └─ runtime.Runtime                  Local | Remote node over mTLS   existing, extended
@@ -153,6 +165,7 @@ Requirement: root, the `wireguard-tools` package and the kernel WireGuard module
 - Accounting comes from the management interface's per-session byte counters every five seconds, plus the totals a disconnect reports, into the same traffic pipeline as every other protocol. Kernel data-channel offload is switched off, because it keeps those counters out of the management interface.
 - Clients reach the internet through kernel NAT (`internal/egress`): an nftables table per inbound and FORWARD accepts tagged with a comment, both removed with the server.
 - The profile embeds the login by default (`<auth-user-pass>`, read by OpenVPN 2.6 and OpenVPN Connect). Per inbound it can be left out for older apps, which then ask for it.
+- Since 0.5.0 an inbound also sets `tun-mtu` and `mssfix` on both ends, a limit on the data ciphers, split tunnelling (no pushed default route), the control channel key (`tls-crypt`, `tls-auth` with `auth SHA256`, or none) and extra profile lines, which may not repeat a directive the panel writes or add a script hook. Its key set can be issued anew (`POST /server/openvpnKeys`: ECDSA P-256 or P-384, RSA 2048 or 4096, lifetime, CA and server names) or brought in, and the form shows each certificate (`POST /server/openvpnCertInfo`). Changing any of these makes the profiles handed out before stale; the form says so.
 - Not built: IPv6 inside the tunnel, client-certificate logins, static addresses per account, and steering tunnel traffic into Xray routing (WARP, outbound rules).
 
 ### 4.5 L2TP/IPsec engine (built, 0.4.0)
@@ -188,6 +201,27 @@ Requirement: root, the `wireguard-tools` package and the kernel WireGuard module
 
 This is the contract Mirza Bot will sync against, so it is frozen before the bot phase starts.
 
+### 4.8 Tunnels (built, 0.5.0)
+
+- An end is a row of `tunnel_ends`: a pair id shared with the other end, a name, a kind, a role (client or server), and the settings its kind reads. `internal/tunnel` normalizes it, runs it and reports on it; the tunnel job reconciles every fifteen seconds and after every change.
+- Kernel kinds: `ip link add mft<id> type <kind> remote … local … ttl … key …`, the MTU (outer headers subtracted from 1500 when not set), the tunnel address, and the alias `manifold-tunnel:<fingerprint>`. A link without that alias prefix is never touched.
+- The server end forwards each listed port, or range, with DNAT to the client end's tunnel address in an nftables table `manifold_tf<id>`, and accepts the forwarded traffic in FORWARD (`internal/egress`). With the user's address kept, the client end's table `manifold_tr<id>` marks connections that came in through the link and an `ip rule` sends what carries the mark to a table whose default route is the link.
+- BackPack kinds: `backpack -c <bin>/tunnels/t<id>.toml`, restarted with a growing delay after it exits, its configuration rewritten and the process restarted when the end changes. `skip_optz` keeps BackPack from tuning the host behind the panel's back. Reverse server ends listen on the tunnel port and expose the forwards with `127.0.0.1:<port>` targets on the client end; layer-3 ends create `mfbp<id>` and serve the forwards on the side that has them.
+- State: an end with an interface is probed with ICMP through the tunnel every two seconds over a window of thirty echoes (down after three lost in a row, degraded above 20 % loss or 800 ms); a reverse end reports what BackPack's snapshot says of its control channel. Bytes come from the interface or the snapshot.
+- Pairing: `tunnel.Mirror` swaps the sides (role, tunnel addresses, the remote address), and a pairing code is that end as base64url JSON under `manifold-tunnel://`. A relay in `tunnel_relays` is a panel URL and a tunnel-scoped token, sealed like node tokens; the panel imports the mirrored end there on every save and withdraws it on delete, and `POST /tunnels/resync` sends every relayed tunnel again.
+- A save is refused when a port it listens on belongs to another tunnel, an enabled inbound, SSH or the panel, or when its tunnel subnet overlaps another tunnel's.
+
+### 4.9 Tunnel edition (built, 0.5.0)
+
+- `MANIFOLD_EDITION=tunnel` in `/etc/default/manifold`, set by `install.sh --edition tunnel` and kept on update. `config.IsTunnelEdition` makes the panel start only the tunnel job and housekeeping, keeps the subscription server off, and tells the page through `window.X_UI_EDITION`; the sidebar and command palette then list the overview, tunnels, settings and API only, and the overview hides the Xray controls.
+- The installer installs `nftables`, `iptables` and `iproute2` for it and none of the VPN engines.
+
+### 4.10 Full backup and restore (built, 0.5.0)
+
+- `GET /server/getFullBackup`: `manifest.json`, `database.db` and `files/<absolute path>` for every regular file of at most 1 MiB that the web and subscription certificate settings, the Xray template or an inbound's settings name under a certificate or key field.
+- `POST /server/inspectBackup` unpacks it beside the database, refusing entries it did not write and files whose checksum differs, reads the backup's database read-only and reports: each address users' configs carry (host rows, external proxies, a custom share address, a listen address, else the subscription or web domain, else the old public IP) as same server, through a relay, breaks, or a domain that already leads here, still leads to the old server, or leads elsewhere; each tunnel's action (resync for a managed relay, a new pairing code where the other end names this server's old address, none otherwise); listen addresses and tunnel bind addresses this machine lacks; ports another program holds; missing engine programs; a newer panel version or another edition.
+- `POST /server/restoreBackup` writes the files (a different file already there is kept as `.before-restore`), imports the database keeping this machine's panel port, path and certificate unless told otherwise, clears listen and tunnel bind addresses this machine lacks, optionally replaces the old IP with this one's in hosts, share addresses, external proxies and subscription URLs, resends relayed tunnels, and restarts the panel.
+
 ## 5. Gap analysis
 
 "3x-ui today" was checked against the source on 2026-11-14.
@@ -208,11 +242,11 @@ This is the contract Mirza Bot will sync against, so it is frozen before the bot
 | Two-factor login (TOTP) | Present | NX | Check recovery codes and session list |
 | Single sign-on | LDAP only | NX | Add OIDC |
 | Command palette, PWA | Present | NX | None |
-| Backup and restore | Present (DB backup, Telegram delivery) | NX | Compare: encryption, schedule, retention, destinations |
+| Backup and restore | Present (DB backup, Telegram delivery); full backup with certificates and a move check built in 0.5.0 (4.10) | NX | Compare: encryption, schedule, retention, destinations |
 | First-run setup wizard | Not found | NX | Build |
 | Panel self-update | Present | NX | Repoint at the fork's releases |
 | Hosts and domain fronting | Present (`Host` model, hosts page) | NX | Compare in detail |
-| Managed node-to-node tunnels with status view | Partial (`tunnel` protocol, tunnel monitor) | NX | Build the managed layer |
+| Managed node-to-node tunnels with status view | Built in 0.5.0 (4.8, 4.9): kernel and BackPack tunnels, relays managed by API, state on the overview | NX, user | Traffic limits per tunnel, failover between relays |
 | WARP, NordVPN, PIA outbound integration | Present | NX | None |
 | Subscription page themes, usage CSV | Partial or unverified | NX | Later phase |
 | Shop: customer portal, payments, agents, promotions | Absent | NX Shop addon | Mirza Bot covers this |
@@ -227,6 +261,7 @@ This is the contract Mirza Bot will sync against, so it is frozen before the bot
 | P2 OpenVPN | Engine 4.4, inbound form, `.ovpn` in the client pages and the subscription page, traffic and limits, node support | Done 2026-11-14 (0.2.0). A real client connects, is billed, is held to its device limit and is cut off when disabled or out of quota, on this server. Open items in 8.2 |
 | P1 WireGuard | Engine 4.3, inbound form, `.conf` and QR in the client pages, traffic and limits, node support, takeover of existing servers | Done 2026-11-14 (0.3.0). A real peer connects, is billed, loses its peer when disabled or out of quota, and an interface `wg-quick` already runs is taken over with its WGDashboard names and usage while its peer keeps connecting. Open items in 8.3 |
 | P3 L2TP/IPsec | Engine 4.5, inbound form, the account's four values in the client pages, traffic and limits, node support, installer and unit | Done 2026-11-15 (0.4.0). A real L2TP client behind NAT connects through IPsec, is billed, is held to its device limit and is cut off when disabled or out of quota, under the installed service on Ubuntu 22.04, 24.04 and 26.04. No phone or Windows machine has connected yet. Open items in 8.4 |
+| P6a Tunnels and moves | 4.8 to 4.10, and the OpenVPN profile options of 4.4 | Done 2026-11-16 (0.5.0). A real GRE link between two network namespaces carries a forwarded port from a third, masqueraded and with the user's address kept; a BackPack reverse tunnel runs the packaged binary at both ends and carries a forwarded port; a real OpenVPN client connects on RSA keys with tls-auth and an MTU; the installed service makes a full backup and restores it, on Ubuntu 22.04, 24.04 and 26.04. Open items in 8.5 |
 | P4 Access model | Items in 4.6 | A reseller can create accounts only within its limits and sees only its own |
 | P5 Events and API freeze | Items in 4.7; OpenAPI v1 for accounts, plans, resellers, usage | A test receiver gets signed events for every account state change, including after downtime |
 | P6 NX-parity operations | Setup wizard, backup upgrades, OIDC, managed tunnels, subscription themes, usage CSV | Checked against the gap table |
@@ -321,6 +356,18 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - An account that is disabled is cut off at the next ten-second tick, not at once, and a new login in that window still succeeds.
 - The L2TP and OpenVPN engines each carry their own process supervisor and their own validators for subnets, DNS lists and user names. They are the same in substance and should become one.
 - L2TP is not available in the container image.
+
+### 8.5 Open items after tunnels and full backups
+
+- No tunnel has run between two real servers: the GRE test uses network namespaces on one runner, and the BackPack test runs both ends on one host over loopback. Real paths (GRE through a provider's filter, BackPack transports through DPI) have to be seen.
+- Only the BackPack reverse transport `tcpmux` and the kernel kind GRE are exercised by a test; the other eleven transports, the layer-3 carriers and GRETAP, IP6GRE, IP6GRETAP, IPIP and SIT are covered by unit tests of their configuration only.
+- A BackPack process dies with the panel, so a panel restart or update interrupts BackPack tunnels for a few seconds while kernel links stay up.
+- Keeping each user's address is built for kernel links only; BackPack reverse tunnels offer the PROXY protocol instead, which the inbounds behind them must accept.
+- BackPack's `pck` and `sni` carriers need `AF_PACKET`, which the unit now allows; they are not exercised by a test.
+- A relay that is itself behind NAT with a mapped address must have its public address entered in the tunnel; the panel detects only its own public address.
+- The full backup holds certificate files of at most 1 MiB found under certificate and key fields; a path written elsewhere (an Xray template outside those keys, a script) is not carried.
+- A restore stops at the first error of the import itself; the files it wrote before stay written.
+- The tunnel edition still carries Xray and the engines' code in its package; it only never starts them.
 
 ## 9. Assumptions and open decisions
 

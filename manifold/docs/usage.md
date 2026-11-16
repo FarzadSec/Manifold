@@ -20,6 +20,7 @@ Open the address the installer printed and sign in with the login it showed. `ma
 | Groups | Sets of clients, for acting on many accounts at once |
 | Nodes | Other servers running Manifold that this panel controls |
 | Hosts | The addresses and domains that links and subscriptions send clients to |
+| Tunnels | Links between this server and a relay, and the ports the relay forwards here |
 | Xray Configs | Core settings, routing rules and outbounds |
 | Panel Settings | Panel address and certificate, login, subscription server, notifications, API tokens |
 | API Docs | Reference for the panel's HTTP API |
@@ -47,6 +48,25 @@ An OpenVPN inbound makes the panel run an OpenVPN server on that port. It needs 
 | Ask for the login | Off: the profile carries the username and password, so the app connects without asking. On: the app asks for them. Turn it on for apps older than OpenVPN 2.6 |
 
 The certificates and keys are created when you save and stay with the inbound. Open the port in the firewall for the transport you chose.
+
+Further fields set what the server and every profile carry:
+
+| Field | Meaning |
+|---|---|
+| MTU, MSS fix | `tun-mtu` and `mssfix` on the server and in every profile. Lower the MTU, for example to 1400, when large transfers stall on a route. Empty keeps OpenVPN's defaults |
+| Data ciphers | Limits the ciphers a client may agree on; empty offers AES-256-GCM, AES-128-GCM and CHACHA20-POLY1305 |
+| Split tunnel | Stops sending the default route, so only the VPN subnet goes through the tunnel |
+| Control channel key | `tls-crypt` (the default), `tls-auth`, or none, for routers and old apps that support neither key file, such as older MikroTik |
+
+Under **Certificates** the form shows the CA and the server certificate with their names, key type, expiry date and fingerprint, and offers:
+
+- **Download CA**, for apps that import the CA on its own.
+- **Issue new keys**: a new CA, server certificate and control channel key, with a key type (ECDSA P-256 or P-384, RSA 2048 or 4096 for routers that know no ECDSA), a lifetime and the two names. The server name is what every profile checks.
+- **Use own keys**: paste a CA, a server certificate it signed and the server's private key in PEM.
+
+New keys take effect when the inbound is saved, and every profile handed out before stops working: clients must download their profile again. The same holds after changing the MTU, the ciphers, the split tunnel or the control channel key.
+
+Under **Client profile**, **Extra profile lines** are added to every profile of the inbound, one OpenVPN directive per line, for example `sndbuf 0`. Lines the panel writes itself (`remote`, `proto`, keys, the login) and script hooks are refused.
 
 **Add clients** on the Clients page as for any other inbound. The client's email is the OpenVPN username and its password is the OpenVPN password, so an email used for OpenVPN may only hold letters, digits and `_ . @ : / = -`.
 
@@ -139,6 +159,47 @@ If the server itself sits behind NAT, as with cloud providers that map a public 
 
 Not supported yet: IPv6 inside the tunnel, logins that use certificates instead of the shared key, a key per customer (every device of one inbound shares one), and sending L2TP traffic through the routing rules and outbounds of Xray Configs.
 
+## Tunnels
+
+A tunnel joins this server to a relay: users connect to the relay, and the relay forwards their ports through the tunnel to this server. Users' configs then name the relay, so this server can be moved, or its IP blocked and changed, without handing anyone a new config.
+
+The two ends have names. The **client** end runs on the panel that serves the accounts, this one. The **server** end runs on the relay, which is best a second Manifold installed as the **tunnel edition** (see [installation](installation.md)): a panel with tunnels and nothing else.
+
+| Kind | What it is |
+|---|---|
+| GRE, GRETAP, IP6GRE, IP6GRETAP, IPIP, SIT | Kernel links: fast, no encryption of their own (users' connections stay encrypted end to end). Each end needs the other's public IP, and the protocol (GRE is IP protocol 47) must pass the route |
+| BackPack reverse | The client end dials the relay over one of twelve transports (TCP, TCP mux, stealth, WebSocket with or without TLS and mux, KCP, QUIC, UDP, PCK, XDI). Gets through filtered paths; the relay never needs this server's address |
+| BackPack layer-3 | An encrypted link with an interface on each side, over UDP, QUIC, PCK, SNI or XDI. One side listens on the tunnel port and the other dials it |
+
+BackPack tunnels run the BackPack program by Amin Mohammadi (AminMGMT), shipped unmodified in the package.
+
+**Create a tunnel** on the Tunnels page with **Add tunnel**. A new tunnel gets a free tunnel subnet from 10.80.0.0/16, a port and a secret. Under **Forwarded ports**, list the ports the relay should expose and the port here each one goes to: `443` → same, or `2201` → `22`, or a range such as `10000-10009`.
+
+**Set up the relay's end**, one of two ways:
+
+1. **Pairing code.** The share button of a tunnel shows a code with the sides already swapped. On the relay's Tunnels page, **Import pairing code** and paste it. Importing a newer code of the same tunnel updates it in place.
+2. **Managed relay.** On the relay, create an API token with the **tunnel** scope (Panel Settings → Security). Here, under **Relays**, add the relay's panel URL and that token, then choose the relay in the tunnel. This panel then creates, updates and deletes the relay's end itself. A tunnel-scoped token can do nothing on the relay but that.
+
+**Users' addresses** (kernel links): with **Masquerade on the relay**, every user seems to come from the relay. **Keep each user's address** lets the panel see each user's own IP, which the device limit and the IP log need; the replies are then routed back through the tunnel by a routing table of its own.
+
+**State.** The Tunnels page and the overview show each tunnel as up, degraded (more than 20 % loss or slow), down, connecting, disabled or error, with latency and loss measured through the tunnel and the traffic it carried. Kernel links stay up when the panel restarts or updates; `manifold uninstall` takes them down.
+
+Open on the relay's firewall the forwarded ports and, for BackPack, the tunnel port.
+
+## Moving to another server
+
+A **full backup** (Overview → Backup → Full backup for a move) holds everything the move needs in one `.tar.gz`: the database with every client, inbound and tunnel, the certificates and keys the settings and inbounds point at, and this server's public address.
+
+On the new server, install Manifold, then **Restore a full backup**. Before changing anything, the panel shows what the move does:
+
+- For every address users' configs carry, whether it still leads to the new server. A **domain** keeps working once its A record points at the new IP; the check says whether it already does. An address of a **relay** keeps working as it is. The old server's **bare IP** stops working unless that IP is moved to the new server: those users need new configs, or keep the IP.
+- For every tunnel, what its other end needs: a managed relay is sent the new address automatically after the restore; a tunnel paired by code needs its new pairing code imported on the relay; a BackPack reverse tunnel whose relay is dialled by this server needs nothing.
+- Ports held by another program, missing programs (openvpn, wireguard-tools, xl2tpd) and a backup from a newer panel, any of which stops the restore until fixed.
+
+The restore keeps this server's panel port, path and certificate unless told otherwise, so the panel stays where you reach it; after it, sign in with the old server's login. Inbounds that listened on an address the new server lacks listen on every address. Optionally the old IP is replaced by the new one wherever the panel stores it (hosts, external proxies, share addresses, subscription URL); users then need their configs again.
+
+Every account keeps its keys, UUIDs, passwords and certificates, so **what decides whether a user's config keeps working is only the address in it**. Point users at a domain or a relay, and a move costs them nothing.
+
 ## Subscriptions
 
 The subscription server is on by default and listens on its own port (2096). Its address, path and the extra formats (JSON and Clash, both off by default) are set under Panel Settings. Open that port in the firewall before handing out subscription links.
@@ -163,7 +224,7 @@ The `manifold` command manages the service and the panel settings; `manifold hel
 | `manifold setting -listenIP IP` | Bind the panel to one address |
 | `manifold setting -resetTwoFactor` | Turn two-factor login off, for a lost device |
 | `manifold setting -webCert FILE -webCertKey FILE` | Set the panel's certificate and key |
-| `manifold setting -getApiToken` | Print a fresh API token and invalidate the previous one. `-tokenName` and `-tokenScope` (`admin`, `monitor`, `node-sync`) choose which |
+| `manifold setting -getApiToken` | Print a fresh API token and invalidate the previous one. `-tokenName` and `-tokenScope` (`admin`, `monitor`, `node-sync`, `node-admin`, `tunnel`) choose which |
 | `manifold migrate-db --dsn DSN` | Copy the SQLite database into PostgreSQL |
 | `manifold migrate-db --dump FILE` | Write the SQLite database as a portable text dump |
 
@@ -175,7 +236,7 @@ Everything the interface does goes through the HTTP API. The API Docs page lists
 
 ## Backup
 
-Everything the panel knows is in `/etc/manifold/`. For a consistent copy, either stop the panel first or write a dump:
+For a move to another server, use the full backup described above. Everything the panel knows is in `/etc/manifold/`. For a consistent copy, either stop the panel first or write a dump:
 
 ```bash
 manifold migrate-db --dump /etc/manifold/backup.dump

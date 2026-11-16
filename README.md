@@ -2,7 +2,7 @@
 
 One control panel for several VPN protocols. A customer has one account with one quota and one expiry date, and that account works on every protocol the server offers.
 
-**Status:** version 0.4. The base panel and all four protocol families are complete and installable. Resellers, plans and the sales bot are next.
+**Status:** version 0.5. The base panel, all four protocol families, tunnels to relays and moving a panel between servers are complete and installable. Resellers, plans and the sales bot are next.
 
 ## Protocols
 
@@ -20,6 +20,10 @@ One control panel for several VPN protocols. A customer has one account with one
 - WireGuard inbounds: each is an interface of the server in `/etc/wireguard`, with a `.conf` and QR code per client, usage read from the interface, and clients taken off it when they are disabled, expired or out of quota
 - Taking over a WireGuard server that already runs, WGDashboard's included: users keep their configs, names and usage
 - L2TP/IPsec inbounds: the panel runs the L2TP server and hands strongSwan its IPsec side; a customer types four values into the device's own VPN settings and needs no app. Usage is counted per account, and quota, expiry and the device limit cut a session
+- OpenVPN profiles set by the admin: MTU, ciphers, split tunnelling, `tls-crypt`, `tls-auth` or no control channel key, extra profile lines, and certificates issued with a chosen key type or brought in
+- Tunnels to a relay: kernel GRE, GRETAP, IP6GRE, IP6GRETAP, IPIP and SIT links and BackPack reverse and layer-3 tunnels, with the relay's forwarded ports, their state on the overview, pairing codes, and relays set up by this panel itself
+- A tunnel edition for the relay: the same package with tunnels only
+- A full backup that moves a panel to another server, with a check of what the move does to every address users' configs carry
 - One client attached to several inbounds, and client groups
 - Subscription server: share links, JSON and Clash output
 - Several servers managed from one panel (nodes over mutual TLS)
@@ -53,6 +57,12 @@ manifold settings
 manifold help
 ```
 
+A relay that forwards users to this panel through tunnels is installed as the tunnel edition:
+
+```bash
+bash <(curl -Ls https://raw.githubusercontent.com/FarzadSec/Manifold/main/install.sh) --edition tunnel
+```
+
 Docker and offline installs are covered in the [installation guide](manifold/docs/installation.md).
 
 ## Documentation
@@ -65,3 +75,5 @@ Docker and offline installs are covered in the [installation guide](manifold/doc
 ## Licence
 
 Manifold is licensed under the GNU General Public License, version 3. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
+
+Release packages also carry, unmodified, the BackPack program that runs BackPack tunnels: [BackPack by Amin Mohammadi (AminMGMT)](https://github.com/AminMGMT/BackPack), licensed under the GNU AGPL, version 3.
