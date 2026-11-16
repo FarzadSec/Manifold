@@ -191,10 +191,14 @@ func fullTransaction(s state) string {
 		}
 	}
 	maps := []struct{ name, typ string }{
-		{"mark_up", "mark"}, {"mark_down", "mark"},
-		{"addr4_up", "ipv4_addr"}, {"addr4_down", "ipv4_addr"},
-		{"addr6_up", "ipv6_addr"}, {"addr6_down", "ipv6_addr"},
-		{"iface_up", "ifname"}, {"iface_down", "ifname"},
+		{"mark_up", "mark"},
+		{"mark_down", "mark"},
+		{"addr4_up", "ipv4_addr"},
+		{"addr4_down", "ipv4_addr"},
+		{"addr6_up", "ipv6_addr"},
+		{"addr6_down", "ipv6_addr"},
+		{"iface_up", "ifname"},
+		{"iface_down", "ifname"},
 	}
 	bySet := map[string][]string{}
 	for _, e := range s.elements() {

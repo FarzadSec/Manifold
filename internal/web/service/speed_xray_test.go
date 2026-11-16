@@ -25,8 +25,10 @@ import (
 func speedTestConfig(t *testing.T, socksPort int, strategy string) *xray.Config {
 	t.Helper()
 	outbounds := []any{
-		map[string]any{"tag": "direct", "protocol": "freedom", "settings": map[string]any{"redirect": ""},
-			"streamSettings": map[string]any{"sockopt": map[string]any{"domainStrategy": "UseIP"}}},
+		map[string]any{
+			"tag": "direct", "protocol": "freedom", "settings": map[string]any{"redirect": ""},
+			"streamSettings": map[string]any{"sockopt": map[string]any{"domainStrategy": "UseIP"}},
+		},
 		map[string]any{"tag": "warp", "protocol": "wireguard", "settings": map[string]any{
 			"secretKey": "cFzzLXZkPN4mG1HMf2eeSsPT1B9/Si0VQ6Lkc26ZDEQ=", "noKernelTun": true,
 			"peers": []any{map[string]any{"publicKey": "bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=", "endpoint": "127.0.0.1:1"}},
@@ -317,7 +319,7 @@ func downloadThroughSocks(t *testing.T, socksPort int, user, addr string) float6
 	for time.Since(start) < 4*time.Second {
 		_ = conn.SetReadDeadline(time.Now().Add(300 * time.Millisecond))
 		n, err := conn.Read(buf)
-		if err != nil && err != io.EOF && !isTimeout(err) {
+		if err != nil && !errors.Is(err, io.EOF) && !isTimeout(err) {
 			t.Fatalf("%s reading from %s: %v", user, addr, err)
 		}
 		if time.Since(start) > time.Second {
