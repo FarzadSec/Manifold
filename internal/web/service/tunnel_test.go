@@ -29,8 +29,10 @@ func initTunnelDB(t *testing.T) *TunnelService {
 }
 
 func relayEnd(port int, forwards ...tunnel.PortForward) TunnelRequest {
-	return TunnelRequest{Name: "relay", Kind: tunnel.KindReverse, Role: tunnel.RoleServer, Enable: true,
-		Settings: tunnel.TunnelSettings{Transport: "tcpmux", Port: port, Forwards: forwards}}
+	return TunnelRequest{
+		Name: "relay", Kind: tunnel.KindReverse, Role: tunnel.RoleServer, Enable: true,
+		Settings: tunnel.TunnelSettings{Transport: "tcpmux", Port: port, Forwards: forwards},
+	}
 }
 
 func TestTunnelSaveRefusesWhatAnotherUserHolds(t *testing.T) {
@@ -38,8 +40,10 @@ func TestTunnelSaveRefusesWhatAnotherUserHolds(t *testing.T) {
 	if _, err := s.Add(relayEnd(8443, tunnel.PortForward{Listen: "443"})); err != nil {
 		t.Fatal(err)
 	}
-	gre := TunnelRequest{Name: "gre", Kind: tunnel.KindGRE, Role: tunnel.RoleClient, Enable: true,
-		Settings: tunnel.TunnelSettings{RemoteAddr: "198.51.100.7", LocalIP: "10.80.0.2/30", PeerIP: "10.80.0.1"}}
+	gre := TunnelRequest{
+		Name: "gre", Kind: tunnel.KindGRE, Role: tunnel.RoleClient, Enable: true,
+		Settings: tunnel.TunnelSettings{RemoteAddr: "198.51.100.7", LocalIP: "10.80.0.2/30", PeerIP: "10.80.0.1"},
+	}
 	if _, err := s.Add(gre); err != nil {
 		t.Fatal(err)
 	}
@@ -55,8 +59,10 @@ func TestTunnelSaveRefusesWhatAnotherUserHolds(t *testing.T) {
 		{"forwarded port of another tunnel", relayEnd(8444, tunnel.PortForward{Listen: "440-445"}), "port 443 is already used by tunnel"},
 		{"port of an inbound", relayEnd(9443), "port 9443 is used by an inbound"},
 		{"SSH", relayEnd(8445, tunnel.PortForward{Listen: "22"}), "port 22 belongs to SSH"},
-		{"overlapping tunnel addresses", TunnelRequest{Name: "gre2", Kind: tunnel.KindGRE, Role: tunnel.RoleClient,
-			Settings: tunnel.TunnelSettings{RemoteAddr: "198.51.100.8", LocalIP: "10.80.0.1/29", PeerIP: "10.80.0.3"}}, `overlap those of tunnel "gre"`},
+		{"overlapping tunnel addresses", TunnelRequest{
+			Name: "gre2", Kind: tunnel.KindGRE, Role: tunnel.RoleClient,
+			Settings: tunnel.TunnelSettings{RemoteAddr: "198.51.100.8", LocalIP: "10.80.0.1/29", PeerIP: "10.80.0.3"},
+		}, `overlap those of tunnel "gre"`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -72,8 +78,10 @@ func TestTunnelSaveRefusesWhatAnotherUserHolds(t *testing.T) {
 // change its end in place, not add a second one on the same ports.
 func TestImportReplacesTheEndOfTheSamePair(t *testing.T) {
 	owner := initTunnelDB(t)
-	v, err := owner.Add(TunnelRequest{Name: "iran", Kind: tunnel.KindReverse, Role: tunnel.RoleClient, Enable: true,
-		Settings: tunnel.TunnelSettings{Transport: "tcpmux", Port: 8443, RemoteAddr: "relay.example.com", Forwards: []tunnel.PortForward{{Listen: "443"}}}})
+	v, err := owner.Add(TunnelRequest{
+		Name: "iran", Kind: tunnel.KindReverse, Role: tunnel.RoleClient, Enable: true,
+		Settings: tunnel.TunnelSettings{Transport: "tcpmux", Port: 8443, RemoteAddr: "relay.example.com", Forwards: []tunnel.PortForward{{Listen: "443"}}},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -148,9 +156,13 @@ func TestARelayedTunnelIsSetUpAndRemovedOnTheRelay(t *testing.T) {
 	if row.Url != srv.URL+"/secret/" {
 		t.Fatalf("url = %q, want the base path to end in a slash", row.Url)
 	}
-	v, err := s.Add(TunnelRequest{Name: "uk", Kind: tunnel.KindGRE, Role: tunnel.RoleClient, Enable: true, RelayId: row.Id,
-		Settings: tunnel.TunnelSettings{RemoteAddr: "198.51.100.7", PublicAddr: "203.0.113.10", LocalIP: "10.80.0.2/30", PeerIP: "10.80.0.1",
-			Forwards: []tunnel.PortForward{{Listen: "443"}}}})
+	v, err := s.Add(TunnelRequest{
+		Name: "uk", Kind: tunnel.KindGRE, Role: tunnel.RoleClient, Enable: true, RelayId: row.Id,
+		Settings: tunnel.TunnelSettings{
+			RemoteAddr: "198.51.100.7", PublicAddr: "203.0.113.10", LocalIP: "10.80.0.2/30", PeerIP: "10.80.0.1",
+			Forwards: []tunnel.PortForward{{Listen: "443"}},
+		},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -9,8 +9,10 @@ import (
 func greClient() Tunnel {
 	return Tunnel{
 		Name: "uk relay", Kind: KindGRE, Role: RoleClient, Enabled: true,
-		Settings: TunnelSettings{RemoteAddr: "198.51.100.7", LocalIP: "10.80.0.2/30", PeerIP: "10.80.0.1",
-			Forwards: []PortForward{{Listen: "443"}, {Listen: "2201", Target: "22", Proto: ProtoBoth}}},
+		Settings: TunnelSettings{
+			RemoteAddr: "198.51.100.7", LocalIP: "10.80.0.2/30", PeerIP: "10.80.0.1",
+			Forwards: []PortForward{{Listen: "443"}, {Listen: "2201", Target: "22", Proto: ProtoBoth}},
+		},
 	}
 }
 
