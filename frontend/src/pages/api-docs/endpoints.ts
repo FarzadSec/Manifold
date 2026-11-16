@@ -902,6 +902,61 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'POST',
+        path: '/panel/api/server/openvpnKeys',
+        summary:
+          'Issue a new key set for an OpenVPN inbound: a CA, a server certificate signed by it and a control channel key. Nothing is saved; the inbound keeps its keys until it is saved with these.',
+        params: [
+          {
+            name: 'keyType',
+            in: 'body (form)',
+            type: 'string',
+            desc: 'ecdsa-p256 (default), ecdsa-p384, rsa-2048 or rsa-4096. RSA is for routers whose OpenVPN knows no ECDSA.',
+            optional: true,
+          },
+          {
+            name: 'days',
+            in: 'body (form)',
+            type: 'number',
+            desc: 'How long both certificates last, 1 to 36500 days (default 3650).',
+            optional: true,
+          },
+          {
+            name: 'caName',
+            in: 'body (form)',
+            type: 'string',
+            desc: 'Common name of the CA (default "Manifold OpenVPN CA").',
+            optional: true,
+          },
+          {
+            name: 'serverName',
+            in: 'body (form)',
+            type: 'string',
+            desc: 'Common name of the server certificate, which every profile verifies. Letters, digits, ".", "_" and "-".',
+            optional: true,
+          },
+        ],
+        body: 'keyType=rsa-2048&days=3650&serverName=vpn.example.com',
+        responseSchema: 'OpenVPNKeySet',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/server/openvpnCertInfo',
+        summary:
+          'Describe a PEM certificate of an OpenVPN inbound: its names, key type, validity and SHA-256 fingerprint.',
+        params: [
+          {
+            name: 'cert',
+            in: 'body (form)',
+            type: 'string',
+            desc: 'The certificate in PEM.',
+            pattern: '.*\\S.*',
+          },
+        ],
+        body: 'cert=-----BEGIN CERTIFICATE-----...',
+        responseSchema: 'OpenVPNCertInfo',
+      },
+      {
+        method: 'POST',
         path: '/panel/api/server/getRemoteCertHash',
         summary:
           'Run `xray tls ping` against a remote server and return its live leaf-certificate SHA-256 hash(es) for pinning (pinnedPeerCertSha256).',

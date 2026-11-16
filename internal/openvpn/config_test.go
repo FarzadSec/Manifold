@@ -16,11 +16,12 @@ func configLines(inst Instance, f files) map[string]bool {
 
 func TestServerConfigFollowsTheInbound(t *testing.T) {
 	base := Instance{
-		Id:     7,
-		Port:   1194,
-		Proto:  ProtoUDP,
-		Subnet: netip.MustParsePrefix("10.20.0.0/20"),
-		DNS:    []string{"1.1.1.1", "9.9.9.9"},
+		Id:      7,
+		Port:    1194,
+		Proto:   ProtoUDP,
+		TLSMode: TLSModeCrypt,
+		Subnet:  netip.MustParsePrefix("10.20.0.0/20"),
+		DNS:     []string{"1.1.1.1", "9.9.9.9"},
 	}
 	tests := []struct {
 		name    string
@@ -32,6 +33,7 @@ func TestServerConfigFollowsTheInbound(t *testing.T) {
 			name: "UDP on every address",
 			want: []string{
 				"port 1194", "proto udp", "dev mfovpn7", "server 10.20.0.0 255.255.240.0",
+				`tls-crypt "/opt/manifold/openvpn/7/tls-crypt.key"`,
 				"explicit-exit-notify 1", `push "dhcp-option DNS 1.1.1.1"`, `push "dhcp-option DNS 9.9.9.9"`,
 				"management-client-auth", "management-hold", "verify-client-cert none",
 			},
@@ -59,6 +61,30 @@ func TestServerConfigFollowsTheInbound(t *testing.T) {
 			name:   "IPv6 listen address needs the v6 transport",
 			mutate: func(i *Instance) { i.Listen, i.Proto = "2001:db8::1", ProtoTCP },
 			want:   []string{"local 2001:db8::1", "proto tcp6-server"},
+		},
+		{
+			name:    "the default keeps tls-crypt and routes everything",
+			want:    []string{`push "redirect-gateway def1 bypass-dhcp"`},
+			wantNot: []string{"auth SHA256", "tun-mtu 0", "mssfix 0", "data-ciphers "},
+		},
+		{
+			name: "tunnel options reach the server",
+			mutate: func(i *Instance) {
+				i.MTU, i.MSSFix, i.DataCiphers, i.SplitTunnel = 1400, 1360, []string{"AES-128-GCM", "CHACHA20-POLY1305"}, true
+			},
+			want:    []string{"tun-mtu 1400", "mssfix 1360", "data-ciphers AES-128-GCM:CHACHA20-POLY1305"},
+			wantNot: []string{`push "redirect-gateway def1 bypass-dhcp"`},
+		},
+		{
+			name:    "tls-auth for apps without tls-crypt",
+			mutate:  func(i *Instance) { i.TLSMode = TLSModeAuth },
+			want:    []string{`tls-auth "/opt/manifold/openvpn/7/tls-crypt.key" 0`, "auth SHA256"},
+			wantNot: []string{`tls-crypt "/opt/manifold/openvpn/7/tls-crypt.key"`},
+		},
+		{
+			name:    "no control channel key for routers that know none",
+			mutate:  func(i *Instance) { i.TLSMode = TLSModeNone },
+			wantNot: []string{`tls-crypt "/opt/manifold/openvpn/7/tls-crypt.key"`, `tls-auth "/opt/manifold/openvpn/7/tls-crypt.key" 0`},
 		},
 		{
 			name:    "IPv6 wildcard listens dual-stack",
@@ -150,5 +176,33 @@ func TestProfileCarriesTheLoginOnlyWhenAsked(t *testing.T) {
 func TestProfileFileNameIsSafeToDownload(t *testing.T) {
 	if got, want := ProfileFileName(`a/b c"@x.io`, 3), "a_b_c__x.io-3.ovpn"; got != want {
 		t.Fatalf("ProfileFileName = %q, want %q", got, want)
+	}
+}
+
+func TestProfileFollowsTheInboundsProfileOptions(t *testing.T) {
+	profile := Profile{
+		Host: "vpn.example.com", Port: 1194, Username: "alice", Password: "pw",
+		Server: ServerSettings{
+			Proto: ProtoUDP, CACert: "CA-PEM", TLSCryptKey: "STATIC-KEY", TLSMode: TLSModeAuth,
+			MTU: 1400, MSSFix: 1360, DataCiphers: []string{"AES-128-GCM"}, ServerName: "edge-1",
+			ClientDirectives: "sndbuf 0\nrcvbuf 0",
+		},
+	}
+	rendered := profile.Render()
+	for _, want := range []string{
+		"\nverify-x509-name edge-1 name\n", "\ntun-mtu 1400\n", "\nmssfix 1360\n", "\ndata-ciphers AES-128-GCM\n",
+		"\nsndbuf 0\nrcvbuf 0\n", "\nauth SHA256\nkey-direction 1\n<tls-auth>\nSTATIC-KEY\n</tls-auth>\n",
+	} {
+		if !strings.Contains(rendered, want) {
+			t.Errorf("profile lacks %q:\n%s", want, rendered)
+		}
+	}
+	if strings.Contains(rendered, "<tls-crypt>") {
+		t.Errorf("a tls-auth profile also carries tls-crypt:\n%s", rendered)
+	}
+
+	profile.Server.TLSMode = TLSModeNone
+	if bare := profile.Render(); strings.Contains(bare, "<tls-auth>") || strings.Contains(bare, "<tls-crypt>") || strings.Contains(bare, "key-direction") {
+		t.Errorf("a profile without a control channel key still carries one:\n%s", bare)
 	}
 }

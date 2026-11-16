@@ -220,7 +220,12 @@ export function createDefaultHysteriaInboundSettings(
 
 export function createDefaultHttpInboundSettings(): HttpInboundSettings {
   return {
-    accounts: [{ user: RandomUtil.randomLowerAndNum(8), pass: RandomUtil.randomLowerAndNum(12) }],
+    accounts: [
+      {
+        user: RandomUtil.randomLowerAndNum(8),
+        pass: RandomUtil.randomLowerAndNum(12),
+      },
+    ],
     allowTransparent: false,
   };
 }
@@ -228,7 +233,12 @@ export function createDefaultHttpInboundSettings(): HttpInboundSettings {
 export function createDefaultMixedInboundSettings(): MixedInboundSettings {
   return {
     auth: 'password',
-    accounts: [{ user: RandomUtil.randomLowerAndNum(8), pass: RandomUtil.randomLowerAndNum(12) }],
+    accounts: [
+      {
+        user: RandomUtil.randomLowerAndNum(8),
+        pass: RandomUtil.randomLowerAndNum(12),
+      },
+    ],
     udp: false,
     ip: '127.0.0.1',
   };
@@ -376,6 +386,12 @@ export function createDefaultOpenvpnInboundSettings(): OpenvpnInboundSettings {
       subnet: '10.8.0.0/24',
       dns: ['1.1.1.1', '8.8.8.8'],
       promptCredentials: false,
+      mtu: 0,
+      mssfix: 0,
+      dataCiphers: [],
+      splitTunnel: false,
+      tlsMode: 'tls-crypt',
+      clientDirectives: '',
       caCert: '',
       tlsCryptKey: '',
     },

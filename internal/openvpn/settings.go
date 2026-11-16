@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/netip"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
@@ -27,18 +28,46 @@ const (
 
 var defaultDNS = []string{"1.1.1.1", "8.8.8.8"}
 
+// How the control channel is protected; old routers know neither key file.
+const (
+	TLSModeCrypt = "tls-crypt"
+	TLSModeAuth  = "tls-auth"
+	TLSModeNone  = "none"
+)
+
+// The data ciphers a profile may be limited to, in OpenVPN's own preference order.
+var allowedDataCiphers = []string{"AES-256-GCM", "AES-128-GCM", "CHACHA20-POLY1305"}
+
+const (
+	minMTU, maxMTU       = 576, 9000
+	minMSSFix, maxMSSFix = 512, 9000
+	maxDirectivesBytes   = 4096
+)
+
 // ServerSettings is the "server" block of an OpenVPN inbound's settings.
 type ServerSettings struct {
 	Proto  string   `json:"proto" example:"udp"`
 	Subnet string   `json:"subnet" example:"10.8.0.0/24"`
 	DNS    []string `json:"dns" example:"[\"1.1.1.1\",\"8.8.8.8\"]"`
 	// PromptCredentials leaves the login out of the profile, so the app asks for it.
-	PromptCredentials bool   `json:"promptCredentials" example:"false"`
-	CACert            string `json:"caCert"`
-	CAKey             string `json:"caKey,omitempty"`
-	ServerCert        string `json:"serverCert,omitempty"`
-	ServerKey         string `json:"serverKey,omitempty"`
-	TLSCryptKey       string `json:"tlsCryptKey"`
+	PromptCredentials bool `json:"promptCredentials" example:"false"`
+	// MTU is tun-mtu on both ends and MSSFix their mssfix; zero keeps OpenVPN's default.
+	MTU    int `json:"mtu,omitempty" example:"1420"`
+	MSSFix int `json:"mssfix,omitempty" example:"1360"`
+	// DataCiphers limits the negotiable ciphers; empty offers every allowed one.
+	DataCiphers []string `json:"dataCiphers,omitempty" example:"[\"AES-256-GCM\"]"`
+	// SplitTunnel stops pushing the default route, so only the VPN subnet goes through it.
+	SplitTunnel bool   `json:"splitTunnel,omitempty" example:"false"`
+	TLSMode     string `json:"tlsMode,omitempty" example:"tls-crypt"`
+	// ServerName is the server certificate's common name, which profiles verify.
+	ServerName string `json:"serverName,omitempty" example:"manifold-openvpn-server"`
+	// ClientDirectives are extra lines for every profile of this inbound.
+	ClientDirectives string `json:"clientDirectives,omitempty" example:"sndbuf 0"`
+	CACert           string `json:"caCert"`
+	CAKey            string `json:"caKey,omitempty"`
+	ServerCert       string `json:"serverCert,omitempty"`
+	ServerKey        string `json:"serverKey,omitempty"`
+	TLSCryptKey      string `json:"tlsCryptKey"`
 }
 
 // InboundSettings is the settings JSON of an OpenVPN inbound.
@@ -98,6 +127,72 @@ func parseSubnet(raw string) (netip.Prefix, error) {
 	return prefix.Masked(), nil
 }
 
+func parseDataCiphers(raw []string) ([]string, error) {
+	var out []string
+	for _, entry := range raw {
+		name := strings.ToUpper(strings.TrimSpace(entry))
+		if name == "" || slices.Contains(out, name) {
+			continue
+		}
+		if !slices.Contains(allowedDataCiphers, name) {
+			return nil, fmt.Errorf("openvpn: data cipher %q must be one of %s", entry, strings.Join(allowedDataCiphers, ", "))
+		}
+		out = append(out, name)
+	}
+	return out, nil
+}
+
+func parseTLSMode(raw string) (string, error) {
+	switch mode := strings.ToLower(strings.TrimSpace(raw)); mode {
+	case "":
+		return TLSModeCrypt, nil
+	case TLSModeCrypt, TLSModeAuth, TLSModeNone:
+		return mode, nil
+	default:
+		return "", fmt.Errorf("openvpn: tlsMode %q must be %s, %s or %s", raw, TLSModeCrypt, TLSModeAuth, TLSModeNone)
+	}
+}
+
+// Lines the panel writes into every profile itself; a second copy would contradict it.
+var panelOwnedDirectives = []string{
+	"client", "remote", "proto", "port", "dev", "dev-type", "ca", "cert", "key", "pkcs12",
+	"tls-crypt", "tls-crypt-v2", "tls-auth", "key-direction", "auth-user-pass", "verify-x509-name",
+	"script-security", "up", "down", "route-up", "ipchange", "tls-verify", "plugin",
+}
+
+var directivePattern = regexp.MustCompile(`^[a-z][a-z0-9-]*$`)
+
+// parseDirectives checks the extra profile lines: one directive per line, no inline blocks.
+func parseDirectives(raw string) (string, error) {
+	if len(raw) > maxDirectivesBytes {
+		return "", fmt.Errorf("openvpn: the extra profile lines are longer than %d bytes", maxDirectivesBytes)
+	}
+	var lines []string
+	for _, line := range strings.Split(strings.ReplaceAll(raw, "\r", ""), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, ";") {
+			continue
+		}
+		name, _, _ := strings.Cut(line, " ")
+		name = strings.TrimSpace(strings.Split(name, "\t")[0])
+		if strings.ContainsAny(line, "<>") || !directivePattern.MatchString(name) {
+			return "", fmt.Errorf("openvpn: %q is not one OpenVPN directive", line)
+		}
+		if slices.Contains(panelOwnedDirectives, name) {
+			return "", fmt.Errorf("openvpn: %q is written by the panel and cannot be an extra line", name)
+		}
+		lines = append(lines, line)
+	}
+	return strings.Join(lines, "\n"), nil
+}
+
+func checkRange(name string, value, low, high int) error {
+	if value != 0 && (value < low || value > high) {
+		return fmt.Errorf("openvpn: %s %d must be 0 for the default or between %d and %d", name, value, low, high)
+	}
+	return nil
+}
+
 func parseDNS(raw []string) ([]string, error) {
 	out := make([]string, 0, len(raw))
 	for _, entry := range raw {
@@ -144,6 +239,21 @@ func NormalizeServer(server, previous *ServerSettings) (*ServerSettings, error) 
 		dns = append(dns, defaultDNS...)
 	}
 	out.DNS = dns
+	if err := checkRange("mtu", out.MTU, minMTU, maxMTU); err != nil {
+		return nil, err
+	}
+	if err := checkRange("mssfix", out.MSSFix, minMSSFix, maxMSSFix); err != nil {
+		return nil, err
+	}
+	if out.DataCiphers, err = parseDataCiphers(out.DataCiphers); err != nil {
+		return nil, err
+	}
+	if out.TLSMode, err = parseTLSMode(out.TLSMode); err != nil {
+		return nil, err
+	}
+	if out.ClientDirectives, err = parseDirectives(out.ClientDirectives); err != nil {
+		return nil, err
+	}
 
 	if !out.hasPKI() && previous != nil && previous.hasPKI() {
 		out.CACert, out.CAKey = previous.CACert, previous.CAKey
@@ -156,7 +266,8 @@ func NormalizeServer(server, previous *ServerSettings) (*ServerSettings, error) 
 		}
 		out.CACert, out.CAKey = pki.caCert, pki.caKey
 		out.ServerCert, out.ServerKey = pki.serverCert, pki.serverKey
-	} else if err := checkPKI(out); err != nil {
+	}
+	if out.ServerName, err = checkPKI(out); err != nil {
 		return nil, err
 	}
 	if strings.TrimSpace(out.TLSCryptKey) == "" && previous != nil {

@@ -263,3 +263,49 @@ func TestRealServerAndClient(t *testing.T) {
 		t.Fatal("the tunnel device outlived the server")
 	}
 }
+
+// TestRealServerWithProfileOptions proves a real openvpn starts on, and a real
+// client accepts, the options an admin can now set: RSA keys, tls-auth, MTU.
+func TestRealServerWithProfileOptions(t *testing.T) {
+	if os.Getenv("XUI_OPENVPN_E2E") == "" {
+		t.Skip("set XUI_OPENVPN_E2E=1 and run as root to drive a real openvpn")
+	}
+	if os.Geteuid() != 0 {
+		t.Fatal("XUI_OPENVPN_E2E is set but the test is not running as root")
+	}
+	clientNS := e2eNetwork(t)
+	baseDir, err := os.MkdirTemp("/tmp", "mfovpn")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(baseDir) })
+
+	keys, err := GenerateKeys(PKIOptions{KeyType: KeyRSA2048, Days: 30, CAName: "Acme VPN CA", ServerName: "edge-1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := ServerSettings{
+		Proto: ProtoUDP, TLSMode: TLSModeAuth, MTU: 1400, MSSFix: 1360, DataCiphers: []string{"AES-128-GCM"},
+		ServerName: "edge-1", CACert: keys.CACert, TLSCryptKey: keys.TLSCryptKey, ClientDirectives: "connect-retry 1",
+	}
+	inst := Instance{
+		Id: e2eInboundID + 1, Tag: "inbound-e2e-options", Port: 21197, Proto: ProtoUDP,
+		Subnet: netip.MustParsePrefix("10.198.0.0/24"), DNS: []string{"1.1.1.1"},
+		MTU: server.MTU, MSSFix: server.MSSFix, DataCiphers: server.DataCiphers, TLSMode: server.TLSMode,
+		CACert: keys.CACert, ServerCert: keys.ServerCert, ServerKey: keys.ServerKey, TLSCryptKey: keys.TLSCryptKey,
+		Users: []User{{Name: "carol", Password: "carol-pass"}},
+	}
+	mgr := newManager(baseDir)
+	t.Cleanup(mgr.StopAll)
+	if err := mgr.Ensure(inst); err != nil {
+		t.Fatalf("Ensure: %v", err)
+	}
+	client := startE2EClient(t, clientNS, baseDir, "carol", Profile{
+		Host: e2eServerAddr, Port: inst.Port, Server: server, Username: "carol", Password: "carol-pass",
+	})
+	client.waitFor(t, "Initialization Sequence Completed", 40*time.Second)
+	if out := client.out.String(); !strings.Contains(out, "AES-128-GCM") {
+		t.Fatalf("the client did not settle on the only allowed cipher:\n%s", out)
+	}
+	sh(t, "ip", "netns", "exec", clientNS, "ping", "-c", "5", "-i", "0.1", "-W", "3", e2eInternetAddr)
+}

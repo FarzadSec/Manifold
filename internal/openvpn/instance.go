@@ -30,6 +30,12 @@ type Instance struct {
 	Subnet netip.Prefix
 	DNS    []string
 
+	MTU         int
+	MSSFix      int
+	DataCiphers []string
+	SplitTunnel bool
+	TLSMode     string
+
 	CACert      string
 	ServerCert  string
 	ServerKey   string
@@ -57,6 +63,14 @@ func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 	if server.Proto != ProtoUDP && server.Proto != ProtoTCP {
 		return Instance{}, false
 	}
+	tlsMode, err := parseTLSMode(server.TLSMode)
+	if err != nil {
+		return Instance{}, false
+	}
+	ciphers, err := parseDataCiphers(server.DataCiphers)
+	if err != nil || checkRange("mtu", server.MTU, minMTU, maxMTU) != nil || checkRange("mssfix", server.MSSFix, minMSSFix, maxMSSFix) != nil {
+		return Instance{}, false
+	}
 	dns, err := parseDNS(server.DNS)
 	if err != nil {
 		return Instance{}, false
@@ -80,6 +94,11 @@ func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 		Proto:       server.Proto,
 		Subnet:      subnet,
 		DNS:         dns,
+		MTU:         server.MTU,
+		MSSFix:      server.MSSFix,
+		DataCiphers: ciphers,
+		SplitTunnel: server.SplitTunnel,
+		TLSMode:     tlsMode,
 		CACert:      server.CACert,
 		ServerCert:  server.ServerCert,
 		ServerKey:   server.ServerKey,
@@ -101,6 +120,9 @@ func (inst Instance) structuralFingerprint() string {
 		inst.Proto,
 		inst.Subnet.String(),
 		strings.Join(inst.DNS, ","),
+		fmt.Sprint(inst.MTU, "/", inst.MSSFix, "/", inst.SplitTunnel),
+		strings.Join(inst.DataCiphers, ":"),
+		inst.TLSMode,
 		inst.CACert,
 		inst.ServerCert,
 		inst.ServerKey,

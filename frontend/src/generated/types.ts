@@ -943,6 +943,23 @@ export interface NodeView {
   xrayVersion: string;
 }
 
+export interface OpenVPNCertInfo {
+  issuer: string;
+  keyType: string;
+  notAfter: string;
+  notBefore: string;
+  sha256: string;
+  subject: string;
+}
+
+export interface OpenVPNKeySet {
+  caCert: string;
+  caKey: string;
+  serverCert: string;
+  serverKey: string;
+  tlsCryptKey: string;
+}
+
 export interface OutboundTraffics {
   down: number;
   id: number;

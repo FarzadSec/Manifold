@@ -4165,6 +4165,79 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "OpenVPNCertInfo": {
+    "description": "OpenVPNCertInfo is what the OpenVPN form shows of one certificate.",
+    "properties": {
+      "issuer": {
+        "example": "Manifold OpenVPN CA",
+        "type": "string"
+      },
+      "keyType": {
+        "example": "ecdsa-p256",
+        "type": "string"
+      },
+      "notAfter": {
+        "example": "2036-11-14T00:00:00Z",
+        "format": "date-time",
+        "type": "string"
+      },
+      "notBefore": {
+        "example": "2026-11-16T00:00:00Z",
+        "format": "date-time",
+        "type": "string"
+      },
+      "sha256": {
+        "example": "5f:0a:3c",
+        "type": "string"
+      },
+      "subject": {
+        "example": "manifold-openvpn-server",
+        "type": "string"
+      }
+    },
+    "required": [
+      "issuer",
+      "keyType",
+      "notAfter",
+      "notBefore",
+      "sha256",
+      "subject"
+    ],
+    "type": "object"
+  },
+  "OpenVPNKeySet": {
+    "description": "OpenVPNKeySet is a new key set for an OpenVPN inbound, for its form to save.",
+    "properties": {
+      "caCert": {
+        "example": "-----BEGIN CERTIFICATE-----",
+        "type": "string"
+      },
+      "caKey": {
+        "example": "-----BEGIN PRIVATE KEY-----",
+        "type": "string"
+      },
+      "serverCert": {
+        "example": "-----BEGIN CERTIFICATE-----",
+        "type": "string"
+      },
+      "serverKey": {
+        "example": "-----BEGIN PRIVATE KEY-----",
+        "type": "string"
+      },
+      "tlsCryptKey": {
+        "example": "-----BEGIN OpenVPN Static key V1-----",
+        "type": "string"
+      }
+    },
+    "required": [
+      "caCert",
+      "caKey",
+      "serverCert",
+      "serverKey",
+      "tlsCryptKey"
+    ],
+    "type": "object"
+  },
   "OutboundTraffics": {
     "description": "OutboundTraffics tracks traffic statistics for Xray outbound connections.",
     "properties": {

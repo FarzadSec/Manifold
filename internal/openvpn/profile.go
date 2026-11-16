@@ -56,18 +56,42 @@ func (p Profile) Render() string {
 	line("persist-key")
 	line("persist-tun")
 	line("remote-cert-tls server")
-	line("verify-x509-name %s name", serverCommonName)
+	serverName := p.Server.ServerName
+	if serverName == "" {
+		serverName = serverCommonName
+	}
+	line("verify-x509-name %s name", serverName)
+	if len(p.Server.DataCiphers) > 0 {
+		line("data-ciphers %s", strings.Join(p.Server.DataCiphers, ":"))
+	}
+	if p.Server.MTU > 0 {
+		line("tun-mtu %d", p.Server.MTU)
+	}
+	if p.Server.MSSFix > 0 {
+		line("mssfix %d", p.Server.MSSFix)
+	}
 	// Windows would otherwise keep asking the DNS servers outside the tunnel.
 	line("ignore-unknown-option block-outside-dns")
 	line("setenv opt block-outside-dns")
 	line("verb 3")
+	if p.Server.ClientDirectives != "" {
+		b.WriteString(p.Server.ClientDirectives + "\n")
+	}
 	if p.Server.PromptCredentials || p.Username == "" {
 		line("auth-user-pass")
 	} else {
 		inlineBlock(&b, "auth-user-pass", p.Username+"\n"+p.Password)
 	}
 	inlineBlock(&b, "ca", p.Server.CACert)
-	inlineBlock(&b, "tls-crypt", p.Server.TLSCryptKey)
+	switch p.Server.TLSMode {
+	case TLSModeAuth:
+		line("auth SHA256")
+		line("key-direction 1")
+		inlineBlock(&b, "tls-auth", p.Server.TLSCryptKey)
+	case TLSModeNone:
+	default:
+		inlineBlock(&b, "tls-crypt", p.Server.TLSCryptKey)
+	}
 	return b.String()
 }
 

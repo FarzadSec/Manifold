@@ -32,8 +32,11 @@ func TestNormalizeSettingsGivesANewInboundWorkingKeys(t *testing.T) {
 	if !slices.Equal(parsed.Server.DNS, []string{"1.1.1.1", "8.8.8.8"}) {
 		t.Fatalf("default DNS = %v", parsed.Server.DNS)
 	}
-	if err := checkPKI(*parsed.Server); err != nil {
-		t.Fatalf("generated keys do not form a valid chain: %v", err)
+	if name, err := checkPKI(*parsed.Server); err != nil || name != serverCommonName {
+		t.Fatalf("generated keys: name %q, err %v; want a valid chain named %q", name, err, serverCommonName)
+	}
+	if parsed.Server.ServerName != serverCommonName || parsed.Server.TLSMode != TLSModeCrypt {
+		t.Fatalf("server name %q, tls mode %q", parsed.Server.ServerName, parsed.Server.TLSMode)
 	}
 	if err := checkStaticKey(parsed.Server.TLSCryptKey); err != nil {
 		t.Fatalf("generated tls-crypt key: %v", err)
@@ -103,6 +106,12 @@ func TestNormalizeSettingsRejectsWhatOpenVPNWouldRefuse(t *testing.T) {
 		{name: "DNS name instead of address", settings: `{"server":{"dns":["dns.google"]}}`, wantErr: `DNS server "dns.google" is not an IPv4 address`},
 		{name: "server certificate of another CA", settings: `{"server":` + string(foreignServer) + `}`, wantErr: "serverCert is not signed by caCert"},
 		{name: "key of another certificate", settings: `{"server":` + string(swappedKey) + `}`, wantErr: "serverKey does not belong to serverCert"},
+		{name: "MTU below what IPv4 needs", settings: `{"server":{"mtu":500}}`, wantErr: "mtu 500 must be 0 for the default or between 576 and 9000"},
+		{name: "mssfix above any MTU", settings: `{"server":{"mssfix":10000}}`, wantErr: "mssfix 10000 must be"},
+		{name: "cipher outside the allowed set", settings: `{"server":{"dataCiphers":["BF-CBC"]}}`, wantErr: `data cipher "BF-CBC" must be one of`},
+		{name: "unknown control channel mode", settings: `{"server":{"tlsMode":"tls-crypt-v2"}}`, wantErr: `tlsMode "tls-crypt-v2" must be`},
+		{name: "extra line with an inline block", settings: `{"server":{"clientDirectives":"<ca>\nx\n</ca>"}}`, wantErr: "is not one OpenVPN directive"},
+		{name: "extra line the panel writes itself", settings: `{"server":{"clientDirectives":"remote evil.example 443"}}`, wantErr: `"remote" is written by the panel`},
 		{name: "truncated tls-crypt key", settings: `{"server":{"tlsCryptKey":"-----BEGIN OpenVPN Static key V1-----\nabcd\n-----END OpenVPN Static key V1-----"}}`, wantErr: "tlsCryptKey must hold 256 bytes of hex"},
 	}
 	for _, tt := range tests {
@@ -254,5 +263,76 @@ func TestFingerprintsSeparateAccountChangesFromRestarts(t *testing.T) {
 		if changed.structuralFingerprint() == base.structuralFingerprint() {
 			t.Errorf("a changed %s would not restart the server", name)
 		}
+	}
+}
+
+// A key set made for routers without ECDSA, with a name of the admin's choosing,
+// must be accepted as it is, and profiles must then verify that name.
+func TestNormalizeSettingsKeepsAnIssuedRSAKeySetAndItsName(t *testing.T) {
+	keys, err := GenerateKeys(PKIOptions{KeyType: KeyRSA2048, Days: 30, CAName: "Acme VPN CA", ServerName: "vpn.acme.example"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	server, err := json.Marshal(ServerSettings{
+		CACert: keys.CACert, CAKey: keys.CAKey, ServerCert: keys.ServerCert, ServerKey: keys.ServerKey,
+		TLSCryptKey: keys.TLSCryptKey, TLSMode: TLSModeAuth, MTU: 1400, DataCiphers: []string{"aes-128-gcm", "AES-128-GCM"},
+		ClientDirectives: "  sndbuf 0\r\n# comment\n\nrcvbuf 0  ",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	parsed := mustNormalize(t, `{"server":`+string(server)+`}`, "")
+	if parsed.Server.CACert != keys.CACert || parsed.Server.ServerKey != keys.ServerKey || parsed.Server.TLSCryptKey != keys.TLSCryptKey {
+		t.Fatal("the issued key set was replaced")
+	}
+	if parsed.Server.ServerName != "vpn.acme.example" {
+		t.Fatalf("server name = %q, want the certificate's", parsed.Server.ServerName)
+	}
+	if !slices.Equal(parsed.Server.DataCiphers, []string{"AES-128-GCM"}) || parsed.Server.ClientDirectives != "sndbuf 0\nrcvbuf 0" {
+		t.Fatalf("ciphers %v, directives %q", parsed.Server.DataCiphers, parsed.Server.ClientDirectives)
+	}
+	profile := Profile{Host: "h", Port: 1, Server: parsed.Server.ForProfiles()}.Render()
+	if !strings.Contains(profile, "\nverify-x509-name vpn.acme.example name\n") {
+		t.Fatalf("profile does not verify the certificate's name:\n%s", profile)
+	}
+}
+
+func TestKeySetOptionsAreChecked(t *testing.T) {
+	tests := []struct {
+		name    string
+		opts    PKIOptions
+		wantErr string
+	}{
+		{name: "unknown key type", opts: PKIOptions{KeyType: "dsa"}, wantErr: `key type "dsa" must be`},
+		{name: "a name verify-x509-name cannot carry", opts: PKIOptions{ServerName: "my server"}, wantErr: `server name "my server" must be`},
+		{name: "a lifetime past a century", opts: PKIOptions{Days: 40000}, wantErr: "not 40000"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := GenerateKeys(tt.opts)
+			if err == nil || !strings.Contains(err.Error(), tt.wantErr) {
+				t.Fatalf("error = %v, want it to contain %q", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestDescribeCertificateReportsWhatTheAdminChose(t *testing.T) {
+	keys, err := GenerateKeys(PKIOptions{KeyType: KeyECDSAP384, Days: 10, CAName: "Acme VPN CA", ServerName: "edge-1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err := DescribeCertificate(keys.ServerCert)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Subject != "edge-1" || info.Issuer != "Acme VPN CA" || info.KeyType != "ecdsa-p384" {
+		t.Fatalf("info = %+v", info)
+	}
+	if days := info.NotAfter.Sub(info.NotBefore).Hours() / 24; days < 10 || days > 10.1 {
+		t.Fatalf("certificate lasts %.2f days, want 10", days)
+	}
+	if len(info.SHA256) != 95 || strings.Count(info.SHA256, ":") != 31 {
+		t.Fatalf("fingerprint %q is not 32 colon-separated bytes", info.SHA256)
 	}
 }

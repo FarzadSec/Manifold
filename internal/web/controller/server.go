@@ -80,6 +80,8 @@ func (a *ServerController) initRouter(g *gin.RouterGroup) {
 	g.POST("/importDB", a.importDB)
 	g.POST("/getNewEchCert", a.getNewEchCert)
 	g.POST("/getCertHash", a.getCertHash)
+	g.POST("/openvpnKeys", a.openvpnKeys)
+	g.POST("/openvpnCertInfo", a.openvpnCertInfo)
 	g.POST("/getRemoteCertHash", a.getRemoteCertHash)
 	g.POST("/scanRealityTarget", a.scanRealityTarget)
 	g.POST("/scanRealityTargets", a.scanRealityTargets)
@@ -464,6 +466,18 @@ func (a *ServerController) getCertHash(c *gin.Context) {
 		return
 	}
 	jsonObj(c, hashes, nil)
+}
+
+// openvpnKeys issues a new key set for an OpenVPN inbound's form.
+func (a *ServerController) openvpnKeys(c *gin.Context) {
+	keys, err := a.serverService.NewOpenVPNKeys(c.PostForm("keyType"), c.PostForm("days"), c.PostForm("caName"), c.PostForm("serverName"))
+	jsonObj(c, keys, err)
+}
+
+// openvpnCertInfo describes one certificate of an OpenVPN inbound.
+func (a *ServerController) openvpnCertInfo(c *gin.Context) {
+	info, err := a.serverService.DescribeOpenVPNCert(c.PostForm("cert"))
+	jsonObj(c, info, err)
 }
 
 // getRemoteCertHash runs `xray tls ping` against the given server and returns

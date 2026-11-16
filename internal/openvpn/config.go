@@ -132,8 +132,24 @@ func renderServerConfig(inst Instance, f files) string {
 	line("cert %s", quoted(f.cert))
 	line("key %s", quoted(f.key))
 	line("dh none")
-	line("tls-crypt %s", quoted(f.tlsCrypt))
+	switch inst.TLSMode {
+	case TLSModeAuth:
+		line("tls-auth %s 0", quoted(f.tlsCrypt))
+		line("auth SHA256")
+	case TLSModeNone:
+	default:
+		line("tls-crypt %s", quoted(f.tlsCrypt))
+	}
 	line("tls-version-min 1.2")
+	if len(inst.DataCiphers) > 0 {
+		line("data-ciphers %s", strings.Join(inst.DataCiphers, ":"))
+	}
+	if inst.MTU > 0 {
+		line("tun-mtu %d", inst.MTU)
+	}
+	if inst.MSSFix > 0 {
+		line("mssfix %d", inst.MSSFix)
+	}
 	// Logins are decided by the panel, and one account may connect several devices.
 	line("verify-client-cert none")
 	line("username-as-common-name")
@@ -153,7 +169,9 @@ func renderServerConfig(inst Instance, f files) string {
 	line("management-hold")
 	line("management-signal")
 	line("writepid %s", quoted(f.pid))
-	line(`push "redirect-gateway def1 bypass-dhcp"`)
+	if !inst.SplitTunnel {
+		line(`push "redirect-gateway def1 bypass-dhcp"`)
+	}
 	for _, dns := range inst.DNS {
 		line(`push "dhcp-option DNS %s"`, dns)
 	}

@@ -4191,6 +4191,79 @@
         ],
         "type": "object"
       },
+      "OpenVPNCertInfo": {
+        "description": "OpenVPNCertInfo is what the OpenVPN form shows of one certificate.",
+        "properties": {
+          "issuer": {
+            "example": "Manifold OpenVPN CA",
+            "type": "string"
+          },
+          "keyType": {
+            "example": "ecdsa-p256",
+            "type": "string"
+          },
+          "notAfter": {
+            "example": "2036-11-14T00:00:00Z",
+            "format": "date-time",
+            "type": "string"
+          },
+          "notBefore": {
+            "example": "2026-11-16T00:00:00Z",
+            "format": "date-time",
+            "type": "string"
+          },
+          "sha256": {
+            "example": "5f:0a:3c",
+            "type": "string"
+          },
+          "subject": {
+            "example": "manifold-openvpn-server",
+            "type": "string"
+          }
+        },
+        "required": [
+          "issuer",
+          "keyType",
+          "notAfter",
+          "notBefore",
+          "sha256",
+          "subject"
+        ],
+        "type": "object"
+      },
+      "OpenVPNKeySet": {
+        "description": "OpenVPNKeySet is a new key set for an OpenVPN inbound, for its form to save.",
+        "properties": {
+          "caCert": {
+            "example": "-----BEGIN CERTIFICATE-----",
+            "type": "string"
+          },
+          "caKey": {
+            "example": "-----BEGIN PRIVATE KEY-----",
+            "type": "string"
+          },
+          "serverCert": {
+            "example": "-----BEGIN CERTIFICATE-----",
+            "type": "string"
+          },
+          "serverKey": {
+            "example": "-----BEGIN PRIVATE KEY-----",
+            "type": "string"
+          },
+          "tlsCryptKey": {
+            "example": "-----BEGIN OpenVPN Static key V1-----",
+            "type": "string"
+          }
+        },
+        "required": [
+          "caCert",
+          "caKey",
+          "serverCert",
+          "serverKey",
+          "tlsCryptKey"
+        ],
+        "type": "object"
+      },
       "OutboundTraffics": {
         "description": "OutboundTraffics tracks traffic statistics for Xray outbound connections.",
         "properties": {
@@ -8194,6 +8267,139 @@
                   "obj": [
                     "e8e2d3..."
                   ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/server/openvpnKeys": {
+      "post": {
+        "tags": [
+          "Server"
+        ],
+        "summary": "Issue a new key set for an OpenVPN inbound: a CA, a server certificate signed by it and a control channel key. Nothing is saved; the inbound keeps its keys until it is saved with these.",
+        "operationId": "post_panel_api_server_openvpnKeys",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "keyType": {
+                    "type": "string",
+                    "description": "ecdsa-p256 (default), ecdsa-p384, rsa-2048 or rsa-4096. RSA is for routers whose OpenVPN knows no ECDSA."
+                  },
+                  "days": {
+                    "type": "integer",
+                    "description": "How long both certificates last, 1 to 36500 days (default 3650)."
+                  },
+                  "caName": {
+                    "type": "string",
+                    "description": "Common name of the CA (default \"Manifold OpenVPN CA\")."
+                  },
+                  "serverName": {
+                    "type": "string",
+                    "description": "Common name of the server certificate, which every profile verifies. Letters, digits, \".\", \"_\" and \"-\"."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/OpenVPNKeySet"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "caCert": "-----BEGIN CERTIFICATE-----",
+                    "caKey": "-----BEGIN PRIVATE KEY-----",
+                    "serverCert": "-----BEGIN CERTIFICATE-----",
+                    "serverKey": "-----BEGIN PRIVATE KEY-----",
+                    "tlsCryptKey": "-----BEGIN OpenVPN Static key V1-----"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/server/openvpnCertInfo": {
+      "post": {
+        "tags": [
+          "Server"
+        ],
+        "summary": "Describe a PEM certificate of an OpenVPN inbound: its names, key type, validity and SHA-256 fingerprint.",
+        "operationId": "post_panel_api_server_openvpnCertInfo",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cert": {
+                    "type": "string",
+                    "pattern": ".*\\S.*",
+                    "description": "The certificate in PEM."
+                  }
+                },
+                "required": [
+                  "cert"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/OpenVPNCertInfo"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "issuer": "Manifold OpenVPN CA",
+                    "keyType": "ecdsa-p256",
+                    "notAfter": "2036-11-14T00:00:00Z",
+                    "notBefore": "2026-11-16T00:00:00Z",
+                    "sha256": "5f:0a:3c",
+                    "subject": "manifold-openvpn-server"
+                  }
                 }
               }
             }

@@ -118,6 +118,8 @@ func run(root, outDir string) error {
 				"WireGuardImportable",
 				"WireGuardImportSources",
 				"WireGuardImportResult",
+				"OpenVPNKeySet",
+				"OpenVPNCertInfo",
 			),
 		},
 		{

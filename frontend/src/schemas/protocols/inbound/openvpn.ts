@@ -33,16 +33,35 @@ export function isOpenvpnDns(value: string): boolean {
   return IPV4.test(value.trim());
 }
 
+// The same lists and ranges the panel checks on save (internal/openvpn/settings.go).
+export const OPENVPN_DATA_CIPHERS = ['AES-256-GCM', 'AES-128-GCM', 'CHACHA20-POLY1305'] as const;
+export const OPENVPN_TLS_MODES = ['tls-crypt', 'tls-auth', 'none'] as const;
+export const OPENVPN_KEY_TYPES = ['ecdsa-p256', 'ecdsa-p384', 'rsa-2048', 'rsa-4096'] as const;
+export const OPENVPN_SERVER_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+
+const optionalRange = (low: number, high: number, message: string) =>
+  z
+    .number()
+    .int()
+    .default(0)
+    .refine((v) => v === 0 || (v >= low && v <= high), { message });
+
 export const OpenvpnServerSchema = z.object({
   proto: z.enum(['udp', 'tcp']).default('udp'),
-  subnet: z
-    .string()
-    .default('10.8.0.0/24')
-    .refine(isOpenvpnSubnet, { message: 'pages.inbounds.openvpn.subnetInvalid' }),
+  subnet: z.string().default('10.8.0.0/24').refine(isOpenvpnSubnet, {
+    message: 'pages.inbounds.openvpn.subnetInvalid',
+  }),
   dns: z
     .array(z.string().refine(isOpenvpnDns, { message: 'pages.inbounds.openvpn.dnsInvalid' }))
     .default(['1.1.1.1', '8.8.8.8']),
   promptCredentials: z.boolean().default(false),
+  mtu: optionalRange(576, 9000, 'pages.inbounds.openvpn.mtuInvalid'),
+  mssfix: optionalRange(512, 9000, 'pages.inbounds.openvpn.mssfixInvalid'),
+  dataCiphers: z.array(z.enum(OPENVPN_DATA_CIPHERS)).default([]),
+  splitTunnel: z.boolean().default(false),
+  tlsMode: z.enum(OPENVPN_TLS_MODES).default('tls-crypt'),
+  serverName: z.string().optional(),
+  clientDirectives: z.string().default(''),
   caCert: z.string().default(''),
   caKey: z.string().optional(),
   serverCert: z.string().optional(),

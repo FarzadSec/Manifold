@@ -1003,6 +1003,25 @@ export const NodeViewSchema = z.object({
 });
 export type NodeView = z.infer<typeof NodeViewSchema>;
 
+export const OpenVPNCertInfoSchema = z.object({
+  issuer: z.string(),
+  keyType: z.string(),
+  notAfter: z.string(),
+  notBefore: z.string(),
+  sha256: z.string(),
+  subject: z.string(),
+});
+export type OpenVPNCertInfo = z.infer<typeof OpenVPNCertInfoSchema>;
+
+export const OpenVPNKeySetSchema = z.object({
+  caCert: z.string(),
+  caKey: z.string(),
+  serverCert: z.string(),
+  serverKey: z.string(),
+  tlsCryptKey: z.string(),
+});
+export type OpenVPNKeySet = z.infer<typeof OpenVPNKeySetSchema>;
+
 export const OutboundTrafficsSchema = z.object({
   down: z.number().int(),
   id: z.number().int(),

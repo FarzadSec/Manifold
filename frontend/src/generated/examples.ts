@@ -1038,6 +1038,21 @@ export const EXAMPLES: Record<string, unknown> = {
     "xrayState": "running",
     "xrayVersion": "25.10.31"
   },
+  "OpenVPNCertInfo": {
+    "issuer": "Manifold OpenVPN CA",
+    "keyType": "ecdsa-p256",
+    "notAfter": "2036-11-14T00:00:00Z",
+    "notBefore": "2026-11-16T00:00:00Z",
+    "sha256": "5f:0a:3c",
+    "subject": "manifold-openvpn-server"
+  },
+  "OpenVPNKeySet": {
+    "caCert": "-----BEGIN CERTIFICATE-----",
+    "caKey": "-----BEGIN PRIVATE KEY-----",
+    "serverCert": "-----BEGIN CERTIFICATE-----",
+    "serverKey": "-----BEGIN PRIVATE KEY-----",
+    "tlsCryptKey": "-----BEGIN OpenVPN Static key V1-----"
+  },
   "OutboundTraffics": {
     "down": 0,
     "id": 0,
