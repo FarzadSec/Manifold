@@ -284,7 +284,61 @@
       "importKeepHostSettings": "Keep this machine's settings",
       "importKeepHostSettingsDesc": "Keeps this panel's listen addresses, ports, base path, certificates and node identity instead of taking them from the uploaded file.",
       "logLines": "Number of lines",
-      "timeRange": "Time range"
+      "timeRange": "Time range",
+      "migration": {
+        "download": "Full backup for a move",
+        "downloadDesc": "The database with every user, inbound and tunnel, the certificates and keys its settings point at, and this server's address, in one .tar.gz.",
+        "upload": "Restore a full backup",
+        "uploadDesc": "First checks the backup against this server and shows what the move does to every address users' configs carry; nothing changes until you confirm.",
+        "reportTitle": "Before the restore",
+        "restore": "Restore here",
+        "restoring": "Restoring the backup",
+        "from": "From",
+        "to": "This server",
+        "inbounds": "Inbounds",
+        "clients": "Clients",
+        "summaryKeeps": "Every address users' configs carry still leads here after the move: nobody needs a new config.",
+        "summaryBreaks": "{count} address(es) users' configs carry would stop leading here. Keep them working by moving that IP to this server, or point users at a domain or a relay; otherwise they need new configs.",
+        "addresses": "Addresses in users' configs",
+        "files": "Certificates and keys restored ({count}):",
+        "keepPanelAccess": "Keep this server's panel port, path and certificate",
+        "rewriteAddress": "Replace {from} with {to} wherever the panel stores it (users then need their configs again)",
+        "loginNote": "After the restore, sign in with the old server's panel login.",
+        "status": {
+          "same": "Same server",
+          "relay": "Through a relay",
+          "dnsHere": "Domain leads here",
+          "dnsUpdate": "Update DNS",
+          "changes": "Breaks",
+          "dnsElsewhere": "Domain leads elsewhere",
+          "elsewhere": "Another server",
+          "unresolved": "Does not resolve"
+        },
+        "explain": {
+          "same": "{address} is this server already.",
+          "relay": "Users connect to the relay, which reaches this server through its tunnel: nothing to change for them.",
+          "dnsHere": "The domain already resolves to this server ({points}).",
+          "dnsUpdate": "The domain still resolves to the old server ({points}). Change its A record to {here} and users keep their configs.",
+          "changes": "Users were given this IP itself. It leads here only if the IP moves to this server; otherwise those users need new configs.",
+          "dnsElsewhere": "The domain resolves to {points}, neither the old nor this server: a CDN or another relay, which needs no change if it reaches this server.",
+          "elsewhere": "This address is another server's, which the move does not touch.",
+          "unresolved": "The domain does not resolve now; check its DNS before users need it."
+        },
+        "tunnelAction": {
+          "none": "Nothing to do: its other end does not depend on this server's address.",
+          "resync": "Its relay is sent this server's address after the restore.",
+          "repair": "Its other end names the old address: after the restore, import this tunnel's new pairing code there."
+        },
+        "issues": {
+          "newerVersion": "This backup was made by Manifold {version}, newer than this panel ({current}). Update this panel first.",
+          "edition": "The backup comes from the {backup} edition and this panel is the {current} edition; what that edition does not run stays stored and unused.",
+          "backpackMissing": "Tunnel {tunnel} needs the BackPack program, which this install lacks: reinstall or update Manifold first.",
+          "tunnelLocalAddr": "Tunnel {tunnel} was bound to {address}, which this server does not have; it will use the address the route chooses.",
+          "listenMissing": "Inbound {inbound} listened on {address}, which this server does not have; it will listen on every address.",
+          "portBusy": "Port {port} of inbound {inbound} is held by another program on this server; free it first.",
+          "engineMissing": "{command} is not installed, and inbounds {inbounds} need it: run the installer again or install it."
+        }
+      }
     },
     "inbounds": {
       "totalDownUp": "Total Sent/Received",

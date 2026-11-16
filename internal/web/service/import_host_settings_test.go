@@ -32,7 +32,7 @@ func TestImportKeepsHostBoundSettings(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	kept := captureHostBoundSettings()
+	kept := captureHostBoundSettings(hostBoundSettingKeys)
 	if len(kept.values) != len(mine) {
 		t.Fatalf("captured %d host settings, want %d: %v", len(kept.values), len(mine), kept.values)
 	}
@@ -76,7 +76,7 @@ func TestImportDropsHostBoundSettingsThisMachineNeverHad(t *testing.T) {
 	setupConflictDB(t)
 	db := database.GetDB()
 
-	kept := captureHostBoundSettings()
+	kept := captureHostBoundSettings(hostBoundSettingKeys)
 
 	for _, key := range []string{"webCertFile", "subCertFile"} {
 		if err := db.Create(&model.Setting{Key: key, Value: "from-imported-file"}).Error; err != nil {
@@ -103,7 +103,7 @@ func TestImportKeepsLazilyMintedMaterialThisMachineNeverHad(t *testing.T) {
 	setupConflictDB(t)
 	db := database.GetDB()
 
-	kept := captureHostBoundSettings()
+	kept := captureHostBoundSettings(hostBoundSettingKeys)
 
 	for _, key := range []string{"nodeMtlsCaCertPem", "nodeMtlsCaKeyPem", "nodeMtlsClientCertPem", "nodeMtlsClientKeyPem", "nodeMtlsClientCAPem"} {
 		if err := db.Create(&model.Setting{Key: key, Value: "from-imported-file"}).Error; err != nil {
@@ -130,7 +130,7 @@ func TestImportRestoresEmptyLocalValueOverImported(t *testing.T) {
 	if err := db.Create(&model.Setting{Key: "webCertFile", Value: ""}).Error; err != nil {
 		t.Fatalf("seed local empty: %v", err)
 	}
-	kept := captureHostBoundSettings()
+	kept := captureHostBoundSettings(hostBoundSettingKeys)
 
 	if err := db.Model(&model.Setting{}).Where("key = ?", "webCertFile").
 		Update("value", "/etc/ssl/source-host.pem").Error; err != nil {

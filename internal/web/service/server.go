@@ -1789,22 +1789,26 @@ var hostBoundSettingKeys = []string{
 // force, and leaving the imported row in place would silently adopt the source
 // machine's certificate path or listen address.
 type hostBoundSnapshot struct {
+	keys    []string
 	values  map[string]string
 	present map[string]struct{}
 	taken   bool
 }
 
-func captureHostBoundSettings() hostBoundSnapshot {
+// captureHostBoundSettings records this machine's values of keys, which an
+// import then puts back over the uploaded ones; no keys keeps nothing.
+func captureHostBoundSettings(keys []string) hostBoundSnapshot {
 	db := database.GetDB()
-	if db == nil {
+	if db == nil || len(keys) == 0 {
 		return hostBoundSnapshot{}
 	}
 	var rows []model.Setting
-	if err := db.Model(&model.Setting{}).Where("key IN ?", hostBoundSettingKeys).Find(&rows).Error; err != nil {
+	if err := db.Model(&model.Setting{}).Where("key IN ?", keys).Find(&rows).Error; err != nil {
 		logger.Warningf("Import: could not read this machine's settings, they will come from the uploaded file: %v", err)
 		return hostBoundSnapshot{}
 	}
 	snap := hostBoundSnapshot{
+		keys:    keys,
 		values:  make(map[string]string, len(rows)),
 		present: make(map[string]struct{}, len(rows)),
 		taken:   true,
@@ -1825,7 +1829,7 @@ func restoreHostBoundSettings(snap hostBoundSnapshot) {
 		return
 	}
 	settingSvc := &SettingService{}
-	for _, key := range hostBoundSettingKeys {
+	for _, key := range snap.keys {
 		if _, had := snap.present[key]; !had {
 			// Absent because it is minted on demand, not because a default applied:
 			// the imported copy is the only one that exists, so keep it (#6227).
@@ -1856,8 +1860,18 @@ var lazilyMintedSettingKeys = map[string]bool{
 }
 
 func (s *ServerService) ImportDB(file multipart.File, keepHostSettings bool) error {
+	var keep []string
+	if keepHostSettings {
+		keep = hostBoundSettingKeys
+	}
+	return s.importDBKeeping(file, keep)
+}
+
+// importDBKeeping replaces the database with the uploaded one, keeping this
+// machine's values of the settings named in keep.
+func (s *ServerService) importDBKeeping(file multipart.File, keep []string) error {
 	if database.IsPostgres() {
-		return s.importPostgresDB(file, keepHostSettings)
+		return s.importPostgresDB(file, keep)
 	}
 	kind, err := sniffUploadKind(file)
 	if err != nil {
@@ -1909,10 +1923,7 @@ func (s *ServerService) ImportDB(file multipart.File, keepHostSettings bool) err
 		logger.Warningf("Failed to stop Xray before DB import: %v", errStop)
 	}
 
-	var keptSettings hostBoundSnapshot
-	if keepHostSettings {
-		keptSettings = captureHostBoundSettings()
-	}
+	keptSettings := captureHostBoundSettings(keep)
 
 	if errClose := database.CloseDB(); errClose != nil {
 		logger.Warningf("Failed to close existing DB before replacement: %v", errClose)
@@ -2125,24 +2136,24 @@ func sniffUploadKind(file multipart.File) (int, error) {
 	return sniffImportKind(header[:n]), nil
 }
 
-func (s *ServerService) importPostgresDB(file multipart.File, keepHostSettings bool) error {
+func (s *ServerService) importPostgresDB(file multipart.File, keep []string) error {
 	kind, err := sniffUploadKind(file)
 	if err != nil {
 		return common.NewErrorf("Error reading uploaded file: %v", err)
 	}
 	switch kind {
 	case importKindPgDump:
-		return s.restorePostgresDump(file, keepHostSettings)
+		return s.restorePostgresDump(file, keep)
 	case importKindSQLiteDB:
-		return s.migrateSQLiteIntoPostgres(file, false, keepHostSettings)
+		return s.migrateSQLiteIntoPostgres(file, false, keep)
 	case importKindSQLiteDump:
-		return s.migrateSQLiteIntoPostgres(file, true, keepHostSettings)
+		return s.migrateSQLiteIntoPostgres(file, true, keep)
 	default:
 		return common.NewError("Invalid file: expected a PostgreSQL custom-format dump (.dump) from this panel's Back Up, a SQLite database (.db), or a SQLite migration dump")
 	}
 }
 
-func (s *ServerService) restorePostgresDump(file multipart.File, keepHostSettings bool) error {
+func (s *ServerService) restorePostgresDump(file multipart.File, keep []string) error {
 	bin, err := exec.LookPath("pg_restore")
 	if err != nil {
 		return common.NewError("pg_restore not found on the server; install the postgresql-client package to restore a PostgreSQL database")
@@ -2182,10 +2193,7 @@ func (s *ServerService) restorePostgresDump(file multipart.File, keepHostSetting
 		logger.Warningf("Failed to stop Xray before DB restore: %v", errStop)
 	}
 
-	var keptSettings hostBoundSnapshot
-	if keepHostSettings {
-		keptSettings = captureHostBoundSettings()
-	}
+	keptSettings := captureHostBoundSettings(keep)
 
 	if errClose := database.CloseDB(); errClose != nil {
 		logger.Warningf("Failed to close existing DB before restore: %v", errClose)
@@ -2218,7 +2226,7 @@ func (s *ServerService) restorePostgresDump(file multipart.File, keepHostSetting
 	return nil
 }
 
-func (s *ServerService) migrateSQLiteIntoPostgres(file multipart.File, isSQLDump, keepHostSettings bool) error {
+func (s *ServerService) migrateSQLiteIntoPostgres(file multipart.File, isSQLDump bool, keep []string) error {
 	tempDir, err := os.MkdirTemp("", "x-ui-pg-migrate-*")
 	if err != nil {
 		return common.NewErrorf("Error creating temporary folder: %v", err)
@@ -2259,10 +2267,7 @@ func (s *ServerService) migrateSQLiteIntoPostgres(file multipart.File, isSQLDump
 		logger.Warningf("Failed to stop Xray before DB restore: %v", errStop)
 	}
 
-	var keptSettings hostBoundSnapshot
-	if keepHostSettings {
-		keptSettings = captureHostBoundSettings()
-	}
+	keptSettings := captureHostBoundSettings(keep)
 
 	if errClose := database.CloseDB(); errClose != nil {
 		logger.Warningf("Failed to close existing DB before restore: %v", errClose)

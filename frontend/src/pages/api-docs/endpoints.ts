@@ -901,6 +901,57 @@ export const sections: readonly Section[] = [
         response: '{\n  "success": true,\n  "obj": [\n    "e8e2d3..."\n  ]\n}',
       },
       {
+        method: 'GET',
+        path: '/panel/api/server/getFullBackup',
+        summary:
+          "Download a full backup for moving this panel to another server: a .tar.gz with the database, every certificate and key the settings and inbounds point at, and a manifest naming this server's version and public address.",
+        response: '(binary .tar.gz)',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/server/inspectBackup',
+        summary:
+          "Check a full backup against this server and change nothing: the addresses users' configs carry and what the move does to each, the tunnels and what their other ends need, the files it brings, and every port, program or version that would stop it.",
+        params: [
+          {
+            name: 'backup',
+            in: 'body (multipart)',
+            type: 'file',
+            desc: 'A .tar.gz from getFullBackup.',
+          },
+        ],
+        responseSchema: 'MigrationReport',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/server/restoreBackup',
+        summary:
+          "Restore a full backup on this server: write its certificates, replace the database, make inbounds and tunnels bound to the old addresses use this server's, resend relayed tunnels with this server's address, then restart the panel.",
+        params: [
+          {
+            name: 'backup',
+            in: 'body (multipart)',
+            type: 'file',
+            desc: 'A .tar.gz from getFullBackup.',
+          },
+          {
+            name: 'keepPanelAccess',
+            in: 'body (multipart)',
+            type: 'boolean',
+            desc: "Keep this server's panel port, path and certificate (default true), so the panel stays where you reach it now.",
+            optional: true,
+          },
+          {
+            name: 'rewriteAddress',
+            in: 'body (multipart)',
+            type: 'boolean',
+            desc: "Replace the old server's IP with this one's in hosts, inbound share addresses, external proxies and subscription URLs. Users then need their configs again; leave it off to keep the old IP by moving it.",
+            optional: true,
+          },
+        ],
+        responseSchema: 'MigrationReport',
+      },
+      {
         method: 'POST',
         path: '/panel/api/server/openvpnKeys',
         summary:

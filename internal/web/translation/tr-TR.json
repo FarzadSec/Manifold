@@ -284,7 +284,61 @@
       "importKeepHostSettings": "Bu makinenin ayarlarını koru",
       "importKeepHostSettingsDesc": "Yüklenen dosyadan almak yerine bu panelin dinleme adreslerini, portlarını, temel yolunu, sertifikalarını ve düğüm kimliğini korur.",
       "logLines": "Satır sayısı",
-      "timeRange": "Zaman aralığı"
+      "timeRange": "Zaman aralığı",
+      "migration": {
+        "download": "Taşıma için tam yedek",
+        "downloadDesc": "Tüm kullanıcılar, gelen bağlantılar ve tünellerle veritabanı, ayarların gösterdiği sertifika ve anahtarlar ve bu sunucunun adresi tek bir .tar.gz içinde.",
+        "upload": "Tam yedeği geri yükle",
+        "uploadDesc": "Önce yedeği bu sunucuyla karşılaştırır ve taşımanın kullanıcı yapılandırmalarındaki her adrese etkisini gösterir; onaylayana kadar hiçbir şey değişmez.",
+        "reportTitle": "Geri yüklemeden önce",
+        "restore": "Buraya geri yükle",
+        "restoring": "Yedek geri yükleniyor",
+        "from": "Kaynak",
+        "to": "Bu sunucu",
+        "inbounds": "Gelen bağlantılar",
+        "clients": "İstemciler",
+        "summaryKeeps": "Kullanıcı yapılandırmalarındaki her adres taşımadan sonra da buraya ulaşır: kimsenin yeni yapılandırmaya ihtiyacı yok.",
+        "summaryBreaks": "Kullanıcı yapılandırmalarındaki {count} adres artık buraya ulaşmayacak. O IP'yi bu sunucuya taşıyarak ya da alan adı veya aktarıcı kullanarak çalışır tutun; aksi halde yeni yapılandırma gerekir.",
+        "addresses": "Kullanıcı yapılandırmalarındaki adresler",
+        "files": "Geri yüklenen sertifikalar ve anahtarlar ({count}):",
+        "keepPanelAccess": "Bu sunucunun panel portunu, yolunu ve sertifikasını koru",
+        "rewriteAddress": "Panelin sakladığı her yerde {from} adresini {to} ile değiştir (kullanıcıların yapılandırmaları yeniden alması gerekir)",
+        "loginNote": "Geri yüklemeden sonra eski sunucunun panel girişiyle oturum açın.",
+        "status": {
+          "same": "Aynı sunucu",
+          "relay": "Aktarıcı üzerinden",
+          "dnsHere": "Alan adı buraya yönleniyor",
+          "dnsUpdate": "DNS'i güncelleyin",
+          "changes": "Bozulur",
+          "dnsElsewhere": "Alan adı başka yere yönleniyor",
+          "elsewhere": "Başka sunucu",
+          "unresolved": "Çözümlenemiyor"
+        },
+        "explain": {
+          "same": "{address} zaten bu sunucu.",
+          "relay": "Kullanıcılar aktarıcıya bağlanır, aktarıcı tünelle bu sunucuya ulaşır: onlar için bir şey değişmez.",
+          "dnsHere": "Alan adı zaten bu sunucuya çözümleniyor ({points}).",
+          "dnsUpdate": "Alan adı hâlâ eski sunucuya çözümleniyor ({points}). A kaydını {here} yapın, kullanıcılar yapılandırmalarını korur.",
+          "changes": "Kullanıcılara bu IP'nin kendisi verildi. Yalnızca IP bu sunucuya taşınırsa buraya ulaşır; aksi halde yeni yapılandırma gerekir.",
+          "dnsElsewhere": "Alan adı {points} adresine çözümleniyor; ne eski ne bu sunucu: bir CDN veya başka bir aktarıcı; bu sunucuya ulaşıyorsa değişiklik gerekmez.",
+          "elsewhere": "Bu adres başka bir sunucuya ait; taşıma ona dokunmaz.",
+          "unresolved": "Alan adı şu an çözümlenmiyor; kullanıcılar ihtiyaç duymadan DNS'ini kontrol edin."
+        },
+        "tunnelAction": {
+          "none": "Yapılacak bir şey yok: diğer ucu bu sunucunun adresine bağlı değil.",
+          "resync": "Geri yüklemeden sonra aktarıcısına bu sunucunun adresi gönderilir.",
+          "repair": "Diğer ucu eski adresi kullanıyor: geri yüklemeden sonra orada yeni eşleştirme kodunu içe aktarın."
+        },
+        "issues": {
+          "newerVersion": "Bu yedek, bu panelden ({current}) yeni olan Manifold {version} ile yapıldı. Önce paneli güncelleyin.",
+          "edition": "Yedek {backup} sürümünden, bu panel {current} sürümü; bu sürümün çalıştırmadıkları saklanır ama kullanılmaz.",
+          "backpackMissing": "{tunnel} tüneli bu kurulumda olmayan BackPack programına ihtiyaç duyar: önce Manifold'u yeniden kurun veya güncelleyin.",
+          "tunnelLocalAddr": "{tunnel} tüneli bu sunucuda olmayan {address} adresine bağlıydı; rotanın seçtiği adresi kullanacak.",
+          "listenMissing": "{inbound} gelen bağlantısı bu sunucuda olmayan {address} adresini dinliyordu; tüm adresleri dinleyecek.",
+          "portBusy": "{inbound} gelen bağlantısının {port} portu bu sunucuda başka bir programda; önce boşaltın.",
+          "engineMissing": "{command} kurulu değil ve {inbounds} gelen bağlantılarının ona ihtiyacı var: yükleyiciyi yeniden çalıştırın veya kurun."
+        }
+      }
     },
     "inbounds": {
       "totalDownUp": "Toplam Gönderilen/Alınan",

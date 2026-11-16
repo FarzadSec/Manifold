@@ -1677,6 +1677,34 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "BackupFile": {
+    "description": "BackupFile is one certificate or key the panel's settings point at.",
+    "properties": {
+      "exists": {
+        "example": false,
+        "type": "boolean"
+      },
+      "mode": {
+        "example": 384,
+        "type": "integer"
+      },
+      "path": {
+        "example": "/root/cert/fullchain.pem",
+        "type": "string"
+      },
+      "sha256": {
+        "example": "9f86d0...",
+        "type": "string"
+      }
+    },
+    "required": [
+      "exists",
+      "mode",
+      "path",
+      "sha256"
+    ],
+    "type": "object"
+  },
   "Blocker": {
     "description": "Blocker is one unmet requirement.",
     "properties": {
@@ -3589,6 +3617,173 @@ export const SCHEMAS: Record<string, unknown> = {
     "required": [
       "client",
       "seed"
+    ],
+    "type": "object"
+  },
+  "MigrationAddress": {
+    "description": "MigrationAddress is an address users' configs carry, and what a move does to it.",
+    "properties": {
+      "address": {
+        "example": "vpn.example.com",
+        "type": "string"
+      },
+      "points": {
+        "example": [
+          "203.0.113.10"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "status": {
+        "example": "dnsUpdate",
+        "type": "string"
+      },
+      "usedBy": {
+        "example": [
+          "VLESS Reality"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "address",
+      "status",
+      "usedBy"
+    ],
+    "type": "object"
+  },
+  "MigrationIssue": {
+    "description": "MigrationIssue is one finding of a restore check, named by code for the page to word.",
+    "properties": {
+      "code": {
+        "example": "addressChanges",
+        "type": "string"
+      },
+      "level": {
+        "example": "warn",
+        "type": "string"
+      },
+      "params": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "type": "object"
+      }
+    },
+    "required": [
+      "code",
+      "level",
+      "params"
+    ],
+    "type": "object"
+  },
+  "MigrationReport": {
+    "description": "MigrationReport is what a restore would do, or did, on this server.",
+    "properties": {
+      "addressChanged": {
+        "example": true,
+        "type": "boolean"
+      },
+      "addresses": {
+        "items": {
+          "$ref": "#/components/schemas/MigrationAddress"
+        },
+        "type": "array"
+      },
+      "clients": {
+        "example": 340,
+        "type": "integer"
+      },
+      "createdAt": {
+        "example": 1763300000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "files": {
+        "items": {
+          "$ref": "#/components/schemas/BackupFile"
+        },
+        "type": "array"
+      },
+      "inbounds": {
+        "example": 12,
+        "type": "integer"
+      },
+      "issues": {
+        "items": {
+          "$ref": "#/components/schemas/MigrationIssue"
+        },
+        "type": "array"
+      },
+      "restored": {
+        "example": false,
+        "type": "boolean"
+      },
+      "sourceAddress": {
+        "example": "203.0.113.10",
+        "type": "string"
+      },
+      "sourceVersion": {
+        "example": "0.5.0",
+        "type": "string"
+      },
+      "thisAddress": {
+        "example": "198.51.100.20",
+        "type": "string"
+      },
+      "tunnels": {
+        "items": {
+          "$ref": "#/components/schemas/MigrationTunnel"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "addressChanged",
+      "addresses",
+      "clients",
+      "createdAt",
+      "files",
+      "inbounds",
+      "issues",
+      "restored",
+      "sourceAddress",
+      "sourceVersion",
+      "thisAddress",
+      "tunnels"
+    ],
+    "type": "object"
+  },
+  "MigrationTunnel": {
+    "description": "MigrationTunnel is a tunnel of the backup and what happens to its other end.",
+    "properties": {
+      "action": {
+        "example": "resync",
+        "type": "string"
+      },
+      "kind": {
+        "example": "gre",
+        "type": "string"
+      },
+      "name": {
+        "example": "uk-relay",
+        "type": "string"
+      },
+      "role": {
+        "example": "client",
+        "type": "string"
+      }
+    },
+    "required": [
+      "action",
+      "kind",
+      "name",
+      "role"
     ],
     "type": "object"
   },

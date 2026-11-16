@@ -284,7 +284,61 @@
       "importKeepHostSettings": "Ponechať nastavenia tohto servera",
       "importKeepHostSettingsDesc": "Ponechajú sa adresy počúvania, porty, základná cesta, certifikáty a identita tohto servera namiesto nastavení z nahraného súboru.",
       "logLines": "Počet riadkov",
-      "timeRange": "Časový rozsah"
+      "timeRange": "Časový rozsah",
+      "migration": {
+        "download": "Úplná záloha na presun",
+        "downloadDesc": "Databáza so všetkými používateľmi, inboundmi a tunelmi, certifikáty a kľúče z nastavení a adresa servera v jednom .tar.gz.",
+        "upload": "Obnoviť úplnú zálohu",
+        "uploadDesc": "Najprv porovná zálohu s týmto serverom a ukáže, čo presun urobí s každou adresou v konfiguráciách; nič sa nezmení, kým nepotvrdíte.",
+        "reportTitle": "Pred obnovením",
+        "restore": "Obnoviť tu",
+        "restoring": "Obnovuje sa záloha",
+        "from": "Odkiaľ",
+        "to": "Tento server",
+        "inbounds": "Inboundy",
+        "clients": "Klienti",
+        "summaryKeeps": "Každá adresa v konfiguráciách po presune vedie sem: nikto nepotrebuje novú konfiguráciu.",
+        "summaryBreaks": "{count} adries v konfiguráciách by prestalo viesť sem. Udržte ich presunom tej IP na tento server alebo doménou či relé; inak používatelia potrebujú nové konfigurácie.",
+        "addresses": "Adresy v konfiguráciách",
+        "files": "Obnovené certifikáty a kľúče ({count}):",
+        "keepPanelAccess": "Zachovať port, cestu a certifikát panela tohto servera",
+        "rewriteAddress": "Nahradiť {from} za {to} všade, kde ho panel ukladá (používatelia potrebujú konfigurácie znova)",
+        "loginNote": "Po obnovení sa prihláste prihlasovacími údajmi panela starého servera.",
+        "status": {
+          "same": "Rovnaký server",
+          "relay": "Cez relé",
+          "dnsHere": "Doména vedie sem",
+          "dnsUpdate": "Aktualizujte DNS",
+          "changes": "Prestane fungovať",
+          "dnsElsewhere": "Doména vedie inam",
+          "elsewhere": "Iný server",
+          "unresolved": "Nepreloží sa"
+        },
+        "explain": {
+          "same": "{address} už je tento server.",
+          "relay": "Používatelia sa pripájajú na relé, ktoré dosiahne server tunelom: pre nich sa nič nemení.",
+          "dnsHere": "Doména už smeruje na tento server ({points}).",
+          "dnsUpdate": "Doména stále smeruje na starý server ({points}). Zmeňte jej záznam A na {here} a používatelia si ponechajú konfigurácie.",
+          "changes": "Používatelia dostali priamo túto IP. Sem vedie, len ak sa IP presunie na tento server; inak potrebujú nové konfigurácie.",
+          "dnsElsewhere": "Doména smeruje na {points}, ani starý, ani tento server: CDN alebo iné relé, ktoré netreba meniť, ak dosiahne tento server.",
+          "elsewhere": "Táto adresa patrí inému serveru, ktorého sa presun netýka.",
+          "unresolved": "Doména sa teraz nepreloží; skontrolujte DNS skôr, než ju budú používatelia potrebovať."
+        },
+        "tunnelAction": {
+          "none": "Netreba nič: druhý koniec nezávisí od adresy tohto servera.",
+          "resync": "Po obnovení dostane relé adresu tohto servera.",
+          "repair": "Druhý koniec používa starú adresu: po obnovení tam importujte nový párovací kód."
+        },
+        "issues": {
+          "newerVersion": "Zálohu vytvoril Manifold {version}, novší ako tento panel ({current}). Najprv ho aktualizujte.",
+          "edition": "Záloha je z edície {backup} a tento panel je {current}; čo táto edícia nespúšťa, zostane uložené a nevyužité.",
+          "backpackMissing": "Tunel {tunnel} potrebuje program BackPack, ktorý tu chýba: preinštalujte alebo aktualizujte Manifold.",
+          "tunnelLocalAddr": "Tunel {tunnel} bol viazaný na {address}, ktorú tento server nemá; použije adresu podľa trasy.",
+          "listenMissing": "Inbound {inbound} počúval na {address}, ktorú server nemá; bude počúvať na všetkých adresách.",
+          "portBusy": "Port {port} inboundu {inbound} drží iný program; najprv ho uvoľnite.",
+          "engineMissing": "{command} nie je nainštalovaný a potrebujú ho inboundy {inbounds}: spustite inštalátor znova alebo ho nainštalujte."
+        }
+      }
     },
     "inbounds": {
       "totalDownUp": "Celkom odoslané/prijaté",

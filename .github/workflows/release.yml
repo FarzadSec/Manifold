@@ -31,6 +31,7 @@ on:
       - "internal/wgquick/**"
       - "internal/l2tp/**"
       - "internal/egress/**"
+      - "internal/tunnel/**"
       - "internal/config/product_version"
 
 permissions:
@@ -251,6 +252,37 @@ jobs:
           set -euo pipefail
           (cd frontend && npm ci && npx playwright install --with-deps chromium)
           PANEL_URL=http://127.0.0.1:20530/smoke PANEL_USER=smoke PANEL_PASSWORD=smoke-pass-123 node deploy/test/panel-ui.cjs
+
+      - name: A full backup made by the installed service restores on it
+        run: |
+          set -euo pipefail
+          base=http://127.0.0.1:20530/smoke
+          jar=$(mktemp)
+          login() {
+            local t
+            t=$(curl -fsS -c "$jar" -b "$jar" "$base/csrf-token" | sed -E 's/.*"obj":"([^"]+)".*/\1/')
+            curl -fsS -b "$jar" -c "$jar" -H "X-CSRF-Token: $t" -d 'username=smoke&password=smoke-pass-123' "$base/login" | grep -q '"success":true'
+            token=$(curl -fsS -b "$jar" -c "$jar" "$base/csrf-token" | sed -E 's/.*"obj":"([^"]+)".*/\1/')
+          }
+          count() { curl -fsS -b "$jar" "$base/panel/api/inbounds/list" | python3 -c 'import json, sys; print(len(json.load(sys.stdin)["obj"]))'; }
+          login
+          before=$(count)
+          curl -fsS -b "$jar" -o /tmp/full.tar.gz "$base/panel/api/server/getFullBackup"
+          tar -tzf /tmp/full.tar.gz > /tmp/full.list
+          grep -qx manifest.json /tmp/full.list
+          grep -qx database.db /tmp/full.list
+          curl -fsS -b "$jar" -H "X-CSRF-Token: $token" -F backup=@/tmp/full.tar.gz "$base/panel/api/server/inspectBackup" > /tmp/inspect.json
+          python3 -c 'import json, sys; r = json.load(open(sys.argv[1])); assert r["success"], r; o = r["obj"]; assert o["inbounds"] == int(sys.argv[2]), o; assert not [i for i in o["issues"] if i["level"] == "error"], o["issues"]' /tmp/inspect.json "$before"
+          curl -fsS -b "$jar" -H "X-CSRF-Token: $token" -F backup=@/tmp/full.tar.gz -F keepPanelAccess=true "$base/panel/api/server/restoreBackup" > /tmp/restore.json
+          grep -q '"success":true' /tmp/restore.json
+          sleep 8
+          for _ in $(seq 1 20); do
+            [ "$(curl -s -o /dev/null -w '%{http_code}' "$base/")" = 200 ] && break
+            sleep 1
+          done
+          systemctl is-active manifold
+          login
+          test "$(count)" = "$before"
 
       - name: Update in place, then uninstall
         run: |

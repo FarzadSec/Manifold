@@ -1703,6 +1703,34 @@
         ],
         "type": "object"
       },
+      "BackupFile": {
+        "description": "BackupFile is one certificate or key the panel's settings point at.",
+        "properties": {
+          "exists": {
+            "example": false,
+            "type": "boolean"
+          },
+          "mode": {
+            "example": 384,
+            "type": "integer"
+          },
+          "path": {
+            "example": "/root/cert/fullchain.pem",
+            "type": "string"
+          },
+          "sha256": {
+            "example": "9f86d0...",
+            "type": "string"
+          }
+        },
+        "required": [
+          "exists",
+          "mode",
+          "path",
+          "sha256"
+        ],
+        "type": "object"
+      },
       "Blocker": {
         "description": "Blocker is one unmet requirement.",
         "properties": {
@@ -3615,6 +3643,173 @@
         "required": [
           "client",
           "seed"
+        ],
+        "type": "object"
+      },
+      "MigrationAddress": {
+        "description": "MigrationAddress is an address users' configs carry, and what a move does to it.",
+        "properties": {
+          "address": {
+            "example": "vpn.example.com",
+            "type": "string"
+          },
+          "points": {
+            "example": [
+              "203.0.113.10"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "status": {
+            "example": "dnsUpdate",
+            "type": "string"
+          },
+          "usedBy": {
+            "example": [
+              "VLESS Reality"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "address",
+          "status",
+          "usedBy"
+        ],
+        "type": "object"
+      },
+      "MigrationIssue": {
+        "description": "MigrationIssue is one finding of a restore check, named by code for the page to word.",
+        "properties": {
+          "code": {
+            "example": "addressChanges",
+            "type": "string"
+          },
+          "level": {
+            "example": "warn",
+            "type": "string"
+          },
+          "params": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "code",
+          "level",
+          "params"
+        ],
+        "type": "object"
+      },
+      "MigrationReport": {
+        "description": "MigrationReport is what a restore would do, or did, on this server.",
+        "properties": {
+          "addressChanged": {
+            "example": true,
+            "type": "boolean"
+          },
+          "addresses": {
+            "items": {
+              "$ref": "#/components/schemas/MigrationAddress"
+            },
+            "type": "array"
+          },
+          "clients": {
+            "example": 340,
+            "type": "integer"
+          },
+          "createdAt": {
+            "example": 1763300000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/BackupFile"
+            },
+            "type": "array"
+          },
+          "inbounds": {
+            "example": 12,
+            "type": "integer"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/MigrationIssue"
+            },
+            "type": "array"
+          },
+          "restored": {
+            "example": false,
+            "type": "boolean"
+          },
+          "sourceAddress": {
+            "example": "203.0.113.10",
+            "type": "string"
+          },
+          "sourceVersion": {
+            "example": "0.5.0",
+            "type": "string"
+          },
+          "thisAddress": {
+            "example": "198.51.100.20",
+            "type": "string"
+          },
+          "tunnels": {
+            "items": {
+              "$ref": "#/components/schemas/MigrationTunnel"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "addressChanged",
+          "addresses",
+          "clients",
+          "createdAt",
+          "files",
+          "inbounds",
+          "issues",
+          "restored",
+          "sourceAddress",
+          "sourceVersion",
+          "thisAddress",
+          "tunnels"
+        ],
+        "type": "object"
+      },
+      "MigrationTunnel": {
+        "description": "MigrationTunnel is a tunnel of the backup and what happens to its other end.",
+        "properties": {
+          "action": {
+            "example": "resync",
+            "type": "string"
+          },
+          "kind": {
+            "example": "gre",
+            "type": "string"
+          },
+          "name": {
+            "example": "uk-relay",
+            "type": "string"
+          },
+          "role": {
+            "example": "client",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "kind",
+          "name",
+          "role"
         ],
         "type": "object"
       },
@@ -8606,6 +8801,244 @@
                   "obj": [
                     "e8e2d3..."
                   ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/server/getFullBackup": {
+      "get": {
+        "tags": [
+          "Server"
+        ],
+        "summary": "Download a full backup for moving this panel to another server: a .tar.gz with the database, every certificate and key the settings and inbounds point at, and a manifest naming this server's version and public address.",
+        "operationId": "get_panel_api_server_getFullBackup",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/server/inspectBackup": {
+      "post": {
+        "tags": [
+          "Server"
+        ],
+        "summary": "Check a full backup against this server and change nothing: the addresses users' configs carry and what the move does to each, the tunnels and what their other ends need, the files it brings, and every port, program or version that would stop it.",
+        "operationId": "post_panel_api_server_inspectBackup",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "backup": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "A .tar.gz from getFullBackup."
+                  }
+                },
+                "required": [
+                  "backup"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/MigrationReport"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "addressChanged": true,
+                    "addresses": [
+                      {
+                        "address": "vpn.example.com",
+                        "points": [
+                          "203.0.113.10"
+                        ],
+                        "status": "dnsUpdate",
+                        "usedBy": [
+                          "VLESS Reality"
+                        ]
+                      }
+                    ],
+                    "clients": 340,
+                    "createdAt": 1763300000000,
+                    "files": [
+                      {
+                        "exists": false,
+                        "mode": 384,
+                        "path": "/root/cert/fullchain.pem",
+                        "sha256": "9f86d0..."
+                      }
+                    ],
+                    "inbounds": 12,
+                    "issues": [
+                      {
+                        "code": "addressChanges",
+                        "level": "warn",
+                        "params": {}
+                      }
+                    ],
+                    "restored": false,
+                    "sourceAddress": "203.0.113.10",
+                    "sourceVersion": "0.5.0",
+                    "thisAddress": "198.51.100.20",
+                    "tunnels": [
+                      {
+                        "action": "resync",
+                        "kind": "gre",
+                        "name": "uk-relay",
+                        "role": "client"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/server/restoreBackup": {
+      "post": {
+        "tags": [
+          "Server"
+        ],
+        "summary": "Restore a full backup on this server: write its certificates, replace the database, make inbounds and tunnels bound to the old addresses use this server's, resend relayed tunnels with this server's address, then restart the panel.",
+        "operationId": "post_panel_api_server_restoreBackup",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "backup": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "A .tar.gz from getFullBackup."
+                  },
+                  "keepPanelAccess": {
+                    "type": "boolean",
+                    "description": "Keep this server's panel port, path and certificate (default true), so the panel stays where you reach it now."
+                  },
+                  "rewriteAddress": {
+                    "type": "boolean",
+                    "description": "Replace the old server's IP with this one's in hosts, inbound share addresses, external proxies and subscription URLs. Users then need their configs again; leave it off to keep the old IP by moving it."
+                  }
+                },
+                "required": [
+                  "backup"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/MigrationReport"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "addressChanged": true,
+                    "addresses": [
+                      {
+                        "address": "vpn.example.com",
+                        "points": [
+                          "203.0.113.10"
+                        ],
+                        "status": "dnsUpdate",
+                        "usedBy": [
+                          "VLESS Reality"
+                        ]
+                      }
+                    ],
+                    "clients": 340,
+                    "createdAt": 1763300000000,
+                    "files": [
+                      {
+                        "exists": false,
+                        "mode": 384,
+                        "path": "/root/cert/fullchain.pem",
+                        "sha256": "9f86d0..."
+                      }
+                    ],
+                    "inbounds": 12,
+                    "issues": [
+                      {
+                        "code": "addressChanges",
+                        "level": "warn",
+                        "params": {}
+                      }
+                    ],
+                    "restored": false,
+                    "sourceAddress": "203.0.113.10",
+                    "sourceVersion": "0.5.0",
+                    "thisAddress": "198.51.100.20",
+                    "tunnels": [
+                      {
+                        "action": "resync",
+                        "kind": "gre",
+                        "name": "uk-relay",
+                        "role": "client"
+                      }
+                    ]
+                  }
                 }
               }
             }

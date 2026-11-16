@@ -284,7 +284,61 @@
       "importKeepHostSettings": "Pertahankan pengaturan mesin ini",
       "importKeepHostSettingsDesc": "Mempertahankan alamat dengar, port, path dasar, sertifikat, dan identitas node panel ini alih-alih mengambilnya dari berkas yang diunggah.",
       "logLines": "Jumlah baris",
-      "timeRange": "Rentang waktu"
+      "timeRange": "Rentang waktu",
+      "migration": {
+        "download": "Cadangan penuh untuk pindah",
+        "downloadDesc": "Basis data berisi semua pengguna, inbound, dan terowongan, sertifikat dan kunci yang dirujuk pengaturannya, serta alamat server ini, dalam satu .tar.gz.",
+        "upload": "Pulihkan cadangan penuh",
+        "uploadDesc": "Pertama memeriksa cadangan terhadap server ini dan menunjukkan dampak pindah pada setiap alamat di konfigurasi pengguna; tidak ada yang berubah sebelum Anda konfirmasi.",
+        "reportTitle": "Sebelum pemulihan",
+        "restore": "Pulihkan di sini",
+        "restoring": "Memulihkan cadangan",
+        "from": "Dari",
+        "to": "Server ini",
+        "inbounds": "Inbound",
+        "clients": "Klien",
+        "summaryKeeps": "Setiap alamat di konfigurasi pengguna tetap menuju ke sini setelah pindah: tidak ada yang perlu konfigurasi baru.",
+        "summaryBreaks": "{count} alamat di konfigurasi pengguna tidak lagi menuju ke sini. Agar tetap berfungsi, pindahkan IP itu ke server ini atau arahkan pengguna ke domain atau relay; jika tidak, mereka perlu konfigurasi baru.",
+        "addresses": "Alamat di konfigurasi pengguna",
+        "files": "Sertifikat dan kunci dipulihkan ({count}):",
+        "keepPanelAccess": "Pertahankan port, jalur, dan sertifikat panel server ini",
+        "rewriteAddress": "Ganti {from} dengan {to} di mana pun panel menyimpannya (pengguna perlu konfigurasi lagi)",
+        "loginNote": "Setelah pemulihan, masuk dengan login panel server lama.",
+        "status": {
+          "same": "Server sama",
+          "relay": "Lewat relay",
+          "dnsHere": "Domain menuju ke sini",
+          "dnsUpdate": "Perbarui DNS",
+          "changes": "Terputus",
+          "dnsElsewhere": "Domain menuju tempat lain",
+          "elsewhere": "Server lain",
+          "unresolved": "Tidak dapat diresolusi"
+        },
+        "explain": {
+          "same": "{address} sudah server ini.",
+          "relay": "Pengguna terhubung ke relay yang mencapai server ini lewat terowongannya: tidak ada yang berubah bagi mereka.",
+          "dnsHere": "Domain sudah mengarah ke server ini ({points}).",
+          "dnsUpdate": "Domain masih mengarah ke server lama ({points}). Ubah record A ke {here} dan pengguna tetap memakai konfigurasinya.",
+          "changes": "Pengguna diberi IP ini sendiri. Ia menuju ke sini hanya jika IP dipindahkan ke server ini; jika tidak, mereka perlu konfigurasi baru.",
+          "dnsElsewhere": "Domain mengarah ke {points}, bukan server lama maupun ini: CDN atau relay lain, yang tak perlu diubah bila mencapai server ini.",
+          "elsewhere": "Alamat ini milik server lain yang tak tersentuh pindahan.",
+          "unresolved": "Domain tidak terresolusi sekarang; periksa DNS-nya sebelum pengguna membutuhkannya."
+        },
+        "tunnelAction": {
+          "none": "Tidak perlu apa pun: ujung lainnya tidak bergantung pada alamat server ini.",
+          "resync": "Setelah pemulihan, relay-nya dikirimi alamat server ini.",
+          "repair": "Ujung lainnya memakai alamat lama: setelah pemulihan, impor kode pemasangan baru di sana."
+        },
+        "issues": {
+          "newerVersion": "Cadangan ini dibuat Manifold {version}, lebih baru dari panel ini ({current}). Perbarui panel dahulu.",
+          "edition": "Cadangan dari edisi {backup} dan panel ini edisi {current}; yang tidak dijalankan edisi ini tetap tersimpan tanpa dipakai.",
+          "backpackMissing": "Terowongan {tunnel} perlu program BackPack yang tidak ada di sini: pasang ulang atau perbarui Manifold dahulu.",
+          "tunnelLocalAddr": "Terowongan {tunnel} terikat ke {address} yang tidak dimiliki server ini; ia akan memakai alamat pilihan rute.",
+          "listenMissing": "Inbound {inbound} mendengarkan di {address} yang tidak dimiliki server ini; ia akan mendengarkan di semua alamat.",
+          "portBusy": "Port {port} milik inbound {inbound} dipakai program lain di server ini; bebaskan dahulu.",
+          "engineMissing": "{command} belum terpasang dan dibutuhkan inbound {inbounds}: jalankan lagi pemasang atau pasang."
+        }
+      }
     },
     "inbounds": {
       "totalDownUp": "Total Terkirim/Diterima",

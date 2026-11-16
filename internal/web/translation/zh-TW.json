@@ -284,7 +284,61 @@
       "importKeepHostSettings": "保留本機設定",
       "importKeepHostSettingsDesc": "保留本面板的監聽位址、連接埠、基礎路徑、憑證與節點身分，而不是使用上傳檔案中的值。",
       "logLines": "行數",
-      "timeRange": "時間範圍"
+      "timeRange": "時間範圍",
+      "migration": {
+        "download": "用於遷移的完整備份",
+        "downloadDesc": "包含所有使用者、入站和通道的資料庫、設定引用的憑證和金鑰以及本伺服器位址，打包為一個 .tar.gz。",
+        "upload": "還原完整備份",
+        "uploadDesc": "先將備份與本伺服器核對，並顯示遷移對使用者設定中每個位址的影響；確認之前不會變更任何內容。",
+        "reportTitle": "還原之前",
+        "restore": "在此還原",
+        "restoring": "正在還原備份",
+        "from": "來源",
+        "to": "本伺服器",
+        "inbounds": "入站",
+        "clients": "用戶",
+        "summaryKeeps": "遷移後使用者設定中的每個位址仍會指向這裡：無人需要新設定。",
+        "summaryBreaks": "使用者設定中有 {count} 個位址將不再指向這裡。把該 IP 遷到本伺服器，或改用網域或中繼即可繼續使用；否則使用者需要新設定。",
+        "addresses": "使用者設定中的位址",
+        "files": "將還原的憑證和金鑰（{count}）：",
+        "keepPanelAccess": "保留本伺服器面板的連接埠、路徑和憑證",
+        "rewriteAddress": "在面板儲存的所有位置把 {from} 取代為 {to}（使用者需要重新取得設定）",
+        "loginNote": "還原後請使用舊伺服器的面板帳號登入。",
+        "status": {
+          "same": "同一伺服器",
+          "relay": "經中繼",
+          "dnsHere": "網域指向此處",
+          "dnsUpdate": "更新 DNS",
+          "changes": "會失效",
+          "dnsElsewhere": "網域指向別處",
+          "elsewhere": "其他伺服器",
+          "unresolved": "無法解析"
+        },
+        "explain": {
+          "same": "{address} 已經是本伺服器。",
+          "relay": "使用者連線中繼伺服器，中繼經通道到達本伺服器：對使用者無需任何變更。",
+          "dnsHere": "網域已解析到本伺服器（{points}）。",
+          "dnsUpdate": "網域仍解析到舊伺服器（{points}）。把 A 紀錄改為 {here}，使用者即可繼續使用原設定。",
+          "changes": "使用者拿到的就是這個 IP。只有把該 IP 遷到本伺服器才會指向這裡，否則這些使用者需要新設定。",
+          "dnsElsewhere": "網域解析到 {points}，既不是舊伺服器也不是本伺服器：可能是 CDN 或其他中繼，只要能到達本伺服器就無需變更。",
+          "elsewhere": "該位址屬於其他伺服器，遷移不影響它。",
+          "unresolved": "該網域目前無法解析；請在使用者需要前檢查其 DNS。"
+        },
+        "tunnelAction": {
+          "none": "無需操作：另一端不依賴本伺服器的位址。",
+          "resync": "還原後會把本伺服器位址傳送給其中繼伺服器。",
+          "repair": "另一端使用舊位址：還原後請在那裡匯入此通道的新配對碼。"
+        },
+        "issues": {
+          "newerVersion": "此備份由 Manifold {version} 產生，比本面板（{current}）更新。請先更新面板。",
+          "edition": "備份來自 {backup} 版，本面板為 {current} 版；本版不執行的內容會保存但不使用。",
+          "backpackMissing": "通道 {tunnel} 需要本安裝缺少的 BackPack 程式：請先重新安裝或更新 Manifold。",
+          "tunnelLocalAddr": "通道 {tunnel} 原綁定的 {address} 本伺服器沒有；將改用路由選擇的位址。",
+          "listenMissing": "入站 {inbound} 原監聽的 {address} 本伺服器沒有；將改為監聽所有位址。",
+          "portBusy": "入站 {inbound} 的連接埠 {port} 被本伺服器上其他程式佔用；請先釋放。",
+          "engineMissing": "{command} 未安裝，入站 {inbounds} 需要它：請重新執行安裝程式或安裝它。"
+        }
+      }
     },
     "inbounds": {
       "totalDownUp": "總上傳 / 下載",

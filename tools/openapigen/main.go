@@ -125,6 +125,11 @@ func run(root, outDir string) error {
 				"TunnelRequest",
 				"TunnelPairing",
 				"TunnelSuggestion",
+				"BackupFile",
+				"MigrationIssue",
+				"MigrationAddress",
+				"MigrationTunnel",
+				"MigrationReport",
 			),
 		},
 		{

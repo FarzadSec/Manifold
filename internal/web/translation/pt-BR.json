@@ -284,7 +284,61 @@
       "importKeepHostSettings": "Manter as configurações desta máquina",
       "importKeepHostSettingsDesc": "Mantém os endereços de escuta, as portas, o caminho base, os certificados e a identidade de nó deste painel em vez de obtê-los do arquivo enviado.",
       "logLines": "Número de linhas",
-      "timeRange": "Intervalo de tempo"
+      "timeRange": "Intervalo de tempo",
+      "migration": {
+        "download": "Backup completo para mudança",
+        "downloadDesc": "O banco de dados com todos os usuários, entradas e túneis, os certificados e chaves que as configurações apontam e o endereço deste servidor, num .tar.gz.",
+        "upload": "Restaurar um backup completo",
+        "uploadDesc": "Primeiro compara o backup com este servidor e mostra o que a mudança faz a cada endereço das configurações; nada muda até você confirmar.",
+        "reportTitle": "Antes de restaurar",
+        "restore": "Restaurar aqui",
+        "restoring": "Restaurando o backup",
+        "from": "De",
+        "to": "Este servidor",
+        "inbounds": "Entradas",
+        "clients": "Clientes",
+        "summaryKeeps": "Todo endereço das configurações continua levando aqui após a mudança: ninguém precisa de nova configuração.",
+        "summaryBreaks": "{count} endereço(s) das configurações deixariam de levar aqui. Mantenha-os movendo esse IP para este servidor ou usando um domínio ou relay; senão os usuários precisam de novas configurações.",
+        "addresses": "Endereços nas configurações",
+        "files": "Certificados e chaves restaurados ({count}):",
+        "keepPanelAccess": "Manter a porta, o caminho e o certificado do painel deste servidor",
+        "rewriteAddress": "Substituir {from} por {to} onde o painel o guarda (os usuários precisam das configurações de novo)",
+        "loginNote": "Após restaurar, entre com o login do painel do servidor antigo.",
+        "status": {
+          "same": "Mesmo servidor",
+          "relay": "Por um relay",
+          "dnsHere": "O domínio aponta aqui",
+          "dnsUpdate": "Atualize o DNS",
+          "changes": "Quebra",
+          "dnsElsewhere": "O domínio aponta para outro lugar",
+          "elsewhere": "Outro servidor",
+          "unresolved": "Não resolve"
+        },
+        "explain": {
+          "same": "{address} já é este servidor.",
+          "relay": "Os usuários se conectam ao relay, que chega a este servidor pelo túnel: nada muda para eles.",
+          "dnsHere": "O domínio já aponta para este servidor ({points}).",
+          "dnsUpdate": "O domínio ainda aponta para o servidor antigo ({points}). Mude o registro A para {here} e os usuários mantêm suas configurações.",
+          "changes": "Os usuários receberam este próprio IP. Ele leva aqui só se o IP passar para este servidor; senão eles precisam de novas configurações.",
+          "dnsElsewhere": "O domínio aponta para {points}, nem o antigo nem este servidor: um CDN ou outro relay, que não muda se chegar a este servidor.",
+          "elsewhere": "Este endereço é de outro servidor, que a mudança não toca.",
+          "unresolved": "O domínio não resolve agora; verifique o DNS antes que os usuários precisem."
+        },
+        "tunnelAction": {
+          "none": "Nada a fazer: a outra ponta não depende do endereço deste servidor.",
+          "resync": "Após restaurar, o relay recebe o endereço deste servidor.",
+          "repair": "A outra ponta usa o endereço antigo: após restaurar, importe lá o novo código de pareamento."
+        },
+        "issues": {
+          "newerVersion": "Este backup é do Manifold {version}, mais novo que este painel ({current}). Atualize primeiro.",
+          "edition": "O backup vem da edição {backup} e este painel é {current}; o que esta edição não executa fica guardado sem uso.",
+          "backpackMissing": "O túnel {tunnel} precisa do programa BackPack, que falta aqui: reinstale ou atualize o Manifold.",
+          "tunnelLocalAddr": "O túnel {tunnel} estava ligado a {address}, que este servidor não tem; usará o endereço escolhido pela rota.",
+          "listenMissing": "A entrada {inbound} escutava em {address}, que este servidor não tem; escutará em todos os endereços.",
+          "portBusy": "A porta {port} da entrada {inbound} está com outro programa aqui; libere-a primeiro.",
+          "engineMissing": "{command} não está instalado e as entradas {inbounds} precisam dele: rode o instalador de novo ou instale-o."
+        }
+      }
     },
     "inbounds": {
       "totalDownUp": "Total Enviado/Recebido",

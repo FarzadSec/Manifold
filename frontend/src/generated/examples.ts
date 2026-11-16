@@ -410,6 +410,12 @@ export const EXAMPLES: Record<string, unknown> = {
     "scope": "admin",
     "token": "new-token-string"
   },
+  "BackupFile": {
+    "exists": false,
+    "mode": 384,
+    "path": "/root/cert/fullchain.pem",
+    "sha256": "9f86d0..."
+  },
   "Blocker": {
     "code": "tools",
     "detail": "awg"
@@ -914,6 +920,72 @@ export const EXAMPLES: Record<string, unknown> = {
   "MLKEM768Response": {
     "client": "mlkem768-client",
     "seed": "mlkem768-seed"
+  },
+  "MigrationAddress": {
+    "address": "vpn.example.com",
+    "points": [
+      "203.0.113.10"
+    ],
+    "status": "dnsUpdate",
+    "usedBy": [
+      "VLESS Reality"
+    ]
+  },
+  "MigrationIssue": {
+    "code": "addressChanges",
+    "level": "warn",
+    "params": {}
+  },
+  "MigrationReport": {
+    "addressChanged": true,
+    "addresses": [
+      {
+        "address": "vpn.example.com",
+        "points": [
+          "203.0.113.10"
+        ],
+        "status": "dnsUpdate",
+        "usedBy": [
+          "VLESS Reality"
+        ]
+      }
+    ],
+    "clients": 340,
+    "createdAt": 1763300000000,
+    "files": [
+      {
+        "exists": false,
+        "mode": 384,
+        "path": "/root/cert/fullchain.pem",
+        "sha256": "9f86d0..."
+      }
+    ],
+    "inbounds": 12,
+    "issues": [
+      {
+        "code": "addressChanges",
+        "level": "warn",
+        "params": {}
+      }
+    ],
+    "restored": false,
+    "sourceAddress": "203.0.113.10",
+    "sourceVersion": "0.5.0",
+    "thisAddress": "198.51.100.20",
+    "tunnels": [
+      {
+        "action": "resync",
+        "kind": "gre",
+        "name": "uk-relay",
+        "role": "client"
+      }
+    ]
+  },
+  "MigrationTunnel": {
+    "action": "resync",
+    "kind": "gre",
+    "name": "uk-relay",
+    "role": "client"
   },
   "Msg": {
     "msg": "",

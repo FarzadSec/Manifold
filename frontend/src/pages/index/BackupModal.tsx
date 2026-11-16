@@ -4,6 +4,8 @@ import { Button, Checkbox, Modal } from 'antd';
 import { DownloadOutlined, UploadOutlined } from '@ant-design/icons';
 
 import { HttpUtil, PromiseUtil } from '@/utils';
+import type { MigrationReport } from '@/generated/types';
+import MigrationModal from './MigrationModal';
 import './BackupModal.css';
 
 interface BusyEvent {
@@ -27,6 +29,34 @@ export default function BackupModal({
   const { t } = useTranslation();
   const isPostgres = window.X_UI_DB_TYPE === 'postgres';
   const [keepHostSettings, setKeepHostSettings] = useState(true);
+  const [inspected, setInspected] = useState<{ file: File; report: MigrationReport } | null>(null);
+  const [inspecting, setInspecting] = useState(false);
+
+  function exportFullBackup() {
+    window.location.href = (window.X_UI_BASE_PATH || '') + 'panel/api/server/getFullBackup';
+  }
+
+  function inspectFullBackup() {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.tar.gz,.tgz,application/gzip';
+    fileInput.addEventListener('change', async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      const form = new FormData();
+      form.append('backup', file);
+      setInspecting(true);
+      try {
+        const msg = await HttpUtil.post<MigrationReport>('/panel/api/server/inspectBackup', form, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        if (msg?.success && msg.obj) setInspected({ file, report: msg.obj });
+      } finally {
+        setInspecting(false);
+      }
+    });
+    fileInput.click();
+  }
 
   function exportDb() {
     window.location.href = (window.X_UI_BASE_PATH || '') + 'panel/api/server/getDb';
@@ -74,6 +104,33 @@ export default function BackupModal({
           {t('pages.index.backupPostgresNote')}
         </div>
       )}
+      <div className="backup-list" style={{ marginBottom: 16 }}>
+        <div className="backup-item">
+          <div className="backup-meta">
+            <div className="backup-title">{t('pages.index.migration.download')}</div>
+            <div className="backup-description">{t('pages.index.migration.downloadDesc')}</div>
+          </div>
+          <Button
+            type="primary"
+            aria-label={t('pages.index.migration.download')}
+            onClick={exportFullBackup}
+            icon={<DownloadOutlined aria-hidden />}
+          />
+        </div>
+        <div className="backup-item">
+          <div className="backup-meta">
+            <div className="backup-title">{t('pages.index.migration.upload')}</div>
+            <div className="backup-description">{t('pages.index.migration.uploadDesc')}</div>
+          </div>
+          <Button
+            type="primary"
+            loading={inspecting}
+            aria-label={t('pages.index.migration.upload')}
+            onClick={inspectFullBackup}
+            icon={<UploadOutlined aria-hidden />}
+          />
+        </div>
+      </div>
       <div className="backup-list">
         <div className="backup-item">
           <div className="backup-meta">
@@ -136,6 +193,14 @@ export default function BackupModal({
           </div>
         </div>
       </div>
+      {inspected && (
+        <MigrationModal
+          file={inspected.file}
+          report={inspected.report}
+          onBusy={onBusy}
+          onClose={() => setInspected(null)}
+        />
+      )}
     </Modal>
   );
 }

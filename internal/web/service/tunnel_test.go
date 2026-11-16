@@ -21,7 +21,9 @@ func (quietEngine) Statuses() []tunnel.TunnelStatus { return nil }
 
 func initTunnelDB(t *testing.T) *TunnelService {
 	t.Helper()
-	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
+	dir := t.TempDir()
+	t.Setenv("XUI_DB_FOLDER", dir)
+	dbtest.InitDB(t, filepath.Join(dir, "x-ui.db"))
 	prev := tunnelManager
 	tunnelManager = func() tunnelEngine { return quietEngine{} }
 	t.Cleanup(func() { tunnelManager = prev })

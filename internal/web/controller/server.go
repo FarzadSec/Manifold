@@ -57,6 +57,7 @@ func (a *ServerController) initRouter(g *gin.RouterGroup) {
 	g.GET("/getConfigJson", a.getConfigJson)
 	g.GET("/getDb", a.getDb)
 	g.GET("/getMigration", a.getMigration)
+	g.GET("/getFullBackup", a.getFullBackup)
 	g.GET("/getNewUUID", a.getNewUUID)
 	g.GET("/getWebCertFiles", a.getWebCertFiles)
 	g.GET("/descendants", a.descendants)
@@ -78,6 +79,8 @@ func (a *ServerController) initRouter(g *gin.RouterGroup) {
 	g.POST("/xraylogs/:count", a.getXrayLogs)
 	g.POST("/amneziawglogs/:count", a.getAmneziaWGLogs)
 	g.POST("/importDB", a.importDB)
+	g.POST("/inspectBackup", a.inspectBackup)
+	g.POST("/restoreBackup", a.restoreBackup)
 	g.POST("/getNewEchCert", a.getNewEchCert)
 	g.POST("/getCertHash", a.getCertHash)
 	g.POST("/openvpnKeys", a.openvpnKeys)
@@ -377,6 +380,55 @@ func (a *ServerController) getMigration(c *gin.Context) {
 	c.Header("Content-Type", "application/octet-stream")
 	c.Header("Content-Disposition", "attachment; filename="+filename)
 	_, _ = c.Writer.Write(data)
+}
+
+// getFullBackup downloads everything a move to another server needs: the
+// database, the certificates the settings point at and where it came from.
+func (a *ServerController) getFullBackup(c *gin.Context) {
+	data, filename, err := a.serverService.FullBackup()
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.index.getDatabaseError"), err)
+		return
+	}
+	if !filenameRegex.MatchString(filename) {
+		_ = c.AbortWithError(http.StatusBadRequest, fmt.Errorf("invalid filename"))
+		return
+	}
+	c.Header("Content-Type", "application/gzip")
+	c.Header("Content-Disposition", "attachment; filename="+filename)
+	_, _ = c.Writer.Write(data)
+}
+
+// inspectBackup reports what restoring a full backup would do here, changing nothing.
+func (a *ServerController) inspectBackup(c *gin.Context) {
+	file, _, err := c.Request.FormFile("backup")
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.index.readDatabaseError"), err)
+		return
+	}
+	defer file.Close()
+	report, err := a.serverService.InspectBackup(file)
+	jsonObj(c, report, err)
+}
+
+// restoreBackup moves a full backup onto this server and restarts the panel.
+func (a *ServerController) restoreBackup(c *gin.Context) {
+	file, _, err := c.Request.FormFile("backup")
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.index.readDatabaseError"), err)
+		return
+	}
+	defer file.Close()
+	report, err := a.serverService.RestoreBackup(file, service.RestoreOptions{
+		KeepPanelAccess: c.Request.FormValue("keepPanelAccess") != "false",
+		RewriteAddress:  c.Request.FormValue("rewriteAddress") == "true",
+	})
+	if err != nil {
+		jsonMsgObj(c, I18nWeb(c, "pages.index.importDatabaseError"), report, err)
+		return
+	}
+	_ = a.panelService.RestartPanel(3 * time.Second)
+	jsonMsgObj(c, I18nWeb(c, "pages.index.importDatabaseSuccess"), report, nil)
 }
 
 // importDB imports a database file and restarts the Xray service.

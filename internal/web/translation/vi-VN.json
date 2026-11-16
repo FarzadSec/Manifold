@@ -284,7 +284,61 @@
       "importKeepHostSettings": "Giữ cài đặt của máy này",
       "importKeepHostSettingsDesc": "Giữ nguyên địa chỉ lắng nghe, cổng, đường dẫn cơ sở, chứng chỉ và danh tính node của bảng điều khiển này thay vì lấy chúng từ tệp đã tải lên.",
       "logLines": "Số dòng",
-      "timeRange": "Khoảng thời gian"
+      "timeRange": "Khoảng thời gian",
+      "migration": {
+        "download": "Bản sao đầy đủ để chuyển",
+        "downloadDesc": "Cơ sở dữ liệu với mọi người dùng, inbound và đường hầm, chứng chỉ và khóa mà cài đặt trỏ tới, cùng địa chỉ máy chủ này, trong một tệp .tar.gz.",
+        "upload": "Khôi phục bản sao đầy đủ",
+        "uploadDesc": "Trước tiên kiểm tra bản sao với máy chủ này và cho thấy việc chuyển ảnh hưởng thế nào tới từng địa chỉ trong cấu hình người dùng; không có gì thay đổi cho tới khi bạn xác nhận.",
+        "reportTitle": "Trước khi khôi phục",
+        "restore": "Khôi phục tại đây",
+        "restoring": "Đang khôi phục",
+        "from": "Từ",
+        "to": "Máy chủ này",
+        "inbounds": "Inbound",
+        "clients": "Khách hàng",
+        "summaryKeeps": "Mọi địa chỉ trong cấu hình người dùng vẫn dẫn tới đây sau khi chuyển: không ai cần cấu hình mới.",
+        "summaryBreaks": "{count} địa chỉ trong cấu hình người dùng sẽ không còn dẫn tới đây. Giữ chúng hoạt động bằng cách chuyển IP đó sang máy chủ này, hoặc dùng tên miền hay relay; nếu không, người dùng cần cấu hình mới.",
+        "addresses": "Địa chỉ trong cấu hình người dùng",
+        "files": "Chứng chỉ và khóa được khôi phục ({count}):",
+        "keepPanelAccess": "Giữ cổng, đường dẫn và chứng chỉ panel của máy chủ này",
+        "rewriteAddress": "Thay {from} bằng {to} ở mọi nơi panel lưu (người dùng cần lấy lại cấu hình)",
+        "loginNote": "Sau khi khôi phục, đăng nhập bằng tài khoản panel của máy chủ cũ.",
+        "status": {
+          "same": "Cùng máy chủ",
+          "relay": "Qua relay",
+          "dnsHere": "Tên miền trỏ tới đây",
+          "dnsUpdate": "Cập nhật DNS",
+          "changes": "Bị hỏng",
+          "dnsElsewhere": "Tên miền trỏ nơi khác",
+          "elsewhere": "Máy chủ khác",
+          "unresolved": "Không phân giải"
+        },
+        "explain": {
+          "same": "{address} đã là máy chủ này.",
+          "relay": "Người dùng kết nối tới relay, relay tới máy chủ này qua đường hầm: không có gì thay đổi với họ.",
+          "dnsHere": "Tên miền đã trỏ tới máy chủ này ({points}).",
+          "dnsUpdate": "Tên miền vẫn trỏ tới máy chủ cũ ({points}). Đổi bản ghi A sang {here} và người dùng giữ nguyên cấu hình.",
+          "changes": "Người dùng được cấp chính IP này. Nó chỉ dẫn tới đây nếu IP được chuyển sang máy chủ này; nếu không họ cần cấu hình mới.",
+          "dnsElsewhere": "Tên miền trỏ tới {points}, không phải máy chủ cũ hay máy chủ này: một CDN hoặc relay khác, không cần đổi nếu nó tới được máy chủ này.",
+          "elsewhere": "Địa chỉ này thuộc máy chủ khác, việc chuyển không ảnh hưởng.",
+          "unresolved": "Tên miền hiện không phân giải được; kiểm tra DNS trước khi người dùng cần."
+        },
+        "tunnelAction": {
+          "none": "Không cần làm gì: đầu kia không phụ thuộc địa chỉ máy chủ này.",
+          "resync": "Sau khi khôi phục, relay sẽ nhận địa chỉ máy chủ này.",
+          "repair": "Đầu kia dùng địa chỉ cũ: sau khi khôi phục, nhập mã ghép đôi mới ở đó."
+        },
+        "issues": {
+          "newerVersion": "Bản sao này do Manifold {version} tạo, mới hơn panel này ({current}). Hãy cập nhật trước.",
+          "edition": "Bản sao từ bản {backup}, panel này là bản {current}; những gì bản này không chạy sẽ được lưu nhưng không dùng.",
+          "backpackMissing": "Đường hầm {tunnel} cần chương trình BackPack mà bản cài này thiếu: hãy cài lại hoặc cập nhật Manifold trước.",
+          "tunnelLocalAddr": "Đường hầm {tunnel} từng gắn với {address} mà máy chủ này không có; nó sẽ dùng địa chỉ do tuyến chọn.",
+          "listenMissing": "Inbound {inbound} từng lắng nghe ở {address} mà máy chủ này không có; nó sẽ lắng nghe mọi địa chỉ.",
+          "portBusy": "Cổng {port} của inbound {inbound} đang bị chương trình khác giữ; hãy giải phóng trước.",
+          "engineMissing": "{command} chưa cài và các inbound {inbounds} cần nó: chạy lại trình cài hoặc cài nó."
+        }
+      }
     },
     "inbounds": {
       "totalDownUp": "Tổng tải lên/tải xuống",

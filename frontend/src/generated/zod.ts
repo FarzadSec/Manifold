@@ -432,6 +432,14 @@ export const ApiTokenViewSchema = z.object({
 });
 export type ApiTokenView = z.infer<typeof ApiTokenViewSchema>;
 
+export const BackupFileSchema = z.object({
+  exists: z.boolean(),
+  mode: z.number().int(),
+  path: z.string(),
+  sha256: z.string(),
+});
+export type BackupFile = z.infer<typeof BackupFileSchema>;
+
 export const BlockerSchema = z.object({
   code: z.lazy(() => BlockerCodeSchema),
   detail: z.string().optional(),
@@ -879,6 +887,45 @@ export const MLKEM768ResponseSchema = z.object({
   seed: z.string(),
 });
 export type MLKEM768Response = z.infer<typeof MLKEM768ResponseSchema>;
+
+export const MigrationAddressSchema = z.object({
+  address: z.string(),
+  points: z.array(z.string()).optional(),
+  status: z.string(),
+  usedBy: z.array(z.string()),
+});
+export type MigrationAddress = z.infer<typeof MigrationAddressSchema>;
+
+export const MigrationIssueSchema = z.object({
+  code: z.string(),
+  level: z.string(),
+  params: z.record(z.string(), z.string()),
+});
+export type MigrationIssue = z.infer<typeof MigrationIssueSchema>;
+
+export const MigrationReportSchema = z.object({
+  addressChanged: z.boolean(),
+  addresses: z.array(z.lazy(() => MigrationAddressSchema)),
+  clients: z.number().int(),
+  createdAt: z.number().int(),
+  files: z.array(z.lazy(() => BackupFileSchema)),
+  inbounds: z.number().int(),
+  issues: z.array(z.lazy(() => MigrationIssueSchema)),
+  restored: z.boolean(),
+  sourceAddress: z.string(),
+  sourceVersion: z.string(),
+  thisAddress: z.string(),
+  tunnels: z.array(z.lazy(() => MigrationTunnelSchema)),
+});
+export type MigrationReport = z.infer<typeof MigrationReportSchema>;
+
+export const MigrationTunnelSchema = z.object({
+  action: z.string(),
+  kind: z.string(),
+  name: z.string(),
+  role: z.string(),
+});
+export type MigrationTunnel = z.infer<typeof MigrationTunnelSchema>;
 
 export const MsgSchema = z.object({
   msg: z.string(),

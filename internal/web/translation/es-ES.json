@@ -284,7 +284,61 @@
       "importKeepHostSettings": "Mantener la configuración de esta máquina",
       "importKeepHostSettingsDesc": "Conserva las direcciones de escucha, los puertos, la ruta base, los certificados y la identidad de nodo de este panel en lugar de tomarlos del archivo subido.",
       "logLines": "Número de líneas",
-      "timeRange": "Rango de tiempo"
+      "timeRange": "Rango de tiempo",
+      "migration": {
+        "download": "Copia completa para mudanza",
+        "downloadDesc": "La base de datos con todos los usuarios, entradas y túneles, los certificados y claves que indican sus ajustes y la dirección de este servidor, en un .tar.gz.",
+        "upload": "Restaurar una copia completa",
+        "uploadDesc": "Primero compara la copia con este servidor y muestra qué hace la mudanza a cada dirección de las configuraciones; nada cambia hasta que confirme.",
+        "reportTitle": "Antes de restaurar",
+        "restore": "Restaurar aquí",
+        "restoring": "Restaurando la copia",
+        "from": "Desde",
+        "to": "Este servidor",
+        "inbounds": "Entradas",
+        "clients": "Clientes",
+        "summaryKeeps": "Cada dirección de las configuraciones sigue llevando aquí tras la mudanza: nadie necesita una configuración nueva.",
+        "summaryBreaks": "{count} dirección(es) de las configuraciones dejarían de llevar aquí. Manténgalas moviendo esa IP a este servidor o usando un dominio o un relé; si no, los usuarios necesitan configuraciones nuevas.",
+        "addresses": "Direcciones en las configuraciones",
+        "files": "Certificados y claves restaurados ({count}):",
+        "keepPanelAccess": "Conservar el puerto, la ruta y el certificado del panel de este servidor",
+        "rewriteAddress": "Reemplazar {from} por {to} donde el panel lo guarde (los usuarios necesitan sus configuraciones de nuevo)",
+        "loginNote": "Tras restaurar, inicie sesión con el usuario del panel del servidor antiguo.",
+        "status": {
+          "same": "Mismo servidor",
+          "relay": "A través de un relé",
+          "dnsHere": "El dominio apunta aquí",
+          "dnsUpdate": "Actualice el DNS",
+          "changes": "Se rompe",
+          "dnsElsewhere": "El dominio apunta a otro sitio",
+          "elsewhere": "Otro servidor",
+          "unresolved": "No se resuelve"
+        },
+        "explain": {
+          "same": "{address} ya es este servidor.",
+          "relay": "Los usuarios se conectan al relé, que llega a este servidor por su túnel: nada cambia para ellos.",
+          "dnsHere": "El dominio ya apunta a este servidor ({points}).",
+          "dnsUpdate": "El dominio aún apunta al servidor antiguo ({points}). Cambie su registro A a {here} y los usuarios conservan sus configuraciones.",
+          "changes": "Los usuarios recibieron esta IP. Solo lleva aquí si la IP pasa a este servidor; si no, necesitan configuraciones nuevas.",
+          "dnsElsewhere": "El dominio apunta a {points}, ni el antiguo ni este servidor: una CDN u otro relé, que no necesita cambios si llega a este servidor.",
+          "elsewhere": "Esta dirección es de otro servidor, que la mudanza no toca.",
+          "unresolved": "El dominio no se resuelve ahora; revise su DNS antes de que lo necesiten los usuarios."
+        },
+        "tunnelAction": {
+          "none": "Nada que hacer: su otro extremo no depende de la dirección de este servidor.",
+          "resync": "Tras restaurar, su relé recibe la dirección de este servidor.",
+          "repair": "Su otro extremo tiene la dirección antigua: tras restaurar, importe allí el nuevo código de emparejamiento."
+        },
+        "issues": {
+          "newerVersion": "Esta copia es de Manifold {version}, más nuevo que este panel ({current}). Actualice primero.",
+          "edition": "La copia viene de la edición {backup} y este panel es {current}; lo que esta edición no ejecuta queda guardado y sin usar.",
+          "backpackMissing": "El túnel {tunnel} necesita el programa BackPack, que falta aquí: reinstale o actualice Manifold.",
+          "tunnelLocalAddr": "El túnel {tunnel} estaba atado a {address}, que este servidor no tiene; usará la dirección que elija la ruta.",
+          "listenMissing": "La entrada {inbound} escuchaba en {address}, que este servidor no tiene; escuchará en todas las direcciones.",
+          "portBusy": "El puerto {port} de la entrada {inbound} lo usa otro programa aquí; libérelo primero.",
+          "engineMissing": "{command} no está instalado y lo necesitan las entradas {inbounds}: ejecute de nuevo el instalador o instálelo."
+        }
+      }
     },
     "inbounds": {
       "totalDownUp": "Subidas/Descargas Totales",

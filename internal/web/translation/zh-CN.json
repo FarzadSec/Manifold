@@ -284,7 +284,61 @@
       "importKeepHostSettings": "保留本机设置",
       "importKeepHostSettingsDesc": "保留本面板的监听地址、端口、基础路径、证书和节点身份，而不是使用上传文件中的值。",
       "logLines": "行数",
-      "timeRange": "时间范围"
+      "timeRange": "时间范围",
+      "migration": {
+        "download": "用于迁移的完整备份",
+        "downloadDesc": "包含所有用户、入站和隧道的数据库、设置引用的证书和密钥以及本服务器地址，打包为一个 .tar.gz。",
+        "upload": "恢复完整备份",
+        "uploadDesc": "先将备份与本服务器核对，并显示迁移对用户配置中每个地址的影响；确认之前不会更改任何内容。",
+        "reportTitle": "恢复之前",
+        "restore": "在此恢复",
+        "restoring": "正在恢复备份",
+        "from": "来源",
+        "to": "本服务器",
+        "inbounds": "入站",
+        "clients": "客户端",
+        "summaryKeeps": "迁移后用户配置中的每个地址仍会指向这里：无人需要新配置。",
+        "summaryBreaks": "用户配置中有 {count} 个地址将不再指向这里。把该 IP 迁到本服务器，或改用域名或中转即可继续使用；否则用户需要新配置。",
+        "addresses": "用户配置中的地址",
+        "files": "将恢复的证书和密钥（{count}）：",
+        "keepPanelAccess": "保留本服务器面板的端口、路径和证书",
+        "rewriteAddress": "在面板存储的所有位置把 {from} 替换为 {to}（用户需要重新获取配置）",
+        "loginNote": "恢复后请使用旧服务器的面板账号登录。",
+        "status": {
+          "same": "同一服务器",
+          "relay": "经中转",
+          "dnsHere": "域名指向此处",
+          "dnsUpdate": "更新 DNS",
+          "changes": "会失效",
+          "dnsElsewhere": "域名指向别处",
+          "elsewhere": "其他服务器",
+          "unresolved": "无法解析"
+        },
+        "explain": {
+          "same": "{address} 已经是本服务器。",
+          "relay": "用户连接中转服务器，中转经隧道到达本服务器：对用户无需任何更改。",
+          "dnsHere": "域名已解析到本服务器（{points}）。",
+          "dnsUpdate": "域名仍解析到旧服务器（{points}）。把 A 记录改为 {here}，用户即可继续使用原配置。",
+          "changes": "用户拿到的就是这个 IP。只有把该 IP 迁到本服务器才会指向这里，否则这些用户需要新配置。",
+          "dnsElsewhere": "域名解析到 {points}，既不是旧服务器也不是本服务器：可能是 CDN 或其他中转，只要能到达本服务器就无需更改。",
+          "elsewhere": "该地址属于其他服务器，迁移不影响它。",
+          "unresolved": "该域名目前无法解析；请在用户需要前检查其 DNS。"
+        },
+        "tunnelAction": {
+          "none": "无需操作：另一端不依赖本服务器的地址。",
+          "resync": "恢复后会把本服务器地址发送给其中转服务器。",
+          "repair": "另一端使用旧地址：恢复后请在那里导入此隧道的新配对码。"
+        },
+        "issues": {
+          "newerVersion": "此备份由 Manifold {version} 生成，比本面板（{current}）更新。请先更新面板。",
+          "edition": "备份来自 {backup} 版，本面板为 {current} 版；本版不运行的内容会保存但不使用。",
+          "backpackMissing": "隧道 {tunnel} 需要本安装缺少的 BackPack 程序：请先重新安装或更新 Manifold。",
+          "tunnelLocalAddr": "隧道 {tunnel} 原绑定的 {address} 本服务器没有；将改用路由选择的地址。",
+          "listenMissing": "入站 {inbound} 原监听的 {address} 本服务器没有；将改为监听所有地址。",
+          "portBusy": "入站 {inbound} 的端口 {port} 被本服务器上其他程序占用；请先释放。",
+          "engineMissing": "{command} 未安装，入站 {inbounds} 需要它：请重新运行安装程序或安装它。"
+        }
+      }
     },
     "inbounds": {
       "totalDownUp": "总上传 / 下载",

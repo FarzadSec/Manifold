@@ -409,6 +409,13 @@ export interface ApiTokenView {
   token?: string;
 }
 
+export interface BackupFile {
+  exists: boolean;
+  mode: number;
+  path: string;
+  sha256: string;
+}
+
 export interface Blocker {
   code: BlockerCode;
   detail?: string;
@@ -823,6 +830,41 @@ export interface MLDSA65Response {
 export interface MLKEM768Response {
   client: string;
   seed: string;
+}
+
+export interface MigrationAddress {
+  address: string;
+  points?: string[];
+  status: string;
+  usedBy: string[];
+}
+
+export interface MigrationIssue {
+  code: string;
+  level: string;
+  params: Record<string, string>;
+}
+
+export interface MigrationReport {
+  addressChanged: boolean;
+  addresses: MigrationAddress[];
+  clients: number;
+  createdAt: number;
+  files: BackupFile[];
+  inbounds: number;
+  issues: MigrationIssue[];
+  restored: boolean;
+  sourceAddress: string;
+  sourceVersion: string;
+  thisAddress: string;
+  tunnels: MigrationTunnel[];
+}
+
+export interface MigrationTunnel {
+  action: string;
+  kind: string;
+  name: string;
+  role: string;
 }
 
 export interface Msg {
