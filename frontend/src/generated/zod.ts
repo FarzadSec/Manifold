@@ -18,6 +18,9 @@ export type Protocol = z.infer<typeof ProtocolSchema>;
 export const addrFamilySchema = z.number().int();
 export type addrFamily = z.infer<typeof addrFamilySchema>;
 
+export const resellerTargetSchema = z.number().int();
+export type resellerTarget = z.infer<typeof resellerTargetSchema>;
+
 export const staticEgressResolverSchema = z.string();
 export type staticEgressResolver = z.infer<typeof staticEgressResolverSchema>;
 
@@ -26,6 +29,66 @@ export type trafficLocalApplyAction = z.infer<typeof trafficLocalApplyActionSche
 
 export const transportBitsSchema = z.number().int();
 export type transportBits = z.infer<typeof transportBitsSchema>;
+
+export const AdminInputSchema = z.object({
+  allowedInboundIds: z.array(z.number().int()),
+  allowedPlanIds: z.array(z.number().int()),
+  brandAnnounce: z.string(),
+  brandSupportUrl: z.string(),
+  brandTitle: z.string(),
+  expiresAt: z.number().int(),
+  inboundsLimited: z.boolean(),
+  maxUsers: z.number().int(),
+  mayEditUsers: z.boolean(),
+  password: z.string(),
+  plansOnly: z.boolean(),
+  remark: z.string(),
+  resetCycle: z.string(),
+  resetDay: z.number().int(),
+  resetMonth: z.number().int(),
+  roleId: z.number().int(),
+  subDomain: z.string(),
+  tier: z.string(),
+  username: z.string(),
+  volumeBytes: z.number().int(),
+});
+export type AdminInput = z.infer<typeof AdminInputSchema>;
+
+export const AdminViewSchema = z.object({
+  allowedInboundIds: z.array(z.number().int()),
+  allowedPlanIds: z.array(z.number().int()),
+  brandAnnounce: z.string(),
+  brandSupportUrl: z.string(),
+  brandTitle: z.string(),
+  createdAt: z.number().int(),
+  cycleStart: z.number().int(),
+  cycleUsed: z.number().int(),
+  expiresAt: z.number().int(),
+  id: z.number().int(),
+  inboundsLimited: z.boolean(),
+  isOwner: z.boolean(),
+  lastLoginAt: z.number().int(),
+  lastLoginIp: z.string(),
+  maxUsers: z.number().int(),
+  mayEditUsers: z.boolean(),
+  ownedUsers: z.number().int(),
+  password: z.string(),
+  plansOnly: z.boolean(),
+  remark: z.string(),
+  resetCycle: z.string(),
+  resetDay: z.number().int(),
+  resetMonth: z.number().int(),
+  roleId: z.number().int(),
+  roleName: z.string(),
+  subDomain: z.string(),
+  suspended: z.string(),
+  tier: z.string(),
+  totalUsed: z.number().int(),
+  twoFactorEnabled: z.boolean(),
+  username: z.string(),
+  volumeBytes: z.number().int(),
+});
+export type AdminView = z.infer<typeof AdminViewSchema>;
 
 export const AllSettingSchema = z.object({
   datepicker: z.string(),
@@ -416,8 +479,12 @@ export const ApiTokenSchema = z.object({
   expiresAt: z.number().int(),
   id: z.number().int(),
   name: z.string(),
+  permissions: z.array(z.string()),
+  rateLimit: z.number().int(),
   scope: z.string(),
+  tier: z.string(),
   token: z.string(),
+  userId: z.number().int(),
 });
 export type ApiToken = z.infer<typeof ApiTokenSchema>;
 
@@ -427,10 +494,40 @@ export const ApiTokenViewSchema = z.object({
   expiresAt: z.number().int(),
   id: z.number().int(),
   name: z.string(),
+  permissions: z.array(z.string()),
+  rateLimit: z.number().int(),
   scope: z.string(),
+  tier: z.string(),
   token: z.string().optional(),
+  userId: z.number().int(),
+  username: z.string(),
 });
 export type ApiTokenView = z.infer<typeof ApiTokenViewSchema>;
+
+export const AuditEntrySchema = z.object({
+  action: z.string(),
+  at: z.number().int(),
+  detail: z.string(),
+  entity: z.string(),
+  id: z.number().int(),
+  ip: z.string(),
+  target: z.string(),
+  userId: z.number().int(),
+  username: z.string(),
+});
+export type AuditEntry = z.infer<typeof AuditEntrySchema>;
+
+export const AuditPageSchema = z.object({
+  items: z.array(z.lazy(() => AuditEntrySchema)),
+  total: z.number().int(),
+});
+export type AuditPage = z.infer<typeof AuditPageSchema>;
+
+export const AuditSettingsSchema = z.object({
+  enabled: z.boolean(),
+  retentionDays: z.number().int(),
+});
+export type AuditSettings = z.infer<typeof AuditSettingsSchema>;
 
 export const BackupFileSchema = z.object({
   exists: z.boolean(),
@@ -519,6 +616,7 @@ export const ClientRecordSchema = z.object({
   keepAlive: z.union([z.number().int(), z.string()]),
   limitHwid: z.number().int(),
   limitIp: z.number().int(),
+  ownerId: z.number().int(),
   password: z.string(),
   preSharedKey: z.string(),
   privateKey: z.string(),
@@ -888,6 +986,29 @@ export const MLKEM768ResponseSchema = z.object({
 });
 export type MLKEM768Response = z.infer<typeof MLKEM768ResponseSchema>;
 
+export const MeViewSchema = z.object({
+  catalogue: z.array(z.string()),
+  cycleStart: z.number().int(),
+  cycleUsed: z.number().int(),
+  expiresAt: z.number().int(),
+  id: z.number().int(),
+  isOwner: z.boolean(),
+  maxUsers: z.number().int(),
+  mayEditUsers: z.boolean(),
+  ownedUsers: z.number().int(),
+  permissions: z.array(z.string()),
+  plansOnly: z.boolean(),
+  resetCycle: z.string(),
+  roleName: z.string(),
+  suspended: z.string(),
+  tier: z.string(),
+  tierCeilings: z.record(z.string(), z.array(z.string())),
+  twoFactorEnabled: z.boolean(),
+  username: z.string(),
+  volumeBytes: z.number().int(),
+});
+export type MeView = z.infer<typeof MeViewSchema>;
+
 export const MigrationAddressSchema = z.object({
   address: z.string(),
   points: z.array(z.string()).optional(),
@@ -1100,6 +1221,28 @@ export const PeerActivitySchema = z.object({
 });
 export type PeerActivity = z.infer<typeof PeerActivitySchema>;
 
+export const PlanSchema = z.object({
+  allInbounds: z.boolean(),
+  createdAt: z.number().int(),
+  days: z.number().int(),
+  description: z.string(),
+  group: z.string(),
+  id: z.number().int(),
+  inboundIds: z.array(z.number().int()),
+  limitHwid: z.number().int(),
+  limitIp: z.number().int(),
+  name: z.string(),
+  namePrefix: z.string(),
+  nameSuffix: z.string(),
+  reset: z.number().int(),
+  sortOrder: z.number().int(),
+  startOnFirstUse: z.boolean(),
+  totalBytes: z.number().int(),
+  trafficReset: z.string(),
+  trafficResetDay: z.number().int(),
+});
+export type Plan = z.infer<typeof PlanSchema>;
+
 export const PortForwardSchema = z.object({
   listen: z.string(),
   proto: z.string().optional(),
@@ -1153,6 +1296,19 @@ export const RealityScanResultSchema = z.object({
   x25519: z.boolean(),
 });
 export type RealityScanResult = z.infer<typeof RealityScanResultSchema>;
+
+export const RoleSchema = z.object({
+  createdAt: z.number().int(),
+  description: z.string(),
+  id: z.number().int(),
+  maxDevicesPerUser: z.number().int(),
+  maxPlanDays: z.number().int(),
+  maxUsersPerAccount: z.number().int(),
+  name: z.string(),
+  permissions: z.array(z.string()),
+  tier: z.string(),
+});
+export type Role = z.infer<typeof RoleSchema>;
 
 export const ServerSettingsSchema = z.object({
   contentPaddingAddition: z.string().optional(),
@@ -1336,10 +1492,43 @@ export const TunnelViewSchema = z.object({
 });
 export type TunnelView = z.infer<typeof TunnelViewSchema>;
 
+export const TwoFactorSetupViewSchema = z.object({
+  secret: z.string(),
+  uri: z.string(),
+});
+export type TwoFactorSetupView = z.infer<typeof TwoFactorSetupViewSchema>;
+
 export const UserSchema = z.object({
+  allowedInboundIds: z.array(z.number().int()),
+  allowedPlanIds: z.array(z.number().int()),
+  brandAnnounce: z.string(),
+  brandSupportUrl: z.string(),
+  brandTitle: z.string(),
+  createdAt: z.number().int(),
+  cycleStart: z.number().int(),
+  cycleUsed: z.number().int(),
+  expiresAt: z.number().int(),
   id: z.number().int(),
+  inboundsLimited: z.boolean(),
+  isOwner: z.boolean(),
+  lastLoginAt: z.number().int(),
+  lastLoginIp: z.string(),
+  maxUsers: z.number().int(),
+  mayEditUsers: z.boolean(),
   password: z.string(),
+  plansOnly: z.boolean(),
+  remark: z.string(),
+  resetCycle: z.string(),
+  resetDay: z.number().int(),
+  resetMonth: z.number().int(),
+  roleId: z.number().int(),
+  subDomain: z.string(),
+  suspended: z.string(),
+  tier: z.string(),
+  totalUsed: z.number().int(),
+  twoFactorEnabled: z.boolean(),
   username: z.string(),
+  volumeBytes: z.number().int(),
 });
 export type User = z.infer<typeof UserSchema>;
 

@@ -12,6 +12,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/access"
 )
 
@@ -170,6 +171,12 @@ func (s *ResellerService) enforceOne(db *gorm.DB, inboundSvc *InboundService, r 
 	return db.Model(&model.User{}).Where("id = ?", r.Id).Update("suspended", want).Error
 }
 
+// RestoreUsers switches back on the users a reseller's suspension switched off, when the
+// account stops being a reseller.
+func (s *ResellerService) RestoreUsers(inboundSvc *InboundService, ownerID int) error {
+	return s.restoreUsers(database.GetDB(), inboundSvc, ownerID)
+}
+
 // restoreUsers switches back on the users a reseller's suspension switched off.
 func (s *ResellerService) restoreUsers(db *gorm.DB, inboundSvc *InboundService, ownerID int) error {
 	var emails []string
@@ -222,6 +229,10 @@ func NotOwned(ownerID int, emails []string) ([]string, error) {
 
 // OwnedEmailSet is every email the account owns, lower-cased, for filtering lists.
 func OwnedEmailSet(ownerID int) (map[string]bool, error) {
+	return ownedEmailsOf(ownerID)
+}
+
+func ownedEmailsOf(ownerID int) (map[string]bool, error) {
 	var emails []string
 	if err := database.GetDB().Model(&model.ClientRecord{}).Where("owner_id = ?", ownerID).
 		Pluck("LOWER(email)", &emails).Error; err != nil {
@@ -252,4 +263,42 @@ func SetOwner(emails []string, ownerID int) error {
 	}
 	return database.GetDB().Model(&model.ClientRecord{}).Where("LOWER(email) IN ?", lower).
 		Updates(map[string]any{"owner_id": ownerID, "owner_suspended": false}).Error
+}
+
+// ChangeOwner hands users to another account (0 is the panel); a reseller's user limit is
+// checked once for the whole selection, and a suspended reseller takes no users.
+func (s *ClientService) ChangeOwner(inboundSvc *InboundService, emails []string, ownerID int) error {
+	clean := trimmedUniqueEmails(emails)
+	if len(clean) == 0 {
+		return common.NewError("no users selected")
+	}
+	if ownerID > 0 {
+		var acc model.User
+		if err := database.GetDB().First(&acc, ownerID).Error; err != nil {
+			return common.NewError("the chosen owner does not exist")
+		}
+		if acc.Tier == access.TierReseller {
+			already, err := NotOwned(ownerID, clean)
+			if err != nil {
+				return err
+			}
+			if err := checkOwnerRoom(acc, len(already)); err != nil {
+				return err
+			}
+			if acc.Suspended != "" {
+				return common.NewError("that reseller's allowance is used up")
+			}
+		}
+	}
+	var suspended []string
+	if err := database.GetDB().Model(&model.ClientRecord{}).Where("email IN ? AND owner_suspended = ?", clean, true).
+		Pluck("email", &suspended).Error; err != nil {
+		return err
+	}
+	if len(suspended) > 0 {
+		if _, _, err := s.BulkSetEnable(inboundSvc, suspended, true); err != nil {
+			return err
+		}
+	}
+	return SetOwner(clean, ownerID)
 }

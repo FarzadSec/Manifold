@@ -36,6 +36,8 @@ var routeRules = map[string]Rule{
 	key("POST", "/access/plans/del/:id"):          need(PlansWrite),
 	key("GET", "/access/audit"):                   need(AuditRead),
 	key("POST", "/access/audit/clear"):            need(AuditRead),
+	key("GET", "/access/audit/settings"):          need(AuditRead),
+	key("POST", "/access/audit/settings"):         need(AuditRead),
 
 	key("GET", "/clients/list"):                  need(UsersRead),
 	key("GET", "/clients/list/paged"):            need(UsersRead),
@@ -50,7 +52,7 @@ var routeRules = map[string]Rule{
 	key("POST", "/clients/hwids/:email"):         need(UsersRead),
 	key("POST", "/clients/onlines"):              need(UsersRead),
 	key("POST", "/clients/lastOnline"):           need(UsersRead),
-	key("POST", "/clients/activeInbounds"):       need(UsersRead),
+	key("POST", "/clients/activeInbounds"):       staff(UsersRead),
 	key("POST", "/clients/renewalPreview"):       need(UsersRead),
 	key("POST", "/clients/happLink/:id"):         need(UsersRead),
 	key("POST", "/clients/add"):                  need(UsersWrite),

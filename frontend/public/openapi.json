@@ -26,6 +26,277 @@
       }
     },
     "schemas": {
+      "AdminInput": {
+        "description": "AdminInput is what the Admins form sends; an empty password keeps the current one.",
+        "properties": {
+          "allowedInboundIds": {
+            "example": [
+              1
+            ],
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "allowedPlanIds": {
+            "example": [
+              1,
+              2
+            ],
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "brandAnnounce": {
+            "type": "string"
+          },
+          "brandSupportUrl": {
+            "type": "string"
+          },
+          "brandTitle": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
+          },
+          "inboundsLimited": {
+            "example": false,
+            "type": "boolean"
+          },
+          "maxUsers": {
+            "example": 100,
+            "type": "integer"
+          },
+          "mayEditUsers": {
+            "example": true,
+            "type": "boolean"
+          },
+          "password": {
+            "example": "long-password",
+            "type": "string"
+          },
+          "plansOnly": {
+            "example": false,
+            "type": "boolean"
+          },
+          "remark": {
+            "type": "string"
+          },
+          "resetCycle": {
+            "example": "monthly",
+            "type": "string"
+          },
+          "resetDay": {
+            "example": 1,
+            "type": "integer"
+          },
+          "resetMonth": {
+            "example": 0,
+            "type": "integer"
+          },
+          "roleId": {
+            "example": 0,
+            "type": "integer"
+          },
+          "subDomain": {
+            "example": "sub.example.com",
+            "type": "string"
+          },
+          "tier": {
+            "example": "reseller",
+            "type": "string"
+          },
+          "username": {
+            "example": "seller1",
+            "type": "string"
+          },
+          "volumeBytes": {
+            "example": 1099511627776,
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "allowedInboundIds",
+          "allowedPlanIds",
+          "brandAnnounce",
+          "brandSupportUrl",
+          "brandTitle",
+          "expiresAt",
+          "inboundsLimited",
+          "maxUsers",
+          "mayEditUsers",
+          "password",
+          "plansOnly",
+          "remark",
+          "resetCycle",
+          "resetDay",
+          "resetMonth",
+          "roleId",
+          "subDomain",
+          "tier",
+          "username",
+          "volumeBytes"
+        ],
+        "type": "object"
+      },
+      "AdminView": {
+        "description": "AdminView is an admin account as the Admins page shows it, without its secrets.",
+        "properties": {
+          "allowedInboundIds": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "allowedPlanIds": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "brandAnnounce": {
+            "type": "string"
+          },
+          "brandSupportUrl": {
+            "type": "string"
+          },
+          "brandTitle": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "cycleStart": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "cycleUsed": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "expiresAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "inboundsLimited": {
+            "type": "boolean"
+          },
+          "isOwner": {
+            "type": "boolean"
+          },
+          "lastLoginAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "lastLoginIp": {
+            "type": "string"
+          },
+          "maxUsers": {
+            "type": "integer"
+          },
+          "mayEditUsers": {
+            "type": "boolean"
+          },
+          "ownedUsers": {
+            "example": 12,
+            "format": "int64",
+            "type": "integer"
+          },
+          "password": {
+            "type": "string"
+          },
+          "plansOnly": {
+            "type": "boolean"
+          },
+          "remark": {
+            "type": "string"
+          },
+          "resetCycle": {
+            "type": "string"
+          },
+          "resetDay": {
+            "type": "integer"
+          },
+          "resetMonth": {
+            "type": "integer"
+          },
+          "roleId": {
+            "type": "integer"
+          },
+          "roleName": {
+            "example": "Reseller",
+            "type": "string"
+          },
+          "subDomain": {
+            "type": "string"
+          },
+          "suspended": {
+            "type": "string"
+          },
+          "tier": {
+            "description": "Tier is admin (main admin), operator or reseller; RoleId 0 is the tier's built-in role.",
+            "type": "string"
+          },
+          "totalUsed": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "twoFactorEnabled": {
+            "type": "boolean"
+          },
+          "username": {
+            "type": "string"
+          },
+          "volumeBytes": {
+            "description": "A reseller's allowance: traffic per cycle, account expiry and the users it may own.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "allowedInboundIds",
+          "allowedPlanIds",
+          "brandAnnounce",
+          "brandSupportUrl",
+          "brandTitle",
+          "createdAt",
+          "cycleStart",
+          "cycleUsed",
+          "expiresAt",
+          "id",
+          "inboundsLimited",
+          "isOwner",
+          "lastLoginAt",
+          "lastLoginIp",
+          "maxUsers",
+          "mayEditUsers",
+          "ownedUsers",
+          "password",
+          "plansOnly",
+          "remark",
+          "resetCycle",
+          "resetDay",
+          "resetMonth",
+          "roleId",
+          "roleName",
+          "subDomain",
+          "suspended",
+          "tier",
+          "totalUsed",
+          "twoFactorEnabled",
+          "username",
+          "volumeBytes"
+        ],
+        "type": "object"
+      },
       "AllSetting": {
         "properties": {
           "datepicker": {
@@ -1641,12 +1912,28 @@
           "name": {
             "type": "string"
           },
+          "permissions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "rateLimit": {
+            "type": "integer"
+          },
           "scope": {
+            "type": "string"
+          },
+          "tier": {
             "type": "string"
           },
           "token": {
             "description": "SHA-256 hash; the plaintext is shown only once at creation",
             "type": "string"
+          },
+          "userId": {
+            "description": "UserId is the account the token acts as (0 is the owner); Tier and Permissions narrow it further.",
+            "type": "integer"
           }
         },
         "required": [
@@ -1655,8 +1942,12 @@
           "expiresAt",
           "id",
           "name",
+          "permissions",
+          "rateLimit",
           "scope",
-          "token"
+          "tier",
+          "token",
+          "userId"
         ],
         "type": "object"
       },
@@ -1684,12 +1975,38 @@
             "example": "central-panel-a",
             "type": "string"
           },
+          "permissions": {
+            "example": [
+              "users:read"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "rateLimit": {
+            "example": 120,
+            "type": "integer"
+          },
           "scope": {
+            "example": "admin",
+            "type": "string"
+          },
+          "tier": {
             "example": "admin",
             "type": "string"
           },
           "token": {
             "example": "new-token-string",
+            "type": "string"
+          },
+          "userId": {
+            "description": "Acts-as account, tier and permissions narrow an admin-scope token; empty permissions mean no restriction.",
+            "example": 1,
+            "type": "integer"
+          },
+          "username": {
+            "example": "admin",
             "type": "string"
           }
         },
@@ -1699,7 +2016,103 @@
           "expiresAt",
           "id",
           "name",
-          "scope"
+          "permissions",
+          "rateLimit",
+          "scope",
+          "tier",
+          "userId",
+          "username"
+        ],
+        "type": "object"
+      },
+      "AuditEntry": {
+        "description": "AuditEntry records one admin action; secrets in Detail are redacted before it is stored.",
+        "properties": {
+          "action": {
+            "example": "update",
+            "type": "string"
+          },
+          "at": {
+            "example": 1700000000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "entity": {
+            "example": "users",
+            "type": "string"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "ip": {
+            "example": "203.0.113.5",
+            "type": "string"
+          },
+          "target": {
+            "example": "alice",
+            "type": "string"
+          },
+          "userId": {
+            "type": "integer"
+          },
+          "username": {
+            "example": "admin",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "at",
+          "detail",
+          "entity",
+          "id",
+          "ip",
+          "target",
+          "userId",
+          "username"
+        ],
+        "type": "object"
+      },
+      "AuditPage": {
+        "description": "AuditPage is one page of the log, newest first.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AuditEntry"
+            },
+            "type": "array"
+          },
+          "total": {
+            "example": 120,
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "type": "object"
+      },
+      "AuditSettings": {
+        "description": "AuditSettings is the change-logging switch and how long records are kept.",
+        "properties": {
+          "enabled": {
+            "example": false,
+            "type": "boolean"
+          },
+          "retentionDays": {
+            "example": 90,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "enabled",
+          "retentionDays"
         ],
         "type": "object"
       },
@@ -2080,6 +2493,10 @@
           "limitIp": {
             "type": "integer"
           },
+          "ownerId": {
+            "description": "OwnerId is the admin account the user belongs to; 0 is the panel (main admins).",
+            "type": "integer"
+          },
           "password": {
             "type": "string"
           },
@@ -2152,6 +2569,7 @@
           "keepAlive",
           "limitHwid",
           "limitIp",
+          "ownerId",
           "password",
           "preSharedKey",
           "privateKey",
@@ -3646,6 +4064,129 @@
         ],
         "type": "object"
       },
+      "MeView": {
+        "description": "MeView is the signed-in account: what it may reach and, for a reseller, its allowance.",
+        "properties": {
+          "catalogue": {
+            "description": "Catalogue and TierCeilings feed the role and token forms.",
+            "example": [
+              "users:read"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "cycleStart": {
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
+          },
+          "cycleUsed": {
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
+          },
+          "expiresAt": {
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "isOwner": {
+            "example": true,
+            "type": "boolean"
+          },
+          "maxUsers": {
+            "example": 0,
+            "type": "integer"
+          },
+          "mayEditUsers": {
+            "example": true,
+            "type": "boolean"
+          },
+          "ownedUsers": {
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
+          },
+          "permissions": {
+            "example": [
+              "users:read"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "plansOnly": {
+            "example": false,
+            "type": "boolean"
+          },
+          "resetCycle": {
+            "example": "none",
+            "type": "string"
+          },
+          "roleName": {
+            "example": "Main admin",
+            "type": "string"
+          },
+          "suspended": {
+            "type": "string"
+          },
+          "tier": {
+            "example": "admin",
+            "type": "string"
+          },
+          "tierCeilings": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "object"
+          },
+          "twoFactorEnabled": {
+            "example": false,
+            "type": "boolean"
+          },
+          "username": {
+            "example": "admin",
+            "type": "string"
+          },
+          "volumeBytes": {
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "catalogue",
+          "cycleStart",
+          "cycleUsed",
+          "expiresAt",
+          "id",
+          "isOwner",
+          "maxUsers",
+          "mayEditUsers",
+          "ownedUsers",
+          "permissions",
+          "plansOnly",
+          "resetCycle",
+          "roleName",
+          "suspended",
+          "tier",
+          "tierCeilings",
+          "twoFactorEnabled",
+          "username",
+          "volumeBytes"
+        ],
+        "type": "object"
+      },
       "MigrationAddress": {
         "description": "MigrationAddress is an address users' configs carry, and what a move does to it.",
         "properties": {
@@ -4581,6 +5122,95 @@
         ],
         "type": "object"
       },
+      "Plan": {
+        "description": "Plan is a preset a new user is created from; nothing links the user to it afterwards.",
+        "properties": {
+          "allInbounds": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "days": {
+            "example": 30,
+            "type": "integer"
+          },
+          "description": {
+            "type": "string"
+          },
+          "group": {
+            "type": "string"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "inboundIds": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "limitHwid": {
+            "type": "integer"
+          },
+          "limitIp": {
+            "type": "integer"
+          },
+          "name": {
+            "example": "30 days 50 GB",
+            "type": "string"
+          },
+          "namePrefix": {
+            "type": "string"
+          },
+          "nameSuffix": {
+            "type": "string"
+          },
+          "reset": {
+            "type": "integer"
+          },
+          "sortOrder": {
+            "type": "integer"
+          },
+          "startOnFirstUse": {
+            "type": "boolean"
+          },
+          "totalBytes": {
+            "example": 53687091200,
+            "format": "int64",
+            "type": "integer"
+          },
+          "trafficReset": {
+            "type": "string"
+          },
+          "trafficResetDay": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "allInbounds",
+          "createdAt",
+          "days",
+          "description",
+          "group",
+          "id",
+          "inboundIds",
+          "limitHwid",
+          "limitIp",
+          "name",
+          "namePrefix",
+          "nameSuffix",
+          "reset",
+          "sortOrder",
+          "startOnFirstUse",
+          "totalBytes",
+          "trafficReset",
+          "trafficResetDay"
+        ],
+        "type": "object"
+      },
       "PortForward": {
         "description": "PortForward is one port, or range, the server side exposes and sends to the client side.",
         "properties": {
@@ -4808,6 +5438,60 @@
           "tls13",
           "tlsVersion",
           "x25519"
+        ],
+        "type": "object"
+      },
+      "Role": {
+        "description": "Role narrows one tier: the permissions it keeps and the caps on what its accounts hand out.",
+        "properties": {
+          "createdAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "maxDevicesPerUser": {
+            "type": "integer"
+          },
+          "maxPlanDays": {
+            "type": "integer"
+          },
+          "maxUsersPerAccount": {
+            "type": "integer"
+          },
+          "name": {
+            "example": "Support",
+            "type": "string"
+          },
+          "permissions": {
+            "example": [
+              "users:read"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "tier": {
+            "example": "operator",
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "description",
+          "id",
+          "maxDevicesPerUser",
+          "maxPlanDays",
+          "maxUsersPerAccount",
+          "name",
+          "permissions",
+          "tier"
         ],
         "type": "object"
       },
@@ -5501,23 +6185,164 @@
         ],
         "type": "object"
       },
-      "User": {
-        "description": "User represents a user account in the 3x-ui panel.",
+      "TwoFactorSetupView": {
+        "description": "TwoFactorSetupView is a fresh secret for the account's authenticator app.",
         "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "password": {
+          "secret": {
+            "example": "JBSWY3DPEHPK3PXP",
             "type": "string"
           },
-          "username": {
+          "uri": {
+            "example": "otpauth://totp/Manifold:admin?secret=JBSWY3DPEHPK3PXP&issuer=Manifold",
             "type": "string"
           }
         },
         "required": [
+          "secret",
+          "uri"
+        ],
+        "type": "object"
+      },
+      "User": {
+        "description": "User represents a user account in the 3x-ui panel.",
+        "properties": {
+          "allowedInboundIds": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "allowedPlanIds": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "brandAnnounce": {
+            "type": "string"
+          },
+          "brandSupportUrl": {
+            "type": "string"
+          },
+          "brandTitle": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "cycleStart": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "cycleUsed": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "expiresAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "inboundsLimited": {
+            "type": "boolean"
+          },
+          "isOwner": {
+            "type": "boolean"
+          },
+          "lastLoginAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "lastLoginIp": {
+            "type": "string"
+          },
+          "maxUsers": {
+            "type": "integer"
+          },
+          "mayEditUsers": {
+            "type": "boolean"
+          },
+          "password": {
+            "type": "string"
+          },
+          "plansOnly": {
+            "type": "boolean"
+          },
+          "remark": {
+            "type": "string"
+          },
+          "resetCycle": {
+            "type": "string"
+          },
+          "resetDay": {
+            "type": "integer"
+          },
+          "resetMonth": {
+            "type": "integer"
+          },
+          "roleId": {
+            "type": "integer"
+          },
+          "subDomain": {
+            "type": "string"
+          },
+          "suspended": {
+            "type": "string"
+          },
+          "tier": {
+            "description": "Tier is admin (main admin), operator or reseller; RoleId 0 is the tier's built-in role.",
+            "type": "string"
+          },
+          "totalUsed": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "twoFactorEnabled": {
+            "type": "boolean"
+          },
+          "username": {
+            "type": "string"
+          },
+          "volumeBytes": {
+            "description": "A reseller's allowance: traffic per cycle, account expiry and the users it may own.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "allowedInboundIds",
+          "allowedPlanIds",
+          "brandAnnounce",
+          "brandSupportUrl",
+          "brandTitle",
+          "createdAt",
+          "cycleStart",
+          "cycleUsed",
+          "expiresAt",
           "id",
+          "inboundsLimited",
+          "isOwner",
+          "lastLoginAt",
+          "lastLoginIp",
+          "maxUsers",
+          "mayEditUsers",
           "password",
-          "username"
+          "plansOnly",
+          "remark",
+          "resetCycle",
+          "resetDay",
+          "resetMonth",
+          "roleId",
+          "subDomain",
+          "suspended",
+          "tier",
+          "totalUsed",
+          "twoFactorEnabled",
+          "username",
+          "volumeBytes"
         ],
         "type": "object"
       },
@@ -5719,6 +6544,10 @@
     {
       "name": "Tunnels",
       "description": "Tunnels between this server and another: kernel GRE, GRETAP, IP6GRE, IP6GRETAP, IPIP and SIT links, and BackPack reverse and layer-3 tunnels. The client end runs on the panel that serves the accounts, the server end on the relay users connect to, which forwards its ports to the client end. A relay is another Manifold, usually the tunnel edition, reached with an API token of the tunnel scope. All endpoints under /panel/api/tunnels."
+    },
+    {
+      "name": "Access",
+      "description": "Admin accounts, custom roles, plans and the audit log. Accounts sit on a tier (main admin, operator, reseller); a reseller works only on the users it owns, inside its allowance. All endpoints under /panel/api/access."
     },
     {
       "name": "Hosts",
@@ -14471,6 +15300,1270 @@
         }
       }
     },
+    "/panel/api/access/me": {
+      "get": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "The signed-in account or token: its tier, permissions and, for a reseller, its allowance and how much of it is used.",
+        "operationId": "get_panel_api_access_me",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/MeView"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "catalogue": [
+                      "users:read"
+                    ],
+                    "cycleStart": 0,
+                    "cycleUsed": 0,
+                    "expiresAt": 0,
+                    "id": 1,
+                    "isOwner": true,
+                    "maxUsers": 0,
+                    "mayEditUsers": true,
+                    "ownedUsers": 0,
+                    "permissions": [
+                      "users:read"
+                    ],
+                    "plansOnly": false,
+                    "resetCycle": "none",
+                    "roleName": "Main admin",
+                    "suspended": "",
+                    "tier": "admin",
+                    "tierCeilings": {},
+                    "twoFactorEnabled": false,
+                    "username": "admin",
+                    "volumeBytes": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access/me/twoFactor": {
+      "get": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "A new secret and otpauth address for the account's authenticator app.",
+        "operationId": "get_panel_api_access_me_twoFactor",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/TwoFactorSetupView"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "secret": "JBSWY3DPEHPK3PXP",
+                    "uri": "otpauth://totp/Manifold:admin?secret=JBSWY3DPEHPK3PXP&issuer=Manifold"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "Turn the account's own two-factor on with the new secret and a code from it, or off with a current code.",
+        "operationId": "post_panel_api_access_me_twoFactor",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "enable": true,
+                "secret": "JBSWY3DPEHPK3PXP",
+                "code": "123456"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access/admins": {
+      "get": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "List every admin account, the owner first, with how many users each owns.",
+        "operationId": "get_panel_api_access_admins",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AdminView"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "allowedInboundIds": [
+                        0
+                      ],
+                      "allowedPlanIds": [
+                        0
+                      ],
+                      "brandAnnounce": "",
+                      "brandSupportUrl": "",
+                      "brandTitle": "",
+                      "createdAt": 0,
+                      "cycleStart": 0,
+                      "cycleUsed": 0,
+                      "expiresAt": 0,
+                      "id": 0,
+                      "inboundsLimited": false,
+                      "isOwner": false,
+                      "lastLoginAt": 0,
+                      "lastLoginIp": "",
+                      "maxUsers": 0,
+                      "mayEditUsers": false,
+                      "ownedUsers": 12,
+                      "password": "",
+                      "plansOnly": false,
+                      "remark": "",
+                      "resetCycle": "",
+                      "resetDay": 0,
+                      "resetMonth": 0,
+                      "roleId": 0,
+                      "roleName": "Reseller",
+                      "subDomain": "",
+                      "suspended": "",
+                      "tier": "",
+                      "totalUsed": 0,
+                      "twoFactorEnabled": false,
+                      "username": "",
+                      "volumeBytes": 0
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access/admins/add": {
+      "post": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "Create an admin account. A reseller also takes its allowance.",
+        "operationId": "post_panel_api_access_admins_add",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "username": "seller1",
+                "password": "a-long-password",
+                "tier": "reseller",
+                "volumeBytes": 1099511627776,
+                "resetCycle": "monthly",
+                "resetDay": 1,
+                "maxUsers": 100,
+                "mayEditUsers": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/AdminView"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "allowedInboundIds": [
+                      0
+                    ],
+                    "allowedPlanIds": [
+                      0
+                    ],
+                    "brandAnnounce": "",
+                    "brandSupportUrl": "",
+                    "brandTitle": "",
+                    "createdAt": 0,
+                    "cycleStart": 0,
+                    "cycleUsed": 0,
+                    "expiresAt": 0,
+                    "id": 0,
+                    "inboundsLimited": false,
+                    "isOwner": false,
+                    "lastLoginAt": 0,
+                    "lastLoginIp": "",
+                    "maxUsers": 0,
+                    "mayEditUsers": false,
+                    "ownedUsers": 12,
+                    "password": "",
+                    "plansOnly": false,
+                    "remark": "",
+                    "resetCycle": "",
+                    "resetDay": 0,
+                    "resetMonth": 0,
+                    "roleId": 0,
+                    "roleName": "Reseller",
+                    "subDomain": "",
+                    "suspended": "",
+                    "tier": "",
+                    "totalUsed": 0,
+                    "twoFactorEnabled": false,
+                    "username": "",
+                    "volumeBytes": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access/admins/update/{id}": {
+      "post": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "Change an account. An empty password keeps the current one; a new tier, role or password ends the account's sessions.",
+        "operationId": "post_panel_api_access_admins_update_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Account ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "username": "seller1",
+                "password": "",
+                "tier": "reseller",
+                "volumeBytes": 2199023255552
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access/admins/del/{id}": {
+      "post": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "Delete an account. Its users pass to the panel and keep working; its API tokens are deleted.",
+        "operationId": "post_panel_api_access_admins_del_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Account ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access/admins/endSessions/{id}": {
+      "post": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "Sign an account out everywhere.",
+        "operationId": "post_panel_api_access_admins_endSessions_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Account ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access/admins/handover/{id}": {
+      "post": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "Make another main admin the panel's owner. Only the owner may, from its own login, not with a token.",
+        "operationId": "post_panel_api_access_admins_handover_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Account ID of the new owner.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access/roles": {
+      "get": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "List the custom roles. The three built-in roles are not stored.",
+        "operationId": "get_panel_api_access_roles",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Role"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "createdAt": 0,
+                      "description": "",
+                      "id": 1,
+                      "maxDevicesPerUser": 0,
+                      "maxPlanDays": 0,
+                      "maxUsersPerAccount": 0,
+                      "name": "Support",
+                      "permissions": [
+                        "users:read"
+                      ],
+                      "tier": "operator"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access/roles/add": {
+      "post": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "Create a custom role: a tier, the permissions it keeps and its limits.",
+        "operationId": "post_panel_api_access_roles_add",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "Support",
+                "tier": "operator",
+                "permissions": [
+                  "users:read"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/Role"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "createdAt": 0,
+                    "description": "",
+                    "id": 1,
+                    "maxDevicesPerUser": 0,
+                    "maxPlanDays": 0,
+                    "maxUsersPerAccount": 0,
+                    "name": "Support",
+                    "permissions": [
+                      "users:read"
+                    ],
+                    "tier": "operator"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access/roles/update/{id}": {
+      "post": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "Change a custom role; every account on it signs in again with the role's new reach.",
+        "operationId": "post_panel_api_access_roles_update_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Role ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "Support",
+                "tier": "operator",
+                "permissions": [
+                  "users:read",
+                  "users:write"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/Role"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "createdAt": 0,
+                    "description": "",
+                    "id": 1,
+                    "maxDevicesPerUser": 0,
+                    "maxPlanDays": 0,
+                    "maxUsersPerAccount": 0,
+                    "name": "Support",
+                    "permissions": [
+                      "users:read"
+                    ],
+                    "tier": "operator"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access/roles/del/{id}": {
+      "post": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "Delete a custom role no account holds.",
+        "operationId": "post_panel_api_access_roles_del_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Role ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access/plans": {
+      "get": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "List the plans. A reseller that sells from plans only sees just the plans it may sell.",
+        "operationId": "get_panel_api_access_plans",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Plan"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "allInbounds": false,
+                      "createdAt": 0,
+                      "days": 30,
+                      "description": "",
+                      "group": "",
+                      "id": 1,
+                      "inboundIds": [
+                        0
+                      ],
+                      "limitHwid": 0,
+                      "limitIp": 0,
+                      "name": "30 days 50 GB",
+                      "namePrefix": "",
+                      "nameSuffix": "",
+                      "reset": 0,
+                      "sortOrder": 0,
+                      "startOnFirstUse": false,
+                      "totalBytes": 53687091200,
+                      "trafficReset": "",
+                      "trafficResetDay": 0
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access/plans/add": {
+      "post": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "Create a plan new users can be created from.",
+        "operationId": "post_panel_api_access_plans_add",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "30 days 50 GB",
+                "totalBytes": 53687091200,
+                "days": 30,
+                "startOnFirstUse": true,
+                "limitIp": 2,
+                "allInbounds": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/Plan"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "allInbounds": false,
+                    "createdAt": 0,
+                    "days": 30,
+                    "description": "",
+                    "group": "",
+                    "id": 1,
+                    "inboundIds": [
+                      0
+                    ],
+                    "limitHwid": 0,
+                    "limitIp": 0,
+                    "name": "30 days 50 GB",
+                    "namePrefix": "",
+                    "nameSuffix": "",
+                    "reset": 0,
+                    "sortOrder": 0,
+                    "startOnFirstUse": false,
+                    "totalBytes": 53687091200,
+                    "trafficReset": "",
+                    "trafficResetDay": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access/plans/update/{id}": {
+      "post": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "Change a plan. Users created from it keep the limits they were given.",
+        "operationId": "post_panel_api_access_plans_update_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Plan ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "30 days 50 GB",
+                "totalBytes": 53687091200,
+                "days": 30
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/Plan"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "allInbounds": false,
+                    "createdAt": 0,
+                    "days": 30,
+                    "description": "",
+                    "group": "",
+                    "id": 1,
+                    "inboundIds": [
+                      0
+                    ],
+                    "limitHwid": 0,
+                    "limitIp": 0,
+                    "name": "30 days 50 GB",
+                    "namePrefix": "",
+                    "nameSuffix": "",
+                    "reset": 0,
+                    "sortOrder": 0,
+                    "startOnFirstUse": false,
+                    "totalBytes": 53687091200,
+                    "trafficReset": "",
+                    "trafficResetDay": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access/plans/del/{id}": {
+      "post": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "Delete a plan. Users created from it keep every limit they were given.",
+        "operationId": "post_panel_api_access_plans_del_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Plan ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access/audit": {
+      "get": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "One page of the audit log, newest first.",
+        "operationId": "get_panel_api_access_audit",
+        "parameters": [
+          {
+            "name": "admin",
+            "in": "query",
+            "required": false,
+            "description": "Only this username.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entity",
+            "in": "query",
+            "required": false,
+            "description": "Only this entity, such as users.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "description": "Only this action, such as delete.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "Unix ms, inclusive.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "Unix ms, inclusive.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Page number, from 1.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "description": "Up to 200; 50 by default.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/AuditPage"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "items": [
+                      {
+                        "action": "update",
+                        "at": 1700000000000,
+                        "detail": "",
+                        "entity": "users",
+                        "id": 1,
+                        "ip": "203.0.113.5",
+                        "target": "alice",
+                        "userId": 0,
+                        "username": "admin"
+                      }
+                    ],
+                    "total": 120
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access/audit/clear": {
+      "post": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "Delete every audit entry. The clearing becomes the first entry of the new log.",
+        "operationId": "post_panel_api_access_audit_clear",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access/audit/settings": {
+      "get": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "Whether admin changes are logged, and how many days entries are kept.",
+        "operationId": "get_panel_api_access_audit_settings",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/AuditSettings"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "enabled": false,
+                    "retentionDays": 90
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "Switch change logging and set the retention; 0 days keeps everything.",
+        "operationId": "post_panel_api_access_audit_settings",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "enabled": true,
+                "retentionDays": 90
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/clients/changeOwner": {
+      "post": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "Hand users to another account (0 is the panel). A reseller's user limit is checked once for the whole selection.",
+        "operationId": "post_panel_api_clients_changeOwner",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "emails": [
+                  "alice",
+                  "bob"
+                ],
+                "ownerId": 3
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/hosts/list": {
       "get": {
         "tags": [
@@ -16087,8 +18180,15 @@
                     "expiresAt": 0,
                     "id": 2,
                     "name": "central-panel-a",
+                    "permissions": [
+                      "users:read"
+                    ],
+                    "rateLimit": 120,
                     "scope": "admin",
-                    "token": "new-token-string"
+                    "tier": "admin",
+                    "token": "new-token-string",
+                    "userId": 1,
+                    "username": "admin"
                   }
                 }
               }

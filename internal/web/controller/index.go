@@ -5,7 +5,10 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/database"
+	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/access"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/middleware"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/panel"
@@ -100,8 +103,14 @@ func (a *IndexController) login(c *gin.Context) {
 	}
 
 	user, checkErr := a.userService.CheckUser(form.Username, form.Password, form.TwoFactorCode)
-
+	if user != nil {
+		if _, err := access.Resolve(user); err != nil {
+			pureJsonMsg(c, http.StatusOK, false, I18nWeb(c, "pages.login.toasts.accountExpired"))
+			return
+		}
+	}
 	if user == nil {
+		auditSvc.Record(model.AuditEntry{Entity: "admins", Action: service.AuditLoginFailed, Username: form.Username, Ip: remoteIP})
 		reason := loginFailureReason(checkErr)
 		if blockedUntil, blocked := defaultLoginLimiter.registerFailure(remoteIP, form.Username); blocked {
 			logger.Warningf("failed login: username=%q, IP=%q, reason=%q, blocked_until=%s", form.Username, remoteIP, reason, blockedUntil.Format(time.RFC3339))
@@ -120,6 +129,13 @@ func (a *IndexController) login(c *gin.Context) {
 	}
 
 	defaultLoginLimiter.registerSuccess(remoteIP, form.Username)
+	loginAction := service.AuditLogin
+	if !auditSvc.SeenLoginIP(user.Id, remoteIP) {
+		loginAction = service.AuditLoginNewIP
+	}
+	auditSvc.Record(model.AuditEntry{UserId: user.Id, Username: user.Username, Entity: "admins", Action: loginAction, Ip: remoteIP})
+	_ = database.GetDB().Model(&model.User{}).Where("id = ?", user.Id).
+		Updates(map[string]any{"last_login_at": time.Now().UnixMilli(), "last_login_ip": remoteIP}).Error
 	logger.Infof("logged in successfully: username=%q, IP=%q", form.Username, remoteIP)
 	a.tgbot.UserLoginNotify(tgbot.LoginAttempt{
 		Username: safeUser,

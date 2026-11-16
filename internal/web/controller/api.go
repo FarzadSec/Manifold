@@ -69,7 +69,7 @@ func (a *APIController) checkAPIAuth(c *gin.Context) {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"success": false, "msg": err.Error()})
 			return
 		}
-		if token.Scope == model.ApiScopeAdmin && !defaultTokenLimiter.allow(token.Id, token.RateLimit) {
+		if token.Scope == model.ApiScopeAdmin && !defaultTokenLimiter.allow(token.Token, token.RateLimit) {
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"success": false, "msg": "too many requests for this API token"})
 			return
 		}
@@ -257,6 +257,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	api.Use(a.checkAPIAuth)
 	api.Use(a.enforceTokenScope)
 	api.Use(a.enforceAccess)
+	api.Use(auditChanges)
 	// Decode + verify the node config envelope (zstd + X-Config-Sha256) and
 	// advertise support, before CSRF/handlers read the body.
 	api.Use(middleware.ConfigEnvelopeMiddleware())
@@ -285,6 +286,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	a.hostController = NewHostController(hosts)
 
 	NewTunnelController(api.Group("/tunnels"))
+	NewAccessController(api.Group("/access"))
 
 	// Settings + Xray config management live under the API surface too, so the
 	// same API token drives them. Paths are /panel/api/setting/* and

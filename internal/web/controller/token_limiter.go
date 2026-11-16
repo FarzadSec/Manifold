@@ -11,7 +11,7 @@ import (
 type tokenLimiter struct {
 	mu      sync.Mutex
 	now     func() time.Time
-	windows map[int]*tokenWindow
+	windows map[string]*tokenWindow
 }
 
 type tokenWindow struct {
@@ -19,18 +19,19 @@ type tokenWindow struct {
 	count int
 }
 
-var defaultTokenLimiter = &tokenLimiter{now: time.Now, windows: map[int]*tokenWindow{}}
+var defaultTokenLimiter = &tokenLimiter{now: time.Now, windows: map[string]*tokenWindow{}}
 
-func (l *tokenLimiter) allow(tokenID, perMinute int) bool {
+// allow is keyed by the token's hash, which no other token can ever share, unlike a row id.
+func (l *tokenLimiter) allow(tokenHash string, perMinute int) bool {
 	if perMinute <= 0 {
 		perMinute = panel.DefaultTokenRateLimit
 	}
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	now := l.now()
-	w := l.windows[tokenID]
+	w := l.windows[tokenHash]
 	if w == nil || now.Sub(w.start) >= time.Minute {
-		l.windows[tokenID] = &tokenWindow{start: now, count: 1}
+		l.windows[tokenHash] = &tokenWindow{start: now, count: 1}
 		return true
 	}
 	if w.count >= perMinute {

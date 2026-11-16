@@ -63,6 +63,23 @@ type ClientPageParams struct {
 	HasTgID    string `form:"hasTgId"`
 	HasComment string `form:"hasComment"`
 	Group      string `form:"group"`
+	// Owner filters by owning account: "panel" or an account id; ScopeOwner forces one for a reseller.
+	Owner      string `form:"owner"`
+	ScopeOwner *int   `form:"-" json:"-"`
+}
+
+func (p ClientPageParams) ownerScope() *int {
+	if p.ScopeOwner != nil {
+		return p.ScopeOwner
+	}
+	if p.Owner == "panel" {
+		zero := 0
+		return &zero
+	}
+	if id, err := strconv.Atoi(p.Owner); err == nil && id > 0 {
+		return &id
+	}
+	return nil
 }
 
 // ClientPageResponse is the shape returned by ListPaged. `Total` is the
@@ -164,6 +181,7 @@ func clientSearchCond(variants []string) (string, []any) {
 // 5 seconds, which is what made the table feel stuck on large panels.
 type clientQuery struct {
 	db               *gorm.DB
+	owner            *int
 	joins            []clientQueryJoin
 	usedExpr         string
 	nowMs            int64
@@ -209,6 +227,9 @@ func (q clientQuery) from() *gorm.DB {
 	tx := q.db.Table("clients AS c")
 	for _, j := range q.joins {
 		tx = tx.Joins(j.sql, j.args...)
+	}
+	if q.owner != nil {
+		tx = tx.Where("c.owner_id = ?", *q.owner)
 	}
 	return tx
 }
@@ -397,9 +418,19 @@ func (s *ClientService) ListPaged(inboundSvc *InboundService, settingSvc *Settin
 
 	onlines := inboundSvc.GetOnlineClients()
 	q := newClientQuery(db, time.Now().UnixMilli(), expireDiffMs, trafficDiffBytes)
+	q.owner = params.ownerScope()
 
 	var total int64
-	if err := db.Model(&model.ClientRecord{}).Count(&total).Error; err != nil {
+	totalQ := db.Model(&model.ClientRecord{})
+	if q.owner != nil {
+		totalQ = totalQ.Where("owner_id = ?", *q.owner)
+		owned, err := ownedEmailsOf(*q.owner)
+		if err != nil {
+			return nil, err
+		}
+		onlines = slices.DeleteFunc(slices.Clone(onlines), func(e string) bool { return !owned[strings.ToLower(e)] })
+	}
+	if err := totalQ.Count(&total).Error; err != nil {
 		return nil, err
 	}
 

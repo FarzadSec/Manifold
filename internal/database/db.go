@@ -1789,25 +1789,32 @@ func runSeeders(isUsersEmpty bool) error {
 	return normalizeSettingPaths()
 }
 
-// ensurePanelOwner makes the oldest account the main-admin owner when no account is, as on
-// every database from before the access model and on one restored from such a backup.
+// ensurePanelOwner makes the oldest account the owner when none is (a database from before the
+// access model, or restored from one), and keeps every inbound stored under the owner.
 func ensurePanelOwner() error {
-	var owners int64
-	if err := db.Model(&model.User{}).Where("is_owner = ?", true).Count(&owners).Error; err != nil {
-		return err
-	}
-	if owners > 0 {
-		return nil
-	}
-	var first model.User
-	if err := db.Order("id").First(&first).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+	var owner model.User
+	err := db.Where("is_owner = ?", true).First(&owner).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		if err = db.Order("id").First(&owner).Error; errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
+		if err != nil {
+			return err
+		}
+		if err = db.Model(&model.User{}).Where("id = ?", owner.Id).
+			Updates(map[string]any{"is_owner": true, "tier": "admin", "role_id": 0}).Error; err != nil {
+			return err
+		}
+	} else if err != nil {
 		return err
 	}
-	return db.Model(&model.User{}).Where("id = ?", first.Id).
-		Updates(map[string]any{"is_owner": true, "tier": "admin", "role_id": 0}).Error
+	return RekeyInboundsToOwner(db, owner.Id)
+}
+
+// RekeyInboundsToOwner stores every inbound under the owner: inbounds are the panel's one
+// pool, which every admin reads through the owner's account.
+func RekeyInboundsToOwner(tx *gorm.DB, ownerID int) error {
+	return tx.Model(&model.Inbound{}).Where("user_id <> ?", ownerID).Update("user_id", ownerID).Error
 }
 
 // moveTwoFactorToOwner turns the panel-wide two-factor secret into the owner's own, since

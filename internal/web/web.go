@@ -318,6 +318,8 @@ const (
 	cadenceWireGuard     = "@every 10s"
 	cadenceL2TP          = "@every 10s"
 	cadenceTunnels       = "@every 15s"
+	cadenceResellers     = "@every 1m"
+	cadenceAuditPrune    = "@every 1h"
 	cadenceClientIPScan  = "@every 10s"
 	cadenceNodeHeartbeat = "@every 5s"
 	cadenceNodeTraffic   = "@every 5s"
@@ -383,6 +385,9 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	l2tpJob := job.NewL2TPJob()
 	_, _ = s.cron.AddJob(cadenceL2TP, l2tpJob)
 	go l2tpJob.Run()
+
+	_, _ = s.cron.AddJob(cadenceResellers, job.NewResellerJob())
+	_, _ = s.cron.AddJob(cadenceAuditPrune, job.NewAuditPruneJob())
 
 	s.startTunnelJob()
 

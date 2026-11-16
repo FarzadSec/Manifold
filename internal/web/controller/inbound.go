@@ -7,12 +7,12 @@ import (
 	"strings"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/amneziawgkern"
+	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/json_util"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/wirecodec"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/middleware"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
-	"github.com/mhsanaei/3x-ui/v3/internal/web/session"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/websocket"
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 
@@ -103,7 +103,7 @@ func (a *InboundController) initRouter(g *gin.RouterGroup) {
 
 // getInbounds retrieves the list of inbounds for the logged-in user.
 func (a *InboundController) getInbounds(c *gin.Context) {
-	user := session.GetLoginUser(c)
+	user := inboundPool()
 	inbounds, err := a.inboundService.GetInbounds(user.Id)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
@@ -115,7 +115,7 @@ func (a *InboundController) getInbounds(c *gin.Context) {
 // getInboundsSlim is the list-page variant that strips full client
 // payloads from settings.clients[]. Detail-view flows still use /get/:id.
 func (a *InboundController) getInboundsSlim(c *gin.Context) {
-	user := session.GetLoginUser(c)
+	user := inboundPool()
 	inbounds, err := a.inboundService.GetInboundsSlim(user.Id)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
@@ -128,7 +128,7 @@ func (a *InboundController) getInboundsSlim(c *gin.Context) {
 // rendered through the same subscription engine the client pages use so the
 // remark template (name-only display part) is applied consistently.
 func (a *InboundController) getAllInboundLinks(c *gin.Context) {
-	user := session.GetLoginUser(c)
+	user := inboundPool()
 	links, err := a.inboundService.GetAllInboundLinks(resolveHost(c), user.Id)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
@@ -141,7 +141,7 @@ func (a *InboundController) getAllInboundLinks(c *gin.Context) {
 // (id, remark, protocol, port, tlsFlowCapable) for pickers in the clients UI.
 // Avoids shipping per-client settings and traffic stats just to fill a dropdown.
 func (a *InboundController) getInboundOptions(c *gin.Context) {
-	user := session.GetLoginUser(c)
+	user := inboundPool()
 	options, err := a.inboundService.GetInboundOptions(user.Id)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
@@ -177,7 +177,7 @@ func (a *InboundController) addInbound(c *gin.Context) {
 	if !ok {
 		return
 	}
-	user := session.GetLoginUser(c)
+	user := inboundPool()
 	inbound.UserId = user.Id
 	// Treat NodeID=0 as "no node" — gin's *int form binding can land on
 	// 0 when the field is absent or empty, and 0 is never a valid Node
@@ -216,7 +216,7 @@ func (a *InboundController) delInbound(c *gin.Context) {
 	if needRestart {
 		a.xrayService.SetToNeedRestart()
 	}
-	user := session.GetLoginUser(c)
+	user := inboundPool()
 	a.broadcastInboundsUpdate(user.Id)
 	notifyClientsChanged()
 }
@@ -242,7 +242,7 @@ func (a *InboundController) bulkDelInbounds(c *gin.Context) {
 	if needRestart {
 		a.xrayService.SetToNeedRestart()
 	}
-	user := session.GetLoginUser(c)
+	user := inboundPool()
 	a.broadcastInboundsUpdate(user.Id)
 	notifyClientsChanged()
 }
@@ -276,7 +276,7 @@ func (a *InboundController) updateInbound(c *gin.Context) {
 	if needRestart {
 		a.xrayService.SetToNeedRestart()
 	}
-	user := session.GetLoginUser(c)
+	user := inboundPool()
 	a.broadcastInboundsUpdate(user.Id)
 	notifyClientsChanged()
 }
@@ -383,7 +383,7 @@ func (a *InboundController) delAllInboundClients(c *gin.Context) {
 	if needRestart {
 		a.xrayService.SetToNeedRestart()
 	}
-	user := session.GetLoginUser(c)
+	user := inboundPool()
 	a.broadcastInboundsUpdate(user.Id)
 	notifyClientsChanged()
 }
@@ -435,7 +435,7 @@ func (a *InboundController) importInbound(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
-	user := session.GetLoginUser(c)
+	user := inboundPool()
 	inbound.Id = 0
 	inbound.UserId = user.Id
 	// Node IDs are panel-local and not portable across panels. Drop a node
@@ -490,7 +490,7 @@ func (a *InboundController) importWireGuard(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
-	user := session.GetLoginUser(c)
+	user := inboundPool()
 	result, err := a.inboundService.ImportWireGuard(user.Id, strings.TrimSpace(req.Interface), strings.TrimSpace(req.DashboardDB))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -558,4 +558,14 @@ func (a *InboundController) setFallbacks(c *gin.Context) {
 	}
 	a.xrayService.SetToNeedRestart()
 	jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.inboundUpdateSuccess"), nil)
+}
+
+// inboundPool is the account the panel's inbounds are stored under: the owner, for every
+// admin alike, since inbounds are one pool and not a book of one account.
+func inboundPool() *model.User {
+	var owner model.User
+	if err := database.GetDB().Where("is_owner = ?", true).First(&owner).Error; err != nil {
+		return &model.User{}
+	}
+	return &owner
 }

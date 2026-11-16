@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/access"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/panel"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/session"
 
@@ -85,6 +86,11 @@ func (w *WebSocketController) HandleWebSocket(c *gin.Context) {
 	if !session.IsLogin(c) {
 		logger.Warningf("Unauthorized WebSocket connection attempt from %s", getRemoteIp(c))
 		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	// The stream carries every inbound and user, so a reseller polls its own instead.
+	if actor, err := access.Resolve(session.GetLoginUser(c)); err != nil || !actor.Perms.Has(access.PoolRead) {
+		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
 

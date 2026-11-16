@@ -2183,6 +2183,210 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'access',
+    title: 'Access',
+    description:
+      'Admin accounts, custom roles, plans and the audit log. Accounts sit on a tier (main admin, operator, reseller); a reseller works only on the users it owns, inside its allowance. All endpoints under /panel/api/access.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/access/me',
+        summary:
+          'The signed-in account or token: its tier, permissions and, for a reseller, its allowance and how much of it is used.',
+        responseSchema: 'MeView',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/access/me/twoFactor',
+        summary: "A new secret and otpauth address for the account's authenticator app.",
+        responseSchema: 'TwoFactorSetupView',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/access/me/twoFactor',
+        summary:
+          "Turn the account's own two-factor on with the new secret and a code from it, or off with a current code.",
+        body: '{\n  "enable": true,\n  "secret": "JBSWY3DPEHPK3PXP",\n  "code": "123456"\n}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/access/admins',
+        summary: 'List every admin account, the owner first, with how many users each owns.',
+        responseSchema: 'AdminView',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/access/admins/add',
+        summary: 'Create an admin account. A reseller also takes its allowance.',
+        body: '{\n  "username": "seller1",\n  "password": "a-long-password",\n  "tier": "reseller",\n  "volumeBytes": 1099511627776,\n  "resetCycle": "monthly",\n  "resetDay": 1,\n  "maxUsers": 100,\n  "mayEditUsers": true\n}',
+        responseSchema: 'AdminView',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/access/admins/update/:id',
+        summary:
+          "Change an account. An empty password keeps the current one; a new tier, role or password ends the account's sessions.",
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Account ID.' }],
+        body: '{\n  "username": "seller1",\n  "password": "",\n  "tier": "reseller",\n  "volumeBytes": 2199023255552\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/access/admins/del/:id',
+        summary:
+          'Delete an account. Its users pass to the panel and keep working; its API tokens are deleted.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Account ID.' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/access/admins/endSessions/:id',
+        summary: 'Sign an account out everywhere.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Account ID.' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/access/admins/handover/:id',
+        summary:
+          "Make another main admin the panel's owner. Only the owner may, from its own login, not with a token.",
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Account ID of the new owner.' }],
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/access/roles',
+        summary: 'List the custom roles. The three built-in roles are not stored.',
+        responseSchema: 'Role',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/access/roles/add',
+        summary: 'Create a custom role: a tier, the permissions it keeps and its limits.',
+        body: '{\n  "name": "Support",\n  "tier": "operator",\n  "permissions": ["users:read"]\n}',
+        responseSchema: 'Role',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/access/roles/update/:id',
+        summary:
+          "Change a custom role; every account on it signs in again with the role's new reach.",
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Role ID.' }],
+        body: '{\n  "name": "Support",\n  "tier": "operator",\n  "permissions": ["users:read", "users:write"]\n}',
+        responseSchema: 'Role',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/access/roles/del/:id',
+        summary: 'Delete a custom role no account holds.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Role ID.' }],
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/access/plans',
+        summary:
+          'List the plans. A reseller that sells from plans only sees just the plans it may sell.',
+        responseSchema: 'Plan',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/access/plans/add',
+        summary: 'Create a plan new users can be created from.',
+        body: '{\n  "name": "30 days 50 GB",\n  "totalBytes": 53687091200,\n  "days": 30,\n  "startOnFirstUse": true,\n  "limitIp": 2,\n  "allInbounds": true\n}',
+        responseSchema: 'Plan',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/access/plans/update/:id',
+        summary: 'Change a plan. Users created from it keep the limits they were given.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Plan ID.' }],
+        body: '{\n  "name": "30 days 50 GB",\n  "totalBytes": 53687091200,\n  "days": 30\n}',
+        responseSchema: 'Plan',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/access/plans/del/:id',
+        summary: 'Delete a plan. Users created from it keep every limit they were given.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Plan ID.' }],
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/access/audit',
+        summary: 'One page of the audit log, newest first.',
+        params: [
+          {
+            name: 'admin',
+            in: 'query',
+            type: 'string',
+            desc: 'Only this username.',
+            optional: true,
+          },
+          {
+            name: 'entity',
+            in: 'query',
+            type: 'string',
+            desc: 'Only this entity, such as users.',
+            optional: true,
+          },
+          {
+            name: 'action',
+            in: 'query',
+            type: 'string',
+            desc: 'Only this action, such as delete.',
+            optional: true,
+          },
+          {
+            name: 'from',
+            in: 'query',
+            type: 'integer',
+            desc: 'Unix ms, inclusive.',
+            optional: true,
+          },
+          { name: 'to', in: 'query', type: 'integer', desc: 'Unix ms, inclusive.', optional: true },
+          {
+            name: 'page',
+            in: 'query',
+            type: 'integer',
+            desc: 'Page number, from 1.',
+            optional: true,
+          },
+          {
+            name: 'pageSize',
+            in: 'query',
+            type: 'integer',
+            desc: 'Up to 200; 50 by default.',
+            optional: true,
+          },
+        ],
+        responseSchema: 'AuditPage',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/access/audit/clear',
+        summary: 'Delete every audit entry. The clearing becomes the first entry of the new log.',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/access/audit/settings',
+        summary: 'Whether admin changes are logged, and how many days entries are kept.',
+        responseSchema: 'AuditSettings',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/access/audit/settings',
+        summary: 'Switch change logging and set the retention; 0 days keeps everything.',
+        body: '{\n  "enabled": true,\n  "retentionDays": 90\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/clients/changeOwner',
+        summary:
+          "Hand users to another account (0 is the panel). A reseller's user limit is checked once for the whole selection.",
+        body: '{\n  "emails": ["alice", "bob"],\n  "ownerId": 3\n}',
+      },
+    ],
+  },
+
+  {
     id: 'hosts',
     title: 'Hosts',
     description:

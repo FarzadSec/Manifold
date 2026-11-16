@@ -5,9 +5,68 @@ export type OnlineAPISupport = number;
 export type ProcessState = string;
 export type Protocol = string;
 export type addrFamily = number;
+export type resellerTarget = number;
 export type staticEgressResolver = string;
 export type trafficLocalApplyAction = number;
 export type transportBits = number;
+
+export interface AdminInput {
+  allowedInboundIds: number[];
+  allowedPlanIds: number[];
+  brandAnnounce: string;
+  brandSupportUrl: string;
+  brandTitle: string;
+  expiresAt: number;
+  inboundsLimited: boolean;
+  maxUsers: number;
+  mayEditUsers: boolean;
+  password: string;
+  plansOnly: boolean;
+  remark: string;
+  resetCycle: string;
+  resetDay: number;
+  resetMonth: number;
+  roleId: number;
+  subDomain: string;
+  tier: string;
+  username: string;
+  volumeBytes: number;
+}
+
+export interface AdminView {
+  allowedInboundIds: number[];
+  allowedPlanIds: number[];
+  brandAnnounce: string;
+  brandSupportUrl: string;
+  brandTitle: string;
+  createdAt: number;
+  cycleStart: number;
+  cycleUsed: number;
+  expiresAt: number;
+  id: number;
+  inboundsLimited: boolean;
+  isOwner: boolean;
+  lastLoginAt: number;
+  lastLoginIp: string;
+  maxUsers: number;
+  mayEditUsers: boolean;
+  ownedUsers: number;
+  password: string;
+  plansOnly: boolean;
+  remark: string;
+  resetCycle: string;
+  resetDay: number;
+  resetMonth: number;
+  roleId: number;
+  roleName: string;
+  subDomain: string;
+  suspended: string;
+  tier: string;
+  totalUsed: number;
+  twoFactorEnabled: boolean;
+  username: string;
+  volumeBytes: number;
+}
 
 export interface AllSetting {
   datepicker: string;
@@ -395,8 +454,12 @@ export interface ApiToken {
   expiresAt: number;
   id: number;
   name: string;
+  permissions: string[];
+  rateLimit: number;
   scope: string;
+  tier: string;
   token: string;
+  userId: number;
 }
 
 export interface ApiTokenView {
@@ -405,8 +468,35 @@ export interface ApiTokenView {
   expiresAt: number;
   id: number;
   name: string;
+  permissions: string[];
+  rateLimit: number;
   scope: string;
+  tier: string;
   token?: string;
+  userId: number;
+  username: string;
+}
+
+export interface AuditEntry {
+  action: string;
+  at: number;
+  detail: string;
+  entity: string;
+  id: number;
+  ip: string;
+  target: string;
+  userId: number;
+  username: string;
+}
+
+export interface AuditPage {
+  items: AuditEntry[];
+  total: number;
+}
+
+export interface AuditSettings {
+  enabled: boolean;
+  retentionDays: number;
 }
 
 export interface BackupFile {
@@ -491,6 +581,7 @@ export interface ClientRecord {
   keepAlive: number | string;
   limitHwid: number;
   limitIp: number;
+  ownerId: number;
   password: string;
   preSharedKey: string;
   privateKey: string;
@@ -832,6 +923,28 @@ export interface MLKEM768Response {
   seed: string;
 }
 
+export interface MeView {
+  catalogue: string[];
+  cycleStart: number;
+  cycleUsed: number;
+  expiresAt: number;
+  id: number;
+  isOwner: boolean;
+  maxUsers: number;
+  mayEditUsers: boolean;
+  ownedUsers: number;
+  permissions: string[];
+  plansOnly: boolean;
+  resetCycle: string;
+  roleName: string;
+  suspended: string;
+  tier: string;
+  tierCeilings: Record<string, string[]>;
+  twoFactorEnabled: boolean;
+  username: string;
+  volumeBytes: number;
+}
+
 export interface MigrationAddress {
   address: string;
   points?: string[];
@@ -1030,6 +1143,27 @@ export interface PeerActivity {
   up: number;
 }
 
+export interface Plan {
+  allInbounds: boolean;
+  createdAt: number;
+  days: number;
+  description: string;
+  group: string;
+  id: number;
+  inboundIds: number[];
+  limitHwid: number;
+  limitIp: number;
+  name: string;
+  namePrefix: string;
+  nameSuffix: string;
+  reset: number;
+  sortOrder: number;
+  startOnFirstUse: boolean;
+  totalBytes: number;
+  trafficReset: string;
+  trafficResetDay: number;
+}
+
 export interface PortForward {
   listen: string;
   proto?: string;
@@ -1078,6 +1212,18 @@ export interface RealityScanResult {
   tls13: boolean;
   tlsVersion: string;
   x25519: boolean;
+}
+
+export interface Role {
+  createdAt: number;
+  description: string;
+  id: number;
+  maxDevicesPerUser: number;
+  maxPlanDays: number;
+  maxUsersPerAccount: number;
+  name: string;
+  permissions: string[];
+  tier: string;
 }
 
 export interface ServerSettings {
@@ -1248,10 +1394,42 @@ export interface TunnelView {
   updatedAt: number;
 }
 
+export interface TwoFactorSetupView {
+  secret: string;
+  uri: string;
+}
+
 export interface User {
+  allowedInboundIds: number[];
+  allowedPlanIds: number[];
+  brandAnnounce: string;
+  brandSupportUrl: string;
+  brandTitle: string;
+  createdAt: number;
+  cycleStart: number;
+  cycleUsed: number;
+  expiresAt: number;
   id: number;
+  inboundsLimited: boolean;
+  isOwner: boolean;
+  lastLoginAt: number;
+  lastLoginIp: string;
+  maxUsers: number;
+  mayEditUsers: boolean;
   password: string;
+  plansOnly: boolean;
+  remark: string;
+  resetCycle: string;
+  resetDay: number;
+  resetMonth: number;
+  roleId: number;
+  subDomain: string;
+  suspended: string;
+  tier: string;
+  totalUsed: number;
+  twoFactorEnabled: boolean;
   username: string;
+  volumeBytes: number;
 }
 
 export interface WireGuardImportResult {

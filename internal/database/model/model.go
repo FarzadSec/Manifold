@@ -43,6 +43,12 @@ const (
 	L2TP        Protocol = "l2tp"
 )
 
+// HoldsClients reports whether an inbound of this protocol serves panel users, so a plan
+// on all inbounds can leave out tunnels and plain HTTP/SOCKS listeners.
+func (p Protocol) HoldsClients() bool {
+	return p != Tunnel && p != HTTP && p != Mixed
+}
+
 // User represents a user account in the 3x-ui panel.
 type User struct {
 	Id         int    `json:"id" gorm:"primaryKey;autoIncrement"`
@@ -66,7 +72,7 @@ type User struct {
 	ResetMonth        int    `json:"resetMonth" gorm:"default:0"`
 	ExpiresAt         int64  `json:"expiresAt" gorm:"default:0"`
 	MaxUsers          int    `json:"maxUsers" gorm:"default:0"`
-	MayEditUsers      bool   `json:"mayEditUsers" gorm:"default:true"`
+	MayEditUsers      bool   `json:"mayEditUsers" gorm:"default:false"`
 	PlansOnly         bool   `json:"plansOnly" gorm:"default:false"`
 	AllowedPlanIds    []int  `json:"allowedPlanIds" gorm:"serializer:json;column:allowed_plan_ids"`
 	InboundsLimited   bool   `json:"inboundsLimited" gorm:"default:false"`
@@ -111,7 +117,7 @@ type Plan struct {
 	Reset           int    `json:"reset" gorm:"default:0"`
 	TrafficReset    string `json:"trafficReset" gorm:"default:never"`
 	TrafficResetDay int    `json:"trafficResetDay" gorm:"default:1"`
-	AllInbounds     bool   `json:"allInbounds" gorm:"default:true"`
+	AllInbounds     bool   `json:"allInbounds" gorm:"default:false"`
 	InboundIds      []int  `json:"inboundIds" gorm:"serializer:json"`
 	Group           string `json:"group" gorm:"column:group_name"`
 	NamePrefix      string `json:"namePrefix"`

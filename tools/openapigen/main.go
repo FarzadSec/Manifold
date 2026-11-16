@@ -41,6 +41,9 @@ func run(root, outDir string) error {
 				"InboundFallback",
 				"Host",
 				"SubBalancer",
+				"Role",
+				"Plan",
+				"AuditEntry",
 			),
 			AliasAllow: setOf("Protocol"),
 			Overrides: map[string][]walkOverride{
@@ -130,15 +133,17 @@ func run(root, outDir string) error {
 				"MigrationAddress",
 				"MigrationTunnel",
 				"MigrationReport",
+				"AuditPage",
+				"AuditSettings",
 			),
 		},
 		{
 			Path:        resolveRel(root, "internal/web/service/panel"),
-			StructAllow: setOf("ApiTokenView", "PanelUpdateStatus"),
+			StructAllow: setOf("ApiTokenView", "PanelUpdateStatus", "AdminView", "AdminInput"),
 		},
 		{
 			Path:        resolveRel(root, "internal/web/controller"),
-			StructAllow: setOf("TgBotCapabilities"),
+			StructAllow: setOf("TgBotCapabilities", "MeView", "TwoFactorSetupView"),
 		},
 		{
 			Path:        resolveRel(root, "internal/amneziawg"),
