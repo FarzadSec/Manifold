@@ -989,7 +989,7 @@
       "expiryTime": "过期时间",
       "addClients": "添加客户端",
       "limitIp": "IP 限制",
-      "limitIpDesc": "最大同时连接 IP 数。0 = 不限制。",
+      "limitIpDesc": "Xray 上的最大同时 IP 数,以及 OpenVPN 和 L2TP 上的已连接设备数。0 表示不限。",
       "limitHwid": "HWID 限制",
       "limitHwidDesc": "订阅请求最多可注册的设备数。0 = 不限制。",
       "hwidLog": "HWID 设备",
@@ -1197,7 +1197,10 @@
       "renewWeeklyDesc": "日历续期按面板时区的午夜执行，并重置客户端流量。若不需要额外重置，请关闭独立的流量重置。",
       "l2tpAccount": "L2TP 账户",
       "l2tpServer": "服务器",
-      "ownerChanged": "所有者已更改"
+      "ownerChanged": "所有者已更改",
+      "speedLimit": "限速",
+      "speedLimitDesc": "每个方向的 Mbps,在每台服务器上分别生效。0 表示不限。",
+      "limitIpTunnelsOnly": "没有 fail2ban 时,此限制只计算 OpenVPN 和 L2TP 连接。"
     },
     "groups": {
       "name": "名称",

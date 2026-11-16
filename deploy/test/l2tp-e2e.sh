@@ -293,6 +293,9 @@ wait_until 20 "alice to reach the internet through the tunnel" reaches_internet
 use_traffic 20 || fail "no answer through the tunnel and NAT"
 wait_until 40 "alice's traffic to be stored" traffic_at_least alice 20000
 
+log "alice's speed limit holds her session to it"
+check_speed_limit alice
+
 log "a second device on alice's account is refused"
 l2tp_connect alice2 alice 1712
 refused() { grep -qi "authentication failed" "$WORK/alice2-ppp.log"; }

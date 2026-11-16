@@ -3,7 +3,9 @@ package openvpn
 import (
 	"context"
 	"net"
+	"net/netip"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/config"
@@ -237,6 +239,30 @@ func (m *Manager) CollectTraffic() ([]Traffic, []string) {
 		online = append(online, connected...)
 	}
 	return out, online
+}
+
+// SessionAddresses returns the tunnel addresses of every live session, by account.
+func (m *Manager) SessionAddresses() map[string][]netip.Prefix {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	out := map[string][]netip.Prefix{}
+	for _, cur := range m.servers {
+		for user, addrs := range cur.ctl.addresses() {
+			out[user] = append(out[user], addrs...)
+		}
+	}
+	return out
+}
+
+var sessionHook atomic.Pointer[func()]
+
+// SetSessionHook runs f, outside any lock, whenever a session comes up or goes away.
+func SetSessionHook(f func()) { sessionHook.Store(&f) }
+
+func notifySessionsChanged() {
+	if f := sessionHook.Load(); f != nil && *f != nil {
+		go (*f)()
+	}
 }
 
 // HasRunning reports whether any server is up.

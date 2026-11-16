@@ -1197,7 +1197,10 @@
       "renewWeeklyDesc": "カレンダー更新はパネルのタイムゾーンの午前 0 時に行われ、クライアントの通信量もリセットします。追加のリセットが不要なら、独立した通信量リセットは無効にしてください。",
       "l2tpAccount": "L2TP アカウント",
       "l2tpServer": "サーバー",
-      "ownerChanged": "Owner changed"
+      "ownerChanged": "Owner changed",
+      "speedLimit": "Speed limit",
+      "speedLimitDesc": "Mbps in each direction, applied on each server separately. 0 = unlimited.",
+      "limitIpTunnelsOnly": "Without fail2ban this limit counts only OpenVPN and L2TP connections."
     },
     "groups": {
       "name": "名前",

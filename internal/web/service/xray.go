@@ -496,6 +496,8 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 
 	xrayConfig.RouterConfig = dropRefusedScript(xrayConfig.RouterConfig, "routing", routingScriptRefused)
 	xrayConfig.DNSConfig = dropRefusedScript(xrayConfig.DNSConfig, "dns", dnsScriptRefused)
+	// Last, so every rule another feature added is honoured for limited users too.
+	injectSpeedLimits(xrayConfig, limitedClientMarks())
 	if excludedClients > 0 {
 		logger.Infof("Xray config generated: excluded %d disabled client entries across %d inbounds", excludedClients, excludedInbounds)
 	}
@@ -1384,7 +1386,7 @@ func (s *XrayService) GetXrayTraffic() ([]*xray.Traffic, []*xray.ClientTraffic, 
 		logger.Debug("Failed to fetch Xray traffic:", err)
 		return nil, nil, err
 	}
-	return traffic, clientTraffic, nil
+	return foldSpeedTraffic(traffic), clientTraffic, nil
 }
 
 // GetOnlineUsers returns connection-based online users (email + source IPs)

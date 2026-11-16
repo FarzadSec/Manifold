@@ -1197,7 +1197,10 @@
       "renewWeeklyDesc": "يتم التجديد التقويمي عند منتصف الليل بتوقيت اللوحة ويُعاد أيضًا تعيين استهلاك العميل. أبقِ إعادة تعيين الاستهلاك المستقلة معطلة ما لم تكن تريد إعادة تعيين إضافية.",
       "l2tpAccount": "حساب L2TP",
       "l2tpServer": "الخادم",
-      "ownerChanged": "Owner changed"
+      "ownerChanged": "Owner changed",
+      "speedLimit": "Speed limit",
+      "speedLimitDesc": "Mbps in each direction, applied on each server separately. 0 = unlimited.",
+      "limitIpTunnelsOnly": "Without fail2ban this limit counts only OpenVPN and L2TP connections."
     },
     "groups": {
       "name": "الاسم",

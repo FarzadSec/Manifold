@@ -1197,7 +1197,10 @@
       "renewWeeklyDesc": "Kalendárne obnovenie prebieha o polnoci v časovom pásme panelu a vynuluje aj spotrebu klienta. Samostatné nulovanie spotreby nechajte vypnuté, ak nechcete ďalšie nulovanie navyše.",
       "l2tpAccount": "Účet L2TP",
       "l2tpServer": "Server",
-      "ownerChanged": "Owner changed"
+      "ownerChanged": "Owner changed",
+      "speedLimit": "Speed limit",
+      "speedLimitDesc": "Mbps in each direction, applied on each server separately. 0 = unlimited.",
+      "limitIpTunnelsOnly": "Without fail2ban this limit counts only OpenVPN and L2TP connections."
     },
     "groups": {
       "name": "Názov",

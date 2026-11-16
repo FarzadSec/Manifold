@@ -37,3 +37,16 @@ func (j *AuditPruneJob) Run() {
 		logger.Warning("audit log prune:", err)
 	}
 }
+
+// SpeedLimitJob keeps the host's speed table in step with its limited users and sessions.
+type SpeedLimitJob struct {
+	speedService service.SpeedService
+}
+
+func NewSpeedLimitJob() *SpeedLimitJob {
+	return new(SpeedLimitJob)
+}
+
+func (j *SpeedLimitJob) Run() {
+	j.speedService.Sync()
+}

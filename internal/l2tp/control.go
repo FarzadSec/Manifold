@@ -217,6 +217,7 @@ func (c *control) sessionUp(req request) {
 	}
 	c.sessions[req.PID] = &session{user: name, ifname: req.Interface}
 	logger.Infof("l2tp: %s connected from %s on %s as %s", user.Name, req.Peer, req.Interface, req.Address)
+	notifySessionsChanged()
 }
 
 func (c *control) sessionDown(req request) {
@@ -228,6 +229,21 @@ func (c *control) sessionDown(req request) {
 	}
 	c.chargeLocked(s, req.Received, req.Sent)
 	delete(c.sessions, req.PID)
+	notifySessionsChanged()
+}
+
+// interfaces returns the ppp interface of each live session, by the account's name.
+func (c *control) interfaces() map[string][]string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	out := map[string][]string{}
+	for pid, s := range c.sessions {
+		if s.ifname != "" && c.alive(pid) {
+			name := c.displayNameLocked(s.user)
+			out[name] = append(out[name], s.ifname)
+		}
+	}
+	return out
 }
 
 // chargeLocked bills what the counters grew by since the session was last read.

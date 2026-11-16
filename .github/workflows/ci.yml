@@ -330,6 +330,15 @@ jobs:
         run: sudo deploy/test/wireguard-e2e.sh build/manifold build/bin
       - name: L2TP inbound end to end, with a client that connects through IPsec
         run: sudo deploy/test/l2tp-e2e.sh build/manifold build/bin
+      - name: Speed limit on a real kernel, through a marked socket and a real core
+        run: |
+          go test -c -o build/speedlimit.test ./internal/speedlimit/
+          go test -c -o build/service.test ./internal/web/service/
+          { sudo XUI_SPEED_E2E=1 ./build/speedlimit.test -test.run 'TestKernel' -test.v \
+            && sudo XUI_SPEED_E2E=1 ./build/service.test -test.run 'TestSpeedLimitedXrayUserIsHeldToItsRate' -test.v; } \
+            > /tmp/speed.log 2>&1 || { tail -n 80 /tmp/speed.log; exit 1; }
+          grep -E '^(---|===|PASS|FAIL|ok)' /tmp/speed.log
+          if grep -q -- '--- SKIP' /tmp/speed.log; then echo "a speed test was skipped"; exit 1; fi
       - name: Tunnels, a kernel GRE link and a BackPack reverse tunnel, each forwarding a port
         run: |
           go test -c -o build/tunnel.test ./internal/tunnel/

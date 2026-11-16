@@ -539,6 +539,7 @@ export interface Client {
   reverse?: ClientReverse | null;
   secret?: string;
   security: string;
+  speedLimit?: number;
   subId: string;
   tgId: number;
   totalGB: number;
@@ -593,6 +594,7 @@ export interface ClientRecord {
   reverse: unknown;
   secret: string;
   security: string;
+  speedLimit: number;
   subId: string;
   tgId: number;
   totalGB: number;
@@ -642,6 +644,7 @@ export interface ClientSlim {
   resetDay: number;
   resetMax: number;
   resetWeekday: number;
+  speedLimit: number;
   subId: string;
   totalGB: number;
   traffic?: ClientTraffic | null;
@@ -1165,6 +1168,7 @@ export interface Plan {
   nameSuffix: string;
   reset: number;
   sortOrder: number;
+  speedLimit: number;
   startOnFirstUse: boolean;
   totalBytes: number;
   trafficReset: string;

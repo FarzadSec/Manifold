@@ -67,6 +67,9 @@ func fillAbsentClientFields(rec *model.ClientRecord, updated *model.Client, limi
 	if !keys.has("limitIp") {
 		updated.LimitIP = stored.LimitIP
 	}
+	if !keys.has("speedLimit") {
+		updated.SpeedLimit = stored.SpeedLimit
+	}
 	if !keys.has("totalGB") {
 		updated.TotalGB = stored.TotalGB
 	}

@@ -5,6 +5,7 @@ import (
 	"crypto/subtle"
 	"fmt"
 	"io"
+	"net/netip"
 	"slices"
 	"strconv"
 	"strings"
@@ -32,6 +33,8 @@ type session struct {
 	closing     bool
 	authorized  time.Time
 	in, out     int64
+	// addrs are the tunnel addresses OpenVPN gave the session.
+	addrs []netip.Prefix
 }
 
 type usage struct{ up, down int64 }
@@ -85,7 +88,10 @@ type clientEvent struct {
 }
 
 // The only values the panel acts on; the rest of a client's environment is dropped.
-var keptEnv = map[string]bool{"username": true, "password": true, "bytes_received": true, "bytes_sent": true}
+var keptEnv = map[string]bool{
+	"username": true, "password": true, "bytes_received": true, "bytes_sent": true,
+	"ifconfig_pool_remote_ip": true, "ifconfig_pool_remote_ip6": true,
+}
 
 // parseClientEvent reads the first line of a multi-line client notification.
 func parseClientEvent(line string) *clientEvent {
@@ -170,8 +176,10 @@ func (c *control) handle(ev *clientEvent) {
 		c.mu.Lock()
 		if s := c.sessions[ev.cid]; s != nil {
 			s.established = true
+			s.addrs = poolAddresses(ev.env)
 		}
 		c.mu.Unlock()
+		notifySessionsChanged()
 	case "DISCONNECT":
 		in, errIn := strconv.ParseInt(ev.env["bytes_received"], 10, 64)
 		out, errOut := strconv.ParseInt(ev.env["bytes_sent"], 10, 64)
@@ -181,7 +189,31 @@ func (c *control) handle(ev *clientEvent) {
 		}
 		delete(c.sessions, ev.cid)
 		c.mu.Unlock()
+		notifySessionsChanged()
 	}
+}
+
+func poolAddresses(env map[string]string) []netip.Prefix {
+	var out []netip.Prefix
+	for _, key := range []string{"ifconfig_pool_remote_ip", "ifconfig_pool_remote_ip6"} {
+		if addr, err := netip.ParseAddr(env[key]); err == nil {
+			out = append(out, netip.PrefixFrom(addr, addr.BitLen()))
+		}
+	}
+	return out
+}
+
+// addresses returns the tunnel addresses of each account's live sessions.
+func (c *control) addresses() map[string][]netip.Prefix {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	out := map[string][]netip.Prefix{}
+	for _, s := range c.sessions {
+		if s.established && !s.closing && len(s.addrs) > 0 {
+			out[s.user] = append(out[s.user], s.addrs...)
+		}
+	}
+	return out
 }
 
 // authorize records the session and returns "", or the reason to refuse it.

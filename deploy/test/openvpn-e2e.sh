@@ -92,6 +92,9 @@ wait_connected alice
 use_traffic 20 || fail "no answer through the tunnel and NAT"
 wait_until 40 "alice's traffic to be stored" traffic_at_least alice 20000
 
+log "alice's speed limit holds her tunnel to it"
+check_speed_limit alice
+
 log "a second device on alice's account is refused"
 cp "$WORK/alice.ovpn" "$WORK/alice2.ovpn"
 # openvpn exits with status 0 after an authentication failure, so only its log tells.

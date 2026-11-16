@@ -1197,7 +1197,10 @@
       "renewWeeklyDesc": "A renovação por calendário ocorre à meia-noite no fuso horário do painel e também redefine o tráfego do cliente. Mantenha as redefinições independentes de tráfego desativadas, a menos que queira uma redefinição adicional.",
       "l2tpAccount": "Conta L2TP",
       "l2tpServer": "Servidor",
-      "ownerChanged": "Owner changed"
+      "ownerChanged": "Owner changed",
+      "speedLimit": "Speed limit",
+      "speedLimitDesc": "Mbps in each direction, applied on each server separately. 0 = unlimited.",
+      "limitIpTunnelsOnly": "Without fail2ban this limit counts only OpenVPN and L2TP connections."
     },
     "groups": {
       "name": "Nome",

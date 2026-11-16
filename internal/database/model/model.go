@@ -114,6 +114,7 @@ type Plan struct {
 	StartOnFirstUse bool   `json:"startOnFirstUse" gorm:"default:false"`
 	LimitIp         int    `json:"limitIp" gorm:"default:0"`
 	LimitHwid       int    `json:"limitHwid" gorm:"default:0"`
+	SpeedLimit      int    `json:"speedLimit" gorm:"default:0" example:"20"`
 	Reset           int    `json:"reset" gorm:"default:0"`
 	TrafficReset    string `json:"trafficReset" gorm:"default:never"`
 	TrafficResetDay int    `json:"trafficResetDay" gorm:"default:1"`
@@ -1066,19 +1067,20 @@ type Client struct {
 	ForwardedPorts      *string          `json:"forwardedPorts,omitempty"` // AmneziaWG port-forwarding spec, e.g. "80,443,8000-8100"; "" withdraws the forwards, omit to keep them
 	Secret              string           `json:"secret,omitempty" example:"ee1234567890abcdef1234567890abcd7777772e636c6f7564666c6172652e636f6d"`
 	AdTag               string           `json:"adTag,omitempty" example:"0123456789abcdef0123456789abcdef"`
-	Email               string           `json:"email"`                            // Client email identifier
-	LimitIP             int              `json:"limitIp"`                          // IP limit for this client
-	TotalGB             int64            `json:"totalGB" form:"totalGB"`           // Total traffic limit in GB
-	ExpiryTime          int64            `json:"expiryTime" form:"expiryTime"`     // Expiration timestamp
-	Enable              bool             `json:"enable" form:"enable"`             // Whether the client is enabled
-	TgID                int64            `json:"tgId" form:"tgId"`                 // Telegram user ID for notifications
-	SubID               string           `json:"subId" form:"subId"`               // Subscription identifier
-	Group               string           `json:"group,omitempty" form:"group"`     // Logical grouping label
-	Comment             string           `json:"comment" form:"comment"`           // Client comment
-	Reset               int              `json:"reset" form:"reset"`               // Reset period in days
-	ResetDay            int              `json:"resetDay" form:"resetDay"`         // Calendar renewal day 1-31, 0 disables monthly renewal
-	ResetWeekday        int              `json:"resetWeekday" form:"resetWeekday"` // Calendar weekday 1-7 (Mon-Sun), 0 disables weekly renewal
-	ResetMax            int              `json:"resetMax" form:"resetMax"`         // Max auto-renew count, 0 = unlimited
+	Email               string           `json:"email"`                             // Client email identifier
+	LimitIP             int              `json:"limitIp"`                           // IP limit for this client
+	SpeedLimit          int              `json:"speedLimit,omitempty" example:"20"` // Mbps in each direction on each host; 0 is unlimited
+	TotalGB             int64            `json:"totalGB" form:"totalGB"`            // Total traffic limit in GB
+	ExpiryTime          int64            `json:"expiryTime" form:"expiryTime"`      // Expiration timestamp
+	Enable              bool             `json:"enable" form:"enable"`              // Whether the client is enabled
+	TgID                int64            `json:"tgId" form:"tgId"`                  // Telegram user ID for notifications
+	SubID               string           `json:"subId" form:"subId"`                // Subscription identifier
+	Group               string           `json:"group,omitempty" form:"group"`      // Logical grouping label
+	Comment             string           `json:"comment" form:"comment"`            // Client comment
+	Reset               int              `json:"reset" form:"reset"`                // Reset period in days
+	ResetDay            int              `json:"resetDay" form:"resetDay"`          // Calendar renewal day 1-31, 0 disables monthly renewal
+	ResetWeekday        int              `json:"resetWeekday" form:"resetWeekday"`  // Calendar weekday 1-7 (Mon-Sun), 0 disables weekly renewal
+	ResetMax            int              `json:"resetMax" form:"resetMax"`          // Max auto-renew count, 0 = unlimited
 	// Per-client traffic reset cycle, independent of the inbound's own (#5497).
 	TrafficReset    string `json:"trafficReset,omitempty" form:"trafficReset" validate:"omitempty,oneof=never hourly daily weekly monthly"`
 	TrafficResetDay int    `json:"trafficResetDay,omitempty" form:"trafficResetDay" validate:"omitempty,gte=1,lte=31"`
@@ -1109,6 +1111,7 @@ type ClientRecord struct {
 	AdTag             string         `json:"adTag" gorm:"column:ad_tag;default:''"`
 	LimitIP           int            `json:"limitIp" gorm:"column:limit_ip"`
 	LimitHwid         int            `json:"limitHwid" gorm:"column:limit_hwid;default:0"`
+	SpeedLimit        int            `json:"speedLimit" gorm:"column:speed_limit;default:0"`
 	TotalGB           int64          `json:"totalGB" gorm:"column:total_gb"`
 	ExpiryTime        int64          `json:"expiryTime" gorm:"column:expiry_time"`
 	Enable            bool           `json:"enable" gorm:"default:true"`
@@ -1417,6 +1420,7 @@ func (c *Client) ToRecord() *ClientRecord {
 		Security:          c.Security,
 		ClientHostRuleIds: CloneClientHostRuleIds(c.ClientHostRuleIds),
 		LimitIP:           c.LimitIP,
+		SpeedLimit:        c.SpeedLimit,
 		TotalGB:           c.TotalGB,
 		ExpiryTime:        c.ExpiryTime,
 		Enable:            c.Enable,
@@ -1477,6 +1481,7 @@ func (r *ClientRecord) ToClient() *Client {
 		Security:          r.Security,
 		ClientHostRuleIds: CloneClientHostRuleIds(r.ClientHostRuleIds),
 		LimitIP:           r.LimitIP,
+		SpeedLimit:        r.SpeedLimit,
 		TotalGB:           r.TotalGB,
 		ExpiryTime:        r.ExpiryTime,
 		Enable:            r.Enable,
@@ -1696,6 +1701,16 @@ func MergeClientRecord(existing *ClientRecord, incoming *ClientRecord) []ClientM
 		if picked != existing.LimitIP {
 			keep("limitIp", existing.LimitIP, incoming.LimitIP, picked)
 			existing.LimitIP = picked
+		}
+	}
+	if existing.SpeedLimit != incoming.SpeedLimit && incoming.SpeedLimit != 0 {
+		picked := existing.SpeedLimit
+		if existing.SpeedLimit == 0 || incoming.SpeedLimit > existing.SpeedLimit {
+			picked = incoming.SpeedLimit
+		}
+		if picked != existing.SpeedLimit {
+			keep("speedLimit", existing.SpeedLimit, incoming.SpeedLimit, picked)
+			existing.SpeedLimit = picked
 		}
 	}
 	if existing.LimitHwid != incoming.LimitHwid && incoming.LimitHwid != 0 {

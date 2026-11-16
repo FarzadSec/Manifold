@@ -97,6 +97,9 @@ wait_until 20 "alice to reach the internet through the tunnel" reaches_internet
 use_traffic 20 || fail "no answer through the tunnel and NAT"
 wait_until 40 "alice's traffic to be stored" traffic_at_least alice 20000
 
+log "alice's speed limit holds her tunnel to it"
+check_speed_limit alice
+
 log "disabling alice removes her peer, enabling her puts it back"
 must_succeed "$(api POST /panel/api/clients/bulkDisable '{"emails":["alice"]}')" "disabling alice"
 wait_until 20 "alice to be cut off" cut_off

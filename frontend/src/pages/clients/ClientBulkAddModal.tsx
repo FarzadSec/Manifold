@@ -56,6 +56,7 @@ const EMPTY: ClientBulkAddFormValues = {
   comment: '',
   flow: '',
   limitIp: 0,
+  speedLimit: 0,
   limitHwid: 0,
   totalGB: 0,
   expiryTime: 0,
@@ -213,6 +214,7 @@ export default function ClientBulkAddModal({
           trafficReset: current.trafficReset || 'never',
           trafficResetDay: Number(current.trafficResetDay) || 1,
           limitIp: Number(current.limitIp) || 0,
+          speedLimit: Number(current.speedLimit) || 0,
           limitHwid: Number(current.limitHwid) || 0,
           group: current.group,
           comment: current.comment,
@@ -359,6 +361,15 @@ export default function ClientBulkAddModal({
                 options={groups.map((g) => ({ value: g }))}
                 allowClear
               />
+            </FormField>
+
+            <FormField
+              name="speedLimit"
+              label={t('pages.clients.speedLimit')}
+              tooltip={t('pages.clients.speedLimitDesc')}
+              transform={{ output: (v) => Number(v) || 0 }}
+            >
+              <InputNumber min={0} max={100000} addonAfter="Mbps" />
             </FormField>
 
             <FormField

@@ -34,6 +34,14 @@ Open the address the installer printed and sign in with the login it showed. `ma
 
 A client whose quota is used up or whose expiry date has passed stops working on all of its inbounds until it is renewed.
 
+## Limits on a client
+
+- **Speed limit** caps a client in Mbps, in each direction, on every engine: Xray (VLESS, VMess, Trojan, Shadowsocks, Hysteria and the embedded AmneziaWG and TUIC that ride it), OpenVPN, L2TP and WireGuard. It applies on each server separately: 20 Mbps lets the client use 20 Mbps on every server it is connected to. All of a client's connections on one server share the one budget, and a change reaches connections that are already open within a few seconds.
+- **IP limit** is the number of simultaneous addresses on Xray, and the number of connected devices on OpenVPN and L2TP: with 2, a third device is refused until one of the first two disconnects. On OpenVPN and L2TP it works without fail2ban.
+- Plans carry a speed limit too, copied onto every user created from them.
+
+The speed limit needs the `nftables` package, which Ubuntu installs by default. It does not reach traffic a routing script decides, and Xray traffic that leaves through a WireGuard outbound such as WARP is limited on its way there, through a loopback hop the panel adds.
+
 ## Admins, resellers and plans
 
 **Admins** in the sidebar lists everyone who signs in. Each account is on a tier:

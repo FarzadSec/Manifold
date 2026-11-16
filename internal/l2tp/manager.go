@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/config"
 	"github.com/mhsanaei/3x-ui/v3/internal/egress"
@@ -227,6 +228,30 @@ func (m *Manager) HasRunning() bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return len(m.servers) > 0
+}
+
+// SessionInterfaces returns the ppp interface of every live session, by account.
+func (m *Manager) SessionInterfaces() map[string][]string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	out := map[string][]string{}
+	for _, r := range m.servers {
+		for name, ifaces := range r.ctl.interfaces() {
+			out[name] = append(out[name], ifaces...)
+		}
+	}
+	return out
+}
+
+var sessionHook atomic.Pointer[func()]
+
+// SetSessionHook runs f, outside any lock, whenever a session comes up or goes away.
+func SetSessionHook(f func()) { sessionHook.Store(&f) }
+
+func notifySessionsChanged() {
+	if f := sessionHook.Load(); f != nil && *f != nil {
+		go (*f)()
+	}
 }
 
 // CollectTraffic returns each account's usage since the previous call and the

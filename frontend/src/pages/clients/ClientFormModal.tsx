@@ -175,6 +175,7 @@ const EMPTY: Values = {
   trafficReset: 'never' as const,
   trafficResetDay: 1,
   limitIp: 0,
+  speedLimit: 0,
   limitHwid: 0,
   tgId: 0,
   group: '',
@@ -318,6 +319,7 @@ export default function ClientFormModal({
       plan.days > 0 && !plan.startOnFirstUse ? Date.now() + plan.days * 86400000 : 0,
     );
     methods.setValue('limitIp', plan.limitIp);
+    methods.setValue('speedLimit', plan.speedLimit || 0);
     methods.setValue('limitHwid', plan.limitHwid);
     methods.setValue('reset', plan.reset);
     methods.setValue('trafficReset', (plan.trafficReset || 'never') as Values['trafficReset']);
@@ -347,8 +349,20 @@ export default function ClientFormModal({
   const hwidDateLabel = (ts: number) =>
     !ts || ts <= 0 ? '-' : IntlUtil.formatDate(ts, datepicker);
   const fail2ban = useFail2banStatusQuery();
-  const limitIpDisabled = !fail2ban.usable;
-  const limitIpNotice = getLimitIpNotice(fail2ban, t);
+  // OpenVPN and L2TP count their own sessions, so their device cap needs no fail2ban.
+  const servesSessionTunnels = useMemo(
+    () =>
+      (inboundIds || []).some((id) => {
+        const protocol = (inbounds || []).find((row) => row.id === id)?.protocol;
+        return protocol === 'openvpn' || protocol === 'l2tp';
+      }),
+    [inboundIds, inbounds],
+  );
+  const limitIpDisabled = !fail2ban.usable && !servesSessionTunnels;
+  const limitIpNotice =
+    !fail2ban.usable && servesSessionTunnels
+      ? t('pages.clients.limitIpTunnelsOnly')
+      : getLimitIpNotice(fail2ban, t);
 
   // Declared ahead of the seeding effect below (which needs them to resolve
   // which specific wg/awg inbound this client is attached to, for seeding
@@ -426,6 +440,7 @@ export default function ClientFormModal({
         trafficReset: (client.trafficReset as ClientFormValues['trafficReset']) || 'never',
         trafficResetDay: Number(client.trafficResetDay) || 1,
         limitIp: client.limitIp || 0,
+        speedLimit: client.speedLimit || 0,
         limitHwid: client.limitHwid || 0,
         tgId: Number(client.tgId) || 0,
         group: client.group || '',
@@ -791,6 +806,7 @@ export default function ClientFormModal({
       trafficReset: values.trafficReset,
       trafficResetDay: values.trafficResetDay,
       limitIp: values.limitIp,
+      speedLimit: values.speedLimit,
       limitHwid: values.limitHwid,
       tgId: values.tgId,
       group: values.group,
@@ -829,6 +845,7 @@ export default function ClientFormModal({
       trafficReset: values.trafficReset || 'never',
       trafficResetDay: Number(values.trafficResetDay) || 1,
       limitIp: Number(values.limitIp) || 0,
+      speedLimit: Number(values.speedLimit) || 0,
       limitHwid: Number(values.limitHwid) || 0,
       tgId: Number(values.tgId) || 0,
       group: values.group,
@@ -1064,6 +1081,22 @@ export default function ClientFormModal({
                             transform={{ output: (v) => Number(v) || 0 }}
                           >
                             <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                          </FormField>
+                        </Col>
+                        <Col xs={24} md={12}>
+                          <FormField
+                            name="speedLimit"
+                            label={t('pages.clients.speedLimit')}
+                            tooltip={t('pages.clients.speedLimitDesc')}
+                            transform={{ output: (v) => Number(v) || 0 }}
+                          >
+                            <InputNumber
+                              min={0}
+                              max={100000}
+                              step={1}
+                              addonAfter="Mbps"
+                              style={{ width: '100%' }}
+                            />
                           </FormField>
                         </Col>
                         <Col xs={24} md={12}>

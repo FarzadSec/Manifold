@@ -1197,7 +1197,10 @@
       "renewWeeklyDesc": "Gia hạn theo lịch diễn ra lúc nửa đêm theo múi giờ của bảng điều khiển và cũng đặt lại lưu lượng của khách hàng. Tắt việc đặt lại lưu lượng độc lập trừ khi bạn muốn đặt lại thêm.",
       "l2tpAccount": "Tài khoản L2TP",
       "l2tpServer": "Máy chủ",
-      "ownerChanged": "Owner changed"
+      "ownerChanged": "Owner changed",
+      "speedLimit": "Speed limit",
+      "speedLimitDesc": "Mbps in each direction, applied on each server separately. 0 = unlimited.",
+      "limitIpTunnelsOnly": "Without fail2ban this limit counts only OpenVPN and L2TP connections."
     },
     "groups": {
       "name": "Tên",

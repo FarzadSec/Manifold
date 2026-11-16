@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"net/netip"
 	"reflect"
 	"strings"
 	"testing"
@@ -254,5 +255,34 @@ func TestMalformedNotificationsAreIgnored(t *testing.T) {
 	f.settle()
 	if used, online := f.ctl.drain(); len(used) != 0 || len(online) != 0 {
 		t.Fatalf("drain = %+v %v, want nothing", used, online)
+	}
+}
+
+// The speed limit polices an OpenVPN session by the address OpenVPN gave it.
+func TestEstablishedSessionsReportTheirTunnelAddresses(t *testing.T) {
+	changed := make(chan struct{}, 4)
+	SetSessionHook(func() { changed <- struct{}{} })
+	t.Cleanup(func() { SetSessionHook(nil) })
+	f := newFakeServer(t, User{Name: "ali", Password: "pw"})
+	f.login(1, "ali", "pw")
+	f.expect("client-auth-nt 1 1")
+	f.emit(">CLIENT:ESTABLISHED,1",
+		">CLIENT:ENV,ifconfig_pool_remote_ip=10.8.0.6",
+		">CLIENT:ENV,ifconfig_pool_remote_ip6=fd00:8::1000",
+		">CLIENT:ENV,END")
+	f.settle()
+	want := map[string][]netip.Prefix{"ali": {netip.MustParsePrefix("10.8.0.6/32"), netip.MustParsePrefix("fd00:8::1000/128")}}
+	if got := f.ctl.addresses(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("addresses = %v, want %v", got, want)
+	}
+	select {
+	case <-changed:
+	case <-time.After(time.Second):
+		t.Fatal("no session change was signalled when the session came up")
+	}
+	f.emit(">CLIENT:DISCONNECT,1", ">CLIENT:ENV,bytes_received=1", ">CLIENT:ENV,bytes_sent=1", ">CLIENT:ENV,END")
+	f.settle()
+	if got := f.ctl.addresses(); len(got) != 0 {
+		t.Fatalf("addresses after the disconnect = %v, want none", got)
 	}
 }

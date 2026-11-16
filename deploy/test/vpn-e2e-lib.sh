@@ -51,6 +51,9 @@ engine_cleanup() { :; }
 
 cleanup() {
     engine_cleanup
+    if [ -n "${SPEED_PID:-}" ]; then
+        kill "$SPEED_PID" 2>/dev/null || true
+    fi
     if [ -n "${PANEL_URL:-}" ] && [ "${#ACCOUNTS[@]}" -gt 0 ]; then
         api POST /panel/api/clients/bulkDel \
             "$(python3 -c 'import json, sys; print(json.dumps({"emails": sys.argv[1:]}))' "${ACCOUNTS[@]}")" >/dev/null 2>&1 || true
@@ -201,4 +204,58 @@ reaches_internet() {
 # use_traffic COUNT: send COUNT kilobyte-sized pings through the tunnel.
 use_traffic() {
     ip netns exec "$CLIENT_NS" ping -c "$1" -i 0.05 -s 1000 -W 3 "$INET_ADDR" >/dev/null
+}
+
+SPEED_PORT=8099
+SPEED_PID=""
+
+# set_speed_limit EMAIL MBPS: change the account's speed limit and nothing else.
+set_speed_limit() {
+    must_succeed "$(api POST "/panel/api/clients/update/$1" "{\"speedLimit\": $2}")" "setting the speed limit of $1"
+}
+
+# start_speed_source: a server in the internet namespace that sends without end to whoever connects.
+start_speed_source() {
+    ip netns exec "$INET_NS" python3 - "$INET_ADDR" "$SPEED_PORT" >/dev/null 2>&1 <<'PY' &
+import socket, sys, threading
+srv = socket.create_server((sys.argv[1], int(sys.argv[2])))
+chunk = b"\0" * 65536
+def serve(c):
+    try:
+        c.recv(4096)
+        c.sendall(b"HTTP/1.0 200 OK\r\nContent-Type: application/octet-stream\r\n\r\n")
+        while True:
+            c.sendall(chunk)
+    except OSError:
+        pass
+    finally:
+        c.close()
+while True:
+    conn, _ = srv.accept()
+    threading.Thread(target=serve, args=(conn,), daemon=True).start()
+PY
+    SPEED_PID=$!
+}
+
+# download_mbps: the rate of a three-second download through the tunnel, in whole Mbps.
+download_mbps() {
+    local bytes_per_second
+    bytes_per_second="$(ip netns exec "$CLIENT_NS" curl -s -o /dev/null --max-time 3 -w '%{speed_download}' \
+        "http://${INET_ADDR}:${SPEED_PORT}/" || true)"
+    python3 -c 'import sys; print(int(float(sys.argv[1] or 0) * 8 / 1e6))' "${bytes_per_second:-0}"
+}
+
+# The first second of a limited download also spends the bucket's initial credit.
+rate_at_most() { [ "$(download_mbps)" -le "$1" ]; }
+
+rate_above() { [ "$(download_mbps)" -gt "$1" ]; }
+
+# check_speed_limit EMAIL: hold a connected account to 5 Mbps, then lift the limit.
+check_speed_limit() {
+    [ -n "$SPEED_PID" ] || start_speed_source
+    wait_until 10 "the speed source to answer" rate_above 0
+    set_speed_limit "$1" 5
+    wait_until 30 "$1 to be held to 5 Mbps" rate_at_most 8
+    set_speed_limit "$1" 0
+    wait_until 30 "$1's limit to be lifted" rate_above 20
 }

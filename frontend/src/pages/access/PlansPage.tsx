@@ -41,6 +41,7 @@ function emptyPlan(): Plan {
     days: 30,
     startOnFirstUse: false,
     limitIp: 0,
+    speedLimit: 0,
     limitHwid: 0,
     reset: 0,
     trafficReset: 'never',
@@ -145,6 +146,15 @@ function PlanFormModal({
                 tooltip={t('pages.access.startOnFirstUseHint')}
               >
                 <Switch />
+              </FormField>
+            </Col>
+            <Col xs={24} md={8}>
+              <FormField
+                name="speedLimit"
+                label={t('pages.clients.speedLimit')}
+                tooltip={t('pages.clients.speedLimitDesc')}
+              >
+                <InputNumber min={0} max={100000} style={{ width: '100%' }} addonAfter="Mbps" />
               </FormField>
             </Col>
             <Col xs={24} md={8}>
@@ -282,6 +292,7 @@ export default function PlansPage() {
       key: 'limits',
       render: (_, p) => (
         <Space size={4} wrap>
+          {p.speedLimit > 0 && <Tag>{p.speedLimit} Mbps</Tag>}
           {p.limitIp > 0 && <Tag>{t('pages.access.addressesCap', { n: p.limitIp })}</Tag>}
           {p.limitHwid > 0 && <Tag>{t('pages.access.devicesCap', { n: p.limitHwid })}</Tag>}
           {p.trafficReset !== 'never' && (

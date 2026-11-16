@@ -2273,6 +2273,11 @@ export const SCHEMAS: Record<string, unknown> = {
         "description": "Security method (e.g., \"auto\", \"aes-128-gcm\")",
         "type": "string"
       },
+      "speedLimit": {
+        "description": "Mbps in each direction on each host; 0 is unlimited",
+        "example": 20,
+        "type": "integer"
+      },
       "subId": {
         "description": "Subscription identifier",
         "type": "string"
@@ -2502,6 +2507,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "security": {
         "type": "string"
       },
+      "speedLimit": {
+        "type": "integer"
+      },
       "subId": {
         "type": "string"
       },
@@ -2555,6 +2563,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "reverse",
       "secret",
       "security",
+      "speedLimit",
       "subId",
       "tgId",
       "totalGB",
@@ -2734,6 +2743,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": 0,
         "type": "integer"
       },
+      "speedLimit": {
+        "example": 0,
+        "type": "integer"
+      },
       "subId": {
         "example": "abcd1234",
         "type": "string"
@@ -2770,6 +2783,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "resetDay",
       "resetMax",
       "resetWeekday",
+      "speedLimit",
       "subId",
       "totalGB",
       "updatedAt"
@@ -5176,6 +5190,10 @@ export const SCHEMAS: Record<string, unknown> = {
       "sortOrder": {
         "type": "integer"
       },
+      "speedLimit": {
+        "example": 20,
+        "type": "integer"
+      },
       "startOnFirstUse": {
         "type": "boolean"
       },
@@ -5206,6 +5224,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "nameSuffix",
       "reset",
       "sortOrder",
+      "speedLimit",
       "startOnFirstUse",
       "totalBytes",
       "trafficReset",

@@ -21,6 +21,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/l2tp"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/openvpn"
+	"github.com/mhsanaei/3x-ui/v3/internal/speedlimit"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/random"
@@ -51,6 +52,13 @@ func validateClientEmail(email string) error {
 func validateClientSubID(subID string) error {
 	if hasForbiddenClientChar(subID) {
 		return common.NewError("client subId contains an invalid character:", subID)
+	}
+	return nil
+}
+
+func validateClientSpeedLimit(mbps int) error {
+	if mbps < 0 || mbps > speedlimit.MaxMbps {
+		return common.NewError("client speedLimit must be between 0 and", speedlimit.MaxMbps, "Mbps, got:", mbps)
 	}
 	return nil
 }
@@ -212,6 +220,9 @@ func (s *ClientService) Create(inboundSvc *InboundService, payload *ClientCreate
 		return false, err
 	}
 	if err := validateClientResetMax(client.ResetMax); err != nil {
+		return false, err
+	}
+	if err := validateClientSpeedLimit(client.SpeedLimit); err != nil {
 		return false, err
 	}
 	if err := validateClientTrafficReset(client.TrafficReset, client.TrafficResetDay); err != nil {
@@ -754,6 +765,9 @@ func (s *ClientService) update(inboundSvc *InboundService, id int, updated model
 	if err := validateClientResetMax(updated.ResetMax); err != nil {
 		return false, err
 	}
+	if err := validateClientSpeedLimit(updated.SpeedLimit); err != nil {
+		return false, err
+	}
 	if err := validateClientTrafficReset(updated.TrafficReset, updated.TrafficResetDay); err != nil {
 		return false, err
 	}
@@ -951,6 +965,7 @@ func (s *ClientService) update(inboundSvc *InboundService, id int, updated model
 				"wg_keep_alive":        keepAliveLegacy,
 				"wg_keep_alive_range":  keepAliveRange,
 				"limit_ip":             merged.LimitIP,
+				"speed_limit":          merged.SpeedLimit,
 				"total_gb":             merged.TotalGB,
 				"expiry_time":          merged.ExpiryTime,
 				"tg_id":                merged.TgID,

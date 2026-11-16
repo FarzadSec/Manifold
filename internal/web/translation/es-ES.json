@@ -1197,7 +1197,10 @@
       "renewWeeklyDesc": "La renovación por calendario se realiza a medianoche en la zona horaria del panel y también reinicia el tráfico del cliente. Mantén desactivados los reinicios de tráfico independientes salvo que quieras un reinicio adicional.",
       "l2tpAccount": "Cuenta L2TP",
       "l2tpServer": "Servidor",
-      "ownerChanged": "Owner changed"
+      "ownerChanged": "Owner changed",
+      "speedLimit": "Speed limit",
+      "speedLimitDesc": "Mbps in each direction, applied on each server separately. 0 = unlimited.",
+      "limitIpTunnelsOnly": "Without fail2ban this limit counts only OpenVPN and L2TP connections."
     },
     "groups": {
       "name": "Nombre",

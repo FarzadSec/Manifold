@@ -2299,6 +2299,11 @@
             "description": "Security method (e.g., \"auto\", \"aes-128-gcm\")",
             "type": "string"
           },
+          "speedLimit": {
+            "description": "Mbps in each direction on each host; 0 is unlimited",
+            "example": 20,
+            "type": "integer"
+          },
           "subId": {
             "description": "Subscription identifier",
             "type": "string"
@@ -2528,6 +2533,9 @@
           "security": {
             "type": "string"
           },
+          "speedLimit": {
+            "type": "integer"
+          },
           "subId": {
             "type": "string"
           },
@@ -2581,6 +2589,7 @@
           "reverse",
           "secret",
           "security",
+          "speedLimit",
           "subId",
           "tgId",
           "totalGB",
@@ -2760,6 +2769,10 @@
             "example": 0,
             "type": "integer"
           },
+          "speedLimit": {
+            "example": 0,
+            "type": "integer"
+          },
           "subId": {
             "example": "abcd1234",
             "type": "string"
@@ -2796,6 +2809,7 @@
           "resetDay",
           "resetMax",
           "resetWeekday",
+          "speedLimit",
           "subId",
           "totalGB",
           "updatedAt"
@@ -5202,6 +5216,10 @@
           "sortOrder": {
             "type": "integer"
           },
+          "speedLimit": {
+            "example": 20,
+            "type": "integer"
+          },
           "startOnFirstUse": {
             "type": "boolean"
           },
@@ -5232,6 +5250,7 @@
           "nameSuffix",
           "reset",
           "sortOrder",
+          "speedLimit",
           "startOnFirstUse",
           "totalBytes",
           "trafficReset",
@@ -10663,6 +10682,7 @@
                         "resetDay": 0,
                         "resetMax": 0,
                         "resetWeekday": 0,
+                        "speedLimit": 0,
                         "subId": "abcd1234",
                         "totalGB": 53687091200,
                         "traffic": null,
@@ -16107,6 +16127,7 @@
                       "nameSuffix": "",
                       "reset": 0,
                       "sortOrder": 0,
+                      "speedLimit": 20,
                       "startOnFirstUse": false,
                       "totalBytes": 53687091200,
                       "trafficReset": "",
@@ -16228,6 +16249,7 @@
                     "nameSuffix": "",
                     "reset": 0,
                     "sortOrder": 0,
+                    "speedLimit": 20,
                     "startOnFirstUse": false,
                     "totalBytes": 53687091200,
                     "trafficReset": "",
@@ -16311,6 +16333,7 @@
                     "nameSuffix": "",
                     "reset": 0,
                     "sortOrder": 0,
+                    "speedLimit": 20,
                     "startOnFirstUse": false,
                     "totalBytes": 53687091200,
                     "trafficReset": "",

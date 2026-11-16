@@ -231,3 +231,29 @@ func TestSessionWhoseProcessDiedSilentlyIsForgotten(t *testing.T) {
 		t.Fatalf("the dead session still holds the account's only seat: %s", got)
 	}
 }
+
+// The speed limit polices an L2TP session by its ppp interface, only while pppd lives.
+func TestLiveSessionsReportTheirInterfaces(t *testing.T) {
+	changed := make(chan struct{}, 4)
+	SetSessionHook(func() { changed <- struct{}{} })
+	t.Cleanup(func() { SetSessionHook(nil) })
+	ctl, host, socket := testControl(t, User{Name: "Alice", Password: "clientPass"})
+	hook(t, socket, "up", "alice", 4101, "ppp0", nil)
+	hook(t, socket, "up", "alice", 4102, "ppp1", nil)
+	select {
+	case <-changed:
+	case <-time.After(time.Second):
+		t.Fatal("no session change was signalled when the link came up")
+	}
+	got := ctl.interfaces()["Alice"]
+	slices.Sort(got)
+	if !slices.Equal(got, []string{"ppp0", "ppp1"}) {
+		t.Fatalf("interfaces = %v, want ppp0 and ppp1 under the account's own name", ctl.interfaces())
+	}
+	host.mu.Lock()
+	host.dead[4102] = true
+	host.mu.Unlock()
+	if got := ctl.interfaces()["Alice"]; !slices.Equal(got, []string{"ppp0"}) {
+		t.Fatalf("interfaces = %v after pppd 4102 died, want only ppp0", got)
+	}
+}

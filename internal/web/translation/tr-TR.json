@@ -1197,7 +1197,10 @@
       "renewWeeklyDesc": "Takvim yenilemesi panelin saat diliminde gece yarısı gerçekleşir ve istemci trafiğini de sıfırlar. Ek bir sıfırlama istemiyorsanız bağımsız trafik sıfırlamalarını devre dışı bırakın.",
       "l2tpAccount": "L2TP hesabı",
       "l2tpServer": "Sunucu",
-      "ownerChanged": "Owner changed"
+      "ownerChanged": "Owner changed",
+      "speedLimit": "Speed limit",
+      "speedLimitDesc": "Mbps in each direction, applied on each server separately. 0 = unlimited.",
+      "limitIpTunnelsOnly": "Without fail2ban this limit counts only OpenVPN and L2TP connections."
     },
     "groups": {
       "name": "İsim",

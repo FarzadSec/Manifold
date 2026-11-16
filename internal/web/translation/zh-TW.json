@@ -1197,7 +1197,10 @@
       "renewWeeklyDesc": "日曆續期按面板時區的午夜執行，並重置客戶端流量。若不需要額外重置，請關閉獨立的流量重置。",
       "l2tpAccount": "L2TP 帳戶",
       "l2tpServer": "伺服器",
-      "ownerChanged": "Owner changed"
+      "ownerChanged": "Owner changed",
+      "speedLimit": "Speed limit",
+      "speedLimitDesc": "Mbps in each direction, applied on each server separately. 0 = unlimited.",
+      "limitIpTunnelsOnly": "Without fail2ban this limit counts only OpenVPN and L2TP connections."
     },
     "groups": {
       "name": "名稱",
