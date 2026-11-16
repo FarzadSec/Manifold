@@ -1200,7 +1200,24 @@
       "ownerChanged": "所有者已更改",
       "speedLimit": "限速",
       "speedLimitDesc": "每个方向的 Mbps,在每台服务器上分别生效。0 表示不限。",
-      "limitIpTunnelsOnly": "没有 fail2ban 时,此限制只计算 OpenVPN 和 L2TP 连接。"
+      "limitIpTunnelsOnly": "没有 fail2ban 时,此限制只计算 OpenVPN 和 L2TP 连接。",
+      "cycle": {
+        "never": "从不",
+        "hourly": "每小时",
+        "daily": "每天",
+        "weekly": "每周",
+        "monthly": "每月",
+        "yearly": "每年",
+        "days": "每 N 天",
+        "calendar": "历法",
+        "gregorian": "公历",
+        "persian": "波斯历",
+        "month": "月份",
+        "weekday": "重置日",
+        "every": "每隔(天)重置",
+        "everyHint": "从上次重置,或从用户创建时起计算。",
+        "dayHint": "某月没有的日期按该月最后一天计算。"
+      }
     },
     "groups": {
       "name": "名称",
@@ -2807,12 +2824,6 @@
         "operations": "运维",
         "administration": "面板管理"
       },
-      "resetEvery": {
-        "never": "从不",
-        "daily": "每天",
-        "weekly": "每周",
-        "monthly": "每月"
-      },
       "accountExpiry": "账户到期",
       "accountExpiryHint": "代理商账户结束时间：其用户将被停用且无法再登录。留空表示永不。",
       "action": "操作",
@@ -2937,7 +2948,6 @@
       "target": "目标",
       "tierHint": "主管理员可访问全部；操作员运营面板但不管理面板本身；代理商只能访问自己的用户。",
       "tierLabel": "层级",
-      "trafficReset": "重置用量",
       "turnOff": "关闭",
       "turnOn": "开启",
       "twoFactor": "双重认证",
@@ -2959,6 +2969,24 @@
       "zeroNever": "0 表示从不。",
       "zeroUnlimited": "0 表示不限制。",
       "about": "描述"
+    },
+    "usage": {
+      "menu": "用量",
+      "title": "{name} 的用量",
+      "thisPanel": "本服务器",
+      "server": "服务器",
+      "upload": "上传",
+      "download": "下载",
+      "total": "合计",
+      "slot": "时间",
+      "share": "占比",
+      "empty": "此时间段内没有流量",
+      "window": {
+        "24h": "24 小时",
+        "7d": "7 天",
+        "30d": "30 天",
+        "month": "月份"
+      }
     }
   },
   "tgbot": {

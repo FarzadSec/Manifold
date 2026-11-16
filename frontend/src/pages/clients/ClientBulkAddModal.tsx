@@ -20,7 +20,8 @@ import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
 import { RandomUtil, SizeFormatter } from '@/utils';
 import { formatInboundLabel } from '@/lib/inbounds/label';
-import { TLS_FLOW_CONTROL, TRAFFIC_RESETS } from '@/schemas/primitives';
+import { TLS_FLOW_CONTROL } from '@/schemas/primitives';
+import ClientCycleFields from './ClientCycleFields';
 import { DateTimePicker, SelectAllClearButtons, selectTagRender } from '@/components/form';
 import { FormField } from '@/components/form/rhf';
 import { useClients, type InboundOption } from '@/hooks/useClients';
@@ -66,6 +67,9 @@ const EMPTY: ClientBulkAddFormValues = {
   resetMax: 0,
   trafficReset: 'never' as const,
   trafficResetDay: 1,
+  trafficResetMonth: 0,
+  trafficResetEvery: 0,
+  trafficResetCalendar: 'gregorian' as const,
   inboundIds: [],
 };
 
@@ -97,7 +101,6 @@ export default function ClientBulkAddModal({
   const expiryTime = useWatch({ control: methods.control, name: 'expiryTime' });
   const subId = useWatch({ control: methods.control, name: 'subId' });
   const limitIp = useWatch({ control: methods.control, name: 'limitIp' });
-  const trafficReset = useWatch({ control: methods.control, name: 'trafficReset' });
   const [delayedStart, setDelayedStart] = useState(false);
   const [saving, setSaving] = useState(false);
   const fail2ban = useFail2banStatusQuery();
@@ -213,6 +216,9 @@ export default function ClientBulkAddModal({
           resetMax: Number(current.resetMax) || 0,
           trafficReset: current.trafficReset || 'never',
           trafficResetDay: Number(current.trafficResetDay) || 1,
+          trafficResetMonth: Number(current.trafficResetMonth) || 0,
+          trafficResetEvery: Number(current.trafficResetEvery) || 0,
+          trafficResetCalendar: current.trafficResetCalendar || 'gregorian',
           limitIp: Number(current.limitIp) || 0,
           speedLimit: Number(current.speedLimit) || 0,
           limitHwid: Number(current.limitHwid) || 0,
@@ -459,24 +465,7 @@ export default function ClientBulkAddModal({
               setExpiry={(expiry) => methods.setValue('expiryTime', expiry)}
             />
 
-            <FormField name="trafficReset" label={t('pages.inbounds.periodicTrafficResetTitle')}>
-              <Select
-                options={TRAFFIC_RESETS.map((r) => ({
-                  value: r,
-                  label: t(`pages.inbounds.periodicTrafficReset.${r}`),
-                }))}
-              />
-            </FormField>
-
-            {trafficReset === 'monthly' && (
-              <FormField
-                name="trafficResetDay"
-                label={t('pages.inbounds.periodicTrafficResetDay')}
-                transform={{ output: (v) => Number(v) || 1 }}
-              >
-                <InputNumber min={1} max={31} />
-              </FormField>
-            )}
+            <ClientCycleFields columns={false} />
           </Form>
         </FormProvider>
       </Modal>

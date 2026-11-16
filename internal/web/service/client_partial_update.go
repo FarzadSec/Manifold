@@ -106,6 +106,15 @@ func fillAbsentClientFields(rec *model.ClientRecord, updated *model.Client, limi
 	if !keys.has("trafficResetDay") {
 		updated.TrafficResetDay = stored.TrafficResetDay
 	}
+	if !keys.has("trafficResetMonth") {
+		updated.TrafficResetMonth = stored.TrafficResetMonth
+	}
+	if !keys.has("trafficResetEvery") {
+		updated.TrafficResetEvery = stored.TrafficResetEvery
+	}
+	if !keys.has("trafficResetCalendar") {
+		updated.TrafficResetCalendar = stored.TrafficResetCalendar
+	}
 	if !keys.has("adTag") {
 		updated.AdTag = stored.AdTag
 	}

@@ -58,6 +58,7 @@ export const keys = {
     activeInbounds: () => ['clients', 'activeInbounds'] as const,
     lastOnline: () => ['clients', 'lastOnline'] as const,
     groups: () => ['clients', 'groups'] as const,
+    usage: (email: string, params: unknown) => ['clients', 'usage', email, params] as const,
   },
   xray: {
     root: () => ['xray'] as const,

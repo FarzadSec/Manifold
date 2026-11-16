@@ -1840,6 +1840,34 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'GET',
+        path: '/panel/api/clients/usage/:email',
+        summary:
+          "A client's traffic over a window, hour by hour (day by day past a month), and how much went through each server. Server 0 is this panel.",
+        params: [
+          { name: 'email', in: 'path', type: 'string', desc: 'Client email.' },
+          {
+            name: 'window',
+            in: 'query',
+            type: 'string',
+            desc: '1h, 24h (default), 7d, 30d or month.',
+          },
+          {
+            name: 'month',
+            in: 'query',
+            type: 'string',
+            desc: 'With window=month: YYYY-MM, in the calendar below.',
+          },
+          {
+            name: 'calendar',
+            in: 'query',
+            type: 'string',
+            desc: 'gregorian (default) or persian, in the panel time zone.',
+          },
+        ],
+        responseSchema: 'ClientUsageView',
+      },
+      {
+        method: 'GET',
         path: '/panel/api/clients/subLinks/:subId',
         summary:
           'Return every protocol URL (vless://, vmess://, trojan://, ss://, hysteria://, hy2://) for clients matching the subscription ID. Same result set as the configured subPath endpoint, but as a JSON array — no base64. When an inbound has streamSettings.externalProxy set, one URL is emitted per external proxy. Empty array when the subId has no enabled clients.',

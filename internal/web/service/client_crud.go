@@ -67,9 +67,9 @@ func validateClientSpeedLimit(mbps int) error {
 // a field that reads as configured while no job ever selects the client.
 func validateClientTrafficReset(period string, day int) error {
 	switch period {
-	case "", "never", "hourly", "daily", "weekly", "monthly":
+	case "", "never", "hourly", "daily", "weekly", "monthly", "yearly", "days":
 	default:
-		return common.NewError("client trafficReset must be never, hourly, daily, weekly or monthly, got:", period)
+		return common.NewError("client trafficReset must be never, hourly, daily, weekly, monthly, yearly or days, got:", period)
 	}
 	if day < 0 || day > 31 {
 		return common.NewError("client trafficResetDay must be between 0 and 31, got:", day)
@@ -132,12 +132,18 @@ func normalizeClientTrafficReset(c *model.Client) {
 // ClientResetCycle is the slice of a client the reset job needs: enough to know
 // whether it is due, and whether its disable is the quota's doing or the operator's.
 type ClientResetCycle struct {
-	Email           string
-	TrafficResetDay int
-	Enable          bool
-	Total           int64
-	Up              int64
-	Down            int64
+	Email                string
+	TrafficReset         string
+	TrafficResetDay      int
+	TrafficResetMonth    int
+	TrafficResetEvery    int
+	TrafficResetCalendar string
+	TrafficResetAt       int64
+	CreatedAt            int64
+	Enable               bool
+	Total                int64
+	Up                   int64
+	Down                 int64
 }
 
 // Depleted reports a client the quota switched off. A reset restores that one;
@@ -148,7 +154,9 @@ func (c ClientResetCycle) Depleted() bool {
 
 func clientResetCycles(tx *gorm.DB) *gorm.DB {
 	return tx.Table("clients c").
-		Select("c.email, c.traffic_reset_day, c.enable, COALESCE(ct.total, 0) AS total, COALESCE(ct.up, 0) AS up, COALESCE(ct.down, 0) AS down").
+		Select("c.email, c.traffic_reset, c.traffic_reset_day, c.traffic_reset_month, c.traffic_reset_every, " +
+			"c.traffic_reset_calendar, c.traffic_reset_at, c.created_at, c.enable, " +
+			"COALESCE(ct.total, 0) AS total, COALESCE(ct.up, 0) AS up, COALESCE(ct.down, 0) AS down").
 		Joins("LEFT JOIN client_traffics ct ON ct.email = c.email")
 }
 
@@ -225,7 +233,7 @@ func (s *ClientService) Create(inboundSvc *InboundService, payload *ClientCreate
 	if err := validateClientSpeedLimit(client.SpeedLimit); err != nil {
 		return false, err
 	}
-	if err := validateClientTrafficReset(client.TrafficReset, client.TrafficResetDay); err != nil {
+	if err := validateClientTrafficCycle(&client); err != nil {
 		return false, err
 	}
 	normalizeClientTrafficReset(&client)
@@ -768,7 +776,7 @@ func (s *ClientService) update(inboundSvc *InboundService, id int, updated model
 	if err := validateClientSpeedLimit(updated.SpeedLimit); err != nil {
 		return false, err
 	}
-	if err := validateClientTrafficReset(updated.TrafficReset, updated.TrafficResetDay); err != nil {
+	if err := validateClientTrafficCycle(&updated); err != nil {
 		return false, err
 	}
 	existingClientsByInbound := make(map[int][]model.Client, len(attachedIds))
@@ -938,6 +946,9 @@ func (s *ClientService) update(inboundSvc *InboundService, id int, updated model
 			Update("email", updated.Email).Error; err != nil {
 			return needRestart, err
 		}
+		if err := renameClientUsage(database.GetDB(), existing.Email, updated.Email); err != nil {
+			return needRestart, err
+		}
 	}
 
 	if len(inboundIds) == 0 {
@@ -950,32 +961,35 @@ func (s *ClientService) update(inboundSvc *InboundService, id int, updated model
 		if err := database.GetDB().Model(&model.ClientRecord{}).
 			Where("id = ?", id).
 			Updates(map[string]any{
-				"sub_id":               merged.SubID,
-				"uuid":                 merged.UUID,
-				"password":             merged.Password,
-				"auth":                 merged.Auth,
-				"secret":               merged.Secret,
-				"flow":                 merged.Flow,
-				"security":             merged.Security,
-				"client_host_rule_ids": model.EncodeClientHostRuleIds(merged.ClientHostRuleIds),
-				"wg_private_key":       merged.PrivateKey,
-				"wg_public_key":        merged.PublicKey,
-				"wg_allowed_ips":       merged.AllowedIPs,
-				"wg_pre_shared_key":    merged.PreSharedKey,
-				"wg_keep_alive":        keepAliveLegacy,
-				"wg_keep_alive_range":  keepAliveRange,
-				"limit_ip":             merged.LimitIP,
-				"speed_limit":          merged.SpeedLimit,
-				"total_gb":             merged.TotalGB,
-				"expiry_time":          merged.ExpiryTime,
-				"tg_id":                merged.TgID,
-				"comment":              merged.Comment,
-				"reset":                merged.Reset,
-				"reset_day":            merged.ResetDay,
-				"reset_weekday":        merged.ResetWeekday,
-				"reset_max":            merged.ResetMax,
-				"traffic_reset":        merged.TrafficReset,
-				"traffic_reset_day":    merged.TrafficResetDay,
+				"sub_id":                 merged.SubID,
+				"uuid":                   merged.UUID,
+				"password":               merged.Password,
+				"auth":                   merged.Auth,
+				"secret":                 merged.Secret,
+				"flow":                   merged.Flow,
+				"security":               merged.Security,
+				"client_host_rule_ids":   model.EncodeClientHostRuleIds(merged.ClientHostRuleIds),
+				"wg_private_key":         merged.PrivateKey,
+				"wg_public_key":          merged.PublicKey,
+				"wg_allowed_ips":         merged.AllowedIPs,
+				"wg_pre_shared_key":      merged.PreSharedKey,
+				"wg_keep_alive":          keepAliveLegacy,
+				"wg_keep_alive_range":    keepAliveRange,
+				"limit_ip":               merged.LimitIP,
+				"speed_limit":            merged.SpeedLimit,
+				"total_gb":               merged.TotalGB,
+				"expiry_time":            merged.ExpiryTime,
+				"tg_id":                  merged.TgID,
+				"comment":                merged.Comment,
+				"reset":                  merged.Reset,
+				"reset_day":              merged.ResetDay,
+				"reset_weekday":          merged.ResetWeekday,
+				"reset_max":              merged.ResetMax,
+				"traffic_reset":          merged.TrafficReset,
+				"traffic_reset_day":      merged.TrafficResetDay,
+				"traffic_reset_month":    merged.TrafficResetMonth,
+				"traffic_reset_every":    merged.TrafficResetEvery,
+				"traffic_reset_calendar": merged.TrafficResetCalendar,
 			}).Error; err != nil {
 			return needRestart, err
 		}

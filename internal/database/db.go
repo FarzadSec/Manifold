@@ -92,6 +92,7 @@ func allModels() []any {
 		&model.Role{},
 		&model.Plan{},
 		&model.AuditEntry{},
+		&model.ClientUsage{},
 	}
 }
 
@@ -1535,7 +1536,7 @@ func runSeeders(isUsersEmpty bool) error {
 	}
 
 	if empty && isUsersEmpty {
-		seeders := []string{"UserPasswordHash", "ClientsTable", "InboundClientsArrayFix", "InboundClientTgIdFix2", "InboundClientSubIdFix", "FreedomFinalRulesReverseFix", "FreedomFinalRulesPrivateEgressBlock", "UppercaseFreedomFinalRulesFix", "FreedomFinalRuleDelayFix", "InboundRealityFinalmaskTcpStrip", "ApiTokensHash", "LegacyProxySettingsCleanup", "SessionSecretRotation", "OutboundRemovedKeysFix", "FreedomDomainStrategyFix", "DNSOutboundLegacyKeysFix", "DNSOutboundQTypeZeroFix", "WireguardDomainStrategyFix", "XdnsFinalmaskNamesAddrsFix", "UDPHopClientMaskFix", "HostVerifyPeerCertByNameBoolFix", "HostMihomoX25519Reset", "WireguardPeersToClients", "MtprotoSecretsToClients", "NodeInboundsAdopted", "NodeDownNotified", "ResetIpLimitNoFail2ban", "ClientGroupNameTrim", "OwnerlessClientHwidPurge", "ClientForwardedPortsBackfill", "TwoFactorPerAccount"}
+		seeders := []string{"UserPasswordHash", "ClientsTable", "InboundClientsArrayFix", "InboundClientTgIdFix2", "InboundClientSubIdFix", "FreedomFinalRulesReverseFix", "FreedomFinalRulesPrivateEgressBlock", "UppercaseFreedomFinalRulesFix", "FreedomFinalRuleDelayFix", "InboundRealityFinalmaskTcpStrip", "ApiTokensHash", "LegacyProxySettingsCleanup", "SessionSecretRotation", "OutboundRemovedKeysFix", "FreedomDomainStrategyFix", "DNSOutboundLegacyKeysFix", "DNSOutboundQTypeZeroFix", "WireguardDomainStrategyFix", "XdnsFinalmaskNamesAddrsFix", "UDPHopClientMaskFix", "HostVerifyPeerCertByNameBoolFix", "HostMihomoX25519Reset", "WireguardPeersToClients", "MtprotoSecretsToClients", "NodeInboundsAdopted", "NodeDownNotified", "ResetIpLimitNoFail2ban", "ClientGroupNameTrim", "OwnerlessClientHwidPurge", "ClientForwardedPortsBackfill", "TwoFactorPerAccount", "ClientWeeklyResetOnSunday"}
 		for _, name := range seeders {
 			if err := db.Create(&model.HistoryOfSeeders{SeederName: name}).Error; err != nil {
 				return err
@@ -1783,6 +1784,11 @@ func runSeeders(isUsersEmpty bool) error {
 			return err
 		}
 	}
+	if !slices.Contains(seedersHistory, "ClientWeeklyResetOnSunday") {
+		if err := pinWeeklyResetsToSunday(); err != nil {
+			return err
+		}
+	}
 
 	// Idempotent, not seeder-gated: bad values can re-enter via a restored
 	// backup, so re-check on every start.
@@ -1838,6 +1844,46 @@ func moveTwoFactorToOwner() error {
 		return err
 	}
 	return db.Create(&model.HistoryOfSeeders{SeederName: "TwoFactorPerAccount"}).Error
+}
+
+// pinWeeklyResetsToSunday keeps weekly cycles on the Sunday they always ran on, now
+// that the day of a weekly cycle names its weekday; inbound copies of the client too.
+func pinWeeklyResetsToSunday() error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&model.ClientRecord{}).Where("traffic_reset = ?", "weekly").
+			UpdateColumn("traffic_reset_day", 7).Error; err != nil {
+			return err
+		}
+		var inbounds []model.Inbound
+		if err := tx.Select("id", "settings").Where("settings LIKE ?", `%"weekly"%`).Find(&inbounds).Error; err != nil {
+			return err
+		}
+		for _, ib := range inbounds {
+			var settings map[string]any
+			if json.Unmarshal([]byte(ib.Settings), &settings) != nil {
+				continue
+			}
+			clients, _ := settings["clients"].([]any)
+			changed := false
+			for _, raw := range clients {
+				if c, ok := raw.(map[string]any); ok && c["trafficReset"] == "weekly" {
+					c["trafficResetDay"] = 7
+					changed = true
+				}
+			}
+			if !changed {
+				continue
+			}
+			out, err := json.MarshalIndent(settings, "", "  ")
+			if err != nil {
+				return err
+			}
+			if err := tx.Model(&model.Inbound{}).Where("id = ?", ib.Id).UpdateColumn("settings", string(out)).Error; err != nil {
+				return err
+			}
+		}
+		return tx.Create(&model.HistoryOfSeeders{SeederName: "ClientWeeklyResetOnSunday"}).Error
+	})
 }
 
 // seedNodeInboundsAdopted keeps the pre-existing reconcile behavior for nodes

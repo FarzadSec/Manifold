@@ -103,18 +103,34 @@ func recordFor(t *testing.T, email string) model.ClientRecord {
 }
 
 func TestPeriodicTrafficResetClients(t *testing.T) {
-	t.Run("resets a client on its own cycle inside a never-reset inbound", func(t *testing.T) {
+	t.Run("a weekly client resets on its weekday, from the daily pass", func(t *testing.T) {
 		initResetJobDB(t)
-		seedClientOnCycle(t, 41001, seededClient{email: "weekly@example.com", cycle: "weekly", day: 1, recordEnable: true, quotaEnable: true})
-		seedClientOnCycle(t, 41002, seededClient{email: "monthly@example.com", cycle: "monthly", day: 1, recordEnable: true, quotaEnable: true})
+		weekday := int(time.Now().UTC().Weekday())
+		if weekday == 0 {
+			weekday = 7
+		}
+		seedClientOnCycle(t, 41001, seededClient{email: "weekly@example.com", cycle: "weekly", day: weekday, recordEnable: true, quotaEnable: true})
+		seedClientOnCycle(t, 41008, seededClient{email: "otherday@example.com", cycle: "weekly", day: weekday%7 + 1, recordEnable: true, quotaEnable: true})
+		seedClientOnCycle(t, 41002, seededClient{email: "monthly@example.com", cycle: "monthly", day: time.Now().UTC().Day()%28 + 1, recordEnable: true, quotaEnable: true})
 
+		// The Sunday job leaves clients to the daily pass, or a weekly one would reset twice.
 		NewPeriodicTrafficResetJob("weekly", time.UTC).Run()
+		if row := trafficFor(t, "weekly@example.com"); row.Up != 500 {
+			t.Fatalf("the Sunday job reset a client cycle: up=%d", row.Up)
+		}
+		NewPeriodicTrafficResetJob("monthly", time.UTC).Run()
 
 		if row := trafficFor(t, "weekly@example.com"); row.Up != 0 || row.Down != 0 {
-			t.Fatalf("weekly client not reset by the weekly run: up=%d down=%d", row.Up, row.Down)
+			t.Fatalf("weekly client not reset on its weekday: up=%d down=%d", row.Up, row.Down)
+		}
+		if row := trafficFor(t, "otherday@example.com"); row.Up != 500 {
+			t.Fatalf("weekly client reset on another weekday: up=%d", row.Up)
 		}
 		if row := trafficFor(t, "monthly@example.com"); row.Up != 500 || row.Down != 700 {
-			t.Fatalf("monthly client reset by the weekly run: up=%d down=%d", row.Up, row.Down)
+			t.Fatalf("monthly client reset before its day: up=%d down=%d", row.Up, row.Down)
+		}
+		if rec := recordFor(t, "weekly@example.com"); rec.TrafficResetAt == 0 {
+			t.Fatal("the reset was not recorded for an every-N-days count to start from")
 		}
 	})
 

@@ -42,15 +42,17 @@ func (s *PlanService) validate(p *model.Plan) error {
 	if p.TotalBytes < 0 || p.Days < 0 || p.LimitIp < 0 || p.LimitHwid < 0 || p.Reset < 0 {
 		return common.NewError("plan limits cannot be negative")
 	}
-	switch p.TrafficReset {
-	case "":
+	if p.TrafficReset == "" {
 		p.TrafficReset = "never"
-	case "never", "hourly", "daily", "weekly", "monthly":
-	default:
-		return common.NewError("traffic reset must be never, hourly, daily, weekly or monthly")
 	}
 	if p.TrafficResetDay < 1 || p.TrafficResetDay > 31 {
 		p.TrafficResetDay = 1
+	}
+	if err := validateClientTrafficCycle(&model.Client{
+		TrafficReset: p.TrafficReset, TrafficResetDay: p.TrafficResetDay, TrafficResetMonth: p.TrafficResetMonth,
+		TrafficResetEvery: p.TrafficResetEvery, TrafficResetCalendar: p.TrafficResetCalendar,
+	}); err != nil {
+		return err
 	}
 	if !p.AllInbounds {
 		if len(p.InboundIds) == 0 {
@@ -109,6 +111,9 @@ func ApplyPlan(p *model.Plan, payload *ClientCreatePayload, allInboundIDs []int,
 	c.Reset = p.Reset
 	c.TrafficReset = p.TrafficReset
 	c.TrafficResetDay = p.TrafficResetDay
+	c.TrafficResetMonth = p.TrafficResetMonth
+	c.TrafficResetEvery = p.TrafficResetEvery
+	c.TrafficResetCalendar = p.TrafficResetCalendar
 	if p.Group != "" {
 		c.Group = p.Group
 	}

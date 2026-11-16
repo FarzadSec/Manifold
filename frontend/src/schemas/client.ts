@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { OptionalClientKeepAliveSchema } from '@/schemas/primitives/keepalive';
+import { CLIENT_TRAFFIC_RESETS } from '@/schemas/primitives/traffic-reset';
 
 const nullableStringArray = z
   .array(z.string())
@@ -49,6 +50,9 @@ export const ClientRecordSchema = z
     resetMax: z.number().optional(),
     trafficReset: z.string().optional(),
     trafficResetDay: z.number().optional(),
+    trafficResetMonth: z.number().optional(),
+    trafficResetEvery: z.number().optional(),
+    trafficResetCalendar: z.string().optional(),
     inboundIds: nullableNumberArray.optional(),
     traffic: ClientTrafficSchema.nullable().optional(),
     reverse: z.object({ tag: z.string().optional() }).loose().nullable().optional(),
@@ -339,8 +343,11 @@ export const ClientFormSchema = z.object({
   resetDay: z.number().int().min(0).max(31),
   resetWeekday: z.number().int().min(0).max(7),
   resetMax: z.number().int().min(0),
-  trafficReset: z.enum(['never', 'hourly', 'daily', 'weekly', 'monthly']),
+  trafficReset: z.enum(CLIENT_TRAFFIC_RESETS),
   trafficResetDay: z.number().int().min(1).max(31),
+  trafficResetMonth: z.number().int().min(0).max(12),
+  trafficResetEvery: z.number().int().min(0).max(3650),
+  trafficResetCalendar: z.enum(['gregorian', 'persian']),
   limitIp: z.number().int().min(0),
   speedLimit: z.number().int().min(0).max(100000),
   limitHwid: z.number().int().min(0),
@@ -406,8 +413,11 @@ export const ClientBulkAddFormSchema = z.object({
   resetDay: z.number().int().min(0).max(31),
   resetWeekday: z.number().int().min(0).max(7),
   resetMax: z.number().int().min(0),
-  trafficReset: z.enum(['never', 'hourly', 'daily', 'weekly', 'monthly']).optional(),
+  trafficReset: z.enum(CLIENT_TRAFFIC_RESETS).optional(),
   trafficResetDay: z.number().int().min(1).max(31).optional(),
+  trafficResetMonth: z.number().int().min(0).max(12).optional(),
+  trafficResetEvery: z.number().int().min(0).max(3650).optional(),
+  trafficResetCalendar: z.enum(['gregorian', 'persian']).optional(),
   inboundIds: z.array(z.number()).min(1, 'pages.clients.selectInbound'),
 });
 

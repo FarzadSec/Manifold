@@ -396,6 +396,7 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	common.GoRecover("speed-limit-kicks", (&service.SpeedService{}).RunSpeedKicks)
 	go speedJob.Run()
 	_, _ = s.cron.AddJob(cadenceAuditPrune, job.NewAuditPruneJob())
+	_, _ = s.cron.AddJob("@daily", job.NewUsagePruneJob())
 
 	s.startTunnelJob()
 

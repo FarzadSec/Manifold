@@ -39,6 +39,8 @@ A client whose quota is used up or whose expiry date has passed stops working on
 - **Speed limit** caps a client in Mbps, in each direction, on every engine: Xray (VLESS, VMess, Trojan, Shadowsocks, Hysteria and the embedded AmneziaWG and TUIC that ride it), OpenVPN, L2TP and WireGuard. It applies on each server separately: 20 Mbps lets the client use 20 Mbps on every server it is connected to. All of a client's connections on one server share the one budget, and a change reaches connections that are already open within a few seconds.
 - **IP limit** is the number of simultaneous addresses on Xray, and the number of connected devices on OpenVPN and L2TP: with 2, a third device is refused until one of the first two disconnects. On OpenVPN and L2TP it works without fail2ban.
 - Plans carry a speed limit too, copied onto every user created from them.
+- **Usage** (the chart icon on a client) draws its traffic over the last 24 hours, 7 or 30 days, or a whole month in the panel's calendar, and splits it per server. **CSV** downloads both. Hours are kept for a month and days for 400 days, in the panel's time zone.
+- **Traffic reset** has the shapes NX Panel offers: every hour or day, weekly on a weekday, monthly on a day, yearly on a month and day, or every N days counted from the last reset. Monthly and yearly cycles follow the Gregorian or the Persian calendar; a day the month lacks falls on its last day. A reset clears the used traffic only.
 
 The speed limit needs the `nftables` package, which Ubuntu installs by default. It does not reach traffic a routing script decides, and Xray traffic that leaves through a WireGuard outbound such as WARP is limited on its way there, through a loopback hop the panel adds.
 

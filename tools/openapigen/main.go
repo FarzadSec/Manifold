@@ -135,6 +135,10 @@ func run(root, outDir string) error {
 				"MigrationReport",
 				"AuditPage",
 				"AuditSettings",
+				"ClientUsageView",
+				"UsagePoint",
+				"NodeUsage",
+				"UserUsage",
 			),
 		},
 		{

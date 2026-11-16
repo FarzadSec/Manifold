@@ -42,7 +42,7 @@ import { useRawHostsQuery } from '@/api/queries/useRawHostsQuery';
 import { DateTimePicker, SelectAllClearButtons, selectTagRender } from '@/components/form';
 import { FormField, rhfZodValidate } from '@/components/form/rhf';
 import ClientHwidListModal from '@/components/clients/ClientHwidList';
-import { TLS_FLOW_CONTROL, TRAFFIC_RESETS } from '@/schemas/primitives';
+import { TLS_FLOW_CONTROL } from '@/schemas/primitives';
 import {
   OptionalAmneziaWGKeepAliveInputSchema,
   OptionalNumericKeepAliveInputSchema,
@@ -56,6 +56,7 @@ import type {
 } from '@/hooks/useClients';
 import { useFail2banStatusQuery, getLimitIpNotice } from '@/api/queries/useFail2banStatusQuery';
 import ClientRenewalFields from './ClientRenewalFields';
+import ClientCycleFields from './ClientCycleFields';
 import { ClientFormSchema, ClientCreateFormSchema, type ClientFormValues } from '@/schemas/client';
 import './ClientFormModal.css';
 
@@ -174,6 +175,9 @@ const EMPTY: Values = {
   resetMax: 0,
   trafficReset: 'never' as const,
   trafficResetDay: 1,
+  trafficResetMonth: 0,
+  trafficResetEvery: 0,
+  trafficResetCalendar: 'gregorian' as const,
   limitIp: 0,
   speedLimit: 0,
   limitHwid: 0,
@@ -285,7 +289,6 @@ export default function ClientFormModal({
   const secret = useWatch({ control: methods.control, name: 'secret' });
   const email = useWatch({ control: methods.control, name: 'email' });
   const uuid = useWatch({ control: methods.control, name: 'uuid' });
-  const trafficReset = useWatch({ control: methods.control, name: 'trafficReset' });
   const password = useWatch({ control: methods.control, name: 'password' });
   const subId = useWatch({ control: methods.control, name: 'subId' });
   const limitHwid = useWatch({ control: methods.control, name: 'limitHwid' });
@@ -324,6 +327,12 @@ export default function ClientFormModal({
     methods.setValue('reset', plan.reset);
     methods.setValue('trafficReset', (plan.trafficReset || 'never') as Values['trafficReset']);
     methods.setValue('trafficResetDay', plan.trafficResetDay || 1);
+    methods.setValue('trafficResetMonth', plan.trafficResetMonth || 0);
+    methods.setValue('trafficResetEvery', plan.trafficResetEvery || 0);
+    methods.setValue(
+      'trafficResetCalendar',
+      plan.trafficResetCalendar === 'persian' ? 'persian' : 'gregorian',
+    );
     if (plan.group) methods.setValue('group', plan.group);
     methods.setValue(
       'inboundIds',
@@ -439,6 +448,9 @@ export default function ClientFormModal({
         resetMax: Number(client.resetMax) || 0,
         trafficReset: (client.trafficReset as ClientFormValues['trafficReset']) || 'never',
         trafficResetDay: Number(client.trafficResetDay) || 1,
+        trafficResetMonth: Number(client.trafficResetMonth) || 0,
+        trafficResetEvery: Number(client.trafficResetEvery) || 0,
+        trafficResetCalendar: client.trafficResetCalendar === 'persian' ? 'persian' : 'gregorian',
         limitIp: client.limitIp || 0,
         speedLimit: client.speedLimit || 0,
         limitHwid: client.limitHwid || 0,
@@ -805,6 +817,9 @@ export default function ClientFormModal({
       resetMax: values.resetMax,
       trafficReset: values.trafficReset,
       trafficResetDay: values.trafficResetDay,
+      trafficResetMonth: values.trafficResetMonth,
+      trafficResetEvery: values.trafficResetEvery,
+      trafficResetCalendar: values.trafficResetCalendar,
       limitIp: values.limitIp,
       speedLimit: values.speedLimit,
       limitHwid: values.limitHwid,
@@ -844,6 +859,9 @@ export default function ClientFormModal({
       resetMax: Number(values.resetMax) || 0,
       trafficReset: values.trafficReset || 'never',
       trafficResetDay: Number(values.trafficResetDay) || 1,
+      trafficResetMonth: Number(values.trafficResetMonth) || 0,
+      trafficResetEvery: Number(values.trafficResetEvery) || 0,
+      trafficResetCalendar: values.trafficResetCalendar,
       limitIp: Number(values.limitIp) || 0,
       speedLimit: Number(values.speedLimit) || 0,
       limitHwid: Number(values.limitHwid) || 0,
@@ -1218,32 +1236,7 @@ export default function ClientFormModal({
                         </Col>
                       </Row>
 
-                      <Row gutter={16}>
-                        <Col xs={24} md={12}>
-                          <FormField
-                            name="trafficReset"
-                            label={t('pages.inbounds.periodicTrafficResetTitle')}
-                          >
-                            <Select
-                              options={TRAFFIC_RESETS.map((r) => ({
-                                value: r,
-                                label: t(`pages.inbounds.periodicTrafficReset.${r}`),
-                              }))}
-                            />
-                          </FormField>
-                        </Col>
-                        {trafficReset === 'monthly' && (
-                          <Col xs={24} md={12}>
-                            <FormField
-                              name="trafficResetDay"
-                              label={t('pages.inbounds.periodicTrafficResetDay')}
-                              transform={{ output: (v) => Number(v) || 1 }}
-                            >
-                              <InputNumber min={1} max={31} style={{ width: '100%' }} />
-                            </FormField>
-                          </Col>
-                        )}
-                      </Row>
+                      <ClientCycleFields />
 
                       <ClientRenewalFields
                         active={open}

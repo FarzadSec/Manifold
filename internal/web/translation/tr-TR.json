@@ -1200,7 +1200,24 @@
       "ownerChanged": "Owner changed",
       "speedLimit": "Speed limit",
       "speedLimitDesc": "Mbps in each direction, applied on each server separately. 0 = unlimited.",
-      "limitIpTunnelsOnly": "Without fail2ban this limit counts only OpenVPN and L2TP connections."
+      "limitIpTunnelsOnly": "Without fail2ban this limit counts only OpenVPN and L2TP connections.",
+      "cycle": {
+        "never": "Never",
+        "hourly": "Every hour",
+        "daily": "Every day",
+        "weekly": "Weekly",
+        "monthly": "Monthly",
+        "yearly": "Yearly",
+        "days": "Every N days",
+        "calendar": "Calendar",
+        "gregorian": "Gregorian",
+        "persian": "Persian (Solar Hijri)",
+        "month": "Month",
+        "weekday": "Resets on",
+        "every": "Reset every (days)",
+        "everyHint": "Counted from the last reset, or from when the user was created.",
+        "dayHint": "A day the month does not have falls on its last day."
+      }
     },
     "groups": {
       "name": "İsim",
@@ -2807,12 +2824,6 @@
         "operations": "Operations",
         "administration": "Panel administration"
       },
-      "resetEvery": {
-        "never": "Never",
-        "daily": "Every day",
-        "weekly": "Every week",
-        "monthly": "Every month"
-      },
       "accountExpiry": "Account expiry",
       "accountExpiryHint": "When the reseller's account ends: its users are switched off and it can no longer sign in. Empty never.",
       "action": "Action",
@@ -2937,7 +2948,6 @@
       "target": "Target",
       "tierHint": "Main admins reach everything; operators run the panel but not its administration; resellers reach only their own users.",
       "tierLabel": "Tier",
-      "trafficReset": "Reset usage",
       "turnOff": "Turn off",
       "turnOn": "Turn on",
       "twoFactor": "Two-factor authentication",
@@ -2959,6 +2969,24 @@
       "zeroNever": "0 means never.",
       "zeroUnlimited": "0 means no limit.",
       "about": "Description"
+    },
+    "usage": {
+      "menu": "Usage",
+      "title": "Usage of {name}",
+      "thisPanel": "This server",
+      "server": "Server",
+      "upload": "Upload",
+      "download": "Download",
+      "total": "Total",
+      "slot": "Time",
+      "share": "Share",
+      "empty": "No traffic in this window",
+      "window": {
+        "24h": "24 hours",
+        "7d": "7 days",
+        "30d": "30 days",
+        "month": "Month"
+      }
     }
   },
   "tgbot": {

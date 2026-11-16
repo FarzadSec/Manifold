@@ -544,7 +544,10 @@ export interface Client {
   tgId: number;
   totalGB: number;
   trafficReset?: string;
+  trafficResetCalendar?: string;
   trafficResetDay?: number;
+  trafficResetEvery?: number;
+  trafficResetMonth?: number;
   updated_at?: number;
 }
 
@@ -599,7 +602,10 @@ export interface ClientRecord {
   tgId: number;
   totalGB: number;
   trafficReset: string;
+  trafficResetCalendar: string;
   trafficResetDay: number;
+  trafficResetEvery: number;
+  trafficResetMonth: number;
   updatedAt: number;
   uuid: string;
 }
@@ -669,6 +675,14 @@ export interface ClientTraffic {
   total: number;
   up: number;
   uuid: string;
+}
+
+export interface ClientUsageView {
+  daily: boolean;
+  from: number;
+  nodes: NodeUsage[];
+  points: UsagePoint[];
+  to: number;
 }
 
 export interface ClientsSummary {
@@ -1057,6 +1071,13 @@ export interface NodeMutationRequest {
   tlsVerifyMode: string;
 }
 
+export interface NodeUsage {
+  down: number;
+  name: string;
+  nodeId: number;
+  up: number;
+}
+
 export interface NodeView {
   activeCount: number;
   address: string;
@@ -1172,7 +1193,10 @@ export interface Plan {
   startOnFirstUse: boolean;
   totalBytes: number;
   trafficReset: string;
+  trafficResetCalendar: string;
   trafficResetDay: number;
+  trafficResetEvery: number;
+  trafficResetMonth: number;
 }
 
 export interface PortForward {
@@ -1410,6 +1434,12 @@ export interface TwoFactorSetupView {
   uri: string;
 }
 
+export interface UsagePoint {
+  down: number;
+  start: number;
+  up: number;
+}
+
 export interface User {
   allowedInboundIds: number[];
   allowedPlanIds: number[];
@@ -1441,6 +1471,12 @@ export interface User {
   twoFactorEnabled: boolean;
   username: string;
   volumeBytes: number;
+}
+
+export interface UserUsage {
+  down: number;
+  email: string;
+  up: number;
 }
 
 export interface WireGuardImportResult {

@@ -226,8 +226,11 @@ func (s *InboundService) upsertNodeBaseline(tx *gorm.DB, nodeID int, email strin
 
 // mergeNodeClientTraffic folds one node-reported client into its central row.
 // While frozen (a push pending or just landed) only the counters may move.
-func (s *InboundService) mergeNodeClientTraffic(tx *gorm.DB, cs xray.ClientTraffic, canon nodeTrafficCounter, frozen bool, deltaUp, deltaDown, now int64) error {
+func (s *InboundService) mergeNodeClientTraffic(tx *gorm.DB, nodeID int, cs xray.ClientTraffic, canon nodeTrafficCounter, frozen bool, deltaUp, deltaDown, now int64) error {
 	if err := chargeOwnerUsage(tx, map[string]int64{cs.Email: max(deltaUp, 0) + max(deltaDown, 0)}); err != nil {
+		return err
+	}
+	if err := recordClientUsage(tx, nodeID, map[string]usageDelta{cs.Email: {up: deltaUp, down: deltaDown}}, time.UnixMilli(now)); err != nil {
 		return err
 	}
 	if frozen {
@@ -1215,7 +1218,7 @@ func (s *InboundService) setRemoteTrafficLocked(nodeID int, snap *runtime.Traffi
 				// A multi-attached client is reported once per inbound and an idle one
 				// every tick: rewriting an unchanged row only holds its lock longer.
 				if next != *row {
-					if err := s.mergeNodeClientTraffic(tx, cs, canon, clientFrozen, deltaUp, deltaDown, now); err != nil {
+					if err := s.mergeNodeClientTraffic(tx, nodeID, cs, canon, clientFrozen, deltaUp, deltaDown, now); err != nil {
 						return false, err
 					}
 					*row = next

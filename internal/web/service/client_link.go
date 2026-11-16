@@ -87,6 +87,9 @@ func applyClientRecordMerge(row *model.ClientRecord, incoming *model.ClientRecor
 	// predate the cycle would otherwise silently erase it.
 	if incoming.TrafficReset != "" {
 		row.TrafficReset = incoming.TrafficReset
+		row.TrafficResetMonth = incoming.TrafficResetMonth
+		row.TrafficResetEvery = incoming.TrafficResetEvery
+		row.TrafficResetCalendar = incoming.TrafficResetCalendar
 	}
 	if incoming.TrafficResetDay > 0 {
 		row.TrafficResetDay = incoming.TrafficResetDay

@@ -31,6 +31,7 @@ import { useInboundOptions } from '@/api/queries/useInboundOptions';
 import type { Plan } from '@/generated/types';
 import PageShell from './PageShell';
 import { GIB, formatBytes } from './accessInfo';
+import ClientCycleFields from '@/pages/clients/ClientCycleFields';
 
 function emptyPlan(): Plan {
   return {
@@ -46,6 +47,9 @@ function emptyPlan(): Plan {
     reset: 0,
     trafficReset: 'never',
     trafficResetDay: 1,
+    trafficResetMonth: 0,
+    trafficResetEvery: 0,
+    trafficResetCalendar: 'gregorian',
     allInbounds: true,
     inboundIds: [],
     group: '',
@@ -74,7 +78,6 @@ function PlanFormModal({
   const methods = useForm<Plan>({ defaultValues: emptyPlan() });
   const { control, reset, handleSubmit } = methods;
   const allInbounds = useWatch({ control, name: 'allInbounds' });
-  const trafficReset = useWatch({ control, name: 'trafficReset' });
   const { data: inbounds = [] } = useInboundOptions();
   const [saving, setSaving] = useState(false);
 
@@ -177,25 +180,9 @@ function PlanFormModal({
             </Col>
           </Row>
           <Divider titlePlacement="start">{t('pages.access.autoReset')}</Divider>
+          <ClientCycleFields />
           <Row gutter={12}>
-            <Col xs={24} md={8}>
-              <FormField name="trafficReset" label={t('pages.access.trafficReset')}>
-                <Select
-                  options={['never', 'daily', 'weekly', 'monthly'].map((v) => ({
-                    label: t(`pages.access.resetEvery.${v}`),
-                    value: v,
-                  }))}
-                />
-              </FormField>
-            </Col>
-            {trafficReset === 'monthly' && (
-              <Col xs={24} md={8}>
-                <FormField name="trafficResetDay" label={t('pages.access.day')}>
-                  <InputNumber min={1} max={31} style={{ width: '100%' }} />
-                </FormField>
-              </Col>
-            )}
-            <Col xs={24} md={8}>
+            <Col xs={24} md={12}>
               <FormField
                 name="reset"
                 label={t('pages.access.renewEveryDays')}
@@ -295,9 +282,7 @@ export default function PlansPage() {
           {p.speedLimit > 0 && <Tag>{p.speedLimit} Mbps</Tag>}
           {p.limitIp > 0 && <Tag>{t('pages.access.addressesCap', { n: p.limitIp })}</Tag>}
           {p.limitHwid > 0 && <Tag>{t('pages.access.devicesCap', { n: p.limitHwid })}</Tag>}
-          {p.trafficReset !== 'never' && (
-            <Tag>{t(`pages.access.resetEvery.${p.trafficReset}`)}</Tag>
-          )}
+          {p.trafficReset !== 'never' && <Tag>{t(`pages.clients.cycle.${p.trafficReset}`)}</Tag>}
         </Space>
       ),
     },

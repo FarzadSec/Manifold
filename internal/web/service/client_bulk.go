@@ -1330,7 +1330,7 @@ func (s *ClientService) bulkCreate(inboundSvc *InboundService, payloads []Client
 			skip(email, verr.Error())
 			continue
 		}
-		if verr := validateClientTrafficReset(client.TrafficReset, client.TrafficResetDay); verr != nil {
+		if verr := validateClientTrafficCycle(&client); verr != nil {
 			skip(email, verr.Error())
 			continue
 		}

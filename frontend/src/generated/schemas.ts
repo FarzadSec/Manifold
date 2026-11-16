@@ -2299,13 +2299,25 @@ export const SCHEMAS: Record<string, unknown> = {
           "hourly",
           "daily",
           "weekly",
-          "monthly"
+          "monthly",
+          "yearly",
+          "days"
         ],
+        "type": "string"
+      },
+      "trafficResetCalendar": {
         "type": "string"
       },
       "trafficResetDay": {
         "maximum": 31,
         "minimum": 1,
+        "type": "integer"
+      },
+      "trafficResetEvery": {
+        "type": "integer"
+      },
+      "trafficResetMonth": {
+        "description": "The month of a yearly cycle, the length of an every-N-days one, and the\ncalendar (gregorian or persian) monthly and yearly cycles follow.",
         "type": "integer"
       },
       "updated_at": {
@@ -2524,7 +2536,17 @@ export const SCHEMAS: Record<string, unknown> = {
       "trafficReset": {
         "type": "string"
       },
+      "trafficResetCalendar": {
+        "type": "string"
+      },
       "trafficResetDay": {
+        "type": "integer"
+      },
+      "trafficResetEvery": {
+        "type": "integer"
+      },
+      "trafficResetMonth": {
+        "description": "TrafficResetMonth, TrafficResetEvery and TrafficResetCalendar shape the cycle; see Client.",
         "type": "integer"
       },
       "updatedAt": {
@@ -2568,7 +2590,10 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgId",
       "totalGB",
       "trafficReset",
+      "trafficResetCalendar",
       "trafficResetDay",
+      "trafficResetEvery",
+      "trafficResetMonth",
       "updatedAt",
       "uuid"
     ],
@@ -2890,6 +2915,45 @@ export const SCHEMAS: Record<string, unknown> = {
       "total",
       "up",
       "uuid"
+    ],
+    "type": "object"
+  },
+  "ClientUsageView": {
+    "description": "ClientUsageView is a user's traffic over a window: slot by slot and per server.",
+    "properties": {
+      "daily": {
+        "example": false,
+        "type": "boolean"
+      },
+      "from": {
+        "example": 1763251200,
+        "format": "int64",
+        "type": "integer"
+      },
+      "nodes": {
+        "items": {
+          "$ref": "#/components/schemas/NodeUsage"
+        },
+        "type": "array"
+      },
+      "points": {
+        "items": {
+          "$ref": "#/components/schemas/UsagePoint"
+        },
+        "type": "array"
+      },
+      "to": {
+        "example": 1763337600,
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "daily",
+      "from",
+      "nodes",
+      "points",
+      "to"
     ],
     "type": "object"
   },
@@ -4695,6 +4759,36 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "NodeUsage": {
+    "description": "NodeUsage is what a user moved through one server in a window; node 0 is this panel.",
+    "properties": {
+      "down": {
+        "example": 4194304,
+        "format": "int64",
+        "type": "integer"
+      },
+      "name": {
+        "example": "Frankfurt",
+        "type": "string"
+      },
+      "nodeId": {
+        "example": 0,
+        "type": "integer"
+      },
+      "up": {
+        "example": 1048576,
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "down",
+      "name",
+      "nodeId",
+      "up"
+    ],
+    "type": "object"
+  },
   "NodeView": {
     "description": "NodeView is the browser/API read contract for nodes. Credentials are\nwrite-only: responses expose only whether a node has a token configured.",
     "properties": {
@@ -5205,7 +5299,16 @@ export const SCHEMAS: Record<string, unknown> = {
       "trafficReset": {
         "type": "string"
       },
+      "trafficResetCalendar": {
+        "type": "string"
+      },
       "trafficResetDay": {
+        "type": "integer"
+      },
+      "trafficResetEvery": {
+        "type": "integer"
+      },
+      "trafficResetMonth": {
         "type": "integer"
       }
     },
@@ -5228,7 +5331,10 @@ export const SCHEMAS: Record<string, unknown> = {
       "startOnFirstUse",
       "totalBytes",
       "trafficReset",
-      "trafficResetDay"
+      "trafficResetCalendar",
+      "trafficResetDay",
+      "trafficResetEvery",
+      "trafficResetMonth"
     ],
     "type": "object"
   },
@@ -6224,6 +6330,32 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "UsagePoint": {
+    "description": "UsagePoint is the traffic of one slot.",
+    "properties": {
+      "down": {
+        "example": 4194304,
+        "format": "int64",
+        "type": "integer"
+      },
+      "start": {
+        "example": 1763337600,
+        "format": "int64",
+        "type": "integer"
+      },
+      "up": {
+        "example": 1048576,
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "down",
+      "start",
+      "up"
+    ],
+    "type": "object"
+  },
   "User": {
     "description": "User represents a user account in the 3x-ui panel.",
     "properties": {
@@ -6364,6 +6496,31 @@ export const SCHEMAS: Record<string, unknown> = {
       "twoFactorEnabled",
       "username",
       "volumeBytes"
+    ],
+    "type": "object"
+  },
+  "UserUsage": {
+    "description": "UserUsage is what one user moved through a server in a window.",
+    "properties": {
+      "down": {
+        "example": 4194304,
+        "format": "int64",
+        "type": "integer"
+      },
+      "email": {
+        "example": "alice",
+        "type": "string"
+      },
+      "up": {
+        "example": 1048576,
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "down",
+      "email",
+      "up"
     ],
     "type": "object"
   },

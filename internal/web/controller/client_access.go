@@ -43,6 +43,7 @@ var resellerClientRoutes = map[string]resellerTarget{
 	"GET /clients/get":                   targetEmailRead,
 	"GET /clients/get/:email":            targetEmailRead,
 	"GET /clients/traffic/:email":        targetEmailRead,
+	"GET /clients/usage/:email":          targetEmailRead,
 	"GET /clients/links/:email":          targetEmailRead,
 	"POST /clients/ips/:email":           targetEmailRead,
 	"POST /clients/hwids/:email":         targetEmailRead,

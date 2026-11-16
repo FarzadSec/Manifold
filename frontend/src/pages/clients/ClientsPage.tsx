@@ -41,6 +41,7 @@ import {
   LinkOutlined,
   MoreOutlined,
   PlusOutlined,
+  LineChartOutlined,
   QrcodeOutlined,
   RestOutlined,
   RetweetOutlined,
@@ -91,6 +92,7 @@ const FilterDrawer = lazy(() => import('./FilterDrawer'));
 const SubLinksModal = lazy(() => import('./SubLinksModal'));
 const BulkAddToGroupModal = lazy(() => import('./BulkAddToGroupModal'));
 const ChangeOwnerModal = lazy(() => import('./ChangeOwnerModal'));
+const ClientUsageModal = lazy(() => import('./ClientUsageModal'));
 
 // Menu entries that act on every user, or on the panel's own labels: never a reseller's.
 const STAFF_MENU_KEYS = new Set([
@@ -460,6 +462,8 @@ export default function ClientsPage() {
   const ownersById = useMemo(() => new Map(owners.map((o) => [o.id, o])), [owners]);
   const [ownerFilter, setOwnerFilter] = useState(searchParams.get('owner') ?? '');
   const [changeOwnerOpen, setChangeOwnerOpen] = useState(false);
+  const [usageEmail, setUsageEmail] = useState('');
+  const onShowUsage = useCallback((email: string) => setUsageEmail(email), []);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
   const initialSort = SORT_OPTIONS.find((o) => o.value === initial.sort) ?? DEFAULT_SORT;
@@ -1085,12 +1089,13 @@ export default function ClientsPage() {
       {
         title: t('pages.clients.actions'),
         key: 'actions',
-        width: 200,
+        width: 236,
         render: (_v, record) => (
           <ClientRowActions
             email={record.email}
             onShowQr={onShowQr}
             onShowInfo={onShowInfo}
+            onShowUsage={onShowUsage}
             onResetTraffic={onResetTraffic}
             onEdit={onEdit}
             onDelete={onDelete}
@@ -1900,6 +1905,16 @@ export default function ClientsPage() {
                                               onClick: () => onShowQr(row.email),
                                             },
                                             {
+                                              key: 'usage',
+                                              label: (
+                                                <>
+                                                  <LineChartOutlined aria-hidden />{' '}
+                                                  {t('pages.usage.menu')}
+                                                </>
+                                              ),
+                                              onClick: () => onShowUsage(row.email),
+                                            },
+                                            {
                                               key: 'reset',
                                               label: (
                                                 <>
@@ -2050,6 +2065,13 @@ export default function ClientsPage() {
             clients={clients}
             subSettings={subSettings}
             onOpenChange={setSubLinksOpen}
+          />
+        </LazyMount>
+        <LazyMount when={usageEmail !== ''}>
+          <ClientUsageModal
+            open={usageEmail !== ''}
+            email={usageEmail}
+            onClose={() => setUsageEmail('')}
           />
         </LazyMount>
         <LazyMount when={changeOwnerOpen}>

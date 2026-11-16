@@ -575,8 +575,11 @@ export const ClientSchema = z.object({
   subId: z.string(),
   tgId: z.number().int(),
   totalGB: z.number().int(),
-  trafficReset: z.enum(['never', 'hourly', 'daily', 'weekly', 'monthly']).optional(),
+  trafficReset: z.enum(['never', 'hourly', 'daily', 'weekly', 'monthly', 'yearly', 'days']).optional(),
+  trafficResetCalendar: z.string().optional(),
   trafficResetDay: z.number().int().min(1).max(31).optional(),
+  trafficResetEvery: z.number().int().optional(),
+  trafficResetMonth: z.number().int().optional(),
   updated_at: z.number().int().optional(),
 });
 export type Client = z.infer<typeof ClientSchema>;
@@ -634,7 +637,10 @@ export const ClientRecordSchema = z.object({
   tgId: z.number().int(),
   totalGB: z.number().int(),
   trafficReset: z.string(),
+  trafficResetCalendar: z.string(),
   trafficResetDay: z.number().int(),
+  trafficResetEvery: z.number().int(),
+  trafficResetMonth: z.number().int(),
   updatedAt: z.number().int(),
   uuid: z.string(),
 });
@@ -711,6 +717,15 @@ export const ClientTrafficSchema = z.object({
   uuid: z.string(),
 });
 export type ClientTraffic = z.infer<typeof ClientTrafficSchema>;
+
+export const ClientUsageViewSchema = z.object({
+  daily: z.boolean(),
+  from: z.number().int(),
+  nodes: z.array(z.lazy(() => NodeUsageSchema)),
+  points: z.array(z.lazy(() => UsagePointSchema)),
+  to: z.number().int(),
+});
+export type ClientUsageView = z.infer<typeof ClientUsageViewSchema>;
 
 export const ClientsSummarySchema = z.object({
   active: z.number().int(),
@@ -1129,6 +1144,14 @@ export const NodeMutationRequestSchema = z.object({
 });
 export type NodeMutationRequest = z.infer<typeof NodeMutationRequestSchema>;
 
+export const NodeUsageSchema = z.object({
+  down: z.number().int(),
+  name: z.string(),
+  nodeId: z.number().int(),
+  up: z.number().int(),
+});
+export type NodeUsage = z.infer<typeof NodeUsageSchema>;
+
 export const NodeViewSchema = z.object({
   activeCount: z.number().int(),
   address: z.string(),
@@ -1251,7 +1274,10 @@ export const PlanSchema = z.object({
   startOnFirstUse: z.boolean(),
   totalBytes: z.number().int(),
   trafficReset: z.string(),
+  trafficResetCalendar: z.string(),
   trafficResetDay: z.number().int(),
+  trafficResetEvery: z.number().int(),
+  trafficResetMonth: z.number().int(),
 });
 export type Plan = z.infer<typeof PlanSchema>;
 
@@ -1510,6 +1536,13 @@ export const TwoFactorSetupViewSchema = z.object({
 });
 export type TwoFactorSetupView = z.infer<typeof TwoFactorSetupViewSchema>;
 
+export const UsagePointSchema = z.object({
+  down: z.number().int(),
+  start: z.number().int(),
+  up: z.number().int(),
+});
+export type UsagePoint = z.infer<typeof UsagePointSchema>;
+
 export const UserSchema = z.object({
   allowedInboundIds: z.array(z.number().int()),
   allowedPlanIds: z.array(z.number().int()),
@@ -1543,6 +1576,13 @@ export const UserSchema = z.object({
   volumeBytes: z.number().int(),
 });
 export type User = z.infer<typeof UserSchema>;
+
+export const UserUsageSchema = z.object({
+  down: z.number().int(),
+  email: z.string(),
+  up: z.number().int(),
+});
+export type UserUsage = z.infer<typeof UserUsageSchema>;
 
 export const WireGuardImportResultSchema = z.object({
   clients: z.number().int(),

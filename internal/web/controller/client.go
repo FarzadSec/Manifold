@@ -61,6 +61,7 @@ func (a *ClientController) initRouter(g *gin.RouterGroup) {
 	g.GET("/get/subId/:subId", a.getBySubId)
 	g.GET("/get/tgId/:tgId", a.getByTgId)
 	g.GET("/traffic/:email", a.getTrafficByEmail)
+	g.GET("/usage/:email", a.getUsage)
 	g.GET("/subLinks/:subId", a.getSubLinks)
 	g.GET("/links/:email", a.getClientLinks)
 	g.POST("/happLink/:id", a.generateHappLink)
@@ -751,6 +752,21 @@ func (a *ClientController) getTrafficByEmail(c *gin.Context) {
 		return
 	}
 	jsonObj(c, traffic, nil)
+}
+
+// getUsage answers a user's traffic over a window, hour by hour or day by day, and per server.
+func (a *ClientController) getUsage(c *gin.Context) {
+	window, err := service.ParseUsageWindow(c.Query("window"), c.Query("month"), c.Query("calendar"), time.Now())
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
+		return
+	}
+	view, err := (&service.UsageService{}).ForClient(c.Param("email"), window)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
+		return
+	}
+	jsonObj(c, view, nil)
 }
 
 func (a *ClientController) getSubLinks(c *gin.Context) {

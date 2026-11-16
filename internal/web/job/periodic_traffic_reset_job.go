@@ -122,7 +122,19 @@ func (j *PeriodicTrafficResetJob) resetInboundsOnSchedule() {
 // resetClientsOnTheirOwnCycle resets clients whose cycle is set individually. A
 // client inside an inbound on the same cycle is reset twice, which is harmless.
 func (j *PeriodicTrafficResetJob) resetClientsOnTheirOwnCycle() {
-	cycles, err := j.clientService.GetClientsByTrafficReset(string(j.period))
+	var cycles []service.ClientResetCycle
+	var err error
+	// The daily pass decides every dated cycle: a weekday, a day of the month or year in
+	// either calendar, or N days since the last reset. The Sunday job leaves clients to it.
+	onDates := j.period == "monthly"
+	switch j.period {
+	case "weekly":
+		return
+	case "monthly":
+		cycles, err = j.clientService.GetClientsWithCalendarCycles()
+	default:
+		cycles, err = j.clientService.GetClientsByTrafficReset(string(j.period))
+	}
 	if err != nil {
 		logger.Warning("Failed to get clients for traffic reset:", err)
 		return
@@ -131,9 +143,7 @@ func (j *PeriodicTrafficResetJob) resetClientsOnTheirOwnCycle() {
 	now := time.Now().In(j.location)
 	due := make([]service.ClientResetCycle, 0, len(cycles))
 	for _, c := range cycles {
-		// Monthly clients come due on their own day, the rule the inbound-level
-		// schedule already follows.
-		if j.period == "monthly" && !monthlyResetDue(c.TrafficResetDay, now) {
+		if onDates && !c.CycleDue(now) {
 			continue
 		}
 		// A reset re-enables, which is right for a client the quota switched off
@@ -159,6 +169,11 @@ func (j *PeriodicTrafficResetJob) resetClientsOnTheirOwnCycle() {
 		if resetErr != nil {
 			logger.Warning("Failed to reset traffic for client", c.Email, ":", resetErr)
 			return
+		}
+		if onDates {
+			if err := j.clientService.MarkCycleReset(c.Email, now); err != nil {
+				logger.Warning("Failed to record the cycle reset of", c.Email, ":", err)
+			}
 		}
 		mu.Lock()
 		needRestart = needRestart || nr

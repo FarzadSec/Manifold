@@ -66,6 +66,7 @@ func migrationModels() []any {
 		&model.Role{},
 		&model.Plan{},
 		&model.AuditEntry{},
+		&model.ClientUsage{},
 	}
 }
 

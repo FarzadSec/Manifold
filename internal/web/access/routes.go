@@ -49,6 +49,7 @@ var routeRules = map[string]Rule{
 	key("GET", "/clients/links/:email"):          need(UsersRead),
 	key("GET", "/clients/subLinks/:subId"):       need(UsersRead),
 	key("GET", "/clients/traffic/:email"):        need(UsersRead),
+	key("GET", "/clients/usage/:email"):          need(UsersRead),
 	key("POST", "/clients/ips/:email"):           need(UsersRead),
 	key("POST", "/clients/hwids/:email"):         need(UsersRead),
 	key("POST", "/clients/onlines"):              need(UsersRead),

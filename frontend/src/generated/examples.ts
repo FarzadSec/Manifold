@@ -567,7 +567,10 @@ export const EXAMPLES: Record<string, unknown> = {
     "tgId": 0,
     "totalGB": 0,
     "trafficReset": "never",
+    "trafficResetCalendar": "",
     "trafficResetDay": 1,
+    "trafficResetEvery": 0,
+    "trafficResetMonth": 0,
     "updated_at": 0
   },
   "ClientInbound": {
@@ -665,7 +668,10 @@ export const EXAMPLES: Record<string, unknown> = {
     "tgId": 0,
     "totalGB": 0,
     "trafficReset": "",
+    "trafficResetCalendar": "",
     "trafficResetDay": 0,
+    "trafficResetEvery": 0,
+    "trafficResetMonth": 0,
     "updatedAt": 0,
     "uuid": ""
   },
@@ -733,6 +739,26 @@ export const EXAMPLES: Record<string, unknown> = {
     "total": 10737418240,
     "up": 1048576,
     "uuid": "e18c9a96-71bf-48d4-933f-8b9a46d4290c"
+  },
+  "ClientUsageView": {
+    "daily": false,
+    "from": 1763251200,
+    "nodes": [
+      {
+        "down": 4194304,
+        "name": "Frankfurt",
+        "nodeId": 0,
+        "up": 1048576
+      }
+    ],
+    "points": [
+      {
+        "down": 4194304,
+        "start": 1763337600,
+        "up": 1048576
+      }
+    ],
+    "to": 1763337600
   },
   "ClientsSummary": {
     "active": 1850,
@@ -1203,6 +1229,12 @@ export const EXAMPLES: Record<string, unknown> = {
     "scheme": "http",
     "tlsVerifyMode": "verify"
   },
+  "NodeUsage": {
+    "down": 4194304,
+    "name": "Frankfurt",
+    "nodeId": 0,
+    "up": 1048576
+  },
   "NodeView": {
     "activeCount": 20,
     "address": "node.example.com",
@@ -1317,7 +1349,10 @@ export const EXAMPLES: Record<string, unknown> = {
     "startOnFirstUse": false,
     "totalBytes": 53687091200,
     "trafficReset": "",
-    "trafficResetDay": 0
+    "trafficResetCalendar": "",
+    "trafficResetDay": 0,
+    "trafficResetEvery": 0,
+    "trafficResetMonth": 0
   },
   "PortForward": {
     "listen": "443",
@@ -1602,6 +1637,11 @@ export const EXAMPLES: Record<string, unknown> = {
     "secret": "JBSWY3DPEHPK3PXP",
     "uri": "otpauth://totp/Manifold:admin?secret=JBSWY3DPEHPK3PXP\u0026issuer=Manifold"
   },
+  "UsagePoint": {
+    "down": 4194304,
+    "start": 1763337600,
+    "up": 1048576
+  },
   "User": {
     "allowedInboundIds": [
       0
@@ -1637,6 +1677,11 @@ export const EXAMPLES: Record<string, unknown> = {
     "twoFactorEnabled": false,
     "username": "",
     "volumeBytes": 0
+  },
+  "UserUsage": {
+    "down": 4194304,
+    "email": "alice",
+    "up": 1048576
   },
   "WireGuardImportResult": {
     "clients": 42,

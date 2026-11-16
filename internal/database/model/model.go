@@ -106,25 +106,40 @@ type Role struct {
 
 // Plan is a preset a new user is created from; nothing links the user to it afterwards.
 type Plan struct {
-	Id              int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
-	Name            string `json:"name" gorm:"uniqueIndex;not null" example:"30 days 50 GB"`
-	SortOrder       int    `json:"sortOrder" gorm:"default:0"`
-	TotalBytes      int64  `json:"totalBytes" gorm:"default:0" example:"53687091200"`
-	Days            int    `json:"days" gorm:"default:0" example:"30"`
-	StartOnFirstUse bool   `json:"startOnFirstUse" gorm:"default:false"`
-	LimitIp         int    `json:"limitIp" gorm:"default:0"`
-	LimitHwid       int    `json:"limitHwid" gorm:"default:0"`
-	SpeedLimit      int    `json:"speedLimit" gorm:"default:0" example:"20"`
-	Reset           int    `json:"reset" gorm:"default:0"`
-	TrafficReset    string `json:"trafficReset" gorm:"default:never"`
-	TrafficResetDay int    `json:"trafficResetDay" gorm:"default:1"`
-	AllInbounds     bool   `json:"allInbounds" gorm:"default:false"`
-	InboundIds      []int  `json:"inboundIds" gorm:"serializer:json"`
-	Group           string `json:"group" gorm:"column:group_name"`
-	NamePrefix      string `json:"namePrefix"`
-	NameSuffix      string `json:"nameSuffix"`
-	Description     string `json:"description"`
-	CreatedAt       int64  `json:"createdAt" gorm:"autoCreateTime:milli"`
+	Id                   int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Name                 string `json:"name" gorm:"uniqueIndex;not null" example:"30 days 50 GB"`
+	SortOrder            int    `json:"sortOrder" gorm:"default:0"`
+	TotalBytes           int64  `json:"totalBytes" gorm:"default:0" example:"53687091200"`
+	Days                 int    `json:"days" gorm:"default:0" example:"30"`
+	StartOnFirstUse      bool   `json:"startOnFirstUse" gorm:"default:false"`
+	LimitIp              int    `json:"limitIp" gorm:"default:0"`
+	LimitHwid            int    `json:"limitHwid" gorm:"default:0"`
+	SpeedLimit           int    `json:"speedLimit" gorm:"default:0" example:"20"`
+	Reset                int    `json:"reset" gorm:"default:0"`
+	TrafficReset         string `json:"trafficReset" gorm:"default:never"`
+	TrafficResetDay      int    `json:"trafficResetDay" gorm:"default:1"`
+	TrafficResetMonth    int    `json:"trafficResetMonth" gorm:"default:0"`
+	TrafficResetEvery    int    `json:"trafficResetEvery" gorm:"default:0"`
+	TrafficResetCalendar string `json:"trafficResetCalendar" gorm:"default:''"`
+	AllInbounds          bool   `json:"allInbounds" gorm:"default:false"`
+	InboundIds           []int  `json:"inboundIds" gorm:"serializer:json"`
+	Group                string `json:"group" gorm:"column:group_name"`
+	NamePrefix           string `json:"namePrefix"`
+	NameSuffix           string `json:"nameSuffix"`
+	Description          string `json:"description"`
+	CreatedAt            int64  `json:"createdAt" gorm:"autoCreateTime:milli"`
+}
+
+// ClientUsage is the traffic one user moved through one server in one slot: an
+// hour (kept a month) or a day in the panel's time zone (kept 400 days).
+type ClientUsage struct {
+	Id     int    `json:"-" gorm:"primaryKey;autoIncrement"`
+	Email  string `json:"email" gorm:"not null;uniqueIndex:idx_client_usage_slot,priority:1"`
+	NodeId int    `json:"nodeId" gorm:"not null;default:0;uniqueIndex:idx_client_usage_slot,priority:2"`
+	Daily  bool   `json:"daily" gorm:"not null;default:false;uniqueIndex:idx_client_usage_slot,priority:3"`
+	Start  int64  `json:"start" gorm:"not null;uniqueIndex:idx_client_usage_slot,priority:4;index"`
+	Up     int64  `json:"up" gorm:"not null;default:0"`
+	Down   int64  `json:"down" gorm:"not null;default:0"`
 }
 
 // AuditEntry records one admin action; secrets in Detail are redacted before it is stored.
@@ -1082,10 +1097,15 @@ type Client struct {
 	ResetWeekday        int              `json:"resetWeekday" form:"resetWeekday"`  // Calendar weekday 1-7 (Mon-Sun), 0 disables weekly renewal
 	ResetMax            int              `json:"resetMax" form:"resetMax"`          // Max auto-renew count, 0 = unlimited
 	// Per-client traffic reset cycle, independent of the inbound's own (#5497).
-	TrafficReset    string `json:"trafficReset,omitempty" form:"trafficReset" validate:"omitempty,oneof=never hourly daily weekly monthly"`
+	TrafficReset    string `json:"trafficReset,omitempty" form:"trafficReset" validate:"omitempty,oneof=never hourly daily weekly monthly yearly days"`
 	TrafficResetDay int    `json:"trafficResetDay,omitempty" form:"trafficResetDay" validate:"omitempty,gte=1,lte=31"`
-	CreatedAt       int64  `json:"created_at,omitempty"` // Creation timestamp
-	UpdatedAt       int64  `json:"updated_at,omitempty"` // Last update timestamp
+	// The month of a yearly cycle, the length of an every-N-days one, and the
+	// calendar (gregorian or persian) monthly and yearly cycles follow.
+	TrafficResetMonth    int    `json:"trafficResetMonth,omitempty" form:"trafficResetMonth"`
+	TrafficResetEvery    int    `json:"trafficResetEvery,omitempty" form:"trafficResetEvery"`
+	TrafficResetCalendar string `json:"trafficResetCalendar,omitempty" form:"trafficResetCalendar"`
+	CreatedAt            int64  `json:"created_at,omitempty"` // Creation timestamp
+	UpdatedAt            int64  `json:"updated_at,omitempty"` // Last update timestamp
 }
 
 type ClientRecord struct {
@@ -1124,8 +1144,14 @@ type ClientRecord struct {
 	ResetMax          int            `json:"resetMax" gorm:"column:reset_max;default:0"`
 	TrafficReset      string         `json:"trafficReset" gorm:"column:traffic_reset;default:never;index:idx_clients_traffic_reset"`
 	TrafficResetDay   int            `json:"trafficResetDay" gorm:"column:traffic_reset_day;default:1"`
-	CreatedAt         int64          `json:"createdAt" gorm:"autoCreateTime:milli"`
-	UpdatedAt         int64          `json:"updatedAt" gorm:"autoUpdateTime:milli"`
+	// TrafficResetMonth, TrafficResetEvery and TrafficResetCalendar shape the cycle; see Client.
+	TrafficResetMonth    int    `json:"trafficResetMonth" gorm:"column:traffic_reset_month;default:0"`
+	TrafficResetEvery    int    `json:"trafficResetEvery" gorm:"column:traffic_reset_every;default:0"`
+	TrafficResetCalendar string `json:"trafficResetCalendar" gorm:"column:traffic_reset_calendar;default:''"`
+	// TrafficResetAt is when the cycle last reset the traffic; an every-N-days cycle counts from it.
+	TrafficResetAt int64 `json:"-" gorm:"column:traffic_reset_at;default:0"`
+	CreatedAt      int64 `json:"createdAt" gorm:"autoCreateTime:milli"`
+	UpdatedAt      int64 `json:"updatedAt" gorm:"autoUpdateTime:milli"`
 	// Owned solely by the node-snapshot sweep, which soft-orphans instead of
 	// deleting; orphans from any other cause stay at zero and are never reaped.
 	SyncOrphanedAt int64 `json:"-" gorm:"column:sync_orphaned_at;default:0"`
@@ -1411,30 +1437,33 @@ func nonEmptyForwardedPorts(spec string) *string {
 
 func (c *Client) ToRecord() *ClientRecord {
 	rec := &ClientRecord{
-		Email:             c.Email,
-		SubID:             c.SubID,
-		UUID:              c.ID,
-		Password:          c.Password,
-		Auth:              c.Auth,
-		Flow:              c.Flow,
-		Security:          c.Security,
-		ClientHostRuleIds: CloneClientHostRuleIds(c.ClientHostRuleIds),
-		LimitIP:           c.LimitIP,
-		SpeedLimit:        c.SpeedLimit,
-		TotalGB:           c.TotalGB,
-		ExpiryTime:        c.ExpiryTime,
-		Enable:            c.Enable,
-		TgID:              c.TgID,
-		Group:             strings.TrimSpace(c.Group),
-		Comment:           c.Comment,
-		Reset:             c.Reset,
-		ResetDay:          c.ResetDay,
-		ResetWeekday:      c.ResetWeekday,
-		ResetMax:          c.ResetMax,
-		TrafficReset:      c.TrafficReset,
-		TrafficResetDay:   c.TrafficResetDay,
-		CreatedAt:         c.CreatedAt,
-		UpdatedAt:         c.UpdatedAt,
+		Email:                c.Email,
+		SubID:                c.SubID,
+		UUID:                 c.ID,
+		Password:             c.Password,
+		Auth:                 c.Auth,
+		Flow:                 c.Flow,
+		Security:             c.Security,
+		ClientHostRuleIds:    CloneClientHostRuleIds(c.ClientHostRuleIds),
+		LimitIP:              c.LimitIP,
+		SpeedLimit:           c.SpeedLimit,
+		TotalGB:              c.TotalGB,
+		ExpiryTime:           c.ExpiryTime,
+		Enable:               c.Enable,
+		TgID:                 c.TgID,
+		Group:                strings.TrimSpace(c.Group),
+		Comment:              c.Comment,
+		Reset:                c.Reset,
+		ResetDay:             c.ResetDay,
+		ResetWeekday:         c.ResetWeekday,
+		ResetMax:             c.ResetMax,
+		TrafficReset:         c.TrafficReset,
+		TrafficResetDay:      c.TrafficResetDay,
+		TrafficResetMonth:    c.TrafficResetMonth,
+		TrafficResetEvery:    c.TrafficResetEvery,
+		TrafficResetCalendar: c.TrafficResetCalendar,
+		CreatedAt:            c.CreatedAt,
+		UpdatedAt:            c.UpdatedAt,
 
 		PrivateKey:     c.PrivateKey,
 		PublicKey:      c.PublicKey,
@@ -1472,30 +1501,33 @@ func splitWireguardAllowedIPs(csv string) []string {
 
 func (r *ClientRecord) ToClient() *Client {
 	c := &Client{
-		ID:                r.UUID,
-		Email:             r.Email,
-		SubID:             r.SubID,
-		Password:          r.Password,
-		Auth:              r.Auth,
-		Flow:              r.Flow,
-		Security:          r.Security,
-		ClientHostRuleIds: CloneClientHostRuleIds(r.ClientHostRuleIds),
-		LimitIP:           r.LimitIP,
-		SpeedLimit:        r.SpeedLimit,
-		TotalGB:           r.TotalGB,
-		ExpiryTime:        r.ExpiryTime,
-		Enable:            r.Enable,
-		TgID:              r.TgID,
-		Group:             r.Group,
-		Comment:           r.Comment,
-		Reset:             r.Reset,
-		ResetDay:          r.ResetDay,
-		ResetWeekday:      r.ResetWeekday,
-		ResetMax:          r.ResetMax,
-		TrafficReset:      r.TrafficReset,
-		TrafficResetDay:   r.TrafficResetDay,
-		CreatedAt:         r.CreatedAt,
-		UpdatedAt:         r.UpdatedAt,
+		ID:                   r.UUID,
+		Email:                r.Email,
+		SubID:                r.SubID,
+		Password:             r.Password,
+		Auth:                 r.Auth,
+		Flow:                 r.Flow,
+		Security:             r.Security,
+		ClientHostRuleIds:    CloneClientHostRuleIds(r.ClientHostRuleIds),
+		LimitIP:              r.LimitIP,
+		SpeedLimit:           r.SpeedLimit,
+		TotalGB:              r.TotalGB,
+		ExpiryTime:           r.ExpiryTime,
+		Enable:               r.Enable,
+		TgID:                 r.TgID,
+		Group:                r.Group,
+		Comment:              r.Comment,
+		Reset:                r.Reset,
+		ResetDay:             r.ResetDay,
+		ResetWeekday:         r.ResetWeekday,
+		ResetMax:             r.ResetMax,
+		TrafficReset:         r.TrafficReset,
+		TrafficResetDay:      r.TrafficResetDay,
+		TrafficResetMonth:    r.TrafficResetMonth,
+		TrafficResetEvery:    r.TrafficResetEvery,
+		TrafficResetCalendar: r.TrafficResetCalendar,
+		CreatedAt:            r.CreatedAt,
+		UpdatedAt:            r.UpdatedAt,
 
 		PrivateKey:     r.PrivateKey,
 		PublicKey:      r.PublicKey,
