@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -146,7 +147,7 @@ func TestEnforceEndsAnExpiredResellersSessions(t *testing.T) {
 	if got.Suspended != access.SuspendedExpired || got.LoginEpoch != r.LoginEpoch+1 {
 		t.Fatalf("suspended=%q epoch=%d, want expired and epoch %d", got.Suspended, got.LoginEpoch, r.LoginEpoch+1)
 	}
-	if _, err := access.Resolve(&got); err != access.ErrAccountExpired {
+	if _, err := access.Resolve(&got); !errors.Is(err, access.ErrAccountExpired) {
 		t.Fatalf("Resolve of an expired reseller = %v, want ErrAccountExpired", err)
 	}
 }

@@ -1,36 +1,44 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { AllSetting } from '@/models/setting';
 import SecurityTab from '@/pages/settings/SecurityTab';
 import { HttpUtil } from '@/utils';
 
+import { renderWithProviders } from './test-utils';
+
+function mockTokenList(tokens: unknown[]) {
+  return vi
+    .spyOn(HttpUtil, 'get')
+    .mockImplementation(async (url: string) =>
+      url.endsWith('/setting/apiTokens')
+        ? { success: true, msg: '', obj: tokens }
+        : { success: false, msg: 'not mocked', obj: null },
+    );
+}
+
 describe('API token creation date', () => {
   it('renders both API seconds and legacy millisecond timestamps', async () => {
-    vi.spyOn(HttpUtil, 'get').mockResolvedValueOnce({
-      success: true,
-      msg: '',
-      obj: [
-        {
-          id: 2,
-          name: 'seconds-token',
-          enabled: true,
-          createdAt: 1782485394,
-          scope: 'node-sync',
-          expiresAt: 0,
-        },
-        {
-          id: 3,
-          name: 'legacy-milliseconds-token',
-          enabled: true,
-          createdAt: 1782485394270,
-          scope: 'node-admin',
-          expiresAt: 0,
-        },
-      ],
-    });
+    mockTokenList([
+      {
+        id: 2,
+        name: 'seconds-token',
+        enabled: true,
+        createdAt: 1782485394,
+        scope: 'node-sync',
+        expiresAt: 0,
+      },
+      {
+        id: 3,
+        name: 'legacy-milliseconds-token',
+        enabled: true,
+        createdAt: 1782485394270,
+        scope: 'node-admin',
+        expiresAt: 0,
+      },
+    ]);
 
-    render(
+    renderWithProviders(
       <SecurityTab allSetting={{} as AllSetting} updateSetting={vi.fn()} saveSetting={vi.fn()} />,
     );
     fireEvent.click(screen.getByRole('tab', { name: /API Token/ }));
@@ -43,14 +51,14 @@ describe('API token creation date', () => {
   });
 
   it('creates a token with the selected scope', async () => {
-    vi.spyOn(HttpUtil, 'get').mockResolvedValue({ success: true, msg: '', obj: [] });
+    mockTokenList([]);
     const post = vi.spyOn(HttpUtil, 'post').mockResolvedValue({
       success: true,
       msg: '',
       obj: { token: 'created-token' },
     });
 
-    render(
+    renderWithProviders(
       <SecurityTab allSetting={{} as AllSetting} updateSetting={vi.fn()} saveSetting={vi.fn()} />,
     );
     fireEvent.click(screen.getByRole('tab', { name: /API Token/ }));
@@ -74,10 +82,11 @@ describe('API token creation date', () => {
 
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Confirm' }));
     await waitFor(() =>
-      expect(post).toHaveBeenCalledWith('/panel/api/setting/apiTokens/create', {
-        name: 'central-node',
-        scope: 'node-admin',
-      }),
+      expect(post).toHaveBeenCalledWith(
+        '/panel/api/setting/apiTokens/create',
+        expect.objectContaining({ name: 'central-node', scope: 'node-admin' }),
+        expect.anything(),
+      ),
     );
   });
 });
