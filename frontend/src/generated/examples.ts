@@ -1078,6 +1078,11 @@ export const EXAMPLES: Record<string, unknown> = {
     "tag": "inbound-51820",
     "up": 1048576
   },
+  "PortForward": {
+    "listen": "443",
+    "proto": "tcp",
+    "target": "2096"
+  },
   "ProbeResultUI": {
     "cpuPct": 12.5,
     "error": "",
@@ -1219,6 +1224,125 @@ export const EXAMPLES: Record<string, unknown> = {
     "sni": "",
     "udp_relay_mode": "",
     "zero_rtt_handshake": false
+  },
+  "TunnelPairing": {
+    "address": "203.0.113.10",
+    "code": "manifold-tunnel://eyJ2Ijox..."
+  },
+  "TunnelRelay": {
+    "createdAt": 1763300000000,
+    "id": 1,
+    "name": "uk-relay",
+    "url": "https://relay.example.com:2053/secret/"
+  },
+  "TunnelRequest": {
+    "enable": true,
+    "kind": "gre",
+    "name": "uk-relay",
+    "relayId": 0,
+    "role": "client",
+    "settings": {
+      "carrier": "udp",
+      "dialer": "server",
+      "forwards": [
+        {
+          "listen": "443",
+          "proto": "tcp",
+          "target": "2096"
+        }
+      ],
+      "key": 0,
+      "localAddr": "203.0.113.10",
+      "localIp": "10.80.0.2/30",
+      "mtu": 1476,
+      "nat": "masquerade",
+      "peerIp": "10.80.0.1",
+      "port": 8443,
+      "proxyProtocol": false,
+      "publicAddr": "203.0.113.10",
+      "remoteAddr": "198.51.100.7",
+      "token": "3f9c...",
+      "transport": "tcpmux",
+      "ttl": 255
+    }
+  },
+  "TunnelSettings": {
+    "carrier": "udp",
+    "dialer": "server",
+    "forwards": [
+      {
+        "listen": "443",
+        "proto": "tcp",
+        "target": "2096"
+      }
+    ],
+    "key": 0,
+    "localAddr": "203.0.113.10",
+    "localIp": "10.80.0.2/30",
+    "mtu": 1476,
+    "nat": "masquerade",
+    "peerIp": "10.80.0.1",
+    "port": 8443,
+    "proxyProtocol": false,
+    "publicAddr": "203.0.113.10",
+    "remoteAddr": "198.51.100.7",
+    "token": "3f9c...",
+    "transport": "tcpmux",
+    "ttl": 255
+  },
+  "TunnelStatus": {
+    "error": "",
+    "id": 1,
+    "latencyMs": 42.5,
+    "loss": 0,
+    "peer": "198.51.100.7:52011",
+    "rxBytes": 1048576,
+    "since": 1763300000000,
+    "state": "up",
+    "txBytes": 2097152
+  },
+  "TunnelSuggestion": {
+    "address": "203.0.113.10",
+    "localIp": "10.80.0.2/30",
+    "peerIp": "10.80.0.1",
+    "port": 8443,
+    "token": "3f9c0e..."
+  },
+  "TunnelView": {
+    "createdAt": 1763300000000,
+    "enable": true,
+    "id": 1,
+    "kind": "gre",
+    "name": "uk-relay",
+    "pairId": "5d1c0a9e7b2f4c11a0e3d8f6",
+    "relayId": 0,
+    "role": "client",
+    "settings": {
+      "carrier": "udp",
+      "dialer": "server",
+      "forwards": [
+        {
+          "listen": "443",
+          "proto": "tcp",
+          "target": "2096"
+        }
+      ],
+      "key": 0,
+      "localAddr": "203.0.113.10",
+      "localIp": "10.80.0.2/30",
+      "mtu": 1476,
+      "nat": "masquerade",
+      "peerIp": "10.80.0.1",
+      "port": 8443,
+      "proxyProtocol": false,
+      "publicAddr": "203.0.113.10",
+      "remoteAddr": "198.51.100.7",
+      "token": "3f9c...",
+      "transport": "tcpmux",
+      "ttl": 255
+    },
+    "status": null,
+    "updatedAt": 1763300000000
   },
   "User": {
     "id": 0,

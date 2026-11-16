@@ -126,6 +126,14 @@ var nodeSyncScopeAllow = map[string]map[string]struct{}{
 	"/hosts/list":                  {http.MethodGet: {}},
 }
 
+// tunnelScopeAllow is all a relay's token lets the panel that owns its tunnels do there.
+var tunnelScopeAllow = map[string]map[string]struct{}{
+	"/tunnels/import":   {http.MethodPost: {}},
+	"/tunnels/withdraw": {http.MethodPost: {}},
+	"/tunnels/list":     {http.MethodGet: {}},
+	"/tunnels/status":   {http.MethodGet: {}},
+}
+
 var nodeAdminScopeAllow = map[string]map[string]struct{}{
 	"/server/updatePanel": {http.MethodPost: {}},
 }
@@ -172,6 +180,11 @@ func (a *APIController) enforceTokenScope(c *gin.Context) {
 		}
 	case model.ApiScopeNodeAdmin:
 		if scopeAllows(nodeSyncScopeAllow, rel, c.Request.Method) || scopeAllows(nodeAdminScopeAllow, rel, c.Request.Method) {
+			c.Next()
+			return
+		}
+	case model.ApiScopeTunnel:
+		if scopeAllows(tunnelScopeAllow, rel, c.Request.Method) {
 			c.Next()
 			return
 		}
@@ -223,6 +236,8 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	// Hosts API — per-inbound override endpoints for subscription links
 	hosts := api.Group("/hosts")
 	a.hostController = NewHostController(hosts)
+
+	NewTunnelController(api.Group("/tunnels"))
 
 	// Settings + Xray config management live under the API surface too, so the
 	// same API token drives them. Paths are /panel/api/setting/* and

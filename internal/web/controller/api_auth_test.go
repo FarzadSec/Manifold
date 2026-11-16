@@ -75,6 +75,12 @@ func newAPIAuthTestEngine(t *testing.T) (*gin.Engine, *APIController) {
 	api.POST("/clients/clientIpsByGuid", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"reached": true})
 	})
+	api.POST("/tunnels/import", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"reached": true})
+	})
+	api.POST("/tunnels/relays/add", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"reached": true})
+	})
 	return engine, a
 }
 
@@ -141,6 +147,36 @@ func TestPanelUpdateRequiresNodeAdminScope(t *testing.T) {
 				t.Fatalf("response = %d %s, want %d %s", w.Code, w.Body.String(), tc.wantCode, tc.wantBody)
 			}
 		})
+	}
+}
+
+// A relay's token is all the owning panel holds of it: it may set up and read
+// tunnel ends there, and nothing else, not even the relay's own relays.
+func TestTunnelScopeReachesOnlyTunnelEnds(t *testing.T) {
+	engine, _ := newAPIAuthTestEngine(t)
+	plaintext := "relay-token"
+	if err := database.GetDB().Create(&model.ApiToken{
+		Name: "owner", Token: crypto.HashTokenSHA256(plaintext), Enabled: true, Scope: model.ApiScopeTunnel,
+	}).Error; err != nil {
+		t.Fatalf("seed token: %v", err)
+	}
+	cases := []struct {
+		method, path string
+		want         int
+	}{
+		{http.MethodPost, "/panel/api/tunnels/import", http.StatusOK},
+		{http.MethodPost, "/panel/api/tunnels/relays/add", http.StatusForbidden},
+		{http.MethodPost, "/panel/api/server/updatePanel", http.StatusForbidden},
+		{http.MethodPost, "/panel/api/clients/clientIpsByGuid", http.StatusForbidden},
+	}
+	for _, tc := range cases {
+		req := httptest.NewRequest(tc.method, tc.path, nil)
+		req.Header.Set("Authorization", "Bearer "+plaintext)
+		w := httptest.NewRecorder()
+		engine.ServeHTTP(w, req)
+		if w.Code != tc.want {
+			t.Errorf("%s %s = %d, want %d", tc.method, tc.path, w.Code, tc.want)
+		}
 	}
 }
 

@@ -4360,6 +4360,27 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "PortForward": {
+    "description": "PortForward is one port, or range, the server side exposes and sends to the client side.",
+    "properties": {
+      "listen": {
+        "example": "443",
+        "type": "string"
+      },
+      "proto": {
+        "example": "tcp",
+        "type": "string"
+      },
+      "target": {
+        "example": "2096",
+        "type": "string"
+      }
+    },
+    "required": [
+      "listen"
+    ],
+    "type": "object"
+  },
   "ProbeResultUI": {
     "properties": {
       "cpuPct": {
@@ -4942,6 +4963,320 @@ export const SCHEMAS: Record<string, unknown> = {
       "private_key",
       "udp_relay_mode",
       "zero_rtt_handshake"
+    ],
+    "type": "object"
+  },
+  "TunnelPairing": {
+    "description": "TunnelPairing is the code the other end of a tunnel imports.",
+    "properties": {
+      "address": {
+        "example": "203.0.113.10",
+        "type": "string"
+      },
+      "code": {
+        "example": "manifold-tunnel://eyJ2Ijox...",
+        "type": "string"
+      }
+    },
+    "required": [
+      "address",
+      "code"
+    ],
+    "type": "object"
+  },
+  "TunnelRelay": {
+    "description": "TunnelRelay is a relay this panel manages over its API with a tunnel-scoped token.",
+    "properties": {
+      "createdAt": {
+        "example": 1763300000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "name": {
+        "example": "uk-relay",
+        "type": "string"
+      },
+      "url": {
+        "example": "https://relay.example.com:2053/secret/",
+        "type": "string"
+      }
+    },
+    "required": [
+      "createdAt",
+      "id",
+      "name",
+      "url"
+    ],
+    "type": "object"
+  },
+  "TunnelRequest": {
+    "description": "TunnelRequest is what the tunnel form saves.",
+    "properties": {
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "kind": {
+        "example": "gre",
+        "type": "string"
+      },
+      "name": {
+        "example": "uk-relay",
+        "type": "string"
+      },
+      "relayId": {
+        "example": 0,
+        "type": "integer"
+      },
+      "role": {
+        "example": "client",
+        "type": "string"
+      },
+      "settings": {
+        "$ref": "#/components/schemas/TunnelSettings"
+      }
+    },
+    "required": [
+      "enable",
+      "kind",
+      "name",
+      "relayId",
+      "role",
+      "settings"
+    ],
+    "type": "object"
+  },
+  "TunnelSettings": {
+    "description": "TunnelSettings is the JSON a tunnel row keeps; each kind reads the fields it needs.",
+    "properties": {
+      "carrier": {
+        "example": "udp",
+        "type": "string"
+      },
+      "dialer": {
+        "description": "Dialer says which role opens a layer-3 tunnel; the other one listens on Port.",
+        "example": "server",
+        "type": "string"
+      },
+      "forwards": {
+        "items": {
+          "$ref": "#/components/schemas/PortForward"
+        },
+        "type": "array"
+      },
+      "key": {
+        "example": 0,
+        "type": "integer"
+      },
+      "localAddr": {
+        "description": "LocalAddr binds the outer packets to one of this server's addresses; empty lets the route choose.",
+        "example": "203.0.113.10",
+        "type": "string"
+      },
+      "localIp": {
+        "example": "10.80.0.2/30",
+        "type": "string"
+      },
+      "mtu": {
+        "example": 1476,
+        "type": "integer"
+      },
+      "nat": {
+        "example": "masquerade",
+        "type": "string"
+      },
+      "peerIp": {
+        "example": "10.80.0.1",
+        "type": "string"
+      },
+      "port": {
+        "description": "Port is where the listening side of a BackPack tunnel waits for the other.",
+        "example": 8443,
+        "type": "integer"
+      },
+      "proxyProtocol": {
+        "example": false,
+        "type": "boolean"
+      },
+      "publicAddr": {
+        "description": "PublicAddr is how the other side reaches this server; empty means the detected public address.",
+        "example": "203.0.113.10",
+        "type": "string"
+      },
+      "remoteAddr": {
+        "description": "RemoteAddr is the other server's public address, or the relay's host for a reverse client.",
+        "example": "198.51.100.7",
+        "type": "string"
+      },
+      "token": {
+        "example": "3f9c...",
+        "type": "string"
+      },
+      "transport": {
+        "example": "tcpmux",
+        "type": "string"
+      },
+      "ttl": {
+        "example": 255,
+        "type": "integer"
+      }
+    },
+    "type": "object"
+  },
+  "TunnelStatus": {
+    "description": "TunnelStatus is what the panel shows of one tunnel end.",
+    "properties": {
+      "error": {
+        "type": "string"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "latencyMs": {
+        "example": 42.5,
+        "type": "number"
+      },
+      "loss": {
+        "example": 0,
+        "type": "number"
+      },
+      "peer": {
+        "example": "198.51.100.7:52011",
+        "type": "string"
+      },
+      "rxBytes": {
+        "example": 1048576,
+        "format": "int64",
+        "type": "integer"
+      },
+      "since": {
+        "example": 1763300000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "state": {
+        "example": "up",
+        "type": "string"
+      },
+      "txBytes": {
+        "example": 2097152,
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "latencyMs",
+      "loss",
+      "rxBytes",
+      "since",
+      "state",
+      "txBytes"
+    ],
+    "type": "object"
+  },
+  "TunnelSuggestion": {
+    "description": "TunnelSuggestion is a free tunnel subnet, port and secret for a new tunnel.",
+    "properties": {
+      "address": {
+        "example": "203.0.113.10",
+        "type": "string"
+      },
+      "localIp": {
+        "example": "10.80.0.2/30",
+        "type": "string"
+      },
+      "peerIp": {
+        "example": "10.80.0.1",
+        "type": "string"
+      },
+      "port": {
+        "example": 8443,
+        "type": "integer"
+      },
+      "token": {
+        "example": "3f9c0e...",
+        "type": "string"
+      }
+    },
+    "required": [
+      "address",
+      "localIp",
+      "peerIp",
+      "port",
+      "token"
+    ],
+    "type": "object"
+  },
+  "TunnelView": {
+    "description": "TunnelView is a tunnel end as the panel shows it, with how it is doing.",
+    "properties": {
+      "createdAt": {
+        "example": 1763300000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "kind": {
+        "example": "gre",
+        "type": "string"
+      },
+      "name": {
+        "example": "uk-relay",
+        "type": "string"
+      },
+      "pairId": {
+        "example": "5d1c0a9e7b2f4c11a0e3d8f6",
+        "type": "string"
+      },
+      "relayId": {
+        "example": 0,
+        "type": "integer"
+      },
+      "role": {
+        "example": "client",
+        "type": "string"
+      },
+      "settings": {
+        "$ref": "#/components/schemas/TunnelSettings"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TunnelStatus"
+          }
+        ],
+        "nullable": true
+      },
+      "updatedAt": {
+        "example": 1763300000000,
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "createdAt",
+      "enable",
+      "id",
+      "kind",
+      "name",
+      "pairId",
+      "relayId",
+      "role",
+      "settings",
+      "updatedAt"
     ],
     "type": "object"
   },

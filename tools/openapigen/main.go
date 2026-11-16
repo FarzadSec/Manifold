@@ -26,6 +26,7 @@ func run(root, outDir string) error {
 			StructAllow: setOf(
 				"User",
 				"Inbound",
+				"TunnelRelay",
 				"FallbackParentInfo",
 				"OutboundTraffics",
 				"InboundClientIps",
@@ -120,6 +121,10 @@ func run(root, outDir string) error {
 				"WireGuardImportResult",
 				"OpenVPNKeySet",
 				"OpenVPNCertInfo",
+				"TunnelView",
+				"TunnelRequest",
+				"TunnelPairing",
+				"TunnelSuggestion",
 			),
 		},
 		{
@@ -138,6 +143,10 @@ func run(root, outDir string) error {
 			Path:        resolveRel(root, "internal/amneziawgkern"),
 			StructAllow: setOf("Readiness", "Blocker"),
 			AliasAllow:  setOf("BlockerCode"),
+		},
+		{
+			Path:        resolveRel(root, "internal/tunnel"),
+			StructAllow: setOf("TunnelSettings", "PortForward", "TunnelStatus"),
 		},
 		{
 			Path:        resolveRel(root, "internal/tuic"),

@@ -1,0 +1,154 @@
+package controller
+
+import (
+	"strconv"
+
+	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
+
+	"github.com/gin-gonic/gin"
+)
+
+// TunnelController serves the tunnels between this server and others, and the
+// relays this panel manages.
+type TunnelController struct {
+	tunnelService service.TunnelService
+}
+
+// NewTunnelController registers the tunnel routes on g.
+func NewTunnelController(g *gin.RouterGroup) *TunnelController {
+	a := &TunnelController{}
+	g.GET("/list", a.list)
+	g.GET("/status", a.status)
+	g.GET("/suggest", a.suggest)
+	g.POST("/add", a.add)
+	g.POST("/update/:id", a.update)
+	g.POST("/del/:id", a.del)
+	g.POST("/pairing/:id", a.pairing)
+	g.POST("/import", a.importCode)
+	g.POST("/withdraw", a.withdraw)
+	g.POST("/resync", a.resync)
+	g.GET("/relays", a.relays)
+	g.POST("/relays/add", a.addRelay)
+	g.POST("/relays/update/:id", a.updateRelay)
+	g.POST("/relays/del/:id", a.delRelay)
+	g.GET("/relays/:id/tunnels", a.relayTunnels)
+	return a
+}
+
+func pathID(c *gin.Context) (int, bool) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id <= 0 {
+		jsonMsg(c, "id", err)
+		return 0, false
+	}
+	return id, true
+}
+
+func (a *TunnelController) list(c *gin.Context) {
+	views, err := a.tunnelService.List()
+	jsonObj(c, views, err)
+}
+
+func (a *TunnelController) status(c *gin.Context) {
+	jsonObj(c, a.tunnelService.Statuses(), nil)
+}
+
+func (a *TunnelController) suggest(c *gin.Context) {
+	s, err := a.tunnelService.Suggest()
+	jsonObj(c, s, err)
+}
+
+func (a *TunnelController) add(c *gin.Context) {
+	var req service.TunnelRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.tunnels.saveError"), err)
+		return
+	}
+	v, err := a.tunnelService.Add(req)
+	jsonMsgObj(c, I18nWeb(c, "pages.tunnels.saved"), v, err)
+}
+
+func (a *TunnelController) update(c *gin.Context) {
+	id, ok := pathID(c)
+	if !ok {
+		return
+	}
+	var req service.TunnelRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.tunnels.saveError"), err)
+		return
+	}
+	v, err := a.tunnelService.Update(id, req)
+	jsonMsgObj(c, I18nWeb(c, "pages.tunnels.saved"), v, err)
+}
+
+func (a *TunnelController) del(c *gin.Context) {
+	id, ok := pathID(c)
+	if !ok {
+		return
+	}
+	jsonMsg(c, I18nWeb(c, "pages.tunnels.deleted"), a.tunnelService.Delete(id))
+}
+
+func (a *TunnelController) pairing(c *gin.Context) {
+	id, ok := pathID(c)
+	if !ok {
+		return
+	}
+	p, err := a.tunnelService.Pairing(id, c.PostForm("address"))
+	jsonObj(c, p, err)
+}
+
+func (a *TunnelController) importCode(c *gin.Context) {
+	v, err := a.tunnelService.Import(c.PostForm("code"))
+	jsonMsgObj(c, I18nWeb(c, "pages.tunnels.saved"), v, err)
+}
+
+func (a *TunnelController) withdraw(c *gin.Context) {
+	jsonMsg(c, I18nWeb(c, "pages.tunnels.deleted"), a.tunnelService.Withdraw(c.PostForm("pairId")))
+}
+
+func (a *TunnelController) resync(c *gin.Context) {
+	errs := a.tunnelService.Resync()
+	failed := make([]string, 0, len(errs))
+	for _, err := range errs {
+		failed = append(failed, err.Error())
+	}
+	jsonObj(c, failed, nil)
+}
+
+func (a *TunnelController) relays(c *gin.Context) {
+	rows, err := a.tunnelService.ListRelays()
+	jsonObj(c, rows, err)
+}
+
+func (a *TunnelController) addRelay(c *gin.Context) {
+	row, err := a.tunnelService.SaveRelay(0, c.PostForm("name"), c.PostForm("url"), c.PostForm("token"))
+	jsonMsgObj(c, I18nWeb(c, "pages.tunnels.saved"), row, err)
+}
+
+func (a *TunnelController) updateRelay(c *gin.Context) {
+	id, ok := pathID(c)
+	if !ok {
+		return
+	}
+	row, err := a.tunnelService.SaveRelay(id, c.PostForm("name"), c.PostForm("url"), c.PostForm("token"))
+	jsonMsgObj(c, I18nWeb(c, "pages.tunnels.saved"), row, err)
+}
+
+func (a *TunnelController) delRelay(c *gin.Context) {
+	id, ok := pathID(c)
+	if !ok {
+		return
+	}
+	jsonMsg(c, I18nWeb(c, "pages.tunnels.deleted"), a.tunnelService.DeleteRelay(id))
+}
+
+func (a *TunnelController) relayTunnels(c *gin.Context) {
+	id, ok := pathID(c)
+	if !ok {
+		return
+	}
+	views, err := a.tunnelService.RelayStatuses(id)
+	jsonObj(c, views, err)
+}

@@ -1053,6 +1053,13 @@ export const PeerActivitySchema = z.object({
 });
 export type PeerActivity = z.infer<typeof PeerActivitySchema>;
 
+export const PortForwardSchema = z.object({
+  listen: z.string(),
+  proto: z.string().optional(),
+  target: z.string().optional(),
+});
+export type PortForward = z.infer<typeof PortForwardSchema>;
+
 export const ProbeResultUISchema = z.object({
   cpuPct: z.number(),
   error: z.string(),
@@ -1200,6 +1207,87 @@ export const TuicServerSettingsSchema = z.object({
   zero_rtt_handshake: z.boolean(),
 });
 export type TuicServerSettings = z.infer<typeof TuicServerSettingsSchema>;
+
+export const TunnelPairingSchema = z.object({
+  address: z.string(),
+  code: z.string(),
+});
+export type TunnelPairing = z.infer<typeof TunnelPairingSchema>;
+
+export const TunnelRelaySchema = z.object({
+  createdAt: z.number().int(),
+  id: z.number().int(),
+  name: z.string(),
+  url: z.string(),
+});
+export type TunnelRelay = z.infer<typeof TunnelRelaySchema>;
+
+export const TunnelRequestSchema = z.object({
+  enable: z.boolean(),
+  kind: z.string(),
+  name: z.string(),
+  relayId: z.number().int(),
+  role: z.string(),
+  settings: z.lazy(() => TunnelSettingsSchema),
+});
+export type TunnelRequest = z.infer<typeof TunnelRequestSchema>;
+
+export const TunnelSettingsSchema = z.object({
+  carrier: z.string().optional(),
+  dialer: z.string().optional(),
+  forwards: z.array(z.lazy(() => PortForwardSchema)).optional(),
+  key: z.number().int().optional(),
+  localAddr: z.string().optional(),
+  localIp: z.string().optional(),
+  mtu: z.number().int().optional(),
+  nat: z.string().optional(),
+  peerIp: z.string().optional(),
+  port: z.number().int().optional(),
+  proxyProtocol: z.boolean().optional(),
+  publicAddr: z.string().optional(),
+  remoteAddr: z.string().optional(),
+  token: z.string().optional(),
+  transport: z.string().optional(),
+  ttl: z.number().int().optional(),
+});
+export type TunnelSettings = z.infer<typeof TunnelSettingsSchema>;
+
+export const TunnelStatusSchema = z.object({
+  error: z.string().optional(),
+  id: z.number().int(),
+  latencyMs: z.number(),
+  loss: z.number(),
+  peer: z.string().optional(),
+  rxBytes: z.number().int(),
+  since: z.number().int(),
+  state: z.string(),
+  txBytes: z.number().int(),
+});
+export type TunnelStatus = z.infer<typeof TunnelStatusSchema>;
+
+export const TunnelSuggestionSchema = z.object({
+  address: z.string(),
+  localIp: z.string(),
+  peerIp: z.string(),
+  port: z.number().int(),
+  token: z.string(),
+});
+export type TunnelSuggestion = z.infer<typeof TunnelSuggestionSchema>;
+
+export const TunnelViewSchema = z.object({
+  createdAt: z.number().int(),
+  enable: z.boolean(),
+  id: z.number().int(),
+  kind: z.string(),
+  name: z.string(),
+  pairId: z.string(),
+  relayId: z.number().int(),
+  role: z.string(),
+  settings: z.lazy(() => TunnelSettingsSchema),
+  status: z.lazy(() => TunnelStatusSchema).nullable().optional(),
+  updatedAt: z.number().int(),
+});
+export type TunnelView = z.infer<typeof TunnelViewSchema>;
 
 export const UserSchema = z.object({
   id: z.number().int(),

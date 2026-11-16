@@ -1965,6 +1965,173 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'tunnels',
+    title: 'Tunnels',
+    description:
+      'Tunnels between this server and another: kernel GRE, GRETAP, IP6GRE, IP6GRETAP, IPIP and SIT links, and BackPack reverse and layer-3 tunnels. The client end runs on the panel that serves the accounts, the server end on the relay users connect to, which forwards its ports to the client end. A relay is another Manifold, usually the tunnel edition, reached with an API token of the tunnel scope. All endpoints under /panel/api/tunnels.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/tunnels/list',
+        summary: 'List every tunnel end of this server with its live status.',
+        responseSchema: 'TunnelView',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/tunnels/status',
+        summary:
+          'The live status of every tunnel end: up, degraded, down, connecting, disabled or error, with latency, loss and bytes.',
+        responseSchema: 'TunnelStatus',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/tunnels/suggest',
+        summary:
+          "A tunnel subnet no tunnel of this server uses, a random port, a new secret and this server's public address, for a new tunnel.",
+        responseSchema: 'TunnelSuggestion',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/tunnels/add',
+        summary:
+          'Create a tunnel end and start it. With a relayId the other end is created on that relay too.',
+        body: '{\n  "name": "uk-relay",\n  "kind": "gre",\n  "role": "client",\n  "enable": true,\n  "relayId": 0,\n  "settings": {\n    "remoteAddr": "198.51.100.7",\n    "localIp": "10.80.0.2/30",\n    "peerIp": "10.80.0.1",\n    "forwards": [{ "listen": "443", "proto": "tcp" }]\n  }\n}',
+        responseSchema: 'TunnelView',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/tunnels/update/:id',
+        summary:
+          'Change a tunnel end. Its pair id stays, so the other end keeps matching it; a relay is updated too.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Tunnel ID.' }],
+        body: '{\n  "name": "uk-relay",\n  "kind": "gre",\n  "role": "client",\n  "enable": true,\n  "relayId": 0,\n  "settings": {\n    "remoteAddr": "198.51.100.7",\n    "localIp": "10.80.0.2/30",\n    "peerIp": "10.80.0.1",\n    "forwards": [{ "listen": "443", "proto": "tcp" }]\n  }\n}',
+        responseSchema: 'TunnelView',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/tunnels/del/:id',
+        summary: 'Delete a tunnel end, and its other end on the relay when it has one.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Tunnel ID.' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/tunnels/pairing/:id',
+        summary:
+          "The pairing code that makes another panel this tunnel's other end, with the sides swapped.",
+        params: [
+          { name: 'id', in: 'path', type: 'integer', desc: 'Tunnel ID.' },
+          {
+            name: 'address',
+            in: 'body (form)',
+            type: 'string',
+            desc: "How the other server reaches this one. Empty uses the tunnel's public address, or the detected one.",
+            optional: true,
+          },
+        ],
+        responseSchema: 'TunnelPairing',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/tunnels/import',
+        summary:
+          'Create or replace the tunnel end a pairing code describes. An end with the same pair id is replaced, which is how the owning panel updates its relay.',
+        params: [
+          {
+            name: 'code',
+            in: 'body (form)',
+            type: 'string',
+            desc: 'A code starting with manifold-tunnel://.',
+            pattern: '^manifold-tunnel://.+',
+          },
+        ],
+        responseSchema: 'TunnelView',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/tunnels/withdraw',
+        summary: 'Delete the tunnel end with this pair id, for the panel that owns the tunnel.',
+        params: [
+          { name: 'pairId', in: 'body (form)', type: 'string', desc: 'Pair ID of the tunnel.' },
+        ],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/tunnels/resync',
+        summary:
+          'Send every relayed tunnel to its relay again, as after this panel moved to another server. Returns the tunnels that failed.',
+        response: '{\n  "success": true,\n  "obj": []\n}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/tunnels/relays',
+        summary: 'List the relays this panel manages.',
+        responseSchema: 'TunnelRelay',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/tunnels/relays/add',
+        summary: 'Add a relay: its panel URL and an API token made on it with the tunnel scope.',
+        params: [
+          { name: 'name', in: 'body (form)', type: 'string', desc: 'A name for the relay.' },
+          {
+            name: 'url',
+            in: 'body (form)',
+            type: 'string',
+            desc: "The relay panel's URL, with its base path.",
+          },
+          {
+            name: 'token',
+            in: 'body (form)',
+            type: 'string',
+            desc: 'API token of the tunnel scope.',
+          },
+        ],
+        responseSchema: 'TunnelRelay',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/tunnels/relays/update/:id',
+        summary: 'Change a relay; an empty token keeps the stored one.',
+        params: [
+          { name: 'id', in: 'path', type: 'integer', desc: 'Relay ID.' },
+          { name: 'name', in: 'body (form)', type: 'string', desc: 'A name for the relay.' },
+          {
+            name: 'url',
+            in: 'body (form)',
+            type: 'string',
+            desc: "The relay panel's URL, with its base path.",
+          },
+          {
+            name: 'token',
+            in: 'body (form)',
+            type: 'string',
+            desc: 'API token of the tunnel scope.',
+            optional: true,
+          },
+        ],
+        responseSchema: 'TunnelRelay',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/tunnels/relays/del/:id',
+        summary: 'Forget a relay. Its tunnels stay on both servers and are no longer kept in step.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Relay ID.' }],
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/tunnels/relays/:id/tunnels',
+        summary: 'The tunnel ends on a relay, with their status, as that relay reports them.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Relay ID.' }],
+        responseSchema: 'TunnelView',
+        responseSchemaArray: true,
+      },
+    ],
+  },
+
+  {
     id: 'hosts',
     title: 'Hosts',
     description:
@@ -2208,7 +2375,7 @@ export const sections: readonly Section[] = [
             in: 'body',
             type: 'string',
             desc: 'admin (default), monitor, node-sync, or node-admin. node-admin inherits node-sync and may also start a panel update.',
-            enum: ['admin', 'monitor', 'node-sync', 'node-admin'],
+            enum: ['admin', 'monitor', 'node-sync', 'node-admin', 'tunnel'],
             optional: true,
           },
           {

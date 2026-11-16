@@ -1,0 +1,77 @@
+package egress
+
+import (
+	"net/netip"
+	"strings"
+	"testing"
+)
+
+func TestApplyForwardsSendsThePortsThroughTheTunnel(t *testing.T) {
+	f := &fakeSystem{commands: map[string]bool{"nft": true, "iptables": true}}
+	useFake(t, f)
+	rules := []PortForward{
+		{Proto: "tcp", Low: 443, High: 443, TargetLow: 443},
+		{Proto: "udp", Low: 2201, High: 2201, TargetLow: 22},
+		{Proto: "tcp", Low: 10000, High: 10009, TargetLow: 10000},
+	}
+	if err := ApplyForwards("tf3", "mft3", netip.MustParseAddr("10.80.0.2"), rules, true); err != nil {
+		t.Fatal(err)
+	}
+	want := "add table ip6 manifold_tf3\ndelete table ip6 manifold_tf3\n" +
+		"add table ip manifold_tf3\ndelete table ip manifold_tf3\ntable ip manifold_tf3 {\n" +
+		"\tchain prerouting {\n\t\ttype nat hook prerouting priority dstnat; policy accept;\n" +
+		"\t\tiifname != \"mft3\" tcp dport 443 dnat to 10.80.0.2:443\n" +
+		"\t\tiifname != \"mft3\" udp dport 2201 dnat to 10.80.0.2:22\n" +
+		"\t\tiifname != \"mft3\" tcp dport 10000-10009 dnat to 10.80.0.2\n\t}\n" +
+		"\tchain postrouting {\n\t\ttype nat hook postrouting priority srcnat; policy accept;\n\t\toifname \"mft3\" masquerade\n\t}\n}\n"
+	if f.calls[0].stdin != want {
+		t.Fatalf("nft transaction:\n%s\nwant:\n%s", f.calls[0].stdin, want)
+	}
+	if !f.forwarding {
+		t.Fatal("IPv4 forwarding was not turned on")
+	}
+	got := strings.Join(f.argvs(), "\n")
+	if !strings.Contains(got, `iptables -w 5 -I FORWARD 1 -o mft3 -m comment --comment manifold:tf3 -j ACCEPT`) {
+		t.Fatalf("no FORWARD accept for the tunnel:\n%s", got)
+	}
+}
+
+// Keeping the client's address means no masquerade on the relay: the client end
+// routes its replies back through the tunnel instead.
+func TestApplyForwardsWithoutMasqueradeKeepsTheSource(t *testing.T) {
+	f := &fakeSystem{commands: map[string]bool{"nft": true}}
+	useFake(t, f)
+	if err := ApplyForwards("tf3", "mft3", netip.MustParseAddr("10.80.0.2"), []PortForward{{Proto: "tcp", Low: 443, High: 443}}, false); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(f.calls[0].stdin, "masquerade") {
+		t.Fatalf("masquerade installed:\n%s", f.calls[0].stdin)
+	}
+	if err := ApplyReplyMark("tr3", "mft3", 0x4d460003); err != nil {
+		t.Fatal(err)
+	}
+	mark := f.calls[len(f.calls)-1].stdin
+	for _, want := range []string{`iifname "mft3" ct state new ct mark set 0x4d460003`, "ct mark 0x4d460003 meta mark set 0x4d460003", "type route hook output"} {
+		if !strings.Contains(mark, want) {
+			t.Errorf("reply marking lacks %q:\n%s", want, mark)
+		}
+	}
+}
+
+func TestApplyForwardsRefusesWhatNftCouldNotTake(t *testing.T) {
+	useFake(t, &fakeSystem{commands: map[string]bool{"nft": true}})
+	tests := []struct {
+		rule    PortForward
+		wantErr string
+	}{
+		{PortForward{Proto: "sctp", Low: 1, High: 1}, `protocol "sctp"`},
+		{PortForward{Proto: "tcp", Low: 10, High: 5}, "is not a port range"},
+		{PortForward{Proto: "tcp", Low: 10, High: 20, TargetLow: 30}, "same ports only"},
+	}
+	for _, tt := range tests {
+		err := ApplyForwards("tf1", "mft1", netip.MustParseAddr("10.0.0.2"), []PortForward{tt.rule}, true)
+		if err == nil || !strings.Contains(err.Error(), tt.wantErr) {
+			t.Errorf("rule %+v: error %v, want %q", tt.rule, err, tt.wantErr)
+		}
+	}
+}

@@ -988,6 +988,12 @@ export interface PeerActivity {
   up: number;
 }
 
+export interface PortForward {
+  listen: string;
+  proto?: string;
+  target?: string;
+}
+
 export interface ProbeResultUI {
   cpuPct: number;
   error: string;
@@ -1124,6 +1130,80 @@ export interface TuicServerSettings {
   sni?: string;
   udp_relay_mode: string;
   zero_rtt_handshake: boolean;
+}
+
+export interface TunnelPairing {
+  address: string;
+  code: string;
+}
+
+export interface TunnelRelay {
+  createdAt: number;
+  id: number;
+  name: string;
+  url: string;
+}
+
+export interface TunnelRequest {
+  enable: boolean;
+  kind: string;
+  name: string;
+  relayId: number;
+  role: string;
+  settings: TunnelSettings;
+}
+
+export interface TunnelSettings {
+  carrier?: string;
+  dialer?: string;
+  forwards?: PortForward[];
+  key?: number;
+  localAddr?: string;
+  localIp?: string;
+  mtu?: number;
+  nat?: string;
+  peerIp?: string;
+  port?: number;
+  proxyProtocol?: boolean;
+  publicAddr?: string;
+  remoteAddr?: string;
+  token?: string;
+  transport?: string;
+  ttl?: number;
+}
+
+export interface TunnelStatus {
+  error?: string;
+  id: number;
+  latencyMs: number;
+  loss: number;
+  peer?: string;
+  rxBytes: number;
+  since: number;
+  state: string;
+  txBytes: number;
+}
+
+export interface TunnelSuggestion {
+  address: string;
+  localIp: string;
+  peerIp: string;
+  port: number;
+  token: string;
+}
+
+export interface TunnelView {
+  createdAt: number;
+  enable: boolean;
+  id: number;
+  kind: string;
+  name: string;
+  pairId: string;
+  relayId: number;
+  role: string;
+  settings: TunnelSettings;
+  status?: TunnelStatus | null;
+  updatedAt: number;
 }
 
 export interface User {

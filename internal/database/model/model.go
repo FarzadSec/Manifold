@@ -171,10 +171,12 @@ const (
 	ApiScopeMonitor   = "monitor"
 	ApiScopeNodeSync  = "node-sync"
 	ApiScopeNodeAdmin = "node-admin"
+	// ApiScopeTunnel lets the panel that owns a tunnel set up and read its relay end.
+	ApiScopeTunnel = "tunnel"
 )
 
 func IsKnownApiScope(s string) bool {
-	return s == ApiScopeAdmin || s == ApiScopeMonitor || s == ApiScopeNodeSync || s == ApiScopeNodeAdmin
+	return s == ApiScopeAdmin || s == ApiScopeMonitor || s == ApiScopeNodeSync || s == ApiScopeNodeAdmin || s == ApiScopeTunnel
 }
 
 func IsNodeSyncApiScope(s string) bool {
@@ -1750,4 +1752,28 @@ func MergeClientRecord(existing *ClientRecord, incoming *ClientRecord) []ClientM
 		existing.UpdatedAt = incoming.UpdatedAt
 	}
 	return conflicts
+}
+
+// TunnelEnd is one end of a tunnel between this server and another; its
+// settings are the JSON internal/tunnel reads for its kind.
+type TunnelEnd struct {
+	Id        int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	PairId    string `json:"pairId" gorm:"column:pair_id;uniqueIndex;not null" example:"5d1c0a9e7b2f4c11a0e3d8f6"`
+	Name      string `json:"name" gorm:"not null" example:"uk-relay"`
+	Kind      string `json:"kind" gorm:"not null" example:"gre"`
+	Role      string `json:"role" gorm:"not null" example:"client"`
+	Enable    bool   `json:"enable" gorm:"default:true" example:"true"`
+	RelayId   int    `json:"relayId" gorm:"column:relay_id;default:0;index" example:"0"`
+	Settings  string `json:"settings" gorm:"type:text" example:"{}"`
+	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime:milli" example:"1763300000000"`
+	UpdatedAt int64  `json:"updatedAt" gorm:"autoUpdateTime:milli" example:"1763300000000"`
+}
+
+// TunnelRelay is a relay this panel manages over its API with a tunnel-scoped token.
+type TunnelRelay struct {
+	Id        int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Name      string `json:"name" gorm:"not null" example:"uk-relay"`
+	Url       string `json:"url" gorm:"not null" example:"https://relay.example.com:2053/secret/"`
+	Token     string `json:"-" gorm:"column:token"`
+	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime:milli" example:"1763300000000"`
 }
