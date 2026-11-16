@@ -37,7 +37,7 @@ import { activateOnKey } from '@/utils/a11y';
 import { useInboundOptions } from '@/api/queries/useInboundOptions';
 import { useAllSettings } from '@/api/queries/useAllSettings';
 import { useTheme } from '@/hooks/useTheme';
-import { PANEL_ROUTES } from '@/routes/panelRoutes';
+import { navigableRoutes } from '@/routes/panelRoutes';
 import type { ClientRecord, InboundOption } from '@/schemas/client';
 import { commandPaletteStore, useCommandPalette } from './useCommandPalette';
 import './CommandPalette.css';
@@ -78,6 +78,7 @@ export const PALETTE_KEYWORDS: Record<string, string[]> = {
   '/groups': ['groups', 'tags', 'batch'],
   '/nodes': ['nodes', 'servers', 'cluster', 'remote nodes'],
   '/hosts': ['hosts', 'sni', 'domains'],
+  '/tunnels': ['tunnels', 'gre', 'backpack', 'relay', 'pairing'],
   '/outbound': ['outbounds', 'freedom', 'blackhole', 'socks', 'http', 'warp', 'nord', 'pia'],
   '/routing': ['routing', 'rules', 'geoip', 'geosite', 'direct', 'block'],
   '/settings': ['settings', 'config', 'port', 'password', 'ssl', 'telegram'],
@@ -366,7 +367,7 @@ export default function CommandPalette() {
       });
     });
 
-    const pages = PANEL_ROUTES.map((route) => ({
+    const pages = navigableRoutes().map((route) => ({
       path: route.path,
       title: t(route.titleKey),
       keywords: PALETTE_KEYWORDS[route.path] ?? [],

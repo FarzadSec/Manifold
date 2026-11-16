@@ -23,6 +23,7 @@ DEFAULT_SUB_PORT=2096
 SUB_PORT=""
 FIRST_INSTALL=0
 WORK_DIR=""
+EDITION=""
 
 usage() {
     cat <<'USAGE'
@@ -39,6 +40,8 @@ The database and settings in /etc/manifold are kept on update.
   --password PASS    Panel password for a first install (default: random)
   --no-start         Install the files but do not start the service
   --no-deps          Do not install the system packages the VPN engines need
+  --edition NAME     full (the default) or tunnel: a relay with tunnels only,
+                     no Xray, inbounds or subscriptions. Kept on update.
   -h, --help         Show this help
 
 Environment:
@@ -124,6 +127,11 @@ parse_args() {
             --password) PANEL_PASSWORD="${2:?--password needs a value}"; shift 2 ;;
             --no-start) START_SERVICE=0; shift ;;
             --no-deps) INSTALL_DEPS=0; shift ;;
+            --edition)
+                EDITION="${2:?--edition needs full or tunnel}"
+                case "$EDITION" in full | tunnel) ;; *) die "--edition must be full or tunnel" ;; esac
+                shift 2
+                ;;
             -h | --help) usage; exit 0 ;;
             *) die "unknown option: $1 (see --help)" ;;
         esac
@@ -205,7 +213,26 @@ install_files() {
     install -m 755 "${src}/manifold.sh" "$COMMAND"
     install -m 644 "${src}/manifold.service" "$UNIT_FILE"
     [ -f "$ENV_FILE" ] || install -m 600 /dev/null "$ENV_FILE"
+    set_edition
     systemctl daemon-reload
+}
+
+# installed_edition prints the edition the env file records: tunnel, or full.
+installed_edition() {
+    if [ -f "$ENV_FILE" ] && grep -q '^MANIFOLD_EDITION=tunnel$' "$ENV_FILE"; then
+        echo tunnel
+    else
+        echo full
+    fi
+}
+
+# set_edition records --edition in the env file; without it an update keeps the edition it finds.
+set_edition() {
+    [ -n "$EDITION" ] || return 0
+    sed -i '/^MANIFOLD_EDITION=/d' "$ENV_FILE"
+    if [ "$EDITION" = tunnel ]; then
+        echo "MANIFOLD_EDITION=tunnel" >>"$ENV_FILE"
+    fi
 }
 
 # Chooses the login, port and path of a new panel. An existing database is left alone.
@@ -239,6 +266,14 @@ command_exists() { command -v "$1" >/dev/null 2>&1; }
 # commands they provide.
 missing_dependencies() {
     local missing=()
+    # A relay runs tunnels only, which need the kernel's links and netfilter.
+    if [ "$(installed_edition)" = tunnel ]; then
+        command_exists nft || missing+=(nftables)
+        command_exists iptables || missing+=(iptables)
+        command_exists ip || missing+=(iproute2)
+        echo "${missing[*]}"
+        return 0
+    fi
     command_exists openvpn || missing+=(openvpn)
     command_exists nft || missing+=(nftables)
     command_exists iptables || missing+=(iptables)
@@ -380,7 +415,11 @@ print_summary() {
     local version
     version=$("${INSTALL_DIR}/manifold" -v 2>/dev/null || echo unknown)
     echo
-    echo "Manifold ${version} is installed."
+    if [ "$(installed_edition)" = tunnel ]; then
+        echo "Manifold Tunnel Server ${version} is installed."
+    else
+        echo "Manifold ${version} is installed."
+    fi
     if [ "$FIRST_INSTALL" -eq 1 ]; then
         cat <<SUMMARY
 

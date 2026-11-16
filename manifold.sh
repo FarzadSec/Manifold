@@ -196,6 +196,25 @@ remove_engine_files() {
     fi
 }
 
+# remove_tunnels takes down the tunnel links the panel made, which it leaves up
+# across restarts, with their forwarding tables and reply routing. $1 is /sys/class/net.
+remove_tunnels() {
+    local link alias table pref
+    for link in "$1"/mft*; do
+        [ -e "$link/ifalias" ] || continue
+        alias=$(cat "$link/ifalias" 2>/dev/null || true)
+        case "$alias" in manifold-tunnel:*) ip link del dev "$(basename "$link")" 2>/dev/null || true ;; esac
+    done
+    if command -v nft >/dev/null 2>&1; then
+        while read -r _ family table; do
+            case "$table" in manifold_tf[0-9]* | manifold_tr[0-9]*) nft delete table "$family" "$table" 2>/dev/null || true ;; esac
+        done < <(nft list tables 2>/dev/null)
+    fi
+    while read -r pref rest; do
+        case "$rest" in *"fwmark 0x4d46"*) ip rule del pref "${pref%:}" 2>/dev/null || true ;; esac
+    done < <(ip rule show 2>/dev/null)
+}
+
 uninstall() {
     need_root
     systemctl disable --now manifold 2>/dev/null || true
@@ -203,6 +222,7 @@ uninstall() {
     systemctl daemon-reload
     rm -rf "$INSTALL_DIR"
     remove_engine_files /etc/wireguard /etc/swanctl/conf.d/manifold-l2tp.conf
+    remove_tunnels /sys/class/net
     if [ "${1:-}" = "--purge" ]; then
         rm -rf "$DATA_DIR" /var/log/manifold /etc/default/manifold
         echo "Manifold and its data are removed."

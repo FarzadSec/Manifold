@@ -17,6 +17,11 @@ export const keys = {
   wireguard: {
     importable: () => ['wireguard', 'importable'] as const,
   },
+  tunnels: {
+    root: () => ['tunnels'] as const,
+    list: () => ['tunnels', 'list'] as const,
+    relays: () => ['tunnels', 'relays'] as const,
+  },
   subBalancers: {
     root: () => ['sub-balancers'] as const,
     list: () => ['sub-balancers', 'list'] as const,

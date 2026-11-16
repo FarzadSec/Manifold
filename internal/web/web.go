@@ -331,6 +331,10 @@ const (
 // startTask schedules background jobs (Xray checks, traffic jobs, cron
 // jobs) which the panel relies on for periodic maintenance and monitoring.
 func (s *Server) startTask(restartXray bool, loc *time.Location) {
+	if config.IsTunnelEdition() {
+		s.startTunnelEditionTasks()
+		return
+	}
 	if restartXray {
 		err := s.xrayService.RestartXray(true)
 		if err != nil {
@@ -459,6 +463,21 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 			time.Sleep(time.Minute)
 			job.NewMemoryReleaseJob().Run()
 		}()
+	}
+}
+
+// startTunnelEditionTasks schedules what a relay needs: its tunnels and the
+// housekeeping that does not involve Xray, inbounds or accounts.
+func (s *Server) startTunnelEditionTasks() {
+	tunnelJob := job.NewTunnelJob()
+	_, _ = s.cron.AddJob(cadenceTunnels, tunnelJob)
+	go tunnelJob.Run()
+	_, _ = s.cron.AddJob("@daily", job.NewClearLogsJob())
+	if s.cpuAlarmWanted() {
+		_, _ = s.cron.AddJob(cadenceCPUAlarm, job.NewCheckCpuJob())
+	}
+	if s.memoryAlarmWanted() {
+		_, _ = s.cron.AddJob(cadenceMemoryAlarm, job.NewCheckMemJob())
 	}
 }
 

@@ -15,6 +15,8 @@ import {
   ReloadOutlined,
 } from '@ant-design/icons';
 
+import { isTunnelEdition } from '@/utils/edition';
+
 import { formatPanelVersion } from '@/lib/panel-version';
 import type { Status } from '@/models/status';
 
@@ -75,34 +77,36 @@ export default function OverviewActionBar({
   const size = isMobile ? ('small' as const) : ('middle' as const);
   const isStopped = status.xray.state === 'stop';
 
+  const edition = isTunnelEdition();
+  const xrayActions: BarAction[] = [
+    {
+      key: 'restart',
+      icon: isStopped ? <PlayCircleOutlined aria-hidden /> : <ReloadOutlined aria-hidden />,
+      text: t(isStopped ? 'pages.index.startXray' : 'pages.index.restartXray'),
+      onClick: onRestartXray,
+      primary: true,
+    },
+    {
+      key: 'stop',
+      icon: <PoweroffOutlined aria-hidden />,
+      text: t('pages.index.stopXray'),
+      danger: true,
+      disabled: isStopped,
+      hint: isStopped ? t('pages.index.stopXrayDisabledHint') : undefined,
+      onClick: () =>
+        modal.confirm({
+          title: t('pages.index.stopXrayConfirmTitle'),
+          content: t('pages.index.stopXrayConfirmContent'),
+          okText: t('pages.index.stopXrayConfirmOk'),
+          okType: 'danger',
+          cancelText: t('cancel'),
+          focusable: { autoFocusButton: 'cancel' },
+          onOk: onStopXray,
+        }),
+    },
+  ];
   const actionGroups: BarAction[][] = [
-    [
-      {
-        key: 'restart',
-        icon: isStopped ? <PlayCircleOutlined aria-hidden /> : <ReloadOutlined aria-hidden />,
-        text: t(isStopped ? 'pages.index.startXray' : 'pages.index.restartXray'),
-        onClick: onRestartXray,
-        primary: true,
-      },
-      {
-        key: 'stop',
-        icon: <PoweroffOutlined aria-hidden />,
-        text: t('pages.index.stopXray'),
-        danger: true,
-        disabled: isStopped,
-        hint: isStopped ? t('pages.index.stopXrayDisabledHint') : undefined,
-        onClick: () =>
-          modal.confirm({
-            title: t('pages.index.stopXrayConfirmTitle'),
-            content: t('pages.index.stopXrayConfirmContent'),
-            okText: t('pages.index.stopXrayConfirmOk'),
-            okType: 'danger',
-            cancelText: t('cancel'),
-            focusable: { autoFocusButton: 'cancel' },
-            onOk: onStopXray,
-          }),
-      },
-    ],
+    ...(edition ? [] : [xrayActions]),
     [
       {
         key: 'logs',
@@ -130,12 +134,16 @@ export default function OverviewActionBar({
             },
           ]
         : []),
-      {
-        key: 'config',
-        icon: <ControlOutlined aria-hidden />,
-        text: t('pages.index.config'),
-        onClick: onOpenConfig,
-      },
+      ...(edition
+        ? []
+        : [
+            {
+              key: 'config',
+              icon: <ControlOutlined aria-hidden />,
+              text: t('pages.index.config'),
+              onClick: onOpenConfig,
+            },
+          ]),
       {
         key: 'backup',
         icon: <CloudServerOutlined aria-hidden />,
@@ -150,12 +158,16 @@ export default function OverviewActionBar({
         text: t('pages.index.systemHistoryTitle'),
         onClick: onOpenSystemHistory,
       },
-      {
-        key: 'metrics',
-        icon: <ArrowUpOutlined aria-hidden />,
-        text: t('pages.index.xrayMetricsTitle'),
-        onClick: onOpenXrayMetrics,
-      },
+      ...(edition
+        ? []
+        : [
+            {
+              key: 'metrics',
+              icon: <ArrowUpOutlined aria-hidden />,
+              text: t('pages.index.xrayMetricsTitle'),
+              onClick: onOpenXrayMetrics,
+            },
+          ]),
     ],
   ];
 
@@ -176,7 +188,9 @@ export default function OverviewActionBar({
   return (
     <div className="ov-bar">
       {modalContextHolder}
-      {status.xray.errorMsg ? (
+      {edition ? (
+        <span className="ov-state">{t('pages.tunnels.editionName')}</span>
+      ) : status.xray.errorMsg ? (
         <Tooltip title={<span className="ov-error-detail">{status.xray.errorMsg}</span>}>
           {statePill}
         </Tooltip>
@@ -184,7 +198,7 @@ export default function OverviewActionBar({
         statePill
       )}
 
-      {status.xray.state === 'running' && status.xray.errorMsg ? (
+      {!edition && status.xray.state === 'running' && status.xray.errorMsg ? (
         <Tooltip title={<span className="ov-error-detail">{status.xray.errorMsg}</span>}>
           <Tag color="error">{t('pages.index.xrayStatusError')}</Tag>
         </Tooltip>

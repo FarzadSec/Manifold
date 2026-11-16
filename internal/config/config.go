@@ -311,3 +311,9 @@ func init() {
 	}
 	_ = copyFile(oldDBPath, newDBPath) // ignore error
 }
+
+// IsTunnelEdition reports whether this install is the tunnel edition: a relay
+// with tunnels and the panel's own settings, and no Xray, inbounds or subscriptions.
+func IsTunnelEdition() bool {
+	return strings.EqualFold(strings.TrimSpace(os.Getenv("XUI_EDITION")), "tunnel")
+}

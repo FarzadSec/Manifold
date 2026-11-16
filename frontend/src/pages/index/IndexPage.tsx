@@ -28,6 +28,7 @@ import VitalTile from './VitalTile';
 import ThroughputCard from './ThroughputCard';
 import ConnectionsCard from './ConnectionsCard';
 import SystemStrip from './SystemStrip';
+import TunnelsCard from './TunnelsCard';
 import { mean, peak, useOverviewHistory } from './useOverviewHistory';
 const JsonEditor = lazy(() => import('@/components/form/JsonEditor'));
 const LogModal = lazy(() => import('./LogModal'));
@@ -134,7 +135,10 @@ export default function IndexPage() {
       };
     const warm = items.filter((i) => i.value >= USAGE_WARN_PERCENT);
     if (warm.length)
-      return { text: t('pages.index.healthWarm', { list: list(warm) }), color: USAGE_WARN_COLOR };
+      return {
+        text: t('pages.index.healthWarm', { list: list(warm) }),
+        color: USAGE_WARN_COLOR,
+      };
     return null;
   }, [status, t]);
 
@@ -263,6 +267,8 @@ export default function IndexPage() {
                       isMobile={isMobile}
                     />
                   </div>
+
+                  <TunnelsCard />
 
                   <SystemStrip
                     status={status}

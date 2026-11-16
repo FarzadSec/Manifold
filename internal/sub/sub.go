@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/config"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/locale"
@@ -393,6 +394,9 @@ func (s *Server) Start() (err error) {
 		}
 	}()
 
+	if config.IsTunnelEdition() {
+		return nil
+	}
 	subEnable, err := s.settingService.GetSubEnable()
 	if err != nil {
 		return err

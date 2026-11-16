@@ -122,6 +122,22 @@ check "nothing to install when every command exists" "$(missing_dependencies)" "
 FAKE_COMMANDS="openvpn nft iptables wg-quick xl2tpd pppd ipsec"
 check "an IPsec service of another kind is not joined by a second one" "$(missing_dependencies)" ""
 
+# A relay of the tunnel edition needs no VPN engine, only links and netfilter.
+ENV_FILE=$(mktemp)
+EDITION=tunnel
+set_edition
+check "the tunnel edition is recorded for the service" "$(cat "$ENV_FILE")" "MANIFOLD_EDITION=tunnel"
+FAKE_COMMANDS="iptables"
+check "a relay installs only what tunnels need" "$(missing_dependencies)" "nftables iproute2"
+EDITION=""
+set_edition
+check "an update without --edition keeps the edition" "$(installed_edition)" "tunnel"
+EDITION=full
+set_edition
+check "the full edition clears the record" "$(installed_edition)" "full"
+rm -f "$ENV_FILE"
+EDITION=""
+
 # Debian and Ubuntu ship strongSwan in pieces; everywhere else it is one package.
 check "apt gets the strongSwan daemon and swanctl by their own names" \
     "$(packages_for apt-get openvpn strongswan ppp)" "openvpn strongswan-swanctl charon-systemd libstrongswan-standard-plugins ppp"

@@ -32,7 +32,7 @@ import { formatPanelVersion } from '@/lib/panel-version';
 import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
 import { useAllSettings } from '@/api/queries/useAllSettings';
 import { useCommandPalette } from '@/components/command-palette/useCommandPalette';
-import { PANEL_ROUTES } from '@/routes/panelRoutes';
+import { navigableRoutes } from '@/routes/panelRoutes';
 import './AppSidebar.css';
 
 // The palette listens for Ctrl as well as Cmd, so the chip must not show a
@@ -148,7 +148,7 @@ export default function AppSidebar() {
 
   const tabs = useMemo<{ key: string; icon: ComponentType; title: string }[]>(
     () => [
-      ...PANEL_ROUTES.map((route) => ({
+      ...navigableRoutes().map((route) => ({
         key: route.path,
         icon: route.icon,
         title: t(route.titleKey),

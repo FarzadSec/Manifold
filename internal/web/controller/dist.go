@@ -137,6 +137,9 @@ func serveDistPage(c *gin.Context, name string) {
 		escapedVer := jsEscape.Replace(config.GetProductVersion())
 		script += `;window.X_UI_CUR_VER="` + escapedVer + `"`
 		script += `;window.X_UI_DB_TYPE="` + config.GetDBKind() + `"`
+		if config.IsTunnelEdition() {
+			script += `;window.X_UI_EDITION="tunnel"`
+		}
 	}
 	script += `;</script>`
 	inject := []byte(script)

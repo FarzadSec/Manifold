@@ -39,5 +39,29 @@ remove_engine_files "$work/wireguard" "$work/swanctl/manifold-l2tp.conf"
 check "strongSwan is left alone when there was nothing of the panel's" "$SWANCTL_CALLS" ""
 unset -f swanctl
 
+# Tunnel links outlive the panel's restarts, so an uninstall takes them down,
+# with their tables and routing, and leaves an admin's own links alone.
+mkdir -p "$work/net/mft4" "$work/net/mft9" "$work/net/gre1"
+echo "manifold-tunnel:0123abcd" >"$work/net/mft4/ifalias"
+echo "made by hand" >"$work/net/mft9/ifalias"
+echo "manifold-tunnel:feed" >"$work/net/gre1/ifalias"
+IP_CALLS="" NFT_CALLS=""
+ip() {
+    case "$*" in
+        "rule show") printf '0:\tfrom all lookup local\n10004:\tfrom all fwmark 0x4d460004 lookup 20004\n32766:\tfrom all lookup main\n' ;;
+        *) IP_CALLS="${IP_CALLS}[$*]" ;;
+    esac
+}
+nft() {
+    case "$*" in
+        "list tables") printf 'table ip manifold_tf4\ntable inet manifold_tr4\ntable ip manifold_ovpn1\n' ;;
+        *) NFT_CALLS="${NFT_CALLS}[$*]" ;;
+    esac
+}
+remove_tunnels "$work/net"
+check "only the panel's tunnel links and rules are removed" "$IP_CALLS" "[link del dev mft4][rule del pref 10004]"
+check "only the tunnel tables are removed" "$NFT_CALLS" "[delete table ip manifold_tf4][delete table inet manifold_tr4]"
+unset -f ip nft
+
 [ "$failures" -eq 0 ] || exit 1
 echo "all management command function tests passed"
