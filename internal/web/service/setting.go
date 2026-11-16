@@ -349,10 +349,13 @@ func (s *SettingService) GetAllSetting() (*entity.AllSetting, error) {
 	return allSetting, nil
 }
 
-func (s *SettingService) GetAllSettingView() (*entity.AllSettingView, error) {
+func (s *SettingService) GetAllSettingView(userId int) (*entity.AllSettingView, error) {
 	allSetting, err := s.GetAllSetting()
 	if err != nil {
 		return nil, err
+	}
+	if enabled, secret, err := s.AccountTwoFactor(userId); err == nil {
+		allSetting.TwoFactorEnable, allSetting.TwoFactorToken = enabled, secret
 	}
 	view := &entity.AllSettingView{AllSetting: *allSetting}
 	view.HasTgBotToken = secretConfigured(allSetting.TgBotToken)
@@ -675,35 +678,46 @@ func (s *SettingService) GetTgLang() (string, error) {
 	return s.getString("tgLang")
 }
 
-func (s *SettingService) GetTwoFactorEnable() (bool, error) {
-	return s.getBool("twoFactorEnable")
+// AccountTwoFactor reads one account's own two-factor state.
+func (s *SettingService) AccountTwoFactor(userId int) (bool, string, error) {
+	var user model.User
+	if err := database.GetDB().Select("two_factor_enabled", "two_factor_secret").First(&user, userId).Error; err != nil {
+		return false, "", err
+	}
+	return user.TwoFactorEnabled, user.TwoFactorSecret, nil
 }
 
-func (s *SettingService) SetTwoFactorEnable(value bool) error {
-	return s.setBool("twoFactorEnable", value)
+// SetAccountTwoFactor switches one account's two-factor on with a secret, or off.
+func (s *SettingService) SetAccountTwoFactor(userId int, enabled bool, secret string) error {
+	if enabled {
+		if !totp.ValidSecret(secret) {
+			return errors.New("two-factor secret must be a non-empty base32 key")
+		}
+		secret = totp.NormalizeSecret(secret)
+	} else {
+		secret = ""
+	}
+	return database.GetDB().Model(&model.User{}).Where("id = ?", userId).
+		Updates(map[string]any{"two_factor_enabled": enabled, "two_factor_secret": secret}).Error
 }
 
-func (s *SettingService) GetTwoFactorToken() (string, error) {
-	return s.getString("twoFactorToken")
+// AnyTwoFactorEnabled tells the login page whether to ask for a code.
+func (s *SettingService) AnyTwoFactorEnabled() (bool, error) {
+	var n int64
+	err := database.GetDB().Model(&model.User{}).Where("two_factor_enabled = ?", true).Count(&n).Error
+	return n > 0, err
 }
 
-func (s *SettingService) SetTwoFactorToken(value string) error {
-	return s.setString("twoFactorToken", value)
-}
-
-func (s *SettingService) VerifyTwoFactorCode(code string) error {
-	enabled, err := s.GetTwoFactorEnable()
+// VerifyTwoFactorCode checks a code against the account's own secret; no two-factor passes.
+func (s *SettingService) VerifyTwoFactorCode(userId int, code string) error {
+	enabled, secret, err := s.AccountTwoFactor(userId)
 	if err != nil {
 		return err
 	}
 	if !enabled {
 		return nil
 	}
-	token, err := s.GetTwoFactorToken()
-	if err != nil {
-		return err
-	}
-	if strings.TrimSpace(token) == "" || !totp.VerifyWithSkew(token, strings.TrimSpace(code), time.Now()) {
+	if strings.TrimSpace(secret) == "" || !totp.VerifyWithSkew(secret, strings.TrimSpace(code), time.Now()) {
 		return common.NewError("invalid two factor code")
 	}
 	return nil
@@ -1687,12 +1701,6 @@ func (s *SettingService) UpdateAllSetting(allSetting *entity.AllSetting, clears 
 	if err := s.preserveRedactedSecrets(allSetting, clears); err != nil {
 		return err
 	}
-	if allSetting.TwoFactorEnable {
-		if !totp.ValidSecret(allSetting.TwoFactorToken) {
-			return errors.New("two-factor secret must be a non-empty base32 key")
-		}
-		allSetting.TwoFactorToken = totp.NormalizeSecret(allSetting.TwoFactorToken)
-	}
 	if err := validateSettingsURLs(allSetting); err != nil {
 		return err
 	}
@@ -1725,6 +1733,9 @@ func (s *SettingService) UpdateAllSetting(allSetting *entity.AllSetting, clears 
 		}
 		for _, field := range fields {
 			key := field.Tag.Get("json")
+			if accountOwnedSettingKeys[key] {
+				continue
+			}
 			fieldV := v.FieldByName(field.Name)
 			value := fmt.Sprint(fieldV.Interface())
 			if st, ok := byKey[key]; ok {
@@ -1744,6 +1755,9 @@ func (s *SettingService) UpdateAllSetting(allSetting *entity.AllSetting, clears 
 		return nil
 	})
 }
+
+// accountOwnedSettingKeys travel with the settings form but belong to the signed-in account.
+var accountOwnedSettingKeys = map[string]bool{"twoFactorEnable": true, "twoFactorToken": true}
 
 func validateSubUserAgentRegexes(allSetting *entity.AllSetting) error {
 	jsonPattern, err := validateSubUserAgentRegex("Xray JSON", allSetting.SubJsonUserAgentRegex, DefaultSubJsonUserAgentRegex)
@@ -1801,13 +1815,6 @@ func (s *SettingService) preserveRedactedSecrets(allSetting *entity.AllSetting, 
 			return err
 		}
 		allSetting.LdapPassword = value
-	}
-	if allSetting.TwoFactorEnable && strings.TrimSpace(allSetting.TwoFactorToken) == "" {
-		value, err := s.GetTwoFactorToken()
-		if err != nil {
-			return err
-		}
-		allSetting.TwoFactorToken = value
 	}
 	if !clears.SmtpPassword && strings.TrimSpace(allSetting.SmtpPassword) == "" {
 		value, err := s.GetSmtpPassword()

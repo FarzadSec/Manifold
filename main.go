@@ -411,13 +411,14 @@ func updateSetting(port int, username string, password string, webBasePath strin
 	}
 
 	if resetTwoFactor {
-		err := settingService.SetTwoFactorEnable(false)
-
+		owner, err := userService.GetFirstUser()
+		if err == nil {
+			err = settingService.SetAccountTwoFactor(owner.Id, false, "")
+		}
 		if err != nil {
 			fmt.Println("Failed to reset two-factor authentication:", err)
 		} else {
-			_ = settingService.SetTwoFactorToken("")
-			fmt.Println("Two-factor authentication reset successfully")
+			fmt.Println("Two-factor authentication of the panel owner reset successfully")
 		}
 	}
 

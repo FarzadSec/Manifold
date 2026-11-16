@@ -1,6 +1,7 @@
 package panel
 
 import (
+	"encoding/json"
 	"errors"
 	"strings"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/crypto"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/random"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/access"
 )
 
 type ApiTokenService struct{}
@@ -26,6 +28,12 @@ type ApiTokenView struct {
 	CreatedAt int64  `json:"createdAt" example:"1736000000"`
 	Scope     string `json:"scope" example:"admin"`
 	ExpiresAt int64  `json:"expiresAt" example:"0"`
+	// Acts-as account, tier and permissions narrow an admin-scope token; empty permissions mean no restriction.
+	UserId      int      `json:"userId" example:"1"`
+	Username    string   `json:"username" example:"admin"`
+	Tier        string   `json:"tier" example:"admin"`
+	Permissions []string `json:"permissions" example:"[\"users:read\"]"`
+	RateLimit   int      `json:"rateLimit" example:"120"`
 }
 
 func apiTokenCreatedAtSeconds(createdAt int64) int64 {
@@ -39,14 +47,80 @@ func apiTokenCreatedAtSeconds(createdAt int64) int64 {
 // token value: only a SHA-256 hash is stored, and the plaintext is shown
 // exactly once at creation time.
 func toView(t *model.ApiToken) *ApiTokenView {
-	return &ApiTokenView{
-		Id:        t.Id,
-		Name:      t.Name,
-		Enabled:   t.Enabled,
-		CreatedAt: apiTokenCreatedAtSeconds(t.CreatedAt),
-		Scope:     t.Scope,
-		ExpiresAt: t.ExpiresAt,
+	perms := t.Permissions
+	if perms == nil {
+		perms = []string{}
 	}
+	return &ApiTokenView{
+		Id:          t.Id,
+		Name:        t.Name,
+		Enabled:     t.Enabled,
+		CreatedAt:   apiTokenCreatedAtSeconds(t.CreatedAt),
+		Scope:       t.Scope,
+		ExpiresAt:   t.ExpiresAt,
+		UserId:      t.UserId,
+		Tier:        t.Tier,
+		Permissions: perms,
+		RateLimit:   t.RateLimit,
+	}
+}
+
+// DefaultTokenRateLimit is the requests per minute a token gets when it names none.
+const DefaultTokenRateLimit = 120
+
+// TokenAccess binds an admin-scope token to an account and narrows it.
+type TokenAccess struct {
+	UserId      int
+	Tier        string
+	Permissions []string
+	RateLimit   int
+}
+
+// CreateBound creates an admin-scope token that acts as one account, never above it.
+func (s *ApiTokenService) CreateBound(name string, expiresAt int64, ta TokenAccess) (*ApiTokenView, error) {
+	var user model.User
+	if err := database.GetDB().First(&user, ta.UserId).Error; err != nil {
+		return nil, common.NewError("the account the token acts as does not exist")
+	}
+	if ta.Tier == "" {
+		ta.Tier = user.Tier
+	}
+	if !access.ValidTier(ta.Tier) || access.TierRank(ta.Tier) > access.TierRank(user.Tier) {
+		return nil, common.NewError("a token's tier cannot be above its account's")
+	}
+	for _, p := range ta.Permissions {
+		if !access.Known(p) {
+			return nil, common.NewError("unknown permission: " + p)
+		}
+	}
+	if ta.RateLimit < 0 {
+		return nil, common.NewError("requests per minute cannot be negative")
+	}
+	view, err := s.Create(name, model.ApiScopeAdmin, expiresAt)
+	if err != nil {
+		return nil, err
+	}
+	if err := database.GetDB().Model(&model.ApiToken{}).Where("id = ?", view.Id).Updates(map[string]any{
+		"user_id": ta.UserId, "tier": ta.Tier, "permissions": jsonStrings(ta.Permissions), "rate_limit": ta.RateLimit,
+	}).Error; err != nil {
+		return nil, err
+	}
+	view.UserId, view.Username, view.Tier, view.RateLimit = ta.UserId, user.Username, ta.Tier, ta.RateLimit
+	view.Permissions = append([]string{}, ta.Permissions...)
+	return view, nil
+}
+
+func jsonStrings(v []string) string {
+	if len(v) == 0 {
+		return "[]"
+	}
+	b, _ := json.Marshal(v)
+	return string(b)
+}
+
+// DeleteForUser removes every token that acts as the account, when the account is deleted.
+func (s *ApiTokenService) DeleteForUser(userId int) error {
+	return database.GetDB().Where("user_id = ?", userId).Delete(&model.ApiToken{}).Error
 }
 
 // NormalizeScope validates a requested scope, defaulting empty to admin so
@@ -74,9 +148,24 @@ func (s *ApiTokenService) List() ([]*ApiTokenView, error) {
 	if err := db.Model(model.ApiToken{}).Order("id asc").Find(&rows).Error; err != nil {
 		return nil, err
 	}
+	var users []model.User
+	if err := db.Model(&model.User{}).Select("id", "username", "is_owner").Find(&users).Error; err != nil {
+		return nil, err
+	}
+	names, owner := map[int]string{}, ""
+	for _, u := range users {
+		names[u.Id] = u.Username
+		if u.IsOwner {
+			owner = u.Username
+		}
+	}
 	out := make([]*ApiTokenView, 0, len(rows))
 	for _, r := range rows {
-		out = append(out, toView(r))
+		v := toView(r)
+		if v.Username = names[r.UserId]; r.UserId == 0 {
+			v.Username = owner
+		}
+		out = append(out, v)
 	}
 	return out, nil
 }

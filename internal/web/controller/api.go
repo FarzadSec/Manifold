@@ -4,7 +4,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/access"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/middleware"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/panel"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/tgbot"
@@ -35,39 +37,48 @@ func NewAPIController(g *gin.RouterGroup) *APIController {
 }
 
 func (a *APIController) checkAPIAuth(c *gin.Context) {
-	setAuthenticated := func(scope string) {
-		if u, err := a.userService.GetFirstUser(); err == nil {
-			session.SetAPIAuthUser(c, u)
-		}
+	authenticateAs := func(scope string, actor *access.Actor) {
+		session.SetAPIAuthUser(c, &actor.Account)
+		access.SetActor(c, actor)
 		c.Set("api_authed", true)
 		c.Set("api_token_scope", scope)
 	}
-	matchedScope := ""
+	var token *model.ApiToken
 	if after, ok := strings.CutPrefix(c.GetHeader("Authorization"), "Bearer "); ok {
 		if row, matched := a.apiTokenService.MatchToken(after); matched {
-			matchedScope = row.Scope
+			token = row
 		}
 	}
-	// Verified mTLS keeps its historical node-sync identity. Only an explicit
-	// node-admin bearer elevates it to software-update authority.
 	if c.Request.TLS != nil && len(c.Request.TLS.VerifiedChains) > 0 {
 		scope := model.ApiScopeNodeSync
-		if matchedScope == model.ApiScopeNodeAdmin {
+		if token != nil && token.Scope == model.ApiScopeNodeAdmin {
 			scope = model.ApiScopeNodeAdmin
 		}
-		setAuthenticated(scope)
+		actor, err := ownerActor()
+		if err != nil {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+		authenticateAs(scope, actor)
 		c.Next()
 		return
 	}
-	if matchedScope != "" {
-		setAuthenticated(matchedScope)
+	if token != nil {
+		actor, err := tokenActor(token)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"success": false, "msg": err.Error()})
+			return
+		}
+		if token.Scope == model.ApiScopeAdmin && !defaultTokenLimiter.allow(token.Id, token.RateLimit) {
+			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"success": false, "msg": "too many requests for this API token"})
+			return
+		}
+		authenticateAs(token.Scope, actor)
 		c.Next()
 		return
 	}
-	if !session.IsLogin(c) {
-		// A presented Bearer token is not an anonymous scan: return 401 so
-		// callers can distinguish a bad/disabled token from a wrong base path
-		// (NoRoute still 404s). XHR keeps 401; bare unauthenticated stays 404.
+	user := session.GetLoginUser(c)
+	if user == nil {
 		authHdr := c.GetHeader("Authorization")
 		if strings.HasPrefix(authHdr, "Bearer ") || c.GetHeader("X-Requested-With") == "XMLHttpRequest" {
 			c.AbortWithStatus(http.StatusUnauthorized)
@@ -76,11 +87,46 @@ func (a *APIController) checkAPIAuth(c *gin.Context) {
 		}
 		return
 	}
+	actor, err := access.Resolve(user)
+	if err != nil {
+		_ = session.ClearSession(c)
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"success": false, "msg": err.Error()})
+		return
+	}
+	access.SetActor(c, actor)
 	c.Next()
 }
 
-// monitorScopeAllow exposes only status/metrics routes without sensitive data.
-// Keys are route patterns relative to /panel/api.
+// ownerActor is who machine credentials (node mTLS, node and tunnel tokens) act as.
+func ownerActor() (*access.Actor, error) {
+	var owner model.User
+	if err := database.GetDB().Where("is_owner = ?", true).First(&owner).Error; err != nil {
+		return nil, err
+	}
+	return access.Resolve(&owner)
+}
+
+func tokenActor(token *model.ApiToken) (*access.Actor, error) {
+	if token.Scope == model.ApiScopeAdmin {
+		return access.ResolveToken(token)
+	}
+	return ownerActor()
+}
+
+// enforceAccess refuses a route the actor's tier or permissions do not reach; a route
+// without a rule is refused to everyone, so a new route cannot ship unguarded.
+func (a *APIController) enforceAccess(c *gin.Context) {
+	rule, ok := access.RouteRule(c.Request.Method, relAPIPath(c.FullPath()))
+	if !ok || !access.ActorFrom(c).Allows(rule) {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+			"success": false,
+			"msg":     "your account is not permitted to do this",
+		})
+		return
+	}
+	c.Next()
+}
+
 var monitorScopeAllow = map[string]struct{}{
 	"/server/status":                              {},
 	"/server/cpuHistory/:bucket":                  {},
@@ -210,6 +256,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	api := g.Group("/panel/api")
 	api.Use(a.checkAPIAuth)
 	api.Use(a.enforceTokenScope)
+	api.Use(a.enforceAccess)
 	// Decode + verify the node config envelope (zstd + X-Config-Sha256) and
 	// advertise support, before CSRF/handlers read the body.
 	api.Use(middleware.ConfigEnvelopeMiddleware())

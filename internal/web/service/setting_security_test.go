@@ -62,7 +62,8 @@ func TestGetAllSettingViewRedactsSecrets(t *testing.T) {
 	if err := s.saveSetting("tgBotToken", "telegram-secret"); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.saveSetting("twoFactorToken", "totp-secret"); err != nil {
+	account := model.User{Username: "admin", Tier: "admin", IsOwner: true, TwoFactorEnabled: true, TwoFactorSecret: "JBSWY3DPEHPK3PXP"}
+	if err := database.GetDB().Create(&account).Error; err != nil {
 		t.Fatal(err)
 	}
 	if err := s.saveSetting("ldapPassword", "ldap-secret"); err != nil {
@@ -78,7 +79,7 @@ func TestGetAllSettingViewRedactsSecrets(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	view, err := s.GetAllSettingView()
+	view, err := s.GetAllSettingView(account.Id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,10 +100,8 @@ func TestUpdateAllSettingPreservesRedactedSecrets(t *testing.T) {
 	if err := s.saveSetting("ldapPassword", "ldap-secret"); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.saveSetting("twoFactorEnable", "true"); err != nil {
-		t.Fatal(err)
-	}
-	if err := s.saveSetting("twoFactorToken", "JBSWY3DPEHPK3PXP"); err != nil {
+	account := model.User{Username: "admin", Tier: "admin", IsOwner: true, TwoFactorEnabled: true, TwoFactorSecret: "JBSWY3DPEHPK3PXP"}
+	if err := database.GetDB().Create(&account).Error; err != nil {
 		t.Fatal(err)
 	}
 	if err := s.saveSetting("smtpPassword", "smtp-secret"); err != nil {
@@ -112,7 +111,7 @@ func TestUpdateAllSettingPreservesRedactedSecrets(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	view, err := s.GetAllSettingView()
+	view, err := s.GetAllSettingView(account.Id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -126,7 +125,7 @@ func TestUpdateAllSettingPreservesRedactedSecrets(t *testing.T) {
 	if got, _ := s.GetLdapPassword(); got != "ldap-secret" {
 		t.Fatalf("ldap password = %q, want preserved secret", got)
 	}
-	if got, _ := s.GetTwoFactorToken(); got != "JBSWY3DPEHPK3PXP" {
+	if _, got, _ := s.AccountTwoFactor(account.Id); got != "JBSWY3DPEHPK3PXP" {
 		t.Fatalf("2fa token = %q, want preserved secret", got)
 	}
 	if got, _ := s.GetSmtpPassword(); got != "smtp-secret" {
@@ -139,36 +138,29 @@ func TestUpdateAllSettingPreservesRedactedSecrets(t *testing.T) {
 
 // Turning 2FA on stores the secret in the form the TOTP decoder takes, and refuses
 // one that no authenticator code could ever match.
-func TestUpdateAllSettingTwoFactorSecret(t *testing.T) {
+func TestSetAccountTwoFactorSecret(t *testing.T) {
 	cases := []struct {
 		name, stored, submitted, want string
 		wantErr                       bool
 	}{
 		{name: "canonical", submitted: "JBSWY3DPEHPK3PXP", want: "JBSWY3DPEHPK3PXP"},
 		{name: "lower case and grouped", submitted: "jbsw y3dp ehpk 3pxp", want: "JBSWY3DPEHPK3PXP"},
-		{name: "redacted keeps stored", stored: "ORIGINALSECRET234567", submitted: "", want: "ORIGINALSECRET234567"},
 		{name: "not base32", stored: "ORIGINALSECRET234567", submitted: "totp-secret", want: "ORIGINALSECRET234567", wantErr: true},
-		{name: "nothing stored", submitted: "", want: "", wantErr: true},
+		{name: "nothing submitted", submitted: "", want: "", wantErr: true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			setupSettingTestDB(t)
 			s := &SettingService{}
-			if err := s.SetTwoFactorToken(tc.stored); err != nil {
+			account := model.User{Username: "admin", Tier: "admin", IsOwner: true, TwoFactorSecret: tc.stored}
+			if err := database.GetDB().Create(&account).Error; err != nil {
 				t.Fatal(err)
 			}
-			view, err := s.GetAllSettingView()
-			if err != nil {
-				t.Fatal(err)
-			}
-			settings := &view.AllSetting
-			settings.TwoFactorEnable = true
-			settings.TwoFactorToken = tc.submitted
-			err = s.UpdateAllSetting(settings, SecretClears{})
+			err := s.SetAccountTwoFactor(account.Id, true, tc.submitted)
 			if (err != nil) != tc.wantErr {
-				t.Fatalf("UpdateAllSetting error = %v, wantErr %v", err, tc.wantErr)
+				t.Fatalf("SetAccountTwoFactor error = %v, wantErr %v", err, tc.wantErr)
 			}
-			if got, _ := s.GetTwoFactorToken(); got != tc.want {
+			if _, got, _ := s.AccountTwoFactor(account.Id); got != tc.want {
 				t.Fatalf("stored 2FA secret = %q, want %q", got, tc.want)
 			}
 		})
@@ -191,7 +183,7 @@ func TestUpdateAllSettingClearsFlaggedSecrets(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	view, err := s.GetAllSettingView()
+	view, err := s.GetAllSettingView(0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -211,7 +203,7 @@ func TestUpdateAllSettingClearsFlaggedSecrets(t *testing.T) {
 		t.Fatalf("discord token = %q, unflagged secret must stay preserved", got)
 	}
 
-	view, err = s.GetAllSettingView()
+	view, err = s.GetAllSettingView(0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -231,7 +223,7 @@ func TestUpdateAllSettingClearsFlaggedSecrets(t *testing.T) {
 		t.Fatalf("discord token = %q, want cleared", got)
 	}
 
-	view, err = s.GetAllSettingView()
+	view, err = s.GetAllSettingView(0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -252,22 +244,27 @@ func TestSanitizePublicHTTPURLBlocksPrivateAddressUnlessAllowed(t *testing.T) {
 func TestVerifyTwoFactorCode(t *testing.T) {
 	setupSettingTestDB(t)
 	s := &SettingService{}
-	if err := s.saveSetting("twoFactorEnable", "true"); err != nil {
+	const token = "JBSWY3DPEHPK3PXP"
+	account := model.User{Username: "admin", Tier: "admin", IsOwner: true, TwoFactorEnabled: true, TwoFactorSecret: token}
+	other := model.User{Username: "reseller", Tier: "reseller"}
+	if err := database.GetDB().Create(&account).Error; err != nil {
 		t.Fatal(err)
 	}
-	const token = "JBSWY3DPEHPK3PXP"
-	if err := s.saveSetting("twoFactorToken", token); err != nil {
+	if err := database.GetDB().Create(&other).Error; err != nil {
 		t.Fatal(err)
 	}
 
-	if err := s.VerifyTwoFactorCode(gotp.NewDefaultTOTP(token).Now()); err != nil {
+	if err := s.VerifyTwoFactorCode(account.Id, gotp.NewDefaultTOTP(token).Now()); err != nil {
 		t.Fatalf("valid code rejected: %v", err)
 	}
-	if err := s.VerifyTwoFactorCode(gotp.NewDefaultTOTP(token).AtTime(time.Now().Add(-30 * time.Second))); err != nil {
+	if err := s.VerifyTwoFactorCode(account.Id, gotp.NewDefaultTOTP(token).AtTime(time.Now().Add(-30*time.Second))); err != nil {
 		t.Fatalf("previous window code rejected: %v", err)
 	}
-	if err := s.VerifyTwoFactorCode("000000"); err == nil {
+	if err := s.VerifyTwoFactorCode(account.Id, "000000"); err == nil {
 		t.Fatal("invalid code accepted")
+	}
+	if err := s.VerifyTwoFactorCode(other.Id, ""); err != nil {
+		t.Fatalf("an account without two-factor was asked for a code: %v", err)
 	}
 }
 

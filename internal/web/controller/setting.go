@@ -100,7 +100,7 @@ func (a *SettingController) validateRegex(c *gin.Context) {
 // getAllSetting retrieves all current settings as the browser-safe view:
 // secret values are redacted and surfaced as has* presence flags instead.
 func (a *SettingController) getAllSetting(c *gin.Context) {
-	allSetting, err := a.settingService.GetAllSettingView()
+	allSetting, err := a.settingService.GetAllSettingView(session.GetLoginUser(c).Id)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.settings.toasts.getSettings"), err)
 		return
@@ -129,7 +129,8 @@ func (a *SettingController) updateSetting(c *gin.Context) {
 		return
 	}
 	allSetting := &form.AllSetting
-	oldTwoFactor, twoFactorErr := a.settingService.GetTwoFactorEnable()
+	account := session.GetLoginUser(c)
+	oldTwoFactor, storedSecret, twoFactorErr := a.settingService.AccountTwoFactor(account.Id)
 	oldPanelOutbound, _ := a.settingService.GetPanelOutbound()
 	oldTgEnable, _ := a.settingService.GetTgbotEnabled()
 	oldTgToken, _ := a.settingService.GetTgBotToken()
@@ -139,16 +140,29 @@ func (a *SettingController) updateSetting(c *gin.Context) {
 	oldDiscordToken, _ := a.settingService.GetDiscordBotToken()
 	oldDiscordChannelId, _ := a.settingService.GetDiscordChannelId()
 	oldDiscordRunTime, _ := a.settingService.GetDiscordRunTime()
+	submittedSecret := strings.TrimSpace(allSetting.TwoFactorToken)
 	if twoFactorErr == nil && oldTwoFactor {
 		// Rebinding the authenticator is the same class of change as turning 2FA
 		// off, so both need a current code. Blank still means "unchanged".
-		submittedToken := strings.TrimSpace(allSetting.TwoFactorToken)
-		storedToken, _ := a.settingService.GetTwoFactorToken()
-		if !allSetting.TwoFactorEnable || (submittedToken != "" && submittedToken != storedToken) {
-			if err := a.settingService.VerifyTwoFactorCode(form.TwoFactorCode); err != nil {
+		if !allSetting.TwoFactorEnable || (submittedSecret != "" && submittedSecret != storedSecret) {
+			if err := a.settingService.VerifyTwoFactorCode(account.Id, form.TwoFactorCode); err != nil {
 				jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), err)
 				return
 			}
+		}
+	}
+	if submittedSecret == "" {
+		submittedSecret = storedSecret
+	}
+	if allSetting.TwoFactorEnable && twoFactorErr == nil && (!oldTwoFactor || submittedSecret != storedSecret) {
+		if err := a.settingService.SetAccountTwoFactor(account.Id, true, submittedSecret); err != nil {
+			jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), err)
+			return
+		}
+	} else if !allSetting.TwoFactorEnable && oldTwoFactor {
+		if err := a.settingService.SetAccountTwoFactor(account.Id, false, ""); err != nil {
+			jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), err)
+			return
 		}
 	}
 	err := a.settingService.UpdateAllSetting(allSetting, service.SecretClears{
@@ -158,7 +172,7 @@ func (a *SettingController) updateSetting(c *gin.Context) {
 		DiscordBotToken: form.ClearDiscordBotToken,
 	})
 	if err == nil && twoFactorErr == nil && !oldTwoFactor && allSetting.TwoFactorEnable {
-		if bumpErr := a.userService.BumpLoginEpoch(); bumpErr != nil {
+		if bumpErr := a.userService.BumpLoginEpochFor(account.Id); bumpErr != nil {
 			err = bumpErr
 		}
 	}
@@ -209,7 +223,7 @@ func (a *SettingController) updateUser(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifyUserError"), errors.New(I18nWeb(c, "pages.settings.toasts.userPassMustBeNotEmpty")))
 		return
 	}
-	if err := a.settingService.VerifyTwoFactorCode(form.TwoFactorCode); err != nil {
+	if err := a.settingService.VerifyTwoFactorCode(user.Id, form.TwoFactorCode); err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifyUserError"), err)
 		return
 	}

@@ -89,6 +89,9 @@ func allModels() []any {
 		&model.TuicTrafficReceipt{},
 		&model.TunnelEnd{},
 		&model.TunnelRelay{},
+		&model.Role{},
+		&model.Plan{},
+		&model.AuditEntry{},
 	}
 }
 
@@ -1502,7 +1505,7 @@ func EnsureFirstUser() (username, password string, err error) {
 	if err != nil {
 		return "", "", err
 	}
-	if err := db.Create(&model.User{Username: username, Password: hashedPassword}).Error; err != nil {
+	if err := db.Create(&model.User{Username: username, Password: hashedPassword, Tier: "admin", IsOwner: true, MayEditUsers: true}).Error; err != nil {
 		return "", "", err
 	}
 	return username, password, nil
@@ -1532,7 +1535,7 @@ func runSeeders(isUsersEmpty bool) error {
 	}
 
 	if empty && isUsersEmpty {
-		seeders := []string{"UserPasswordHash", "ClientsTable", "InboundClientsArrayFix", "InboundClientTgIdFix2", "InboundClientSubIdFix", "FreedomFinalRulesReverseFix", "FreedomFinalRulesPrivateEgressBlock", "UppercaseFreedomFinalRulesFix", "FreedomFinalRuleDelayFix", "InboundRealityFinalmaskTcpStrip", "ApiTokensHash", "LegacyProxySettingsCleanup", "SessionSecretRotation", "OutboundRemovedKeysFix", "FreedomDomainStrategyFix", "DNSOutboundLegacyKeysFix", "DNSOutboundQTypeZeroFix", "WireguardDomainStrategyFix", "XdnsFinalmaskNamesAddrsFix", "UDPHopClientMaskFix", "HostVerifyPeerCertByNameBoolFix", "HostMihomoX25519Reset", "WireguardPeersToClients", "MtprotoSecretsToClients", "NodeInboundsAdopted", "NodeDownNotified", "ResetIpLimitNoFail2ban", "ClientGroupNameTrim", "OwnerlessClientHwidPurge", "ClientForwardedPortsBackfill"}
+		seeders := []string{"UserPasswordHash", "ClientsTable", "InboundClientsArrayFix", "InboundClientTgIdFix2", "InboundClientSubIdFix", "FreedomFinalRulesReverseFix", "FreedomFinalRulesPrivateEgressBlock", "UppercaseFreedomFinalRulesFix", "FreedomFinalRuleDelayFix", "InboundRealityFinalmaskTcpStrip", "ApiTokensHash", "LegacyProxySettingsCleanup", "SessionSecretRotation", "OutboundRemovedKeysFix", "FreedomDomainStrategyFix", "DNSOutboundLegacyKeysFix", "DNSOutboundQTypeZeroFix", "WireguardDomainStrategyFix", "XdnsFinalmaskNamesAddrsFix", "UDPHopClientMaskFix", "HostVerifyPeerCertByNameBoolFix", "HostMihomoX25519Reset", "WireguardPeersToClients", "MtprotoSecretsToClients", "NodeInboundsAdopted", "NodeDownNotified", "ResetIpLimitNoFail2ban", "ClientGroupNameTrim", "OwnerlessClientHwidPurge", "ClientForwardedPortsBackfill", "TwoFactorPerAccount"}
 		for _, name := range seeders {
 			if err := db.Create(&model.HistoryOfSeeders{SeederName: name}).Error; err != nil {
 				return err
@@ -1772,9 +1775,62 @@ func runSeeders(isUsersEmpty bool) error {
 		return err
 	}
 
+	if err := ensurePanelOwner(); err != nil {
+		return err
+	}
+	if !slices.Contains(seedersHistory, "TwoFactorPerAccount") {
+		if err := moveTwoFactorToOwner(); err != nil {
+			return err
+		}
+	}
+
 	// Idempotent, not seeder-gated: bad values can re-enter via a restored
 	// backup, so re-check on every start.
 	return normalizeSettingPaths()
+}
+
+// ensurePanelOwner makes the oldest account the main-admin owner when no account is, as on
+// every database from before the access model and on one restored from such a backup.
+func ensurePanelOwner() error {
+	var owners int64
+	if err := db.Model(&model.User{}).Where("is_owner = ?", true).Count(&owners).Error; err != nil {
+		return err
+	}
+	if owners > 0 {
+		return nil
+	}
+	var first model.User
+	if err := db.Order("id").First(&first).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+	return db.Model(&model.User{}).Where("id = ?", first.Id).
+		Updates(map[string]any{"is_owner": true, "tier": "admin", "role_id": 0}).Error
+}
+
+// moveTwoFactorToOwner turns the panel-wide two-factor secret into the owner's own, since
+// every account now carries its own.
+func moveTwoFactorToOwner() error {
+	read := func(key string) string {
+		var row model.Setting
+		if err := db.Where("key = ?", key).First(&row).Error; err != nil {
+			return ""
+		}
+		return row.Value
+	}
+	if read("twoFactorEnable") == "true" && read("twoFactorToken") != "" {
+		if err := db.Model(&model.User{}).Where("is_owner = ?", true).Updates(map[string]any{
+			"two_factor_enabled": true, "two_factor_secret": read("twoFactorToken"),
+		}).Error; err != nil {
+			return err
+		}
+	}
+	if err := db.Where("key IN ?", []string{"twoFactorEnable", "twoFactorToken"}).Delete(&model.Setting{}).Error; err != nil {
+		return err
+	}
+	return db.Create(&model.HistoryOfSeeders{SeederName: "TwoFactorPerAccount"}).Error
 }
 
 // seedNodeInboundsAdopted keeps the pre-existing reconcile behavior for nodes

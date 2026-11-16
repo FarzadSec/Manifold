@@ -29,6 +29,7 @@ func (s *UserService) GetFirstUser() (*model.User, error) {
 
 	user := &model.User{}
 	err := db.Model(model.User{}).
+		Order("is_owner DESC").Order("id").
 		First(user).
 		Error
 	if err != nil {
@@ -99,25 +100,17 @@ func (s *UserService) CheckUser(username string, password string, twoFactorCode 
 		}
 	}
 
-	twoFactorEnable, err := s.settingService.GetTwoFactorEnable()
-	if err != nil {
-		logger.Warning("check two factor err:", err)
-		return nil, err
-	}
-
-	if twoFactorEnable {
-		twoFactorToken, err := s.settingService.GetTwoFactorToken()
-		if err != nil {
-			logger.Warning("check two factor token err:", err)
-			return nil, err
-		}
-
-		if !totp.VerifyWithSkew(twoFactorToken, twoFactorCode, time.Now()) {
-			return nil, errors.New("invalid 2fa code")
-		}
+	if user.TwoFactorEnabled && !totp.VerifyWithSkew(user.TwoFactorSecret, twoFactorCode, time.Now()) {
+		return nil, errors.New("invalid 2fa code")
 	}
 
 	return user, nil
+}
+
+// BumpLoginEpochFor ends every session of one account.
+func (s *UserService) BumpLoginEpochFor(id int) error {
+	return database.GetDB().Model(model.User{}).Where("id = ?", id).
+		Update("login_epoch", gorm.Expr("login_epoch + 1")).Error
 }
 
 func (s *UserService) BumpLoginEpoch() error {
@@ -138,22 +131,14 @@ func (s *UserService) UpdateUser(id int, username string, password string) error
 		return err
 	}
 
-	twoFactorEnable, err := s.settingService.GetTwoFactorEnable()
-	if err != nil {
-		return err
-	}
-
-	if twoFactorEnable {
-		_ = s.settingService.SetTwoFactorEnable(false)
-		_ = s.settingService.SetTwoFactorToken("")
-	}
-
 	return db.Model(model.User{}).
 		Where("id = ?", id).
 		Updates(map[string]any{
-			"username":    username,
-			"password":    hashedPassword,
-			"login_epoch": gorm.Expr("login_epoch + 1"),
+			"username":           username,
+			"password":           hashedPassword,
+			"login_epoch":        gorm.Expr("login_epoch + 1"),
+			"two_factor_enabled": false,
+			"two_factor_secret":  "",
 		}).
 		Error
 }
@@ -174,10 +159,11 @@ func (s *UserService) UpdateFirstUser(username string, password string) error {
 
 	db := database.GetDB()
 	user := &model.User{}
-	err := db.Model(model.User{}).First(user).Error
+	err := db.Model(model.User{}).Order("is_owner DESC").Order("id").First(user).Error
 	if database.IsNotFound(err) {
 		user.Username = username
 		user.Password = hashedPassword
+		user.Tier, user.IsOwner, user.MayEditUsers = "admin", true, true
 		return db.Model(model.User{}).Create(user).Error
 	} else if err != nil {
 		return err

@@ -227,6 +227,9 @@ func (s *InboundService) upsertNodeBaseline(tx *gorm.DB, nodeID int, email strin
 // mergeNodeClientTraffic folds one node-reported client into its central row.
 // While frozen (a push pending or just landed) only the counters may move.
 func (s *InboundService) mergeNodeClientTraffic(tx *gorm.DB, cs xray.ClientTraffic, canon nodeTrafficCounter, frozen bool, deltaUp, deltaDown, now int64) error {
+	if err := chargeOwnerUsage(tx, map[string]int64{cs.Email: max(deltaUp, 0) + max(deltaDown, 0)}); err != nil {
+		return err
+	}
 	if frozen {
 		return tx.Exec(
 			fmt.Sprintf(

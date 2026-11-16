@@ -179,6 +179,7 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 		}
 	}
 	now := time.Now().UnixMilli()
+	usage := make(map[string]int64, len(dbClientTraffics))
 	// Use atomic per-row UPDATE instead of read-modify-write Save. tx.Save
 	// issues UPDATEs in slice order, which varies between concurrent callers;
 	// on PostgreSQL two transactions locking the same rows in opposite order
@@ -200,6 +201,10 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 		).Error; err != nil {
 			return fmt.Errorf("update traffic for %s: %w", ct.Email, err)
 		}
+		usage[ct.Email] += t.Up + t.Down
+	}
+	if err = chargeOwnerUsage(tx, usage); err != nil {
+		return fmt.Errorf("charge owners: %w", err)
 	}
 
 	// adjustTraffics converts delayed-start rows (negative ExpiryTime → absolute

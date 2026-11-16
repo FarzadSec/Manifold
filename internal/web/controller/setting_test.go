@@ -18,6 +18,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/web/locale"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/discord"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/session"
 )
 
 func TestValidateRegex(t *testing.T) {
@@ -96,11 +97,17 @@ func TestUpdateSettingRequiresCodeToReplaceTwoFactorToken(t *testing.T) {
 	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
 
 	settingService := service.SettingService{}
-	if err := settingService.SetTwoFactorToken("ORIGINALSECRET234567"); err != nil {
-		t.Fatalf("seed token: %v", err)
+	account := model.User{Username: "admin", Tier: "admin", IsOwner: true, TwoFactorEnabled: true, TwoFactorSecret: "ORIGINALSECRET234567"}
+	if err := database.GetDB().Create(&account).Error; err != nil {
+		t.Fatalf("seed account: %v", err)
 	}
-	if err := settingService.SetTwoFactorEnable(true); err != nil {
-		t.Fatalf("seed enable: %v", err)
+	storedSecret := func(t *testing.T) string {
+		t.Helper()
+		_, secret, err := settingService.AccountTwoFactor(account.Id)
+		if err != nil {
+			t.Fatalf("AccountTwoFactor: %v", err)
+		}
+		return secret
 	}
 
 	post := func(t *testing.T, mutate func(map[string]any)) string {
@@ -125,6 +132,7 @@ func TestUpdateSettingRequiresCodeToReplaceTwoFactorToken(t *testing.T) {
 
 		gin.SetMode(gin.TestMode)
 		router := gin.New()
+		router.Use(func(c *gin.Context) { session.SetAPIAuthUser(c, &account); c.Next() })
 		NewSettingController(router.Group("/panel/api"))
 		req := httptest.NewRequest(http.MethodPost, "/panel/api/setting/update", strings.NewReader(string(payload)))
 		req.Header.Set("Content-Type", "application/json")
@@ -141,11 +149,7 @@ func TestUpdateSettingRequiresCodeToReplaceTwoFactorToken(t *testing.T) {
 		if !strings.Contains(got, `"success":false`) {
 			t.Fatalf("rebind without a 2FA code was accepted: %s", got)
 		}
-		stored, err := settingService.GetTwoFactorToken()
-		if err != nil {
-			t.Fatalf("GetTwoFactorToken: %v", err)
-		}
-		if stored != "ORIGINALSECRET234567" {
+		if stored := storedSecret(t); stored != "ORIGINALSECRET234567" {
 			t.Fatalf("stored 2FA secret = %q, want it unchanged", stored)
 		}
 	})
@@ -158,11 +162,7 @@ func TestUpdateSettingRequiresCodeToReplaceTwoFactorToken(t *testing.T) {
 		if !strings.Contains(got, `"success":true`) {
 			t.Fatalf("normal settings save was rejected: %s", got)
 		}
-		stored, err := settingService.GetTwoFactorToken()
-		if err != nil {
-			t.Fatalf("GetTwoFactorToken: %v", err)
-		}
-		if stored != "ORIGINALSECRET234567" {
+		if stored := storedSecret(t); stored != "ORIGINALSECRET234567" {
 			t.Fatalf("stored 2FA secret = %q, want it preserved", stored)
 		}
 	})

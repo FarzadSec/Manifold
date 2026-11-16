@@ -49,6 +49,88 @@ type User struct {
 	Username   string `json:"username"`
 	Password   string `json:"password"`
 	LoginEpoch int64  `json:"-" gorm:"default:0"`
+
+	// Tier is admin (main admin), operator or reseller; RoleId 0 is the tier's built-in role.
+	Tier    string `json:"tier" gorm:"default:admin"`
+	RoleId  int    `json:"roleId" gorm:"default:0"`
+	IsOwner bool   `json:"isOwner" gorm:"default:false"`
+	Remark  string `json:"remark"`
+
+	TwoFactorEnabled bool   `json:"twoFactorEnabled" gorm:"default:false"`
+	TwoFactorSecret  string `json:"-" gorm:"column:two_factor_secret"`
+
+	// A reseller's allowance: traffic per cycle, account expiry and the users it may own.
+	VolumeBytes       int64  `json:"volumeBytes" gorm:"default:0"`
+	ResetCycle        string `json:"resetCycle" gorm:"default:none"`
+	ResetDay          int    `json:"resetDay" gorm:"default:0"`
+	ResetMonth        int    `json:"resetMonth" gorm:"default:0"`
+	ExpiresAt         int64  `json:"expiresAt" gorm:"default:0"`
+	MaxUsers          int    `json:"maxUsers" gorm:"default:0"`
+	MayEditUsers      bool   `json:"mayEditUsers" gorm:"default:true"`
+	PlansOnly         bool   `json:"plansOnly" gorm:"default:false"`
+	AllowedPlanIds    []int  `json:"allowedPlanIds" gorm:"serializer:json;column:allowed_plan_ids"`
+	InboundsLimited   bool   `json:"inboundsLimited" gorm:"default:false"`
+	AllowedInboundIds []int  `json:"allowedInboundIds" gorm:"serializer:json;column:allowed_inbound_ids"`
+	SubDomain         string `json:"subDomain"`
+	BrandTitle        string `json:"brandTitle"`
+	BrandSupportUrl   string `json:"brandSupportUrl"`
+	BrandAnnounce     string `json:"brandAnnounce"`
+
+	CycleStart  int64  `json:"cycleStart" gorm:"default:0"`
+	CycleUsed   int64  `json:"cycleUsed" gorm:"default:0"`
+	TotalUsed   int64  `json:"totalUsed" gorm:"default:0"`
+	Suspended   string `json:"suspended" gorm:"default:''"`
+	LastLoginAt int64  `json:"lastLoginAt" gorm:"default:0"`
+	LastLoginIp string `json:"lastLoginIp"`
+	CreatedAt   int64  `json:"createdAt" gorm:"autoCreateTime:milli"`
+}
+
+// Role narrows one tier: the permissions it keeps and the caps on what its accounts hand out.
+type Role struct {
+	Id                 int      `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Name               string   `json:"name" gorm:"uniqueIndex;not null" example:"Support"`
+	Description        string   `json:"description"`
+	Tier               string   `json:"tier" gorm:"not null" example:"operator"`
+	Permissions        []string `json:"permissions" gorm:"serializer:json" example:"[\"users:read\"]"`
+	MaxUsersPerAccount int      `json:"maxUsersPerAccount" gorm:"default:0"`
+	MaxDevicesPerUser  int      `json:"maxDevicesPerUser" gorm:"default:0"`
+	MaxPlanDays        int      `json:"maxPlanDays" gorm:"default:0"`
+	CreatedAt          int64    `json:"createdAt" gorm:"autoCreateTime:milli"`
+}
+
+// Plan is a preset a new user is created from; nothing links the user to it afterwards.
+type Plan struct {
+	Id              int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Name            string `json:"name" gorm:"uniqueIndex;not null" example:"30 days 50 GB"`
+	SortOrder       int    `json:"sortOrder" gorm:"default:0"`
+	TotalBytes      int64  `json:"totalBytes" gorm:"default:0" example:"53687091200"`
+	Days            int    `json:"days" gorm:"default:0" example:"30"`
+	StartOnFirstUse bool   `json:"startOnFirstUse" gorm:"default:false"`
+	LimitIp         int    `json:"limitIp" gorm:"default:0"`
+	LimitHwid       int    `json:"limitHwid" gorm:"default:0"`
+	Reset           int    `json:"reset" gorm:"default:0"`
+	TrafficReset    string `json:"trafficReset" gorm:"default:never"`
+	TrafficResetDay int    `json:"trafficResetDay" gorm:"default:1"`
+	AllInbounds     bool   `json:"allInbounds" gorm:"default:true"`
+	InboundIds      []int  `json:"inboundIds" gorm:"serializer:json"`
+	Group           string `json:"group" gorm:"column:group_name"`
+	NamePrefix      string `json:"namePrefix"`
+	NameSuffix      string `json:"nameSuffix"`
+	Description     string `json:"description"`
+	CreatedAt       int64  `json:"createdAt" gorm:"autoCreateTime:milli"`
+}
+
+// AuditEntry records one admin action; secrets in Detail are redacted before it is stored.
+type AuditEntry struct {
+	Id       int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	At       int64  `json:"at" gorm:"index" example:"1700000000000"`
+	UserId   int    `json:"userId" gorm:"index"`
+	Username string `json:"username" example:"admin"`
+	Entity   string `json:"entity" gorm:"index" example:"users"`
+	Action   string `json:"action" gorm:"index" example:"update"`
+	Target   string `json:"target" example:"alice"`
+	Detail   string `json:"detail" gorm:"type:text"`
+	Ip       string `json:"ip" example:"203.0.113.5"`
 }
 
 // Inbound represents an Xray inbound configuration with traffic statistics and settings.
@@ -191,6 +273,11 @@ type ApiToken struct {
 	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime"`
 	Scope     string `json:"scope" gorm:"not null;default:admin"`
 	ExpiresAt int64  `json:"expiresAt" gorm:"not null;default:0"`
+	// UserId is the account the token acts as (0 is the owner); Tier and Permissions narrow it further.
+	UserId      int      `json:"userId" gorm:"default:0;index"`
+	Tier        string   `json:"tier" gorm:"default:''"`
+	Permissions []string `json:"permissions" gorm:"serializer:json"`
+	RateLimit   int      `json:"rateLimit" gorm:"default:0"`
 }
 
 // MarshalJSON emits settings, streamSettings, and sniffing as nested JSON
@@ -1035,6 +1122,10 @@ type ClientRecord struct {
 	SyncOrphanedAt int64 `json:"-" gorm:"column:sync_orphaned_at;default:0"`
 	// The node whose merge orphaned the record: only that node may take it back.
 	SyncOrphanedBy int `json:"-" gorm:"column:sync_orphaned_by;default:0"`
+	// OwnerId is the admin account the user belongs to; 0 is the panel (main admins).
+	OwnerId int `json:"ownerId" gorm:"column:owner_id;default:0;index"`
+	// OwnerSuspended marks users switched off because their reseller ran out, so only those come back.
+	OwnerSuspended bool `json:"-" gorm:"column:owner_suspended;default:false"`
 }
 
 func (ClientRecord) TableName() string { return "clients" }

@@ -96,10 +96,8 @@ func TestCheckUserTwoFactorSecretForms(t *testing.T) {
 			if err := svc.UpdateFirstUser("admin", "s3cret-Pass"); err != nil {
 				t.Fatalf("UpdateFirstUser: %v", err)
 			}
-			if err := svc.settingService.SetTwoFactorEnable(true); err != nil {
-				t.Fatal(err)
-			}
-			if err := svc.settingService.SetTwoFactorToken(tc.stored); err != nil {
+			if err := database.GetDB().Model(&model.User{}).Where("username = ?", "admin").
+				Updates(map[string]any{"two_factor_enabled": true, "two_factor_secret": tc.stored}).Error; err != nil {
 				t.Fatal(err)
 			}
 			code := gotp.NewDefaultTOTP(tc.codeSecret).AtTime(time.Now())

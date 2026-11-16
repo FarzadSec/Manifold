@@ -63,6 +63,9 @@ func migrationModels() []any {
 		&model.TuicTrafficReceipt{},
 		&model.TunnelEnd{},
 		&model.TunnelRelay{},
+		&model.Role{},
+		&model.Plan{},
+		&model.AuditEntry{},
 	}
 }
 
