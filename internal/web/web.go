@@ -15,6 +15,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/amneziawgkern"
@@ -139,6 +140,9 @@ type Server struct {
 
 	ctx    context.Context
 	cancel context.CancelFunc
+	// tunnelRequests is the loop that applies saved tunnels; stop waits for it
+	// so no tunnel is started after StopAll.
+	tunnelRequests sync.WaitGroup
 }
 
 // NewServer installs the share-link provider before anything serves, so an early link request
@@ -380,9 +384,7 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	_, _ = s.cron.AddJob(cadenceL2TP, l2tpJob)
 	go l2tpJob.Run()
 
-	tunnelJob := job.NewTunnelJob()
-	_, _ = s.cron.AddJob(cadenceTunnels, tunnelJob)
-	go tunnelJob.Run()
+	s.startTunnelJob()
 
 	// check client ips from log file every 10 sec
 	_, _ = s.cron.AddJob(cadenceClientIPScan, job.NewCheckClientIpJob())
@@ -466,12 +468,18 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	}
 }
 
-// startTunnelEditionTasks schedules what a relay needs: its tunnels and the
-// housekeeping that does not involve Xray, inbounds or accounts.
-func (s *Server) startTunnelEditionTasks() {
+// startTunnelJob runs the tunnels on the job's cadence and after every save.
+func (s *Server) startTunnelJob() {
 	tunnelJob := job.NewTunnelJob()
 	_, _ = s.cron.AddJob(cadenceTunnels, tunnelJob)
 	go tunnelJob.Run()
+	s.tunnelRequests.Go(func() { tunnelJob.ServeRequests(s.ctx) })
+}
+
+// startTunnelEditionTasks schedules what a relay needs: its tunnels and the
+// housekeeping that does not involve Xray, inbounds or accounts.
+func (s *Server) startTunnelEditionTasks() {
+	s.startTunnelJob()
 	_, _ = s.cron.AddJob("@daily", job.NewClearLogsJob())
 	if s.cpuAlarmWanted() {
 		_, _ = s.cron.AddJob(cadenceCPUAlarm, job.NewCheckCpuJob())
@@ -840,6 +848,7 @@ func (s *Server) stop(stopXray bool, stopTgBot bool) error {
 	if s.cron != nil {
 		<-s.cron.Stop().Done()
 	}
+	s.tunnelRequests.Wait()
 	if stopXray {
 		tuic.GetManager().StopAll()
 		if err := job.NewTuicJob().FlushStoppedTraffic(); err != nil {

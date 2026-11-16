@@ -1,12 +1,14 @@
 package service
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/dbtest"
@@ -28,6 +30,52 @@ func initTunnelDB(t *testing.T) *TunnelService {
 	tunnelManager = func() tunnelEngine { return quietEngine{} }
 	t.Cleanup(func() { tunnelManager = prev })
 	return &TunnelService{}
+}
+
+type recordingEngine struct{ applied chan []tunnel.Tunnel }
+
+func (e recordingEngine) Reconcile(desired []tunnel.Tunnel) { e.applied <- desired }
+func (recordingEngine) Statuses() []tunnel.TunnelStatus     { return nil }
+
+// A save is applied by the server's request loop, and the loop ends with the
+// server's context, so no reconcile outlives a shutdown or the database.
+func TestASavedTunnelIsAppliedByTheRequestLoopUntilItStops(t *testing.T) {
+	s := initTunnelDB(t)
+	engine := recordingEngine{applied: make(chan []tunnel.Tunnel, 4)}
+	tunnelManager = func() tunnelEngine { return engine }
+	ctx, cancel := context.WithCancel(context.Background())
+	stopped := make(chan struct{})
+	go func() { s.ServeReconcileRequests(ctx); close(stopped) }()
+	t.Cleanup(func() { cancel(); <-stopped })
+
+	v, err := s.Add(relayEnd(8443, tunnel.PortForward{Listen: "443"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.After(5 * time.Second)
+	for applied := false; !applied; {
+		select {
+		case desired := <-engine.applied:
+			applied = len(desired) == 1 && desired[0].ID == v.Id
+		case <-deadline:
+			t.Fatalf("tunnel %d was not applied", v.Id)
+		}
+	}
+
+	cancel()
+	select {
+	case <-stopped:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the request loop kept running after its context ended")
+	}
+	if err := s.Delete(v.Id); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case desired := <-engine.applied:
+		t.Fatalf("applied %+v after the loop stopped", desired)
+	case <-time.After(200 * time.Millisecond):
+	}
 }
 
 func relayEnd(port int, forwards ...tunnel.PortForward) TunnelRequest {

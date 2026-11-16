@@ -146,6 +146,30 @@ func (s *TunnelService) Desired() ([]tunnel.Tunnel, error) {
 
 var reconcileMu sync.Mutex
 
+// tunnelReconcileRequests coalesces saves into one pending reconcile; only the
+// server's loop drains it, so no reconcile outlives a shutdown or a test's database.
+var tunnelReconcileRequests = make(chan struct{}, 1)
+
+// RequestReconcile asks the running panel to apply the stored tunnels soon.
+func (s *TunnelService) RequestReconcile() {
+	select {
+	case tunnelReconcileRequests <- struct{}{}:
+	default:
+	}
+}
+
+// ServeReconcileRequests applies the stored tunnels after each request until ctx ends.
+func (s *TunnelService) ServeReconcileRequests(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-tunnelReconcileRequests:
+			s.Reconcile()
+		}
+	}
+}
+
 // Reconcile applies the stored tunnels now instead of at the job's next run.
 func (s *TunnelService) Reconcile() {
 	reconcileMu.Lock()
@@ -272,7 +296,7 @@ func (s *TunnelService) Update(id int, req TunnelRequest) (*TunnelView, error) {
 }
 
 func (s *TunnelService) afterSave(row *model.TunnelEnd, t tunnel.Tunnel) (*TunnelView, error) {
-	go s.Reconcile()
+	s.RequestReconcile()
 	v := viewOf(row, t)
 	if row.RelayId == 0 {
 		return &v, nil
@@ -292,7 +316,7 @@ func (s *TunnelService) Delete(id int) error {
 	if err := database.GetDB().Delete(row).Error; err != nil {
 		return err
 	}
-	go s.Reconcile()
+	s.RequestReconcile()
 	if row.RelayId != 0 {
 		if err := s.withdrawFrom(row.RelayId, row.PairId); err != nil {
 			return common.NewErrorf("deleted here, but the relay still has its end: %v", err)
@@ -377,7 +401,7 @@ func (s *TunnelService) Import(code string) (*TunnelView, error) {
 		return nil, err
 	}
 	t.ID = row.Id
-	go s.Reconcile()
+	s.RequestReconcile()
 	v := viewOf(row, t)
 	return &v, nil
 }
@@ -388,7 +412,7 @@ func (s *TunnelService) Withdraw(pairID string) error {
 	if res.Error != nil {
 		return res.Error
 	}
-	go s.Reconcile()
+	s.RequestReconcile()
 	return nil
 }
 
