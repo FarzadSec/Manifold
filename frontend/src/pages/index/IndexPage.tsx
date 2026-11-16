@@ -1,5 +1,7 @@
 import { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useAccess } from '@/api/queries/useAccess';
+import ResellerDashboard from './ResellerDashboard';
 import { Button, ConfigProvider, Layout, Modal, Result, Spin, message } from 'antd';
 import {
   CopyOutlined,
@@ -40,7 +42,13 @@ const AmneziaWGLogModal = lazy(() => import('./AmneziaWGLogModal'));
 const VersionModal = lazy(() => import('./VersionModal'));
 import './IndexPage.css';
 
+// A reseller sees its own allowance and users; everyone else, the panel's machine.
 export default function IndexPage() {
+  const { isReseller } = useAccess();
+  return isReseller ? <ResellerDashboard /> : <PanelOverview />;
+}
+
+function PanelOverview() {
   const { t } = useTranslation();
   const { isDark, isUltra, antdThemeConfig } = useTheme();
   const { status, fetched, fetchError, refresh } = useStatusQuery();

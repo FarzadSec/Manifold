@@ -2714,6 +2714,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": 0,
         "type": "integer"
       },
+      "ownerId": {
+        "example": 0,
+        "type": "integer"
+      },
       "reset": {
         "example": 0,
         "type": "integer"
@@ -2761,6 +2765,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "inboundIds",
       "limitHwid",
       "limitIp",
+      "ownerId",
       "reset",
       "resetDay",
       "resetMax",
@@ -5002,6 +5007,29 @@ export const SCHEMAS: Record<string, unknown> = {
       "tag",
       "total",
       "up"
+    ],
+    "type": "object"
+  },
+  "OwnerView": {
+    "description": "OwnerView names an account users can belong to, for the users page's owner column and filter.",
+    "properties": {
+      "id": {
+        "example": 3,
+        "type": "integer"
+      },
+      "tier": {
+        "example": "reseller",
+        "type": "string"
+      },
+      "username": {
+        "example": "seller1",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "tier",
+      "username"
     ],
     "type": "object"
   },

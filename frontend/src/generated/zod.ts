@@ -676,6 +676,7 @@ export const ClientSlimSchema = z.object({
   inboundIds: z.array(z.number().int()),
   limitHwid: z.number().int(),
   limitIp: z.number().int(),
+  ownerId: z.number().int(),
   reset: z.number().int(),
   resetDay: z.number().int(),
   resetMax: z.number().int(),
@@ -1198,6 +1199,13 @@ export const OutboundTrafficsSchema = z.object({
   up: z.number().int(),
 });
 export type OutboundTraffics = z.infer<typeof OutboundTrafficsSchema>;
+
+export const OwnerViewSchema = z.object({
+  id: z.number().int(),
+  tier: z.string(),
+  username: z.string(),
+});
+export type OwnerView = z.infer<typeof OwnerViewSchema>;
 
 export const PanelUpdateStatusSchema = z.object({
   exitCode: z.number().int(),

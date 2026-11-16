@@ -45,6 +45,7 @@ func NewAccessController(g *gin.RouterGroup) *AccessController {
 	g.POST("/roles/update/:id", a.saveRole)
 	g.POST("/roles/del/:id", a.deleteRole)
 	g.GET("/plans", a.listPlans)
+	g.GET("/owners", a.listOwners)
 	g.POST("/plans/add", a.savePlan)
 	g.POST("/plans/update/:id", a.savePlan)
 	g.POST("/plans/del/:id", a.deletePlan)
@@ -287,4 +288,20 @@ func (a *AccessController) saveAuditSettings(c *gin.Context) {
 		return
 	}
 	jsonMsg(c, I18nWeb(c, "pages.access.saved"), a.auditService.SaveSettings(s))
+}
+
+// OwnerView names an account users can belong to, for the users page's owner column and filter.
+type OwnerView struct {
+	Id       int    `json:"id" example:"3"`
+	Username string `json:"username" example:"seller1"`
+	Tier     string `json:"tier" example:"reseller"`
+}
+
+func (a *AccessController) listOwners(c *gin.Context) {
+	var owners []OwnerView
+	err := database.GetDB().Model(&model.User{}).Select("id", "username", "tier").Order("username").Scan(&owners).Error
+	if owners == nil {
+		owners = []OwnerView{}
+	}
+	jsonObj(c, owners, err)
 }

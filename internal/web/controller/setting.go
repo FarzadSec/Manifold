@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/crypto"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
@@ -258,6 +259,12 @@ type apiTokenCreateForm struct {
 	Name      string `json:"name" form:"name"`
 	Scope     string `json:"scope" form:"scope"`
 	ExpiresAt int64  `json:"expiresAt" form:"expiresAt"`
+	// An admin-scope token acts as UserId (the creator when 0), narrowed by Tier and Permissions.
+	UserId       int      `json:"userId" form:"userId"`
+	Tier         string   `json:"tier" form:"tier"`
+	Permissions  []string `json:"permissions" form:"permissions"`
+	RateLimit    int      `json:"rateLimit" form:"rateLimit"`
+	ValidityDays int      `json:"validityDays" form:"validityDays"`
 }
 
 type apiTokenEnabledForm struct {
@@ -284,7 +291,22 @@ func (a *SettingController) createApiToken(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), err)
 		return
 	}
-	row, err := a.apiTokenService.Create(form.Name, form.Scope, form.ExpiresAt)
+	if form.ValidityDays > 0 {
+		form.ExpiresAt = time.Now().Add(time.Duration(form.ValidityDays) * 24 * time.Hour).UnixMilli()
+	}
+	var row *panel.ApiTokenView
+	var err error
+	if scope, _ := panel.NormalizeScope(form.Scope); scope == model.ApiScopeAdmin {
+		userID := form.UserId
+		if userID == 0 {
+			userID = session.GetLoginUser(c).Id
+		}
+		row, err = a.apiTokenService.CreateBound(form.Name, form.ExpiresAt, panel.TokenAccess{
+			UserId: userID, Tier: form.Tier, Permissions: form.Permissions, RateLimit: form.RateLimit,
+		})
+	} else {
+		row, err = a.apiTokenService.Create(form.Name, form.Scope, form.ExpiresAt)
+	}
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), err)
 		return

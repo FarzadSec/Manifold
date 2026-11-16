@@ -637,6 +637,7 @@ export interface ClientSlim {
   inboundIds: number[];
   limitHwid: number;
   limitIp: number;
+  ownerId: number;
   reset: number;
   resetDay: number;
   resetMax: number;
@@ -1121,6 +1122,12 @@ export interface OutboundTraffics {
   tag: string;
   total: number;
   up: number;
+}
+
+export interface OwnerView {
+  id: number;
+  tier: string;
+  username: string;
 }
 
 export interface PanelUpdateStatus {

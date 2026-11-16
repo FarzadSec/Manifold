@@ -595,6 +595,7 @@ export const EXAMPLES: Record<string, unknown> = {
         ],
         "limitHwid": 0,
         "limitIp": 0,
+        "ownerId": 0,
         "reset": 0,
         "resetDay": 0,
         "resetMax": 0,
@@ -700,6 +701,7 @@ export const EXAMPLES: Record<string, unknown> = {
     ],
     "limitHwid": 0,
     "limitIp": 0,
+    "ownerId": 0,
     "reset": 0,
     "resetDay": 0,
     "resetMax": 0,
@@ -1266,6 +1268,11 @@ export const EXAMPLES: Record<string, unknown> = {
     "tag": "",
     "total": 0,
     "up": 0
+  },
+  "OwnerView": {
+    "id": 3,
+    "tier": "reseller",
+    "username": "seller1"
   },
   "PanelUpdateStatus": {
     "exitCode": 0,

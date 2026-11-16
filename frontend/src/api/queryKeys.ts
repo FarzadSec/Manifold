@@ -17,6 +17,16 @@ export const keys = {
   wireguard: {
     importable: () => ['wireguard', 'importable'] as const,
   },
+  access: {
+    root: () => ['access'] as const,
+    me: () => ['access', 'me'] as const,
+    admins: () => ['access', 'admins'] as const,
+    roles: () => ['access', 'roles'] as const,
+    plans: () => ['access', 'plans'] as const,
+    owners: () => ['access', 'owners'] as const,
+    audit: (filter: Record<string, unknown>) => ['access', 'audit', filter] as const,
+    auditSettings: () => ['access', 'auditSettings'] as const,
+  },
   tunnels: {
     root: () => ['tunnels'] as const,
     list: () => ['tunnels', 'list'] as const,

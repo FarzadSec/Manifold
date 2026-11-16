@@ -2740,6 +2740,10 @@
             "example": 0,
             "type": "integer"
           },
+          "ownerId": {
+            "example": 0,
+            "type": "integer"
+          },
           "reset": {
             "example": 0,
             "type": "integer"
@@ -2787,6 +2791,7 @@
           "inboundIds",
           "limitHwid",
           "limitIp",
+          "ownerId",
           "reset",
           "resetDay",
           "resetMax",
@@ -5028,6 +5033,29 @@
           "tag",
           "total",
           "up"
+        ],
+        "type": "object"
+      },
+      "OwnerView": {
+        "description": "OwnerView names an account users can belong to, for the users page's owner column and filter.",
+        "properties": {
+          "id": {
+            "example": 3,
+            "type": "integer"
+          },
+          "tier": {
+            "example": "reseller",
+            "type": "string"
+          },
+          "username": {
+            "example": "seller1",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "tier",
+          "username"
         ],
         "type": "object"
       },
@@ -10630,6 +10658,7 @@
                         ],
                         "limitHwid": 0,
                         "limitIp": 0,
+                        "ownerId": 0,
                         "reset": 0,
                         "resetDay": 0,
                         "resetMax": 0,
@@ -16082,6 +16111,51 @@
                       "totalBytes": 53687091200,
                       "trafficReset": "",
                       "trafficResetDay": 0
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access/owners": {
+      "get": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "Every account users can belong to, for the users page's owner column and filter.",
+        "operationId": "get_panel_api_access_owners",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OwnerView"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "id": 3,
+                      "tier": "reseller",
+                      "username": "seller1"
                     }
                   ]
                 }

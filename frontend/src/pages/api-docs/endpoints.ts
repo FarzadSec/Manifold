@@ -2288,6 +2288,13 @@ export const sections: readonly Section[] = [
         responseSchemaArray: true,
       },
       {
+        method: 'GET',
+        path: '/panel/api/access/owners',
+        summary: "Every account users can belong to, for the users page's owner column and filter.",
+        responseSchema: 'OwnerView',
+        responseSchemaArray: true,
+      },
+      {
         method: 'POST',
         path: '/panel/api/access/plans/add',
         summary: 'Create a plan new users can be created from.',

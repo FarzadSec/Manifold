@@ -25,6 +25,7 @@ import {
   SunOutlined,
   TagOutlined,
   TelegramFilled,
+  UserOutlined,
 } from '@ant-design/icons';
 
 import { HttpUtil } from '@/utils';
@@ -33,12 +34,15 @@ import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
 import { useAllSettings } from '@/api/queries/useAllSettings';
 import { useCommandPalette } from '@/components/command-palette/useCommandPalette';
 import { navigableRoutes } from '@/routes/panelRoutes';
+import { useAccess } from '@/api/queries/useAccess';
+import AccountModal from './AccountModal';
 import './AppSidebar.css';
 
 // The palette listens for Ctrl as well as Cmd, so the chip must not show a
 // Mac glyph to the Linux and Windows operators who are most of this panel's.
 const SHORTCUT_MODIFIER = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent) ? '⌘' : 'Ctrl';
 const LOGOUT_KEY = '__logout__';
+const ACCOUNT_KEY = '__account__';
 const RAIL_WIDTH = 72;
 const SIDER_WIDTH = 220;
 const SIDEBAR_PINNED_KEY = 'sidebar-pinned';
@@ -110,7 +114,8 @@ export default function AppSidebar() {
   const { open: openCommandPalette } = useCommandPalette();
   const navigate = useNavigate();
   const { pathname, hash } = useLocation();
-  const { allSetting } = useAllSettings();
+  const access = useAccess();
+  const { allSetting } = useAllSettings(access.can('settings:read'));
   const showSubFormats = !!(allSetting.subJsonEnable || allSetting.subClashEnable);
   const showSubBalancers = !!allSetting.subJsonEnable;
 
@@ -148,18 +153,26 @@ export default function AppSidebar() {
 
   const tabs = useMemo<{ key: string; icon: ComponentType; title: string }[]>(
     () => [
-      ...navigableRoutes().map((route) => ({
+      ...navigableRoutes(access).map((route) => ({
         key: route.path,
         icon: route.icon,
         title: t(route.titleKey),
       })),
+      { key: ACCOUNT_KEY, icon: UserOutlined, title: t('pages.access.myAccount') },
       { key: LOGOUT_KEY, icon: LogoutOutlined, title: t('logout') },
     ],
-    [t],
+    [t, access],
   );
 
-  const navItems = useMemo(() => tabs.filter((tab) => tab.key !== LOGOUT_KEY), [tabs]);
-  const utilItems = useMemo(() => tabs.filter((tab) => tab.key === LOGOUT_KEY), [tabs]);
+  const navItems = useMemo(
+    () => tabs.filter((tab) => tab.key !== LOGOUT_KEY && tab.key !== ACCOUNT_KEY),
+    [tabs],
+  );
+  const utilItems = useMemo(
+    () => tabs.filter((tab) => tab.key === LOGOUT_KEY || tab.key === ACCOUNT_KEY),
+    [tabs],
+  );
+  const [accountOpen, setAccountOpen] = useState(false);
 
   const settingsChildren = useMemo<NonNullable<MenuProps['items']>>(() => {
     const children: NonNullable<MenuProps['items']> = [
@@ -276,6 +289,10 @@ export default function AppSidebar() {
 
   const openLink = useCallback(
     async (key: string) => {
+      if (key === ACCOUNT_KEY) {
+        setAccountOpen(true);
+        return;
+      }
       if (key === LOGOUT_KEY) {
         await HttpUtil.post('/logout');
         window.location.href = window.X_UI_BASE_PATH || '/';
@@ -478,6 +495,8 @@ export default function AppSidebar() {
           <VersionBadge version={panelVersion} />
         </div>
       </Drawer>
+
+      <AccountModal open={accountOpen} onClose={() => setAccountOpen(false)} />
 
       {!drawerOpen && (
         <button

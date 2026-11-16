@@ -36,6 +36,7 @@ type ClientSlim struct {
 	Traffic      *xray.ClientTraffic `json:"traffic,omitempty"`
 	CreatedAt    int64               `json:"createdAt" example:"1735000000000"`
 	UpdatedAt    int64               `json:"updatedAt" example:"1735100000000"`
+	OwnerId      int                 `json:"ownerId" example:"0"`
 }
 
 // ClientPageParams are the query params accepted by /panel/api/clients/list/paged.
@@ -683,6 +684,7 @@ func toClientSlim(c ClientWithAttachments) ClientSlim {
 		Traffic:      c.Traffic,
 		CreatedAt:    c.CreatedAt,
 		UpdatedAt:    c.UpdatedAt,
+		OwnerId:      c.OwnerId,
 	}
 }
 

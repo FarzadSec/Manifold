@@ -25,7 +25,7 @@ async function fetchAllSetting(): Promise<AllSettingInput | null> {
   return validated.obj;
 }
 
-export function useAllSettings() {
+export function useAllSettings(enabled = true) {
   const queryClient = useQueryClient();
   const [extraSpinning, setExtraSpinning] = useState(false);
 
@@ -33,6 +33,7 @@ export function useAllSettings() {
     queryKey: keys.settings.all(),
     queryFn: fetchAllSetting,
     staleTime: Infinity,
+    enabled,
   });
 
   const server = useMemo(() => new AllSetting(query.data), [query.data]);

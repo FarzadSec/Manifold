@@ -72,7 +72,7 @@ export default function TwoFactorModal({
     }
     if (!totp) return;
     if (totp.generate() === codeOk.data) {
-      close(true);
+      close(true, codeOk.data);
     } else {
       messageApi.error(t('pages.settings.security.twoFactorModalError'));
     }

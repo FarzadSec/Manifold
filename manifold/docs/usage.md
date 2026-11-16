@@ -34,6 +34,20 @@ Open the address the installer printed and sign in with the login it showed. `ma
 
 A client whose quota is used up or whose expiry date has passed stops working on all of its inbounds until it is renewed.
 
+## Admins, resellers and plans
+
+**Admins** in the sidebar lists everyone who signs in. Each account is on a tier:
+
+- **Main admin** reaches everything, including admins, roles, API tokens, backups and the audit log. One main admin is the **owner**, marked with a crown; only the owner can hand the panel over (**Hand over ownership**).
+- **Operator** runs the panel (users, inbounds, nodes, tunnels, settings) but not its administration.
+- **Reseller** sees only the users it created, inside an allowance: traffic per cycle, a reset cycle (weekly, monthly or yearly from a day), an account expiry and a user limit. When it runs out its users are switched off until the next cycle or until you raise the allowance; users switched off by hand stay off. **May edit and delete users**, **Sell from plans only** and **Only chosen inbounds** narrow it further, and its profile title, support link and announcement replace the panel's in its customers' apps.
+
+**Roles** makes custom roles: a tier, the permissions kept from it, and caps on users per account, devices per user and plan length. **Plans** holds the presets users are created from; pick one in the user form and its limits are filled in and applied by the server.
+
+API tokens (**Settings → Security**) act as one account. Pick the account, optionally a lower tier and fewer permissions, the requests per minute and how many days the token is valid.
+
+**Audit log** records sign-ins always, and every change while **Log admin changes** is on. Every account sets its own password and two-factor authentication from **My account** in the sidebar.
+
 ## OpenVPN
 
 An OpenVPN inbound makes the panel run an OpenVPN server on that port. It needs the `openvpn` package on the server, which the installer installs.

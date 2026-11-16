@@ -191,3 +191,33 @@ func TestMetadataForSubRequestUsesStableClientIdentity(t *testing.T) {
 		t.Fatalf("Announce = %q", metadata.Announce)
 	}
 }
+
+// A reseller's customers see the reseller's title, support link and announcement, and fall
+// back to the panel's for whatever the reseller left empty; the panel's own users are untouched.
+func TestMetadataForSubRequestUsesTheResellersBranding(t *testing.T) {
+	initSubDB(t)
+	db := database.GetDB()
+	seller := model.User{Username: "seller", Tier: "reseller", BrandTitle: "Fast VPN · {{EMAIL}}", BrandAnnounce: "Renew at t.me/fast"}
+	if err := db.Create(&seller).Error; err != nil {
+		t.Fatal(err)
+	}
+	for _, rec := range []model.ClientRecord{
+		{Email: "bought", SubID: "sub-bought", UUID: "11111111-1111-1111-1111-111111111111", Enable: true, OwnerId: seller.Id},
+		{Email: "house", SubID: "sub-house", UUID: "22222222-2222-2222-2222-222222222222", Enable: true},
+	} {
+		if err := db.Create(&rec).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	a := &SUBController{subTitle: "Panel", subSupportUrl: "https://panel.example/help", subAnnounce: "Panel news"}
+	get := func() *SubService { return &SubService{} }
+
+	bought := a.metadataForSubRequest(get, "sub-bought", "")
+	if bought.Title != "Fast VPN · bought" || bought.Announce != "Renew at t.me/fast" || bought.SupportURL != "https://panel.example/help" {
+		t.Fatalf("reseller's customer got %+v", bought)
+	}
+	house := a.metadataForSubRequest(get, "sub-house", "")
+	if house.Title != "Panel" || house.Announce != "Panel news" {
+		t.Fatalf("the panel's user got %+v", house)
+	}
+}

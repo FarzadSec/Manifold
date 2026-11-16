@@ -1,6 +1,7 @@
 import { lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useLocation, useSearchParams } from 'react-router';
+import { useAccess, useOwners } from '@/api/queries/useAccess';
 import { useTranslation } from 'react-i18next';
 import {
   Badge,
@@ -50,6 +51,7 @@ import {
   TeamOutlined,
   UploadOutlined,
   UsergroupAddOutlined,
+  UserSwitchOutlined,
   UsergroupDeleteOutlined,
 } from '@ant-design/icons';
 import { activateOnKey } from '@/utils/a11y';
@@ -88,6 +90,19 @@ const ClientBulkAdjustModal = lazy(() => import('./ClientBulkAdjustModal'));
 const FilterDrawer = lazy(() => import('./FilterDrawer'));
 const SubLinksModal = lazy(() => import('./SubLinksModal'));
 const BulkAddToGroupModal = lazy(() => import('./BulkAddToGroupModal'));
+const ChangeOwnerModal = lazy(() => import('./ChangeOwnerModal'));
+
+// Menu entries that act on every user, or on the panel's own labels: never a reseller's.
+const STAFF_MENU_KEYS = new Set([
+  'addToGroup',
+  'ungroup',
+  'changeOwner',
+  'export',
+  'import',
+  'resetAll',
+  'delDepleted',
+  'delOrphans',
+]);
 const BulkAttachInboundsModal = lazy(() => import('./BulkAttachInboundsModal'));
 const BulkDetachInboundsModal = lazy(() => import('./BulkDetachInboundsModal'));
 const TextModal = lazy(() => import('@/components/feedback/TextModal'));
@@ -439,6 +454,12 @@ export default function ClientsPage() {
     searchParam !== null ? searchParam : initial.searchKey,
   );
   const [filters, setFilters] = useState<ClientFilters>(initial.filters);
+  const access = useAccess();
+  const staff = !access.isReseller;
+  const { data: owners = [] } = useOwners(staff && access.loaded);
+  const ownersById = useMemo(() => new Map(owners.map((o) => [o.id, o])), [owners]);
+  const [ownerFilter, setOwnerFilter] = useState(searchParams.get('owner') ?? '');
+  const [changeOwnerOpen, setChangeOwnerOpen] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
   const initialSort = SORT_OPTIONS.find((o) => o.value === initial.sort) ?? DEFAULT_SORT;
@@ -529,10 +550,12 @@ export default function ClientsPage() {
       hasTgId: filters.hasTgId || undefined,
       hasComment: filters.hasComment || undefined,
       group: filters.groups.join(',') || undefined,
+      owner: ownerFilter || undefined,
       sort: sortColumn || undefined,
       order: sortOrder || undefined,
     });
   }, [
+    ownerFilter,
     setQuery,
     resolvedPageSize,
     currentPage,
@@ -1136,6 +1159,20 @@ export default function ClientsPage() {
         ),
       },
       {
+        title: t('pages.access.owner'),
+        key: 'owner',
+        width: 120,
+        hidden: !staff || owners.length <= 1,
+        render: (_v, record) =>
+          record.ownerId ? (
+            <Tag color="purple" style={{ margin: 0 }}>
+              {ownersById.get(record.ownerId)?.username ?? `#${record.ownerId}`}
+            </Tag>
+          ) : (
+            <Typography.Text type="secondary">{t('pages.access.panel')}</Typography.Text>
+          ),
+      },
+      {
         title: t('pages.clients.group'),
         key: 'group',
         width: 130,
@@ -1231,6 +1268,9 @@ export default function ClientsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       t,
+      staff,
+      owners,
+      ownersById,
       togglingEmail,
       clientBucket,
       isOnline,
@@ -1476,7 +1516,17 @@ export default function ClientsPage() {
                                         label: t('pages.clients.subLinks'),
                                         onClick: () => setSubLinksOpen(true),
                                       },
-                                    ]
+                                      {
+                                        key: 'changeOwner',
+                                        icon: <UserSwitchOutlined aria-hidden />,
+                                        label: t('pages.access.changeOwner'),
+                                        onClick: () => setChangeOwnerOpen(true),
+                                      },
+                                    ].filter(
+                                      (item) =>
+                                        staff ||
+                                        !STAFF_MENU_KEYS.has(('key' in item && item.key) || ''),
+                                    )
                                   : [
                                       {
                                         key: 'bulk',
@@ -1517,7 +1567,11 @@ export default function ClientsPage() {
                                         danger: true,
                                         onClick: onDeleteOrphans,
                                       },
-                                    ],
+                                    ].filter(
+                                      (item) =>
+                                        staff ||
+                                        !STAFF_MENU_KEYS.has(('key' in item && item.key) || ''),
+                                    ),
                             }}
                           >
                             <Button icon={<MoreOutlined aria-hidden />} aria-label={t('more')}>
@@ -1549,6 +1603,23 @@ export default function ClientsPage() {
                           style={{ maxWidth: 320 }}
                           aria-label={t('search')}
                         />
+                        {staff && owners.length > 1 && (
+                          <Select
+                            value={ownerFilter}
+                            onChange={setOwnerFilter}
+                            size={isMobile ? 'small' : 'middle'}
+                            style={{ minWidth: 140 }}
+                            aria-label={t('pages.access.owner')}
+                            options={[
+                              { label: t('pages.access.anyOwner'), value: '' },
+                              { label: t('pages.access.panel'), value: 'panel' },
+                              { label: t('pages.access.mine'), value: 'mine' },
+                              ...owners
+                                .filter((o) => o.tier !== 'admin')
+                                .map((o) => ({ label: o.username, value: String(o.id) })),
+                            ]}
+                          />
+                        )}
                         <Badge count={activeCount} size="small" offset={[-4, 4]}>
                           <Button
                             icon={<FilterOutlined aria-hidden />}
@@ -1979,6 +2050,20 @@ export default function ClientsPage() {
             clients={clients}
             subSettings={subSettings}
             onOpenChange={setSubLinksOpen}
+          />
+        </LazyMount>
+        <LazyMount when={changeOwnerOpen}>
+          <ChangeOwnerModal
+            open={changeOwnerOpen}
+            emails={selectedRowKeys}
+            owners={owners}
+            onClose={(changed) => {
+              setChangeOwnerOpen(false);
+              if (changed) {
+                setSelectedRowKeys([]);
+                void refresh();
+              }
+            }}
           />
         </LazyMount>
         <LazyMount when={bulkGroupOpen}>

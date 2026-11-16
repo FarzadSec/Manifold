@@ -5,6 +5,7 @@ import {
   Empty,
   Form,
   Input,
+  InputNumber,
   Modal,
   Select,
   Space,
@@ -21,6 +22,10 @@ import { SettingListItem } from '@/components/ui';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { catTabLabel } from './catTabLabel';
 import TwoFactorModal from './TwoFactorModal';
+import { onNumber } from '@/utils/onNumber';
+import PermissionPicker from '@/pages/access/PermissionPicker';
+import { TIERS } from '@/pages/access/accessInfo';
+import { useAccess, useAdmins } from '@/api/queries/useAccess';
 import './SecurityTab.css';
 
 interface ApiMsg<T = unknown> {
@@ -38,6 +43,10 @@ interface ApiTokenRow {
   createdAt: number;
   scope: ApiTokenScope;
   expiresAt: number;
+  username?: string;
+  tier?: string;
+  permissions?: string[];
+  rateLimit?: number;
 }
 
 interface SecurityTabProps {
@@ -93,6 +102,15 @@ export default function SecurityTab({ allSetting, updateSetting, saveSetting }: 
   const [createOpen, setCreateOpen] = useState(false);
   const [createName, setCreateName] = useState('');
   const [createScope, setCreateScope] = useState<ApiTokenScope>('admin');
+  const access = useAccess();
+  const { data: admins = [] } = useAdmins(access.can('admins:write'));
+  const [createUserId, setCreateUserId] = useState(0);
+  const [createTier, setCreateTier] = useState('');
+  const [createPerms, setCreatePerms] = useState<string[] | null>(null);
+  const [createRate, setCreateRate] = useState(0);
+  const [createDays, setCreateDays] = useState(0);
+  const actingTier = admins.find((a) => a.id === createUserId)?.tier ?? access.me?.tier ?? 'admin';
+  const tokenTier = createTier || actingTier;
   const [creating, setCreating] = useState(false);
   const [createdToken, setCreatedToken] = useState<{ name: string; token: string } | null>(null);
 
@@ -175,6 +193,11 @@ export default function SecurityTab({ allSetting, updateSetting, saveSetting }: 
   function openCreateModal() {
     setCreateName('');
     setCreateScope('admin');
+    setCreateUserId(0);
+    setCreateTier('');
+    setCreatePerms(null);
+    setCreateRate(0);
+    setCreateDays(0);
     setCreateOpen(true);
   }
 
@@ -186,10 +209,19 @@ export default function SecurityTab({ allSetting, updateSetting, saveSetting }: 
     }
     setCreating(true);
     try {
-      const msg = (await HttpUtil.post('/panel/api/setting/apiTokens/create', {
-        name,
-        scope: createScope,
-      })) as ApiMsg<{ token?: string }>;
+      const msg = (await HttpUtil.post(
+        '/panel/api/setting/apiTokens/create',
+        {
+          name,
+          scope: createScope,
+          userId: createUserId,
+          tier: createTier,
+          permissions: createPerms ?? [],
+          rateLimit: createRate,
+          validityDays: createDays,
+        },
+        { headers: { 'Content-Type': 'application/json' } },
+      )) as ApiMsg<{ token?: string }>;
       if (msg?.success) {
         setCreateOpen(false);
         await loadApiTokens();
@@ -403,6 +435,16 @@ export default function SecurityTab({ allSetting, updateSetting, saveSetting }: 
                             <Tag color={scopeMeta[row.scope].color}>
                               {scopeMeta[row.scope].label}
                             </Tag>
+                            {row.scope === 'admin' && row.username && (
+                              <Tag>
+                                {t('pages.access.actsAs')} {row.username}
+                              </Tag>
+                            )}
+                            {row.scope === 'admin' && (row.permissions?.length ?? 0) > 0 && (
+                              <Tag color="orange">
+                                {t('pages.access.permCount', { n: row.permissions?.length ?? 0 })}
+                              </Tag>
+                            )}
                           </div>
                           <span className="api-token-created">
                             {formatTokenDate(row.createdAt)}
@@ -475,6 +517,94 @@ export default function SecurityTab({ allSetting, updateSetting, saveSetting }: 
               onChange={setCreateScope}
             />
           </Form.Item>
+          {createScope === 'admin' && (
+            <>
+              {admins.length > 0 && (
+                <Form.Item
+                  label={t('pages.access.actsAs')}
+                  extra={t('pages.access.actsAsHint')}
+                  htmlFor={`${uid}-tokenUser`}
+                >
+                  <Select
+                    id={`${uid}-tokenUser`}
+                    value={createUserId}
+                    onChange={(v) => {
+                      setCreateUserId(v);
+                      setCreateTier('');
+                      setCreatePerms(null);
+                    }}
+                    options={[
+                      { label: t('pages.access.myself'), value: 0 },
+                      ...admins.map((a) => ({
+                        label: `${a.username} · ${t(`pages.access.tier.${a.tier}`)}`,
+                        value: a.id,
+                      })),
+                    ]}
+                  />
+                </Form.Item>
+              )}
+              <Form.Item label={t('pages.access.tierLabel')} htmlFor={`${uid}-tokenTier`}>
+                <Select
+                  id={`${uid}-tokenTier`}
+                  value={createTier}
+                  onChange={(v) => {
+                    setCreateTier(v);
+                    setCreatePerms(null);
+                  }}
+                  options={[
+                    { label: t('pages.access.sameAsAccount'), value: '' },
+                    ...TIERS.filter(
+                      (tier) =>
+                        TIERS.indexOf(tier) >= TIERS.indexOf(actingTier as (typeof TIERS)[number]),
+                    ).map((tier) => ({ label: t(`pages.access.tier.${tier}`), value: tier })),
+                  ]}
+                />
+              </Form.Item>
+              <Form.Item label={t('pages.access.permissions')}>
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  <Switch
+                    checked={createPerms === null}
+                    aria-label={t('pages.access.noRestriction')}
+                    onChange={(on) => setCreatePerms(on ? null : [])}
+                  />
+                  <span>{t('pages.access.noRestriction')}</span>
+                  {createPerms !== null && (
+                    <PermissionPicker
+                      value={createPerms}
+                      onChange={setCreatePerms}
+                      ceiling={access.me?.tierCeilings?.[tokenTier] ?? []}
+                    />
+                  )}
+                </Space>
+              </Form.Item>
+              <Space wrap>
+                <Form.Item
+                  label={t('pages.access.requestsPerMinute')}
+                  extra={t('pages.access.requestsPerMinuteHint')}
+                  htmlFor={`${uid}-tokenRate`}
+                >
+                  <InputNumber
+                    id={`${uid}-tokenRate`}
+                    min={0}
+                    value={createRate}
+                    onChange={onNumber(setCreateRate)}
+                  />
+                </Form.Item>
+                <Form.Item
+                  label={t('pages.access.validityDays')}
+                  extra={t('pages.access.zeroNever')}
+                  htmlFor={`${uid}-tokenDays`}
+                >
+                  <InputNumber
+                    id={`${uid}-tokenDays`}
+                    min={0}
+                    value={createDays}
+                    onChange={onNumber(setCreateDays)}
+                  />
+                </Form.Item>
+              </Space>
+            </>
+          )}
         </Form>
       </Modal>
 

@@ -61,6 +61,7 @@ export const ClientRecordSchema = z
     adTag: z.string().optional(),
     createdAt: z.number().optional(),
     updatedAt: z.number().optional(),
+    ownerId: z.number().optional(),
   })
   .loose();
 

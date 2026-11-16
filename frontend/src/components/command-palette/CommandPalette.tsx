@@ -38,6 +38,7 @@ import { useInboundOptions } from '@/api/queries/useInboundOptions';
 import { useAllSettings } from '@/api/queries/useAllSettings';
 import { useTheme } from '@/hooks/useTheme';
 import { navigableRoutes } from '@/routes/panelRoutes';
+import { useAccess } from '@/api/queries/useAccess';
 import type { ClientRecord, InboundOption } from '@/schemas/client';
 import { commandPaletteStore, useCommandPalette } from './useCommandPalette';
 import './CommandPalette.css';
@@ -84,6 +85,10 @@ export const PALETTE_KEYWORDS: Record<string, string[]> = {
   '/settings': ['settings', 'config', 'port', 'password', 'ssl', 'telegram'],
   '/xray': ['xray', 'templates', 'balancer', 'dns'],
   '/api-docs': ['api', 'api docs', 'swagger', 'rest api', 'endpoints'],
+  '/admins': ['admins', 'resellers', 'operators', 'accounts', 'owner'],
+  '/roles': ['roles', 'permissions', 'tiers'],
+  '/plans': ['plans', 'packages', 'presets', 'products'],
+  '/audit': ['audit', 'log', 'history', 'who changed'],
 };
 
 export default function CommandPalette() {
@@ -92,7 +97,8 @@ export default function CommandPalette() {
   const navigate = useNavigate();
   const { isDark, isUltra, toggleTheme, toggleUltra, antdThemeConfig } = useTheme();
   const { isOpen, close } = useCommandPalette();
-  const { allSetting } = useAllSettings();
+  const access = useAccess();
+  const { allSetting } = useAllSettings(access.can('settings:read'));
   const { data: inbounds = [] } = useInboundOptions();
 
   const [query, setQuery] = useState('');
@@ -367,7 +373,7 @@ export default function CommandPalette() {
       });
     });
 
-    const pages = navigableRoutes().map((route) => ({
+    const pages = navigableRoutes(access).map((route) => ({
       path: route.path,
       title: t(route.titleKey),
       keywords: PALETTE_KEYWORDS[route.path] ?? [],
@@ -586,6 +592,7 @@ export default function CommandPalette() {
 
     return list;
   }, [
+    access,
     query,
     clientSearch,
     inbounds,

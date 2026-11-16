@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"net"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/json_util"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/wirecodec"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/access"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/middleware"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/websocket"
@@ -146,6 +148,14 @@ func (a *InboundController) getInboundOptions(c *gin.Context) {
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
 		return
+	}
+	allowed, err := service.ClientAccess{Actor: access.ActorFrom(c)}.AllowedInboundIDs()
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
+		return
+	}
+	if allowed != nil {
+		options = slices.DeleteFunc(options, func(o service.InboundOption) bool { return !slices.Contains(allowed, o.Id) })
 	}
 	jsonObj(c, options, nil)
 }

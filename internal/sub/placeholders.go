@@ -85,9 +85,13 @@ func (a *SUBController) metadataForSubRequest(getSubReq func() *SubService, subI
 	case service.SubProfileModeCustom:
 		profileURL = strings.TrimSpace(a.subProfileUrl)
 	}
+	title, supportURL, announce := a.subTitle, a.subSupportUrl, a.subAnnounce
+	if brand, ok := resellerBranding(subID); ok {
+		title, supportURL, announce = pickBrand(brand.BrandTitle, title), pickBrand(brand.BrandSupportUrl, supportURL), pickBrand(brand.BrandAnnounce, announce)
+	}
 	var context remarkContext
 	var hasContext bool
-	if subMetadataUsesPlaceholders(a.subTitle, a.subSupportUrl, profileURL, a.subAnnounce) {
+	if subMetadataUsesPlaceholders(title, supportURL, profileURL, announce) {
 		var err error
 		subReq := getSubReq()
 		context, hasContext, err = subReq.subscriptionTemplateContextBySubID(subID)
@@ -99,11 +103,33 @@ func (a *SUBController) metadataForSubRequest(getSubReq func() *SubService, subI
 	profileURL = renderSubPlaceholders(profileURL, subPlaceholderData{SubID: subID, Context: context, HasCtx: hasContext, Escape: true})
 	data := subPlaceholderData{SubID: subID, Context: context, HasCtx: hasContext}
 	return renderedSubMetadata{
-		Title:      renderSubPlaceholders(a.subTitle, data),
-		SupportURL: renderSubPlaceholders(a.subSupportUrl, subPlaceholderData{SubID: subID, Context: context, HasCtx: hasContext, Escape: true}),
+		Title:      renderSubPlaceholders(title, data),
+		SupportURL: renderSubPlaceholders(supportURL, subPlaceholderData{SubID: subID, Context: context, HasCtx: hasContext, Escape: true}),
 		ProfileURL: profileURL,
-		Announce:   renderSubPlaceholders(a.subAnnounce, data),
+		Announce:   renderSubPlaceholders(announce, data),
 	}
+}
+
+func pickBrand(own, panel string) string {
+	if strings.TrimSpace(own) != "" {
+		return own
+	}
+	return panel
+}
+
+// resellerBranding is the branding of the reseller that owns the subscription, which its
+// customers see in place of the panel's title, support link and announcement.
+func resellerBranding(subID string) (model.User, bool) {
+	if subID == "" || database.GetDB() == nil {
+		return model.User{}, false
+	}
+	var owner model.User
+	err := database.GetDB().Model(&model.User{}).
+		Joins("JOIN clients ON clients.owner_id = users.id").
+		Where("clients.sub_id = ? AND users.tier = ?", subID, "reseller").
+		Select("users.brand_title", "users.brand_support_url", "users.brand_announce").
+		First(&owner).Error
+	return owner, err == nil
 }
 
 func (s *SubService) subscriptionTemplateContextBySubID(subID string) (remarkContext, bool, error) {

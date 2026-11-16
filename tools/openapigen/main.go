@@ -143,7 +143,7 @@ func run(root, outDir string) error {
 		},
 		{
 			Path:        resolveRel(root, "internal/web/controller"),
-			StructAllow: setOf("TgBotCapabilities", "MeView", "TwoFactorSetupView"),
+			StructAllow: setOf("TgBotCapabilities", "MeView", "TwoFactorSetupView", "OwnerView"),
 		},
 		{
 			Path:        resolveRel(root, "internal/amneziawg"),

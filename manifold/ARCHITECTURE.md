@@ -1,8 +1,15 @@
 # Manifold — Architecture and Roadmap
 
-Version 0.10 · 2026-11-16 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnels and full backups delivered; see 8.1 to 8.5 for what they leave open
+Version 0.11 · 2026-11-17 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnels, full backups and the access model delivered; see 8.1 to 8.6 for what they leave open
 
 Decision log:
+
+- 2026-11-17 — The access model follows NX Panel's: three tiers (main admin, operator, reseller), custom roles that only narrow a tier, and one permission catalogue shared by roles and API tokens. Every API route carries a rule in `internal/web/access/routes.go`; a route without one is refused to everyone, and `TestEveryAPIRouteHasAnAccessRule` pins the table to the router both ways.
+- 2026-11-17 — A reseller reaches only the users it owns (`clients.owner_id`). The guard sits in front of the client routes and checks the users a request names before the handler runs; lists are filtered in the handlers. Staff routes (import, export, groups, every-user operations, node sync) are never a reseller's, whatever its role holds.
+- 2026-11-17 — A reseller is charged its users' traffic in the transaction that adds it to them, local and node traffic alike, so past traffic stays with whoever owned the user. A minute job starts new cycles and switches a reseller's users off when it runs out, marking them, and switches back on only those when it is renewed.
+- 2026-11-17 — Inbounds are one pool, stored under the owner's account (`inbounds.user_id`), also across an ownership handover. The base code stored them under whoever made them and read them back by the signed-in account, which would have shown a second admin no inbounds.
+- 2026-11-17 — Two-factor authentication belongs to each account. The panel-wide secret moved to the owner; the login page asks for a code when any account has one.
+- 2026-11-17 — Plans are copied onto a user once and leave no link but its group, so editing a plan never changes what a customer bought.
 
 - 2026-11-16 — Tunnels are a subsystem of their own (`internal/tunnel`, tables `tunnel_ends` and `tunnel_relays`), not an inbound protocol: a tunnel carries no accounts, and the relay end has no inbounds at all. The panel that serves the accounts runs the client end; the relay users connect to runs the server end and forwards its ports to the client end.
 - 2026-11-16 — Kernel links (GRE, GRETAP, IP6GRE, IP6GRETAP, IPIP, SIT) are Manifold's own code driving `ip` and nftables. DrSaeedHub's Tunnel-Panel, which the owner pointed to, is AGPL-3.0; none of its code is used, only the idea of a pairing code with the sides swapped.
@@ -180,16 +187,14 @@ Requirement: root, the `wireguard-tools` package and the kernel WireGuard module
 - The unit allows `AF_PPPOX`, so that xl2tpd hands sessions to the kernel, and lets the panel write `/etc/swanctl`.
 - Not built: IKEv2 from the same strongSwan, a `.mobileconfig` for Apple devices, a key per account, IPv6 inside the tunnel, several devices behind one public address (strongSwan's `connmark` plugin is the known answer), L2TP in the container image, and steering tunnel traffic into Xray routing.
 
-### 4.6 Access model
+### 4.6 Access model (built, 0.6.0)
 
-3x-ui's `User` is only a username and password. To build:
-
-- Roles with permissions (main admin, operator, reseller, custom roles that can only remove permissions)
-- Ownership: a reseller sees only the accounts it owns
-- Reseller limits: account count, device limit, plan length, traffic allowance charged to a ledger as it is used
-- Plans: presets accounts are created from
-- Audit log
-- Reseller-scoped API tokens beside the existing `monitor`, `node-sync`, `node-admin`, `admin` scopes
+- Accounts (`users`) carry a tier, an optional custom role (`roles`), the owner flag, their own two-factor secret and, for a reseller, its allowance: volume per cycle (weekly, monthly or yearly from a day), expiry, user limit, may-edit, plans-only with allowed plans, allowed inbounds, and branding (profile title, support link, announcement) its customers' subscriptions use.
+- Permissions (`internal/web/access`): `users`, `plans`, `nodes`, `tunnels`, `pool` (inbounds, hosts, outbounds, routing), `settings`, `stats`, `tools`, `services`, `admins`, `tokens`, `backup`, `audit`. A role keeps a subset of its tier's; a role's caps (users per account, devices per user, plan length) hold over the account's own values.
+- API tokens of the admin scope act as one account, below its tier, with fewer permissions and their own requests per minute. The machine scopes (`monitor`, `node-sync`, `node-admin`, `tunnel`) keep their allow-lists and act as the owner.
+- Plans (`plans`) fill a new user's limits, length (fixed or from first use), reset, inbounds, group and name prefix or suffix.
+- The audit log (`audit_entries`) always holds sign-ins, failed and new-address sign-ins and two-factor changes; while change logging is on, every change a person makes, with secrets redacted, kept for the retention (90 days by default).
+- Pages: Admins, Roles, Plans, Audit log; the users page gains an owner column, an owner filter, change owner, a plan picker and, for main admins, an owner picker; a reseller's overview shows its allowance and users; every account has its own password and two-factor dialog.
 
 ### 4.7 Events and webhooks
 
@@ -234,9 +239,9 @@ This is the contract Mirza Bot will sync against, so it is frozen before the bot
 | OpenVPN | Absent | User, NX | Built in 0.2.0 (4.4) |
 | L2TP/IPsec | Absent | User | Built in 0.4.0 (4.5) |
 | Multi-node over mTLS, node health | Present | NX | Extend to new engines |
-| Roles, admins, resellers, ownership, ledger | Absent | NX | Build (4.6) |
-| Plans | Absent | NX | Build |
-| Audit log | Absent | NX | Build |
+| Roles, admins, resellers, ownership, ledger | Absent | NX | Built in 0.6.0 (4.6) |
+| Plans | Absent | NX | Built in 0.6.0 |
+| Audit log | Absent | NX | Built in 0.6.0 |
 | Webhooks with outbox and replay | Absent (in-process bus only) | NX, Mirza sync | Build (4.7) |
 | API tokens | Present, 4 scopes | NX | Add reseller scope |
 | Two-factor login (TOTP) | Present | NX | Check recovery codes and session list |
@@ -262,7 +267,7 @@ This is the contract Mirza Bot will sync against, so it is frozen before the bot
 | P1 WireGuard | Engine 4.3, inbound form, `.conf` and QR in the client pages, traffic and limits, node support, takeover of existing servers | Done 2026-11-14 (0.3.0). A real peer connects, is billed, loses its peer when disabled or out of quota, and an interface `wg-quick` already runs is taken over with its WGDashboard names and usage while its peer keeps connecting. Open items in 8.3 |
 | P3 L2TP/IPsec | Engine 4.5, inbound form, the account's four values in the client pages, traffic and limits, node support, installer and unit | Done 2026-11-15 (0.4.0). A real L2TP client behind NAT connects through IPsec, is billed, is held to its device limit and is cut off when disabled or out of quota, under the installed service on Ubuntu 22.04, 24.04 and 26.04. No phone or Windows machine has connected yet. Open items in 8.4 |
 | P6a Tunnels and moves | 4.8 to 4.10, and the OpenVPN profile options of 4.4 | Done 2026-11-16 (0.5.0). A real GRE link between two network namespaces carries a forwarded port from a third, masqueraded and with the user's address kept; a BackPack reverse tunnel runs the packaged binary at both ends and carries a forwarded port; a real OpenVPN client connects on RSA keys with tls-auth and an MTU; the installed service makes a full backup and restores it, on Ubuntu 22.04, 24.04 and 26.04. Open items in 8.5 |
-| P4 Access model | Items in 4.6 | A reseller can create accounts only within its limits and sees only its own |
+| P4 Access model | Items in 4.6 | Done 2026-11-17 (0.6.0). A reseller creates users only within its limits and plans and reaches only its own, checked through the API by `internal/web/access_http_test.go`. Open items in 8.6 |
 | P5 Events and API freeze | Items in 4.7; OpenAPI v1 for accounts, plans, resellers, usage | A test receiver gets signed events for every account state change, including after downtime |
 | P6 NX-parity operations | Setup wizard, backup upgrades, OIDC, managed tunnels, subscription themes, usage CSV | Checked against the gap table |
 | P7 Mirza Bot | Section 7 | A purchase in the bot yields one account with every protocol output, and panel events update the bot without polling |
@@ -368,6 +373,13 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - The full backup holds certificate files of at most 1 MiB found under certificate and key fields; a path written elsewhere (an Xray template outside those keys, a script) is not carried.
 - A restore stops at the first error of the import itself; the files it wrote before stay written.
 - The tunnel edition still carries Xray and the engines' code in its package; it only never starts them.
+
+### 8.6 Open items after the access model
+
+- A reseller's subscription domain is stored but not yet used: links are built on the panel's subscription address until several subscription domains exist (section 4 of the NX comparison).
+- The token rate limit counts in the panel's memory, so it starts again when the panel restarts.
+- Translations of the new pages exist in English, Persian, Russian and Simplified Chinese; the other ten locales show English.
+- A reseller's users stay on the nodes they were on; nodes are not yet limited per reseller beyond the allowed inbounds.
 
 ## 9. Assumptions and open decisions
 

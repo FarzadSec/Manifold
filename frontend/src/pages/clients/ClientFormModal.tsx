@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useAccess, useOwners, usePlans } from '@/api/queries/useAccess';
 import {
   AutoComplete,
   Button,
@@ -115,6 +116,8 @@ interface SaveMetaCreate {
 interface SaveCreatePayload {
   client: Record<string, unknown>;
   inboundIds: number[];
+  planId?: number;
+  ownerId?: number;
 }
 
 interface ClientFormModalProps {
@@ -295,6 +298,36 @@ export default function ClientFormModal({
   } = useFieldArray({ control: methods.control, name: 'externalLinks' });
 
   const [submitting, setSubmitting] = useState(false);
+  const access = useAccess();
+  const { data: plans = [] } = usePlans(open && !isEdit);
+  const { data: owners = [] } = useOwners(open && !isEdit && access.isMainAdmin);
+  const [planId, setPlanId] = useState(0);
+  const [ownerId, setOwnerId] = useState(0);
+  const chosenPlan = plans.find((p) => p.id === planId);
+
+  // Picking a plan fills the form with the plan's limits; the server applies the plan again on save.
+  function applyPlan(id: number) {
+    setPlanId(id);
+    const plan = plans.find((p) => p.id === id);
+    if (!plan) return;
+    methods.setValue('totalGB', bytesToGB(plan.totalBytes));
+    methods.setValue('delayedStart', plan.startOnFirstUse && plan.days > 0);
+    methods.setValue('delayedDays', plan.startOnFirstUse ? plan.days : 0);
+    methods.setValue(
+      'expiryDate',
+      plan.days > 0 && !plan.startOnFirstUse ? Date.now() + plan.days * 86400000 : 0,
+    );
+    methods.setValue('limitIp', plan.limitIp);
+    methods.setValue('limitHwid', plan.limitHwid);
+    methods.setValue('reset', plan.reset);
+    methods.setValue('trafficReset', (plan.trafficReset || 'never') as Values['trafficReset']);
+    methods.setValue('trafficResetDay', plan.trafficResetDay || 1);
+    if (plan.group) methods.setValue('group', plan.group);
+    methods.setValue(
+      'inboundIds',
+      plan.allInbounds ? inbounds.map((ib) => ib.id) : [...(plan.inboundIds ?? [])],
+    );
+  }
   const [resetting, setResetting] = useState(false);
   const [clientIps, setClientIps] = useState<ClientIpInfo[]>([]);
   const [ipsLoading, setIpsLoading] = useState(false);
@@ -355,6 +388,8 @@ export default function ClientFormModal({
     if (!open) return;
     setIpsModalOpen(false);
     setHwidsModalOpen(false);
+    setPlanId(0);
+    setOwnerId(0);
 
     if (isEdit && client) {
       const et = Number(client.expiryTime) || 0;
@@ -883,7 +918,7 @@ export default function ClientFormModal({
         });
       } else {
         msg = await save(
-          { client: clientPayload, inboundIds: values.inboundIds },
+          { client: clientPayload, inboundIds: values.inboundIds, planId, ownerId },
           { isEdit: false, email: clientPayload.email as string, externalLinks },
         );
       }
@@ -948,6 +983,52 @@ export default function ClientFormModal({
                   label: t('pages.clients.tabBasics'),
                   children: (
                     <>
+                      {!isEdit && (plans.length > 0 || owners.length > 1) && (
+                        <Row gutter={16}>
+                          {plans.length > 0 && (
+                            <Col xs={24} md={12}>
+                              <Form.Item
+                                label={t('pages.access.plan')}
+                                htmlFor={`${uid}-plan`}
+                                extra={
+                                  chosenPlan
+                                    ? t('pages.access.savedAs', {
+                                        name: `${chosenPlan.namePrefix}${email}${chosenPlan.nameSuffix}`,
+                                      })
+                                    : undefined
+                                }
+                              >
+                                <Select
+                                  id={`${uid}-plan`}
+                                  value={planId}
+                                  onChange={applyPlan}
+                                  options={[
+                                    { label: t('pages.access.byHand'), value: 0 },
+                                    ...plans.map((p) => ({ label: p.name, value: p.id })),
+                                  ]}
+                                />
+                              </Form.Item>
+                            </Col>
+                          )}
+                          {access.isMainAdmin && owners.length > 1 && (
+                            <Col xs={24} md={12}>
+                              <Form.Item label={t('pages.access.owner')} htmlFor={`${uid}-owner`}>
+                                <Select
+                                  id={`${uid}-owner`}
+                                  value={ownerId}
+                                  onChange={setOwnerId}
+                                  options={[
+                                    { label: t('pages.access.panel'), value: 0 },
+                                    ...owners
+                                      .filter((o) => o.tier !== 'admin')
+                                      .map((o) => ({ label: o.username, value: o.id })),
+                                  ]}
+                                />
+                              </Form.Item>
+                            </Col>
+                          )}
+                        </Row>
+                      )}
                       <Row gutter={16}>
                         <Col xs={24} md={12}>
                           <Form.Item
