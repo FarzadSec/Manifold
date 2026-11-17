@@ -135,10 +135,15 @@ func (ca *CA) jwk(*http.Request) crypto.PublicKey {
 	k, _ := head["jwk"].(map[string]any)
 	x, _ := base64.RawURLEncoding.DecodeString(fmt.Sprint(k["x"]))
 	y, _ := base64.RawURLEncoding.DecodeString(fmt.Sprint(k["y"]))
-	if k["kty"] != "EC" || k["crv"] != "P-256" {
+	if k["kty"] != "EC" || k["crv"] != "P-256" || len(x) != 32 || len(y) != 32 {
 		ca.t.Errorf("account key %v is not P-256", k)
+		return nil
 	}
-	return &ecdsa.PublicKey{Curve: elliptic.P256(), X: new(big.Int).SetBytes(x), Y: new(big.Int).SetBytes(y)}
+	pub, err := ecdsa.ParseUncompressedPublicKey(elliptic.P256(), append(append([]byte{4}, x...), y...))
+	if err != nil {
+		ca.t.Errorf("account key: %v", err)
+	}
+	return pub
 }
 
 func (ca *CA) keyAuth(token string) string {
@@ -191,17 +196,17 @@ func (ca *CA) serve(w http.ResponseWriter, r *http.Request) {
 	ca.body = body
 	switch p := r.URL.Path; {
 	case p == "/dir":
-		ca.writeJSON(w, 200, map[string]any{
+		ca.writeJSON(w, http.StatusOK, map[string]any{
 			"newNonce": ca.url("/nonce"), "newAccount": ca.url("/acct"), "newOrder": ca.url("/order"),
 			"revokeCert": ca.url("/revoke"), "keyChange": ca.url("/kc"),
 			"meta": map[string]any{"termsOfService": ca.url("/tos")},
 		})
 	case p == "/nonce":
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 	case p == "/acct":
 		ca.account = ca.jwk(r)
 		w.Header().Set("Location", ca.url("/acct/1"))
-		ca.writeJSON(w, 201, map[string]any{"status": "valid"})
+		ca.writeJSON(w, http.StatusCreated, map[string]any{"status": "valid"})
 	case p == "/order" && r.Method == http.MethodPost:
 		ca.orders++
 		var req struct{ Identifiers []struct{ Value string } }
@@ -213,7 +218,7 @@ func (ca *CA) serve(w http.ResponseWriter, r *http.Request) {
 			ca.authzs = append(ca.authzs, &fakeAuthz{domain: strings.TrimPrefix(id.Value, "*."), wildcard: wild, token: fmt.Sprintf("tok%d", i), status: "pending"})
 		}
 		w.Header().Set("Location", ca.url("/order/1"))
-		ca.writeJSON(w, 201, ca.orderJSON("pending"))
+		ca.writeJSON(w, http.StatusCreated, ca.orderJSON("pending"))
 	case p == "/order/1":
 		status := "ready"
 		for _, a := range ca.authzs {
@@ -221,11 +226,11 @@ func (ca *CA) serve(w http.ResponseWriter, r *http.Request) {
 				status = "pending"
 			}
 		}
-		ca.writeJSON(w, 200, ca.orderJSON(status))
+		ca.writeJSON(w, http.StatusOK, ca.orderJSON(status))
 	case strings.HasPrefix(p, "/authz/"):
 		var i int
 		_, _ = fmt.Sscanf(p, "/authz/%d", &i)
-		ca.writeJSON(w, 200, ca.authzJSON(i))
+		ca.writeJSON(w, http.StatusOK, ca.authzJSON(i))
 	case strings.HasPrefix(p, "/chal/"):
 		var i int
 		var typ string
@@ -240,7 +245,7 @@ func (ca *CA) serve(w http.ResponseWriter, r *http.Request) {
 			ca.t.Logf("challenge %s for %s failed: %v", typ, a.domain, err)
 			a.status = "invalid"
 		}
-		ca.writeJSON(w, 200, map[string]any{"type": typ, "url": ca.url(p), "token": a.token, "status": a.status})
+		ca.writeJSON(w, http.StatusOK, map[string]any{"type": typ, "url": ca.url(p), "token": a.token, "status": a.status})
 	case p == "/finalize":
 		var req struct{ CSR string }
 		_ = json.Unmarshal(ca.payload(r), &req)
@@ -252,7 +257,7 @@ func (ca *CA) serve(w http.ResponseWriter, r *http.Request) {
 		}
 		ca.csrNames = csr.DNSNames
 		w.Header().Set("Location", ca.url("/order/1"))
-		ca.writeJSON(w, 200, ca.orderJSON("valid"))
+		ca.writeJSON(w, http.StatusOK, ca.orderJSON("valid"))
 		ca.issued(csr)
 	case p == "/cert":
 		w.Header().Set("Content-Type", "application/pem-certificate-chain")
@@ -261,7 +266,7 @@ func (ca *CA) serve(w http.ResponseWriter, r *http.Request) {
 		}
 	default:
 		ca.t.Errorf("fake CA: unexpected %s %s", r.Method, p)
-		w.WriteHeader(404)
+		w.WriteHeader(http.StatusNotFound)
 	}
 }
 

@@ -314,9 +314,10 @@ func (s *TLSALPN01) Present(ctx context.Context, client *acme.Client, domain str
 				return
 			}
 			go func() {
+				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				defer cancel()
 				tc := tls.Server(conn, cfg)
-				_ = tc.SetDeadline(time.Now().Add(10 * time.Second))
-				_ = tc.Handshake()
+				_ = tc.HandshakeContext(ctx)
 				_ = tc.Close()
 			}()
 		}
