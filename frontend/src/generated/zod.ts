@@ -573,12 +573,16 @@ export type AmneziaWGLogs = z.infer<typeof AmneziaWGLogsSchema>;
 
 export const ApiTokenSchema = z.object({
   createdAt: z.number().int(),
+  deleteOnLimit: z.boolean(),
   enabled: z.boolean(),
   expiresAt: z.number().int(),
   id: z.number().int(),
+  lastUsedAt: z.number().int(),
+  maxRequests: z.number().int(),
   name: z.string(),
   permissions: z.array(z.string()),
   rateLimit: z.number().int(),
+  requestCount: z.number().int(),
   scope: z.string(),
   tier: z.string(),
   token: z.string(),
@@ -588,12 +592,16 @@ export type ApiToken = z.infer<typeof ApiTokenSchema>;
 
 export const ApiTokenViewSchema = z.object({
   createdAt: z.number().int(),
+  deleteOnLimit: z.boolean(),
   enabled: z.boolean(),
   expiresAt: z.number().int(),
   id: z.number().int(),
+  lastUsedAt: z.number().int(),
+  maxRequests: z.number().int(),
   name: z.string(),
   permissions: z.array(z.string()),
   rateLimit: z.number().int(),
+  requestCount: z.number().int(),
   scope: z.string(),
   tier: z.string(),
   token: z.string().optional(),

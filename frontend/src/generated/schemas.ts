@@ -2203,6 +2203,9 @@ export const SCHEMAS: Record<string, unknown> = {
         "format": "int64",
         "type": "integer"
       },
+      "deleteOnLimit": {
+        "type": "boolean"
+      },
       "enabled": {
         "type": "boolean"
       },
@@ -2211,6 +2214,15 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "integer"
       },
       "id": {
+        "type": "integer"
+      },
+      "lastUsedAt": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "maxRequests": {
+        "description": "A cap on the requests a token makes in its life, 0 for none; only a capped token is counted.",
+        "format": "int64",
         "type": "integer"
       },
       "name": {
@@ -2223,6 +2235,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "array"
       },
       "rateLimit": {
+        "type": "integer"
+      },
+      "requestCount": {
+        "format": "int64",
         "type": "integer"
       },
       "scope": {
@@ -2242,12 +2258,16 @@ export const SCHEMAS: Record<string, unknown> = {
     },
     "required": [
       "createdAt",
+      "deleteOnLimit",
       "enabled",
       "expiresAt",
       "id",
+      "lastUsedAt",
+      "maxRequests",
       "name",
       "permissions",
       "rateLimit",
+      "requestCount",
       "scope",
       "tier",
       "token",
@@ -2262,6 +2282,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "format": "int64",
         "type": "integer"
       },
+      "deleteOnLimit": {
+        "example": false,
+        "type": "boolean"
+      },
       "enabled": {
         "example": true,
         "type": "boolean"
@@ -2273,6 +2297,17 @@ export const SCHEMAS: Record<string, unknown> = {
       },
       "id": {
         "example": 2,
+        "type": "integer"
+      },
+      "lastUsedAt": {
+        "example": 1736000000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "maxRequests": {
+        "description": "Requests over the token's life: the cap (0 for none), how many it made, and its last use.",
+        "example": 10000,
+        "format": "int64",
         "type": "integer"
       },
       "name": {
@@ -2290,6 +2325,11 @@ export const SCHEMAS: Record<string, unknown> = {
       },
       "rateLimit": {
         "example": 120,
+        "type": "integer"
+      },
+      "requestCount": {
+        "example": 42,
+        "format": "int64",
         "type": "integer"
       },
       "scope": {
@@ -2316,12 +2356,16 @@ export const SCHEMAS: Record<string, unknown> = {
     },
     "required": [
       "createdAt",
+      "deleteOnLimit",
       "enabled",
       "expiresAt",
       "id",
+      "lastUsedAt",
+      "maxRequests",
       "name",
       "permissions",
       "rateLimit",
+      "requestCount",
       "scope",
       "tier",
       "userId",

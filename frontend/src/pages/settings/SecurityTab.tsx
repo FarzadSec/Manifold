@@ -47,6 +47,9 @@ interface ApiTokenRow {
   tier?: string;
   permissions?: string[];
   rateLimit?: number;
+  maxRequests?: number;
+  requestCount?: number;
+  lastUsedAt?: number;
 }
 
 interface SecurityTabProps {
@@ -109,6 +112,8 @@ export default function SecurityTab({ allSetting, updateSetting, saveSetting }: 
   const [createPerms, setCreatePerms] = useState<string[] | null>(null);
   const [createRate, setCreateRate] = useState(0);
   const [createDays, setCreateDays] = useState(0);
+  const [createMax, setCreateMax] = useState(0);
+  const [createDeleteAtMax, setCreateDeleteAtMax] = useState(false);
   const actingTier = admins.find((a) => a.id === createUserId)?.tier ?? access.me?.tier ?? 'admin';
   const tokenTier = createTier || actingTier;
   const [creating, setCreating] = useState(false);
@@ -198,6 +203,8 @@ export default function SecurityTab({ allSetting, updateSetting, saveSetting }: 
     setCreatePerms(null);
     setCreateRate(0);
     setCreateDays(0);
+    setCreateMax(0);
+    setCreateDeleteAtMax(false);
     setCreateOpen(true);
   }
 
@@ -219,6 +226,8 @@ export default function SecurityTab({ allSetting, updateSetting, saveSetting }: 
           permissions: createPerms ?? [],
           rateLimit: createRate,
           validityDays: createDays,
+          maxRequests: createMax,
+          deleteOnLimit: createMax > 0 && createDeleteAtMax,
         },
         { headers: { 'Content-Type': 'application/json' } },
       )) as ApiMsg<{ token?: string }>;
@@ -445,9 +454,25 @@ export default function SecurityTab({ allSetting, updateSetting, saveSetting }: 
                                 {t('pages.access.permCount', { n: row.permissions?.length ?? 0 })}
                               </Tag>
                             )}
+                            {(row.maxRequests ?? 0) > 0 && (
+                              <Tag
+                                color={
+                                  (row.requestCount ?? 0) >= (row.maxRequests ?? 0)
+                                    ? 'red'
+                                    : 'default'
+                                }
+                              >
+                                {t('pages.access.requestsUsed', {
+                                  used: row.requestCount ?? 0,
+                                  max: row.maxRequests ?? 0,
+                                })}
+                              </Tag>
+                            )}
                           </div>
                           <span className="api-token-created">
                             {formatTokenDate(row.createdAt)}
+                            {(row.lastUsedAt ?? 0) > 0 &&
+                              ` · ${t('pages.access.lastUsed', { when: formatTokenDate(row.lastUsedAt ?? 0) })}`}
                           </span>
                         </div>
                         <div className="api-token-actions">
@@ -602,6 +627,27 @@ export default function SecurityTab({ allSetting, updateSetting, saveSetting }: 
                     onChange={onNumber(setCreateDays)}
                   />
                 </Form.Item>
+                <Form.Item
+                  label={t('pages.access.maxRequests')}
+                  extra={t('pages.access.maxRequestsHint')}
+                  htmlFor={`${uid}-tokenMax`}
+                >
+                  <InputNumber
+                    id={`${uid}-tokenMax`}
+                    min={0}
+                    value={createMax}
+                    onChange={onNumber(setCreateMax)}
+                  />
+                </Form.Item>
+                {createMax > 0 && (
+                  <Form.Item label={t('pages.access.deleteOnLimit')} htmlFor={`${uid}-tokenDel`}>
+                    <Switch
+                      id={`${uid}-tokenDel`}
+                      checked={createDeleteAtMax}
+                      onChange={setCreateDeleteAtMax}
+                    />
+                  </Form.Item>
+                )}
               </Space>
             </>
           )}

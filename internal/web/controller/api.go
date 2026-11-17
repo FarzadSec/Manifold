@@ -3,6 +3,7 @@ package controller
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
@@ -72,6 +73,10 @@ func (a *APIController) checkAPIAuth(c *gin.Context) {
 		}
 		if token.Scope == model.ApiScopeAdmin && !defaultTokenLimiter.allow(token.Token, token.RateLimit) {
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"success": false, "msg": "too many requests for this API token"})
+			return
+		}
+		if err := a.apiTokenService.Spend(token, time.Now()); err != nil {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"success": false, "msg": err.Error()})
 			return
 		}
 		authenticateAs(token.Scope, actor)

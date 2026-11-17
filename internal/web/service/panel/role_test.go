@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/dbtest"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/access"
@@ -65,5 +66,16 @@ func TestAccountOverridesStayInsideTheTier(t *testing.T) {
 	ok := AdminInput{Username: "o3", Tier: access.TierOperator, Password: base.Password, GrantedPermissions: []string{access.PlansWrite}, DeniedPermissions: []string{access.UsersWrite}}
 	if _, err := svc.Add(ok); err != nil {
 		t.Fatalf("overrides inside the tier were refused: %v", err)
+	}
+}
+
+func TestTokenRequestCapCannotBeNegative(t *testing.T) {
+	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
+	u := model.User{Username: "acc", Password: "x", Tier: access.TierOperator}
+	if err := database.GetDB().Create(&u).Error; err != nil {
+		t.Fatal(err)
+	}
+	if _, err := (&ApiTokenService{}).CreateBound("neg", 0, TokenAccess{UserId: u.Id, MaxRequests: -1}); err == nil {
+		t.Error("a token with a negative request cap was created")
 	}
 }

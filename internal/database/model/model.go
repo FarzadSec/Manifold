@@ -325,6 +325,11 @@ type ApiToken struct {
 	Tier        string   `json:"tier" gorm:"default:''"`
 	Permissions []string `json:"permissions" gorm:"serializer:json"`
 	RateLimit   int      `json:"rateLimit" gorm:"default:0"`
+	// A cap on the requests a token makes in its life, 0 for none; only a capped token is counted.
+	MaxRequests   int64 `json:"maxRequests" gorm:"default:0"`
+	RequestCount  int64 `json:"requestCount" gorm:"default:0"`
+	DeleteOnLimit bool  `json:"deleteOnLimit" gorm:"default:false"`
+	LastUsedAt    int64 `json:"lastUsedAt" gorm:"default:0"`
 }
 
 // MarshalJSON emits settings, streamSettings, and sniffing as nested JSON

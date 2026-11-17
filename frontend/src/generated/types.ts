@@ -528,12 +528,16 @@ export interface AmneziaWGLogs {
 
 export interface ApiToken {
   createdAt: number;
+  deleteOnLimit: boolean;
   enabled: boolean;
   expiresAt: number;
   id: number;
+  lastUsedAt: number;
+  maxRequests: number;
   name: string;
   permissions: string[];
   rateLimit: number;
+  requestCount: number;
   scope: string;
   tier: string;
   token: string;
@@ -542,12 +546,16 @@ export interface ApiToken {
 
 export interface ApiTokenView {
   createdAt: number;
+  deleteOnLimit: boolean;
   enabled: boolean;
   expiresAt: number;
   id: number;
+  lastUsedAt: number;
+  maxRequests: number;
   name: string;
   permissions: string[];
   rateLimit: number;
+  requestCount: number;
   scope: string;
   tier: string;
   token?: string;

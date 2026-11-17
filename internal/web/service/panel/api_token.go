@@ -10,6 +10,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/crypto"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/random"
@@ -34,6 +35,11 @@ type ApiTokenView struct {
 	Tier        string   `json:"tier" example:"admin"`
 	Permissions []string `json:"permissions" example:"[\"users:read\"]"`
 	RateLimit   int      `json:"rateLimit" example:"120"`
+	// Requests over the token's life: the cap (0 for none), how many it made, and its last use.
+	MaxRequests   int64 `json:"maxRequests" example:"10000"`
+	RequestCount  int64 `json:"requestCount" example:"42"`
+	DeleteOnLimit bool  `json:"deleteOnLimit" example:"false"`
+	LastUsedAt    int64 `json:"lastUsedAt" example:"1736000000000"`
 }
 
 func apiTokenCreatedAtSeconds(createdAt int64) int64 {
@@ -62,6 +68,11 @@ func toView(t *model.ApiToken) *ApiTokenView {
 		Tier:        t.Tier,
 		Permissions: perms,
 		RateLimit:   t.RateLimit,
+
+		MaxRequests:   t.MaxRequests,
+		RequestCount:  t.RequestCount,
+		DeleteOnLimit: t.DeleteOnLimit,
+		LastUsedAt:    t.LastUsedAt,
 	}
 }
 
@@ -71,6 +82,9 @@ type TokenAccess struct {
 	Tier        string
 	Permissions []string
 	RateLimit   int
+	// MaxRequests caps the token's requests over its life; DeleteOnLimit removes it at the cap.
+	MaxRequests   int64
+	DeleteOnLimit bool
 }
 
 // CreateBound creates an admin-scope token that acts as one account, never above it.
@@ -90,8 +104,8 @@ func (s *ApiTokenService) CreateBound(name string, expiresAt int64, ta TokenAcce
 			return nil, common.NewError("unknown permission: " + p)
 		}
 	}
-	if ta.RateLimit < 0 {
-		return nil, common.NewError("requests per minute cannot be negative")
+	if ta.RateLimit < 0 || ta.MaxRequests < 0 {
+		return nil, common.NewError("request limits cannot be negative")
 	}
 	view, err := s.Create(name, model.ApiScopeAdmin, expiresAt)
 	if err != nil {
@@ -99,10 +113,12 @@ func (s *ApiTokenService) CreateBound(name string, expiresAt int64, ta TokenAcce
 	}
 	if err := database.GetDB().Model(&model.ApiToken{}).Where("id = ?", view.Id).Updates(map[string]any{
 		"user_id": ta.UserId, "tier": ta.Tier, "permissions": jsonStrings(ta.Permissions), "rate_limit": ta.RateLimit,
+		"max_requests": ta.MaxRequests, "delete_on_limit": ta.DeleteOnLimit,
 	}).Error; err != nil {
 		return nil, err
 	}
 	view.UserId, view.Username, view.Tier, view.RateLimit = ta.UserId, user.Username, ta.Tier, ta.RateLimit
+	view.MaxRequests, view.DeleteOnLimit = ta.MaxRequests, ta.DeleteOnLimit
 	view.Permissions = append([]string{}, ta.Permissions...)
 	return view, nil
 }
@@ -363,6 +379,36 @@ func (s *ApiTokenService) MatchToken(presented string) (*model.ApiToken, bool) {
 		return nil, false
 	}
 	return &row, true
+}
+
+// ErrTokenUsedUp refuses a token that has made every request it was given.
+var ErrTokenUsedUp = errors.New("this API token has used up its requests")
+
+// Spend counts one request against a capped token, deleting it at the cap when asked to, and
+// notes an uncapped token's last use at most once a minute.
+func (s *ApiTokenService) Spend(t *model.ApiToken, now time.Time) error {
+	db := database.GetDB()
+	ms := now.UnixMilli()
+	if t.MaxRequests == 0 {
+		if ms-t.LastUsedAt >= int64(time.Minute/time.Millisecond) {
+			if err := db.Model(&model.ApiToken{}).Where("id = ?", t.Id).Update("last_used_at", ms).Error; err != nil {
+				logger.Warning("api token: last use not recorded:", err)
+			}
+		}
+		return nil
+	}
+	res := db.Model(&model.ApiToken{}).Where("id = ? AND request_count < max_requests", t.Id).
+		Updates(map[string]any{"request_count": gorm.Expr("request_count + 1"), "last_used_at": ms})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return ErrTokenUsedUp
+	}
+	if t.DeleteOnLimit && t.RequestCount+1 >= t.MaxRequests {
+		return db.Delete(&model.ApiToken{}, t.Id).Error
+	}
+	return nil
 }
 
 // Match is the legacy boolean form for callers that do not need scope.

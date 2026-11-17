@@ -275,6 +275,9 @@ type apiTokenCreateForm struct {
 	Permissions  []string `json:"permissions" form:"permissions"`
 	RateLimit    int      `json:"rateLimit" form:"rateLimit"`
 	ValidityDays int      `json:"validityDays" form:"validityDays"`
+	// MaxRequests caps the token's requests over its life; DeleteOnLimit removes it at the cap.
+	MaxRequests   int64 `json:"maxRequests" form:"maxRequests"`
+	DeleteOnLimit bool  `json:"deleteOnLimit" form:"deleteOnLimit"`
 }
 
 type apiTokenEnabledForm struct {
@@ -313,6 +316,7 @@ func (a *SettingController) createApiToken(c *gin.Context) {
 		}
 		row, err = a.apiTokenService.CreateBound(form.Name, form.ExpiresAt, panel.TokenAccess{
 			UserId: userID, Tier: form.Tier, Permissions: form.Permissions, RateLimit: form.RateLimit,
+			MaxRequests: form.MaxRequests, DeleteOnLimit: form.DeleteOnLimit,
 		})
 	} else {
 		row, err = a.apiTokenService.Create(form.Name, form.Scope, form.ExpiresAt)

@@ -579,14 +579,18 @@ export const EXAMPLES: Record<string, unknown> = {
   },
   "ApiToken": {
     "createdAt": 0,
+    "deleteOnLimit": false,
     "enabled": false,
     "expiresAt": 0,
     "id": 0,
+    "lastUsedAt": 0,
+    "maxRequests": 0,
     "name": "",
     "permissions": [
       ""
     ],
     "rateLimit": 0,
+    "requestCount": 0,
     "scope": "",
     "tier": "",
     "token": "",
@@ -594,14 +598,18 @@ export const EXAMPLES: Record<string, unknown> = {
   },
   "ApiTokenView": {
     "createdAt": 1736000000,
+    "deleteOnLimit": false,
     "enabled": true,
     "expiresAt": 0,
     "id": 2,
+    "lastUsedAt": 1736000000000,
+    "maxRequests": 10000,
     "name": "central-panel-a",
     "permissions": [
       "users:read"
     ],
     "rateLimit": 120,
+    "requestCount": 42,
     "scope": "admin",
     "tier": "admin",
     "token": "new-token-string",

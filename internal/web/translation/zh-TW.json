@@ -3180,7 +3180,12 @@
       "disabledHint": "A switched-off account cannot sign in and its tokens stop working. Its users stay on unless its role switches them off too.",
       "usersOffWhenDisabled": "Switch its users off while the account is off",
       "keepUsersWhenLimited": "Keep its users on when the allowance runs out",
-      "lockWhenLimited": "Lock sign-in while the allowance is used up"
+      "lockWhenLimited": "Lock sign-in while the allowance is used up",
+      "maxRequests": "Requests in total",
+      "maxRequestsHint": "0 means no cap. Past it the token is refused.",
+      "deleteOnLimit": "Delete it when used up",
+      "requestsUsed": "{used} / {max} requests",
+      "lastUsed": "last used {when}"
     },
     "usage": {
       "menu": "Usage",

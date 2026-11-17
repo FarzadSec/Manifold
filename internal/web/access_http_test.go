@@ -638,3 +638,49 @@ func TestSwitchedOffAndLockedAccountsAreRefused(t *testing.T) {
 		t.Error("the panel owner was switched off")
 	}
 }
+
+// A capped token makes exactly its requests and is then refused, or deleted when asked to be;
+// every token notes when it was last used.
+func TestTokenRequestCap(t *testing.T) {
+	f := newAccessFixture(t)
+	db := database.GetDB()
+	capped := f.token(t, "capped", panel.TokenAccess{UserId: f.owner.Id, MaxRequests: 2})
+	for i, want := range []int{http.StatusOK, http.StatusOK, http.StatusForbidden} {
+		if code, _ := f.call(t, capped, http.MethodGet, "/clients/list", ""); code != want {
+			t.Errorf("request %d of a token capped at 2 answered %d, want %d", i+1, code, want)
+		}
+	}
+	var row model.ApiToken
+	if err := db.Where("name = ?", "capped").First(&row).Error; err != nil {
+		t.Fatal(err)
+	}
+	if row.RequestCount != 2 || row.LastUsedAt == 0 {
+		t.Errorf("capped token count=%d lastUsed=%d, want 2 and a time", row.RequestCount, row.LastUsedAt)
+	}
+
+	once := f.token(t, "once", panel.TokenAccess{UserId: f.owner.Id, MaxRequests: 1, DeleteOnLimit: true})
+	if code, _ := f.call(t, once, http.MethodGet, "/clients/list", ""); code != http.StatusOK {
+		t.Fatalf("the single request of a one-shot token answered %d", code)
+	}
+	var left int64
+	if err := db.Model(&model.ApiToken{}).Where("name = ?", "once").Count(&left).Error; err != nil {
+		t.Fatal(err)
+	}
+	if left != 0 {
+		t.Error("a token set to delete at its cap was kept after reaching it")
+	}
+
+	open := f.token(t, "open", panel.TokenAccess{UserId: f.owner.Id})
+	for range 3 {
+		if code, _ := f.call(t, open, http.MethodGet, "/clients/list", ""); code != http.StatusOK {
+			t.Fatalf("an uncapped token answered %d", code)
+		}
+	}
+	var openRow model.ApiToken
+	if err := db.Where("name = ?", "open").First(&openRow).Error; err != nil {
+		t.Fatal(err)
+	}
+	if openRow.LastUsedAt == 0 || openRow.RequestCount != 0 {
+		t.Errorf("uncapped token lastUsed=%d count=%d, want a time and no count", openRow.LastUsedAt, openRow.RequestCount)
+	}
+}
