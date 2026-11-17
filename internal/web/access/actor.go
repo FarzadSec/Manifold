@@ -38,7 +38,7 @@ const (
 // ValidScopes reports whether a role may hold this pair; a role cannot change users it cannot see.
 func ValidScopes(read, write string) bool {
 	valid := func(s string) bool { return s == "" || s == ScopeAll || s == ScopeOwn }
-	return valid(read) && valid(write) && !(read == ScopeOwn && write != ScopeOwn)
+	return valid(read) && valid(write) && (read != ScopeOwn || write == ScopeOwn)
 }
 
 // Allows reports whether the actor may call a route with this rule. A staff route acts on
