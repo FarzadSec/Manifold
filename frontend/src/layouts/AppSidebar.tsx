@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { ComponentType, CSSProperties } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
@@ -14,12 +14,12 @@ import {
   DiscordOutlined,
   LogoutOutlined,
   MailOutlined,
+  MenuFoldOutlined,
   MenuOutlined,
+  MenuUnfoldOutlined,
   MobileOutlined,
   MoonFilled,
   MoonOutlined,
-  PushpinFilled,
-  PushpinOutlined,
   SafetyOutlined,
   SearchOutlined,
   SettingOutlined,
@@ -47,9 +47,7 @@ const LOGOUT_KEY = '__logout__';
 const ACCOUNT_KEY = '__account__';
 const RAIL_WIDTH = 72;
 const SIDER_WIDTH = 220;
-const SIDEBAR_PINNED_KEY = 'sidebar-pinned';
-
-let hoveredAcrossRemounts = false;
+const SIDEBAR_COLLAPSED_KEY = 'sidebar-collapsed';
 
 function VersionBadge({ version, collapsed }: { version: string; collapsed?: boolean }) {
   if (!version) return null;
@@ -96,17 +94,17 @@ function ThemeCycleButton({
   );
 }
 
-function readSidebarPinned() {
+function readSidebarCollapsed() {
   try {
-    return localStorage.getItem(SIDEBAR_PINNED_KEY) === 'true';
+    return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
   } catch {
     return false;
   }
 }
 
-function saveSidebarPinned(pinned: boolean) {
+function saveSidebarCollapsed(collapsed: boolean) {
   try {
-    localStorage.setItem(SIDEBAR_PINNED_KEY, String(pinned));
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(collapsed));
   } catch {}
 }
 
@@ -122,34 +120,18 @@ export default function AppSidebar() {
   const showSubFormats = !!(allSetting.subJsonEnable || allSetting.subClashEnable);
   const showSubBalancers = !!allSetting.subJsonEnable;
 
-  const [hovered, setHovered] = useState(() => hoveredAcrossRemounts);
-  const [pinned, setPinned] = useState(readSidebarPinned);
+  const [railCollapsed, setRailCollapsed] = useState(readSidebarCollapsed);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const railCollapsed = !hovered && !pinned;
   const railStyle = useMemo(
-    () => ({ '--sider-rail': `${pinned ? SIDER_WIDTH : RAIL_WIDTH}px` }) as CSSProperties,
-    [pinned],
+    () => ({ '--sider-rail': `${railCollapsed ? RAIL_WIDTH : SIDER_WIDTH}px` }) as CSSProperties,
+    [railCollapsed],
   );
-  const rootRef = useRef<HTMLDivElement>(null);
 
-  const updateHovered = useCallback((value: boolean) => {
-    hoveredAcrossRemounts = value;
-    setHovered(value);
-  }, []);
-
-  const togglePinned = useCallback(() => {
-    const next = !pinned;
-    saveSidebarPinned(next);
-    setPinned(next);
-  }, [pinned]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      const el = rootRef.current;
-      if (el) updateHovered(el.matches(':hover'));
-    }, 150);
-    return () => window.clearTimeout(timer);
-  }, [updateHovered]);
+  const toggleCollapsed = useCallback(() => {
+    const next = !railCollapsed;
+    saveSidebarCollapsed(next);
+    setRailCollapsed(next);
+  }, [railCollapsed]);
 
   const currentTheme: 'light' | 'dark' = isDark ? 'dark' : 'light';
   const panelVersion = window.X_UI_CUR_VER || '';
@@ -364,13 +346,7 @@ export default function AppSidebar() {
   );
 
   return (
-    <div
-      ref={rootRef}
-      className={`ant-sidebar${pinned ? ' sidebar-pinned' : ''}`}
-      style={railStyle}
-      onMouseEnter={() => updateHovered(true)}
-      onMouseLeave={() => updateHovered(false)}
-    >
+    <div className="ant-sidebar" style={railStyle}>
       <Layout.Sider
         theme={currentTheme}
         width={SIDER_WIDTH}
@@ -378,21 +354,27 @@ export default function AppSidebar() {
         collapsed={railCollapsed}
       >
         <div className="sider-brand">
-          <div className="brand-block">
-            <span className="brand-text">{railCollapsed ? 'M' : productName}</span>
-          </div>
           {!railCollapsed && (
-            <div className="brand-actions">
-              <button
-                type="button"
-                className="sidebar-pin"
-                aria-label={t('menu.pinSidebar')}
-                aria-pressed={pinned}
-                title={t(pinned ? 'menu.unpinSidebar' : 'menu.pinSidebar')}
-                onClick={togglePinned}
-              >
-                {pinned ? <PushpinFilled aria-hidden /> : <PushpinOutlined aria-hidden />}
-              </button>
+            <div className="brand-block">
+              <span className="brand-text">{productName}</span>
+            </div>
+          )}
+          <div className="brand-actions">
+            <button
+              type="button"
+              className="sidebar-collapse"
+              aria-label={t(railCollapsed ? 'menu.expandSidebar' : 'menu.collapseSidebar')}
+              aria-expanded={!railCollapsed}
+              title={t(railCollapsed ? 'menu.expandSidebar' : 'menu.collapseSidebar')}
+              onClick={toggleCollapsed}
+            >
+              {railCollapsed ? (
+                <MenuUnfoldOutlined aria-hidden />
+              ) : (
+                <MenuFoldOutlined aria-hidden />
+              )}
+            </button>
+            {!railCollapsed && (
               <ThemeCycleButton
                 id="theme-cycle"
                 isDark={isDark}
@@ -400,8 +382,8 @@ export default function AppSidebar() {
                 onCycle={() => cycleTheme('theme-cycle')}
                 ariaLabel={t('menu.theme')}
               />
-            </div>
-          )}
+            )}
+          </div>
         </div>
         <Tooltip
           title={

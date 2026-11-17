@@ -12,10 +12,6 @@
   align-self: flex-start;
 }
 
-.ant-sidebar:not(.sidebar-pinned) > .ant-layout-sider:not(.ant-layout-sider-collapsed) {
-  box-shadow: 0 0 32px rgba(0, 0, 0, 0.22);
-}
-
 .sider-nav .ant-menu-item .anticon,
 .sider-nav .ant-menu-submenu-title .anticon,
 .sider-utility .ant-menu-item .anticon {
@@ -43,6 +39,12 @@
   overflow: hidden;
 }
 
+/* On the rail only the unfold button is left in the header, centred. */
+.ant-layout-sider-collapsed .sider-brand {
+  justify-content: center;
+  padding: 0;
+}
+
 .brand-block {
   display: inline-flex;
   align-items: center;
@@ -57,7 +59,7 @@
   flex-shrink: 0;
 }
 
-.brand-actions .sidebar-pin,
+.brand-actions .sidebar-collapse,
 .brand-actions .sidebar-theme-cycle {
   width: 26px;
   height: 26px;
@@ -185,7 +187,7 @@
   padding: 8px 8px 12px;
 }
 
-.sidebar-pin {
+.sidebar-collapse {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -204,15 +206,15 @@
     color 0.2s;
 }
 
-.sidebar-pin:hover,
-.sidebar-pin:focus-visible {
+.sidebar-collapse:hover,
+.sidebar-collapse:focus-visible {
   background-color: color-mix(in srgb, var(--ant-color-primary) 10%, transparent);
   color: var(--ant-color-primary);
   transform: scale(1.08);
   outline: none;
 }
 
-.sidebar-pin .anticon {
+.sidebar-collapse .anticon {
   font-size: 16px;
 }
 

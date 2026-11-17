@@ -24,49 +24,35 @@ async function renderSidebar() {
   return view;
 }
 
-test('keeps the sidebar expanded after pinning it from the header and restores the choice', async () => {
+// The rail used to spring open under the pointer and cover the page; it now
+// changes width only from its own button, and remembers the choice.
+test('folds and unfolds only from its button, never under the pointer', async () => {
   const first = await renderSidebar();
   const sidebar = first.container.querySelector('.ant-layout-sider');
   const sidebarRoot = first.container.querySelector('.ant-sidebar');
 
-  expect(sidebar?.classList.contains('ant-layout-sider-collapsed')).toBe(true);
-
-  fireEvent.mouseEnter(sidebarRoot!);
-
-  const pinButton = screen.getByRole('button', { name: 'Pin sidebar' });
-  expect(pinButton.closest('.brand-actions')).not.toBeNull();
-
-  fireEvent.click(pinButton);
-  fireEvent.mouseLeave(sidebarRoot!);
-
   expect(sidebar?.classList.contains('ant-layout-sider-collapsed')).toBe(false);
-  expect(sidebarRoot?.getAttribute('style')).toContain('--sider-rail: 220px');
-  expect(localStorage.getItem('sidebar-pinned')).toBe('true');
-
-  first.unmount();
-
-  const second = await renderSidebar();
-  const restoredSidebar = second.container.querySelector('.ant-layout-sider');
-  const restoredSidebarRoot = second.container.querySelector('.ant-sidebar');
-
-  expect(restoredSidebar?.classList.contains('ant-layout-sider-collapsed')).toBe(false);
-  expect(restoredSidebarRoot?.getAttribute('style')).toContain('--sider-rail: 220px');
-  expect(screen.getByRole('button', { name: 'Pin sidebar' })).not.toBeNull();
-});
-
-test('returns to the compact rail after unpinning', async () => {
-  const view = await renderSidebar();
-  const sidebar = view.container.querySelector('.ant-layout-sider');
-  const sidebarRoot = view.container.querySelector('.ant-sidebar');
-
-  fireEvent.mouseEnter(sidebarRoot!);
-  fireEvent.click(screen.getByRole('button', { name: 'Pin sidebar' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Pin sidebar' }));
   fireEvent.mouseLeave(sidebarRoot!);
+  expect(sidebar?.classList.contains('ant-layout-sider-collapsed')).toBe(false);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Collapse sidebar' }));
+  fireEvent.mouseEnter(sidebarRoot!);
 
   expect(sidebar?.classList.contains('ant-layout-sider-collapsed')).toBe(true);
   expect(sidebarRoot?.getAttribute('style')).toContain('--sider-rail: 72px');
-  expect(localStorage.getItem('sidebar-pinned')).toBe('false');
+  expect(localStorage.getItem('sidebar-collapsed')).toBe('true');
+  first.unmount();
+
+  const second = await renderSidebar();
+  const restored = second.container.querySelector('.ant-layout-sider');
+  expect(restored?.classList.contains('ant-layout-sider-collapsed')).toBe(true);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Expand sidebar' }));
+  expect(restored?.classList.contains('ant-layout-sider-collapsed')).toBe(false);
+  expect(second.container.querySelector('.ant-sidebar')?.getAttribute('style')).toContain(
+    '--sider-rail: 220px',
+  );
+  expect(localStorage.getItem('sidebar-collapsed')).toBe('false');
 });
 
 test('labels the palette shortcut with the modifier the platform actually uses', async () => {
@@ -76,7 +62,6 @@ test('labels the palette shortcut with the modifier the platform actually uses',
 });
 
 test('groups the pages under section headings, and only separates them on the rail', async () => {
-  localStorage.setItem('sidebar-pinned', 'true');
   const pinned = await renderSidebar();
   const titles = [
     ...pinned.container.querySelectorAll('.sider-nav .ant-menu-item-group-title'),
@@ -86,7 +71,7 @@ test('groups the pages under section headings, and only separates them on the ra
   expect(certs?.querySelector('.ant-menu-item-group-title')?.textContent).toBe('Network');
   pinned.unmount();
 
-  localStorage.setItem('sidebar-pinned', 'false');
+  localStorage.setItem('sidebar-collapsed', 'true');
   const rail = await renderSidebar();
   expect(rail.container.querySelectorAll('.sider-nav .ant-menu-item-group-title')).toHaveLength(0);
   expect(rail.container.querySelectorAll('.sider-nav .ant-menu-item-divider')).toHaveLength(4);
@@ -95,8 +80,7 @@ test('groups the pages under section headings, and only separates them on the ra
 test('names Manifold Relay on a relay', async () => {
   window.X_UI_EDITION = 'tunnel';
   try {
-    const view = await renderSidebar();
-    fireEvent.mouseEnter(view.container.querySelector('.ant-sidebar')!);
+    await renderSidebar();
     expect(await screen.findByText('Manifold Relay')).toBeTruthy();
   } finally {
     delete window.X_UI_EDITION;
