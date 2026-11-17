@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -21,7 +22,7 @@ issue gets a Let's Encrypt certificate and serves the panel with it; the panel r
 on its own. NAME is a domain pointing at this server, or this server's public IP address,
 which gets a six-day certificate. Over HTTP-01, port 80 (or -port) must be free and
 reachable from the internet. -dns proves the names through the DNS provider instead, and
-is the only way to a wildcard.
+is the only way to a wildcard; the token may also come from MANIFOLD_DNS_TOKEN.
 -webCert/-webCertKey serve the panel with files of your own; -reset stops serving a
 certificate, so the panel answers over plain HTTP. Restart the panel afterwards.
 `
@@ -55,7 +56,7 @@ func runCertIssue(args []string) int {
 	port := fs.Int("port", 80, "port the HTTP-01 answer is served on")
 	staging := fs.Bool("staging", false, "use Let's Encrypt's staging CA, for a trial run")
 	dns := fs.String("dns", "", "prove the names with DNS-01 through cloudflare or arvancloud")
-	dnsToken := fs.String("dnsToken", "", "the DNS provider's API token")
+	dnsToken := fs.String("dnsToken", os.Getenv("MANIFOLD_DNS_TOKEN"), "the DNS provider's API token")
 	if err := fs.Parse(args); err != nil || strings.TrimSpace(*names) == "" || fs.NArg() > 0 {
 		fmt.Print(certUsage)
 		return 2
