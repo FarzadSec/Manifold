@@ -311,6 +311,29 @@
   font-size: 13px;
 }
 
+.sub-account {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  margin: -4px 4px 4px;
+  padding: 0 8px;
+  font-size: 12px;
+  color: var(--ant-color-text-secondary);
+}
+
+.sub-account-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sub-account-value {
+  font-weight: 600;
+  color: var(--ant-color-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
 a.sub-row-title:hover {
   color: var(--ant-color-primary);
 }

@@ -3411,6 +3411,51 @@ type PageData struct {
 	SubAnnounce   string
 	Result        []string
 	Emails        []string
+	// Accounts holds, by email, what the page shows under each of that user's services.
+	Accounts map[string]PageAccount
+}
+
+// PageAccount is what a user needs to know about its own account beside its configs.
+type PageAccount struct {
+	Password  string `json:"password,omitempty"`
+	LimitIP   int    `json:"limitIp"`
+	UserLimit int    `json:"userLimit"`
+}
+
+// pageAccounts reads the limits of the page's users; the password goes only to a user
+// with an OpenVPN or L2TP service, whose app asks for it.
+func pageAccounts(emails, links []string) map[string]PageAccount {
+	asksPassword := map[string]bool{}
+	unique := []string{}
+	for i, email := range emails {
+		if email == "" {
+			continue
+		}
+		if _, seen := asksPassword[email]; !seen {
+			unique = append(unique, email)
+			asksPassword[email] = false
+		}
+		if i < len(links) && (strings.HasPrefix(links[i], "openvpn://") || strings.HasPrefix(links[i], "l2tp://")) {
+			asksPassword[email] = true
+		}
+	}
+	if len(unique) == 0 {
+		return nil
+	}
+	var recs []model.ClientRecord
+	if err := database.GetDB().Select("email", "password", "limit_ip", "user_limit").
+		Where("email IN ?", unique).Find(&recs).Error; err != nil {
+		return nil
+	}
+	out := make(map[string]PageAccount, len(recs))
+	for _, r := range recs {
+		acct := PageAccount{LimitIP: r.LimitIP, UserLimit: r.UserLimit}
+		if asksPassword[r.Email] {
+			acct.Password = r.Password
+		}
+		out[r.Email] = acct
+	}
+	return out
 }
 
 // ResolveRequest extracts scheme, host, and header information from an HTTP request.

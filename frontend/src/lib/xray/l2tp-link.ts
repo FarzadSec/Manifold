@@ -40,6 +40,7 @@ export function l2tpAccountFromLink(link: string): L2tpAccount | null {
 
 export interface L2tpAccountEntry {
   key: string;
+  index: number;
   account: L2tpAccount;
 }
 
@@ -48,7 +49,7 @@ export function l2tpAccountsFromLinks(links: string[]): L2tpAccountEntry[] {
   const out: L2tpAccountEntry[] = [];
   links.forEach((link, index) => {
     const account = l2tpAccountFromLink(link);
-    if (account) out.push({ key: `l2tp-${index}`, account });
+    if (account) out.push({ key: `l2tp-${index}`, index, account });
   });
   return out;
 }

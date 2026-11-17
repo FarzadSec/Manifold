@@ -93,6 +93,7 @@
     "unlimited": "Неограниченно",
     "noExpiry": "Бессрочно",
     "copyAllConfigs": "Копировать все конфигурации",
+    "usersAtOnce": "Пользователей одновременно",
     "copyAllConfigsCopied": "Все конфигурации скопированы",
     "daysLeft": "Осталось дней",
     "expired": "Истёк",

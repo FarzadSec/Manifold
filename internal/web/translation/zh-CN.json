@@ -93,6 +93,7 @@
     "unlimited": "无限制",
     "noExpiry": "无到期",
     "copyAllConfigs": "复制全部配置",
+    "usersAtOnce": "同时用户数",
     "copyAllConfigsCopied": "已复制全部配置",
     "daysLeft": "剩余天数",
     "expired": "已过期",

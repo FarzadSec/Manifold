@@ -93,6 +93,7 @@
     "unlimited": "Безліміт",
     "noExpiry": "Без строку",
     "copyAllConfigs": "Копіювати всі конфігурації",
+    "usersAtOnce": "Користувачів одночасно",
     "copyAllConfigsCopied": "Всі конфігурації скопійовано",
     "daysLeft": "Залишилось днів",
     "expired": "Термін дії минув",

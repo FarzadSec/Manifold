@@ -468,6 +468,7 @@ func (a *SUBController) maybeServeSubInfo(c *gin.Context) bool {
 	info := a.subPageContext(page)
 	delete(info, "links")
 	delete(info, "configs")
+	delete(info, "accounts")
 	info["emails"] = dedupeEmails(page.Emails)
 	c.JSON(http.StatusOK, info)
 	return true
@@ -504,6 +505,7 @@ func (a *SUBController) buildSubPageData(c *gin.Context) (PageData, bool) {
 	page := subReq.BuildPageData(subId, hostHeader, traffic, lastOnline, subs, emails, subURL, subJsonURL, subClashURL, basePathStr, metadata.Title, metadata.SupportURL)
 	page.SubAnnounce = metadata.Announce
 	page.SubSingboxUrl = subSingboxURL
+	page.Accounts = pageAccounts(page.Emails, page.Result)
 	return page, true
 }
 
@@ -765,6 +767,7 @@ func (a *SUBController) subPageContext(page PageData) map[string]any {
 		"daysLeft":      daysLeft(page.Expire, now),
 		"usedPercent":   usedPercent,
 		"configs":       pageConfigs(page.Result),
+		"accounts":      page.Accounts,
 	}
 }
 

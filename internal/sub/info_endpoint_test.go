@@ -60,6 +60,9 @@ func TestSubInfoEndpoint_ServesStatusJSONEvenForBrowsers(t *testing.T) {
 	if _, hasLinks := info["links"]; hasLinks {
 		t.Fatal("info payload must not include the links list")
 	}
+	if _, hasAccounts := info["accounts"]; hasAccounts {
+		t.Fatal("info payload must not include the accounts, which can carry passwords")
+	}
 	if isOnline, ok := info["isOnline"].(bool); !ok || isOnline {
 		t.Fatalf("isOnline = %v, want false with no live xray", info["isOnline"])
 	}

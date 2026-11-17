@@ -19,6 +19,7 @@ interface SubPageData {
   subUpdates?: number;
   links?: string[];
   emails?: string[];
+  accounts?: Record<string, { password?: string; limitIp?: number; userLimit?: number }>;
   datepicker?: 'gregorian' | 'jalalian';
   announce?: string;
   downloadByte?: string | number;

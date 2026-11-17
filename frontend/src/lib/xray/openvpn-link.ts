@@ -42,6 +42,7 @@ export function openvpnProfileFileName(remark: string, fallback: string): string
 
 export interface OpenvpnProfileEntry {
   key: string;
+  index: number;
   text: string;
   remark: string;
   fileName: string;
@@ -59,6 +60,7 @@ export function openvpnProfilesFromLinks(
     const { remark } = summarizeOpenvpnProfile(text);
     out.push({
       key: `openvpn-${index}`,
+      index,
       text,
       remark,
       fileName: openvpnProfileFileName(remark, fallbackName),

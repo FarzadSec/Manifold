@@ -93,6 +93,7 @@
     "unlimited": "無制限",
     "noExpiry": "期限なし",
     "copyAllConfigs": "すべての設定をコピー",
+    "usersAtOnce": "同時ユーザー数",
     "copyAllConfigsCopied": "すべての設定をコピーしました",
     "daysLeft": "残り日数",
     "expired": "期限切れ",

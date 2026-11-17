@@ -93,6 +93,7 @@
     "unlimited": "Unlimited",
     "noExpiry": "No expiry",
     "copyAllConfigs": "Copy All Configs",
+    "usersAtOnce": "Users at once",
     "copyAllConfigsCopied": "All configs copied",
     "daysLeft": "Days left",
     "expired": "Expired",

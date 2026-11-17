@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/database"
+	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 )
 
@@ -65,5 +67,30 @@ func TestBuildPageData_IsOnlineFalseWithoutLiveConnections(t *testing.T) {
 
 	if page.IsOnline {
 		t.Fatal("IsOnline must be false when the subscription's client has no live connection")
+	}
+}
+
+// Each user's services show its name and how many may use them at once; the password
+// goes only to a user with an OpenVPN or L2TP service, whose app asks for it.
+func TestPageAccountsNameEachUsersLimits(t *testing.T) {
+	initSubDB(t)
+	for _, rec := range []model.ClientRecord{
+		{Email: "ali", Password: "pw-ali", LimitIP: 2, UserLimit: 3, Enable: true},
+		{Email: "bob", Password: "pw-bob", LimitIP: 1, Enable: true},
+	} {
+		if err := database.GetDB().Create(&rec).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	links := []string{"vless://a@h:443?type=tcp#ali", "openvpn://cHJvZmlsZQ", "vless://b@h:443?type=tcp#bob"}
+	emails := []string{"ali", "ali", "bob"}
+
+	got := pageAccounts(emails, links)
+	want := map[string]PageAccount{
+		"ali": {Password: "pw-ali", LimitIP: 2, UserLimit: 3},
+		"bob": {LimitIP: 1},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("accounts = %+v, want %+v", got, want)
 	}
 }

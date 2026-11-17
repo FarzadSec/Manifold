@@ -15,16 +15,41 @@ import { isOpenvpnLink } from '@/lib/xray/openvpn-link';
 import L2tpAccountBlocks from '@/components/clients/L2tpAccountBlocks';
 import { isL2tpLink } from '@/lib/xray/l2tp-link';
 import SubQrButton from './SubQrButton';
+import SubAccountLine, { type SubAccount } from './SubAccountLine';
 
 interface SubConfigsTabProps {
   links: string[];
+  /** The user each link belongs to, by position. */
+  emails?: string[];
+  accounts?: Record<string, SubAccount>;
   onCopy: (value: string, toast?: string) => void;
 }
 
-export default function SubConfigsTab({ links: allLinks, onCopy }: SubConfigsTabProps) {
+export default function SubConfigsTab({
+  links: allLinks,
+  emails = [],
+  accounts = {},
+  onCopy,
+}: SubConfigsTabProps) {
   const { t } = useTranslation();
   // An OpenVPN profile is a file to download and an L2TP account is typed in by hand; neither is a link an app imports.
-  const links = allLinks.filter((link) => !isOpenvpnLink(link) && !isL2tpLink(link));
+  const rows = allLinks
+    .map((link, index) => ({ link, index }))
+    .filter(({ link }) => !isOpenvpnLink(link) && !isL2tpLink(link));
+  const links = rows.map(({ link }) => link);
+  const accountLine = (index: number, tunnel: boolean) => {
+    const username = emails[index];
+    const account = username ? accounts[username] : undefined;
+    if (!username || !account) return null;
+    return (
+      <SubAccountLine
+        username={username}
+        users={(tunnel ? account.userLimit : account.limitIp) ?? 0}
+        password={tunnel ? account.password : undefined}
+        onCopy={onCopy}
+      />
+    );
+  };
 
   return (
     <div className="sub-rows">
@@ -36,7 +61,7 @@ export default function SubConfigsTab({ links: allLinks, onCopy }: SubConfigsTab
           {t('subscription.copyAllConfigs')}
         </Button>
       </div>
-      {links.map((link, idx) => {
+      {rows.map(({ link, index: linkIndex }, idx) => {
         const parts = parseLinkParts(link);
         const rowTitle = parts?.remark || `Link ${idx + 1}`;
         const isWireguardLink = link.startsWith('wireguard://') || link.startsWith('wg://');
@@ -61,6 +86,7 @@ export default function SubConfigsTab({ links: allLinks, onCopy }: SubConfigsTab
                 )}
               </div>
             </div>
+            {accountLine(linkIndex, false)}
             {wireguardConfig && (
               <ConfigBlock
                 label={t('pages.clients.wireguardConfig')}
@@ -82,8 +108,16 @@ export default function SubConfigsTab({ links: allLinks, onCopy }: SubConfigsTab
           </Fragment>
         );
       })}
-      <OpenvpnProfileBlocks links={allLinks} fallbackName="openvpn" />
-      <L2tpAccountBlocks links={allLinks} fallbackName="l2tp" />
+      <OpenvpnProfileBlocks
+        links={allLinks}
+        fallbackName="openvpn"
+        footer={(index) => accountLine(index, true)}
+      />
+      <L2tpAccountBlocks
+        links={allLinks}
+        fallbackName="l2tp"
+        footer={(index) => accountLine(index, true)}
+      />
     </div>
   );
 }

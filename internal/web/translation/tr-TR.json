@@ -93,6 +93,7 @@
     "unlimited": "Sınırsız",
     "noExpiry": "Süresiz",
     "copyAllConfigs": "Tüm Yapılandırmaları Kopyala",
+    "usersAtOnce": "Aynı anda kullanıcı",
     "copyAllConfigsCopied": "Tüm yapılandırmalar kopyalandı",
     "daysLeft": "Kalan gün",
     "expired": "Süresi doldu",
