@@ -2,7 +2,6 @@
 package metrics
 
 import (
-	"bufio"
 	"io"
 	"math"
 	"strconv"
@@ -51,27 +50,28 @@ func formatValue(v float64) string {
 
 // Write writes the families that have samples, in the order given.
 func Write(out io.Writer, families ...*Family) error {
-	w := bufio.NewWriter(out)
+	var b strings.Builder
 	for _, f := range families {
 		if len(f.samples) == 0 {
 			continue
 		}
-		w.WriteString("# HELP " + f.Name + " " + helpEscaper.Replace(f.Help) + "\n")
-		w.WriteString("# TYPE " + f.Name + " " + f.Type + "\n")
+		b.WriteString("# HELP " + f.Name + " " + helpEscaper.Replace(f.Help) + "\n")
+		b.WriteString("# TYPE " + f.Name + " " + f.Type + "\n")
 		for _, s := range f.samples {
-			w.WriteString(f.Name)
+			b.WriteString(f.Name)
 			if len(s.labels) > 1 {
-				w.WriteByte('{')
+				b.WriteByte('{')
 				for i := 0; i+1 < len(s.labels); i += 2 {
 					if i > 0 {
-						w.WriteByte(',')
+						b.WriteByte(',')
 					}
-					w.WriteString(s.labels[i] + `="` + labelEscaper.Replace(s.labels[i+1]) + `"`)
+					b.WriteString(s.labels[i] + `="` + labelEscaper.Replace(s.labels[i+1]) + `"`)
 				}
-				w.WriteByte('}')
+				b.WriteByte('}')
 			}
-			w.WriteString(" " + formatValue(s.value) + "\n")
+			b.WriteString(" " + formatValue(s.value) + "\n")
 		}
 	}
-	return w.Flush()
+	_, err := io.WriteString(out, b.String())
+	return err
 }
