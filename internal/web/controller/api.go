@@ -294,6 +294,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	NewWebhookController(api.Group("/webhooks"))
 	NewMetricsController(api, &a.serverController.serverService)
 	NewCertificateController(api.Group("/certs"))
+	NewPanelImportController(api.Group("/import"))
 	NewAccessController(api.Group("/access"))
 
 	// Settings + Xray config management live under the API surface too, so the

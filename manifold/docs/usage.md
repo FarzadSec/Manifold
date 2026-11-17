@@ -212,6 +212,24 @@ BackPack tunnels run the BackPack program by Amin Mohammadi (AminMGMT), shipped 
 
 Open on the relay's firewall the forwarded ports and, for BackPack, the tunnel port.
 
+## Moving from another panel
+
+**Import** (sidebar) brings users over from another panel:
+
+| Panel | What to give it | Old links |
+|---|---|---|
+| Marzban | `/var/lib/marzban/db.sqlite3`, or its address and admin login (any database) | `/sub/<token>` and `/sub/<token>/<client>`, checked against its secret |
+| PasarGuard | `/var/lib/pasarguard/db.sqlite3`, or its address and admin login | the same as Marzban |
+| Marzneshin | `/var/lib/marzneshin/db.sqlite3` | `/sub/<username>/<key>` |
+| 3x-ui, x-ui | `/etc/x-ui/x-ui.db` | `/sub/<subId>` (the sub id is kept) |
+| s-ui | `/usr/local/s-ui/db/s-ui.db` | `/sub/<name>` |
+| Hiddify | the JSON backup (Settings → Backup) | the user's UUID as the sub id |
+| Remnawave | its address and an API token | the short UUID as the sub id |
+
+The preview shows how many users there are, which protocols they have and who is already on this panel (those are skipped). Then pick, for each protocol, the inbounds its users go to; a user keeps its UUID (VLESS/VMess) or password (Trojan, Shadowsocks, Hysteria 2), quota, usage, expiry, note and reset cycle. Users with none of the picked protocols can go to fallback inbounds with new credentials.
+
+To keep old links working, leave **Keep the old subscription links working** on, point the old subscription domain at this server and give the subscription server the old path. For a Marzban or PasarGuard read over the API, paste the old panel's subscription secret (`SELECT secret_key FROM jwt;`) so links it handed out at any time are recognised; without it only each user's current link is. A token from before the old panel revoked a user's links stays refused.
+
 ## Moving to another server
 
 A **full backup** (Overview → Backup → Full backup for a move) holds everything the move needs in one `.tar.gz`: the database with every client, inbound and tunnel, the certificates and keys the settings and inbounds point at, and this server's public address.

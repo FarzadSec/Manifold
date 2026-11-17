@@ -2592,6 +2592,21 @@
         ],
         "type": "object"
       },
+      "BulkCreateReport": {
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "reason"
+        ],
+        "type": "object"
+      },
       "CatalogTheme": {
         "description": "CatalogTheme is one theme a catalogue offers. Files sit beside the catalogue in a\ndirectory named after the theme, or in Path when it says otherwise.",
         "properties": {
@@ -4567,6 +4582,182 @@
           "limit",
           "registered",
           "remaining"
+        ],
+        "type": "object"
+      },
+      "ImportApplyRequest": {
+        "description": "ImportApplyRequest creates the users of a preview on the inbounds picked per protocol.",
+        "properties": {
+          "fallback": {
+            "description": "Fallback takes the users that have no credential for any picked protocol.",
+            "example": [],
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "id": {
+            "example": "f3a1c0d9e8b7a6c5",
+            "type": "string"
+          },
+          "inbounds": {
+            "additionalProperties": {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "type": "object"
+          },
+          "keepLinks": {
+            "example": true,
+            "type": "boolean"
+          },
+          "ownerId": {
+            "example": 0,
+            "type": "integer"
+          },
+          "secret": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "fallback",
+          "id",
+          "inbounds",
+          "keepLinks",
+          "ownerId"
+        ],
+        "type": "object"
+      },
+      "ImportApplyResult": {
+        "description": "ImportApplyResult is what an import created.",
+        "properties": {
+          "aliases": {
+            "example": 118,
+            "type": "integer"
+          },
+          "created": {
+            "example": 118,
+            "type": "integer"
+          },
+          "skipped": {
+            "items": {
+              "$ref": "#/components/schemas/BulkCreateReport"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "aliases",
+          "created",
+          "skipped"
+        ],
+        "type": "object"
+      },
+      "ImportPreview": {
+        "description": "ImportPreview is what a source holds, kept for importKeep under Id.",
+        "properties": {
+          "existing": {
+            "example": 0,
+            "type": "integer"
+          },
+          "hasSecret": {
+            "example": true,
+            "type": "boolean"
+          },
+          "id": {
+            "example": "f3a1c0d9e8b7a6c5",
+            "type": "string"
+          },
+          "protocols": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object"
+          },
+          "sample": {
+            "items": {
+              "$ref": "#/components/schemas/ImportUserPreview"
+            },
+            "type": "array"
+          },
+          "source": {
+            "example": "marzban",
+            "type": "string"
+          },
+          "users": {
+            "example": 120,
+            "type": "integer"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "existing",
+          "hasSecret",
+          "id",
+          "protocols",
+          "sample",
+          "source",
+          "users",
+          "warnings"
+        ],
+        "type": "object"
+      },
+      "ImportUserPreview": {
+        "description": "ImportUserPreview is one user of a read source, as the preview lists it.",
+        "properties": {
+          "dataLimit": {
+            "example": 53687091200,
+            "format": "int64",
+            "type": "integer"
+          },
+          "enabled": {
+            "example": true,
+            "type": "boolean"
+          },
+          "exists": {
+            "example": false,
+            "type": "boolean"
+          },
+          "expire": {
+            "example": 1771116000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "protocols": {
+            "example": [
+              "vless",
+              "trojan"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "used": {
+            "example": 1073741824,
+            "format": "int64",
+            "type": "integer"
+          },
+          "username": {
+            "example": "alice",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataLimit",
+          "enabled",
+          "exists",
+          "expire",
+          "protocols",
+          "used",
+          "username"
         ],
         "type": "object"
       },
@@ -8448,6 +8639,10 @@
     {
       "name": "Nodes",
       "description": "Manage remote Manifold panels acting as nodes for a central panel. All endpoints under /panel/api/nodes."
+    },
+    {
+      "name": "Import from another panel",
+      "description": "Moves users in from Marzban, PasarGuard, Marzneshin, 3x-ui/x-ui and s-ui (their SQLite database), Hiddify (its JSON backup), or Marzban, PasarGuard and Remnawave over their API. A read returns a preview held for 30 minutes; apply creates the users on the inbounds picked for each protocol, keeping each user's UUID or password, quota, usage, expiry and reset cycle. With keepLinks the old panel's subscription links keep working on this panel's subscription server: kept ids (3x-ui, s-ui, Hiddify, Remnawave), Marzneshin's /sub/<user>/<key>, and Marzban/PasarGuard tokens checked against the old panel's secret. Users whose name is already taken are skipped. All endpoints under /panel/api/import."
     },
     {
       "name": "Certificates",
@@ -16943,6 +17138,212 @@
                     ],
                     "nodeId": 3,
                     "state": "running"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/import/file": {
+      "post": {
+        "tags": [
+          "Import from another panel"
+        ],
+        "summary": "Read an uploaded database or backup (multipart field file, up to 512 MiB); the kind is recognised from its tables.",
+        "operationId": "post_panel_api_import_file",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/ImportPreview"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "existing": 0,
+                    "hasSecret": true,
+                    "id": "f3a1c0d9e8b7a6c5",
+                    "protocols": {},
+                    "sample": [
+                      {
+                        "dataLimit": 53687091200,
+                        "enabled": true,
+                        "exists": false,
+                        "expire": 1771116000000,
+                        "protocols": [
+                          "vless",
+                          "trojan"
+                        ],
+                        "used": 1073741824,
+                        "username": "alice"
+                      }
+                    ],
+                    "source": "marzban",
+                    "users": 120,
+                    "warnings": [
+                      ""
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/import/remote": {
+      "post": {
+        "tags": [
+          "Import from another panel"
+        ],
+        "summary": "Read a panel over its API: marzban or pasarguard (admin username and password, or a token; secret is the old panel's jwt secret_key for old links) or remnawave (an API token).",
+        "operationId": "post_panel_api_import_remote",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "kind": "marzban",
+                "url": "https://old.example.com:8000",
+                "username": "admin",
+                "password": "…",
+                "secret": ""
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/ImportPreview"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "existing": 0,
+                    "hasSecret": true,
+                    "id": "f3a1c0d9e8b7a6c5",
+                    "protocols": {},
+                    "sample": [
+                      {
+                        "dataLimit": 53687091200,
+                        "enabled": true,
+                        "exists": false,
+                        "expire": 1771116000000,
+                        "protocols": [
+                          "vless",
+                          "trojan"
+                        ],
+                        "used": 1073741824,
+                        "username": "alice"
+                      }
+                    ],
+                    "source": "marzban",
+                    "users": 120,
+                    "warnings": [
+                      ""
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/import/apply": {
+      "post": {
+        "tags": [
+          "Import from another panel"
+        ],
+        "summary": "Create the users of a preview. inbounds maps a protocol (vless, vmess, trojan, shadowsocks, hysteria2) to inbound ids; fallback takes users with none of them.",
+        "operationId": "post_panel_api_import_apply",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "id": "f3a1c0d9e8b7a6c5",
+                "inbounds": {
+                  "vless": [
+                    1
+                  ],
+                  "trojan": [
+                    2
+                  ]
+                },
+                "fallback": [],
+                "keepLinks": true,
+                "ownerId": 0
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/ImportApplyResult"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "aliases": 118,
+                    "created": 118,
+                    "skipped": [
+                      {
+                        "email": "",
+                        "reason": ""
+                      }
+                    ]
                   }
                 }
               }

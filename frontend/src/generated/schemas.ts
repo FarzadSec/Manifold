@@ -2566,6 +2566,21 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "BulkCreateReport": {
+    "properties": {
+      "email": {
+        "type": "string"
+      },
+      "reason": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "email",
+      "reason"
+    ],
+    "type": "object"
+  },
   "CatalogTheme": {
     "description": "CatalogTheme is one theme a catalogue offers. Files sit beside the catalogue in a\ndirectory named after the theme, or in Path when it says otherwise.",
     "properties": {
@@ -4541,6 +4556,182 @@ export const SCHEMAS: Record<string, unknown> = {
       "limit",
       "registered",
       "remaining"
+    ],
+    "type": "object"
+  },
+  "ImportApplyRequest": {
+    "description": "ImportApplyRequest creates the users of a preview on the inbounds picked per protocol.",
+    "properties": {
+      "fallback": {
+        "description": "Fallback takes the users that have no credential for any picked protocol.",
+        "example": [],
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "id": {
+        "example": "f3a1c0d9e8b7a6c5",
+        "type": "string"
+      },
+      "inbounds": {
+        "additionalProperties": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        "type": "object"
+      },
+      "keepLinks": {
+        "example": true,
+        "type": "boolean"
+      },
+      "ownerId": {
+        "example": 0,
+        "type": "integer"
+      },
+      "secret": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "fallback",
+      "id",
+      "inbounds",
+      "keepLinks",
+      "ownerId"
+    ],
+    "type": "object"
+  },
+  "ImportApplyResult": {
+    "description": "ImportApplyResult is what an import created.",
+    "properties": {
+      "aliases": {
+        "example": 118,
+        "type": "integer"
+      },
+      "created": {
+        "example": 118,
+        "type": "integer"
+      },
+      "skipped": {
+        "items": {
+          "$ref": "#/components/schemas/BulkCreateReport"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "aliases",
+      "created",
+      "skipped"
+    ],
+    "type": "object"
+  },
+  "ImportPreview": {
+    "description": "ImportPreview is what a source holds, kept for importKeep under Id.",
+    "properties": {
+      "existing": {
+        "example": 0,
+        "type": "integer"
+      },
+      "hasSecret": {
+        "example": true,
+        "type": "boolean"
+      },
+      "id": {
+        "example": "f3a1c0d9e8b7a6c5",
+        "type": "string"
+      },
+      "protocols": {
+        "additionalProperties": {
+          "type": "integer"
+        },
+        "type": "object"
+      },
+      "sample": {
+        "items": {
+          "$ref": "#/components/schemas/ImportUserPreview"
+        },
+        "type": "array"
+      },
+      "source": {
+        "example": "marzban",
+        "type": "string"
+      },
+      "users": {
+        "example": 120,
+        "type": "integer"
+      },
+      "warnings": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "existing",
+      "hasSecret",
+      "id",
+      "protocols",
+      "sample",
+      "source",
+      "users",
+      "warnings"
+    ],
+    "type": "object"
+  },
+  "ImportUserPreview": {
+    "description": "ImportUserPreview is one user of a read source, as the preview lists it.",
+    "properties": {
+      "dataLimit": {
+        "example": 53687091200,
+        "format": "int64",
+        "type": "integer"
+      },
+      "enabled": {
+        "example": true,
+        "type": "boolean"
+      },
+      "exists": {
+        "example": false,
+        "type": "boolean"
+      },
+      "expire": {
+        "example": 1771116000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "protocols": {
+        "example": [
+          "vless",
+          "trojan"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "used": {
+        "example": 1073741824,
+        "format": "int64",
+        "type": "integer"
+      },
+      "username": {
+        "example": "alice",
+        "type": "string"
+      }
+    },
+    "required": [
+      "dataLimit",
+      "enabled",
+      "exists",
+      "expire",
+      "protocols",
+      "used",
+      "username"
     ],
     "type": "object"
   },

@@ -2167,6 +2167,38 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'import',
+    title: 'Import from another panel',
+    description:
+      "Moves users in from Marzban, PasarGuard, Marzneshin, 3x-ui/x-ui and s-ui (their SQLite database), Hiddify (its JSON backup), or Marzban, PasarGuard and Remnawave over their API. A read returns a preview held for 30 minutes; apply creates the users on the inbounds picked for each protocol, keeping each user's UUID or password, quota, usage, expiry and reset cycle. With keepLinks the old panel's subscription links keep working on this panel's subscription server: kept ids (3x-ui, s-ui, Hiddify, Remnawave), Marzneshin's /sub/<user>/<key>, and Marzban/PasarGuard tokens checked against the old panel's secret. Users whose name is already taken are skipped. All endpoints under /panel/api/import.",
+    endpoints: [
+      {
+        method: 'POST',
+        path: '/panel/api/import/file',
+        summary:
+          'Read an uploaded database or backup (multipart field file, up to 512 MiB); the kind is recognised from its tables.',
+        responseSchema: 'ImportPreview',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/import/remote',
+        summary:
+          "Read a panel over its API: marzban or pasarguard (admin username and password, or a token; secret is the old panel's jwt secret_key for old links) or remnawave (an API token).",
+        body: '{\n  "kind": "marzban",\n  "url": "https://old.example.com:8000",\n  "username": "admin",\n  "password": "…",\n  "secret": ""\n}',
+        responseSchema: 'ImportPreview',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/import/apply',
+        summary:
+          'Create the users of a preview. inbounds maps a protocol (vless, vmess, trojan, shadowsocks, hysteria2) to inbound ids; fallback takes users with none of them.',
+        body: '{\n  "id": "f3a1c0d9e8b7a6c5",\n  "inbounds": { "vless": [1], "trojan": [2] },\n  "fallback": [],\n  "keepLinks": true,\n  "ownerId": 0\n}',
+        responseSchema: 'ImportApplyResult',
+      },
+    ],
+  },
+
+  {
     id: 'certs',
     title: 'Certificates',
     description:

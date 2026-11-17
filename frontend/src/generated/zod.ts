@@ -643,6 +643,12 @@ export const BlockerSchema = z.object({
 });
 export type Blocker = z.infer<typeof BlockerSchema>;
 
+export const BulkCreateReportSchema = z.object({
+  email: z.string(),
+  reason: z.string(),
+});
+export type BulkCreateReport = z.infer<typeof BulkCreateReportSchema>;
+
 export const CatalogThemeSchema = z.object({
   author: z.string().optional(),
   description: z.record(z.string(), z.string()),
@@ -1092,6 +1098,46 @@ export const HwidSlotStatusSchema = z.object({
   remaining: z.number().int(),
 });
 export type HwidSlotStatus = z.infer<typeof HwidSlotStatusSchema>;
+
+export const ImportApplyRequestSchema = z.object({
+  fallback: z.array(z.number().int()),
+  id: z.string(),
+  inbounds: z.record(z.string(), z.array(z.number().int())),
+  keepLinks: z.boolean(),
+  ownerId: z.number().int(),
+  secret: z.string().optional(),
+});
+export type ImportApplyRequest = z.infer<typeof ImportApplyRequestSchema>;
+
+export const ImportApplyResultSchema = z.object({
+  aliases: z.number().int(),
+  created: z.number().int(),
+  skipped: z.array(z.lazy(() => BulkCreateReportSchema)),
+});
+export type ImportApplyResult = z.infer<typeof ImportApplyResultSchema>;
+
+export const ImportPreviewSchema = z.object({
+  existing: z.number().int(),
+  hasSecret: z.boolean(),
+  id: z.string(),
+  protocols: z.record(z.string(), z.number().int()),
+  sample: z.array(z.lazy(() => ImportUserPreviewSchema)),
+  source: z.string(),
+  users: z.number().int(),
+  warnings: z.array(z.string()),
+});
+export type ImportPreview = z.infer<typeof ImportPreviewSchema>;
+
+export const ImportUserPreviewSchema = z.object({
+  dataLimit: z.number().int(),
+  enabled: z.boolean(),
+  exists: z.boolean(),
+  expire: z.number().int(),
+  protocols: z.array(z.string()),
+  used: z.number().int(),
+  username: z.string(),
+});
+export type ImportUserPreview = z.infer<typeof ImportUserPreviewSchema>;
 
 export const InboundSchema = z.object({
   clientStats: z.array(z.lazy(() => ClientTrafficSchema)),

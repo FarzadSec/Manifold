@@ -2015,6 +2015,24 @@ type IngressRoute struct {
 	ProxyProtocol int      `json:"proxyProtocol" example:"0"`
 }
 
+// SubAlias lets a subscription link another panel handed out reach the user it was
+// imported as: an exact path, or "token:<name>" for a signed token naming that user.
+type SubAlias struct {
+	Id     int    `json:"id" gorm:"primaryKey;autoIncrement"`
+	Alias  string `json:"alias" gorm:"uniqueIndex;not null"`
+	SubId  string `json:"subId" gorm:"index;not null"`
+	Source string `json:"source"`
+	// NotBefore refuses tokens made before the old panel revoked the user's links.
+	NotBefore int64 `json:"notBefore"`
+}
+
+// LegacySubSecret verifies the subscription tokens an imported panel signed.
+type LegacySubSecret struct {
+	Id     int    `json:"id" gorm:"primaryKey;autoIncrement"`
+	Source string `json:"source"`
+	Secret string `json:"-" gorm:"uniqueIndex;not null"`
+}
+
 // Certificate is one certificate of the store, issued over ACME or uploaded, kept as PEM
 // files under the panel's folder and copied to the nodes it names.
 type Certificate struct {

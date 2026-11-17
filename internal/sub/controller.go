@@ -360,14 +360,15 @@ func NewSUBController(g *gin.RouterGroup, options ...SUBControllerOption) *SUBCo
 // initRouter registers HTTP routes for subscription links and JSON endpoints
 // on the provided router group.
 func (a *SUBController) initRouter(g *gin.RouterGroup) {
-	gLink := g.Group(a.subPath, setNoCacheHeaders)
+	gLink := g.Group(a.subPath, setNoCacheHeaders, resolveLegacySubID)
 	gLink.GET(":subid", a.subs)
 	gLink.HEAD(":subid", a.subs)
 	gLink.GET(":subid/hwid-status", a.hwidStatus)
 	gLink.HEAD(":subid/hwid-status", a.hwidStatus)
 	gLink.GET(":subid/theme/*file", a.themeAsset)
+	gLink.GET(":subid/:key", a.legacyTwoPart)
 	if a.jsonEnabled {
-		gJson := g.Group(a.subJsonPath, setNoCacheHeaders)
+		gJson := g.Group(a.subJsonPath, setNoCacheHeaders, resolveLegacySubID)
 		gJson.GET(":subid", a.subJsons)
 		gJson.HEAD(":subid", a.subJsons)
 		gJson.GET(":subid/theme/*file", a.themeAsset)
@@ -377,14 +378,14 @@ func (a *SUBController) initRouter(g *gin.RouterGroup) {
 			logger.Warningf("sing-box subscription path %q is unavailable because it conflicts with the configured %s path", a.subSingboxPath, owner)
 			a.singboxEnabled = false
 		} else {
-			gSingbox := g.Group(a.subSingboxPath, setNoCacheHeaders)
+			gSingbox := g.Group(a.subSingboxPath, setNoCacheHeaders, resolveLegacySubID)
 			gSingbox.GET(":subid", a.subSingbox)
 			gSingbox.HEAD(":subid", a.subSingbox)
 			gSingbox.GET(":subid/theme/*file", a.themeAsset)
 		}
 	}
 	if a.clashEnabled {
-		gClash := g.Group(a.subClashPath, setNoCacheHeaders)
+		gClash := g.Group(a.subClashPath, setNoCacheHeaders, resolveLegacySubID)
 		gClash.GET(":subid", a.subClashs)
 		gClash.HEAD(":subid", a.subClashs)
 		gClash.GET(":subid/theme/*file", a.themeAsset)
@@ -393,7 +394,7 @@ func (a *SUBController) initRouter(g *gin.RouterGroup) {
 		} else if owner := a.configuredSubscriptionPathOwner(subMihomoPath); owner != "" {
 			logger.Warningf("Mihomo subscription alias %q is unavailable because it conflicts with the configured %s path", subMihomoPath, owner)
 		} else {
-			gMihomo := g.Group(subMihomoPath, setNoCacheHeaders)
+			gMihomo := g.Group(subMihomoPath, setNoCacheHeaders, resolveLegacySubID)
 			gMihomo.GET(":subid", a.subClashs)
 			gMihomo.HEAD(":subid", a.subClashs)
 			gMihomo.GET(":subid/theme/*file", a.themeAsset)
@@ -401,7 +402,7 @@ func (a *SUBController) initRouter(g *gin.RouterGroup) {
 		if owner := a.configuredSubscriptionPathOwner(subClashLegacyPath); owner != "" {
 			logger.Warningf("Legacy Clash subscription alias %q is unavailable because it conflicts with the configured %s path", subClashLegacyPath, owner)
 		} else {
-			gLegacy := g.Group(subClashLegacyPath, setNoCacheHeaders)
+			gLegacy := g.Group(subClashLegacyPath, setNoCacheHeaders, resolveLegacySubID)
 			gLegacy.GET(":subid", a.subClashLegacy)
 			gLegacy.HEAD(":subid", a.subClashLegacy)
 			gLegacy.GET(":subid/theme/*file", a.themeAsset)

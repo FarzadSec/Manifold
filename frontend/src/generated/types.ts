@@ -607,6 +607,11 @@ export interface Blocker {
   detail?: string;
 }
 
+export interface BulkCreateReport {
+  email: string;
+  reason: string;
+}
+
 export interface CatalogTheme {
   author?: string;
   description: Record<string, string>;
@@ -1025,6 +1030,42 @@ export interface HwidSlotStatus {
   limit: number;
   registered: number;
   remaining: number;
+}
+
+export interface ImportApplyRequest {
+  fallback: number[];
+  id: string;
+  inbounds: Record<string, number[]>;
+  keepLinks: boolean;
+  ownerId: number;
+  secret?: string;
+}
+
+export interface ImportApplyResult {
+  aliases: number;
+  created: number;
+  skipped: BulkCreateReport[];
+}
+
+export interface ImportPreview {
+  existing: number;
+  hasSecret: boolean;
+  id: string;
+  protocols: Record<string, number>;
+  sample: ImportUserPreview[];
+  source: string;
+  users: number;
+  warnings: string[];
+}
+
+export interface ImportUserPreview {
+  dataLimit: number;
+  enabled: boolean;
+  exists: boolean;
+  expire: number;
+  protocols: string[];
+  used: number;
+  username: string;
 }
 
 export interface Inbound {

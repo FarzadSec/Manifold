@@ -621,6 +621,10 @@ export const EXAMPLES: Record<string, unknown> = {
     "code": "tools",
     "detail": "awg"
   },
+  "BulkCreateReport": {
+    "email": "",
+    "reason": ""
+  },
   "CatalogTheme": {
     "author": "FarzadSec",
     "description": {},
@@ -1145,6 +1149,61 @@ export const EXAMPLES: Record<string, unknown> = {
     "limit": 2,
     "registered": 1,
     "remaining": 1
+  },
+  "ImportApplyRequest": {
+    "fallback": [],
+    "id": "f3a1c0d9e8b7a6c5",
+    "inbounds": {},
+    "keepLinks": true,
+    "ownerId": 0,
+    "secret": ""
+  },
+  "ImportApplyResult": {
+    "aliases": 118,
+    "created": 118,
+    "skipped": [
+      {
+        "email": "",
+        "reason": ""
+      }
+    ]
+  },
+  "ImportPreview": {
+    "existing": 0,
+    "hasSecret": true,
+    "id": "f3a1c0d9e8b7a6c5",
+    "protocols": {},
+    "sample": [
+      {
+        "dataLimit": 53687091200,
+        "enabled": true,
+        "exists": false,
+        "expire": 1771116000000,
+        "protocols": [
+          "vless",
+          "trojan"
+        ],
+        "used": 1073741824,
+        "username": "alice"
+      }
+    ],
+    "source": "marzban",
+    "users": 120,
+    "warnings": [
+      ""
+    ]
+  },
+  "ImportUserPreview": {
+    "dataLimit": 53687091200,
+    "enabled": true,
+    "exists": false,
+    "expire": 1771116000000,
+    "protocols": [
+      "vless",
+      "trojan"
+    ],
+    "used": 1073741824,
+    "username": "alice"
   },
   "Inbound": {
     "clientStats": [

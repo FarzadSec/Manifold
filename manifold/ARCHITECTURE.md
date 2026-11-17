@@ -4,6 +4,8 @@ Version 0.13 · 2026-11-17 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnel
 
 Decision log:
 
+- 2026-11-17 — Old Marzban/PasarGuard links are verified, not looked up: their tokens carry the username and a signature with the old panel's secret, and a new one was minted every time a link was shown, so no list of tokens exists to import. The panel keeps the secret and checks each token as Marzban did, refusing tokens older than the user's revocation
+
 - 2026-11-17 — Certificates are issued by the panel itself on `golang.org/x/crypto/acme`, already in the module graph, instead of calling acme.sh: one process, errors the panel can show, and renewal that knows which inbounds and nodes read a certificate. The master issues (DNS-01 works from anywhere) and copies the pair to nodes, so a node needs neither a token nor a free port 80
 
 - 2026-11-17 — Metrics are an API route behind `stats:read`, not a second listener with its own secret: tokens already have scopes, an expiry and a rate, and Prometheus sends a bearer token as it is
@@ -273,6 +275,12 @@ This is the contract Mirza Bot will sync against.
 - Port checks run both ways: a shared port refuses a local TCP inbound's, the panel's or the subscription server's port, and `checkPortConflictTx` refuses an inbound on a shared port.
 - PROXY protocol v1 and v2 per route, for targets that should see the client address.
 
+### 4.18 Importers (built, 0.11.0)
+
+- `internal/importer` reads Marzban, PasarGuard, Marzneshin, 3x-ui/x-ui and s-ui from their SQLite file (recognised by tables and columns, read-only), Hiddify from its JSON backup, Marzban/PasarGuard and Remnawave over their APIs, into one `User` shape with a credential per protocol.
+- The panel holds a read source for 30 minutes as a preview; apply builds one client per user, attaches it to the inbounds picked for the protocols it has, and creates them through the normal client import (traffic carried over).
+- `sub_aliases` maps old link paths to a sub id; `legacy_sub_secrets` holds Marzban/PasarGuard signing secrets. A subscription request for an unknown id is resolved through them before any handler runs; a `"token:"` alias is only reachable through a token that verifies and is not older than the user's revocation.
+
 ### 4.17 Certificate store (built, 0.11.0)
 
 - `internal/certstore`: an ACME client on `golang.org/x/crypto/acme` with HTTP-01, TLS-ALPN-01 and DNS-01 solvers, and DNS providers for Cloudflare and ArvanCloud. `internal/certstore/acmetest` is a CA for tests that checks each challenge for real (an HTTP fetch, an `acme-tls/1` handshake, the TXT record).
@@ -449,6 +457,12 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - SSH install downloads the installer from GitHub on the server; a server that cannot reach GitHub needs the package copied by hand (`install.sh --package`).
 - Node templates (one configuration applied to many nodes) are not built; a node's inbounds are created on it from the master as before.
 - Live connections per node are still not listed (see 8.7).
+
+### 8.12 Open items after the importers (0.11.0)
+
+- Marzban admins, PasarGuard groups and Hiddify owners are not mapped to resellers; an import can give all its users to one owner.
+- Remnawave's squads and Marzban's per-user inbound exclusions are not carried; a user lands on every inbound picked for its protocols.
+- Users on hold or with a first-use start are imported with their time starting now (each is listed in the preview's warnings).
 
 ### 8.11 Open items after the certificate store (0.11.0)
 

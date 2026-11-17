@@ -99,6 +99,8 @@ func allModels() []any {
 		&model.Webhook{},
 		&model.WebhookDelivery{},
 		&model.Certificate{},
+		&model.SubAlias{},
+		&model.LegacySubSecret{},
 	}
 }
 
