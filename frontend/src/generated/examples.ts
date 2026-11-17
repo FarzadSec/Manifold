@@ -1978,7 +1978,11 @@ export const EXAMPLES: Record<string, unknown> = {
     "id": 1,
     "maxDevicesPerUser": 0,
     "maxPlanDays": 0,
+    "maxUserBytes": 107374182400,
     "maxUsersPerAccount": 0,
+    "minDevicesPerUser": 0,
+    "minPlanDays": 0,
+    "minUserBytes": 1073741824,
     "name": "Support",
     "permissions": [
       "users:read"

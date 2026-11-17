@@ -3050,7 +3050,6 @@
       "customRoles": "Custom roles",
       "cycleSince": "since {date}",
       "day": "Day",
-      "daysCap": "up to {n} days",
       "daysCount": "{n} days",
       "deleteAdminConfirm": "Delete this account? Its users pass to the panel and keep working; its API tokens are deleted.",
       "deletePlanConfirm": "Delete this plan? Users created from it keep their limits.",
@@ -3077,10 +3076,10 @@
       "length": "Length",
       "lengthDays": "Length (days)",
       "limits": "Limits",
-      "limitsHint": "Ceilings over what accounts on this role may hand out; 0 means no limit. The tighter of the role's and the account's own value holds.",
+      "limitsHint": "Bounds on what accounts on this role hand out to each user; 0 leaves that side open. A ceiling also refuses unlimited users. The tighter of the role's and the account's own value holds.",
       "logChanges": "Log admin changes",
-      "maxDevicesPerUser": "Devices per user",
-      "maxPlanDays": "Plan length (days)",
+      "maxDevicesPerUser": "Most devices per user",
+      "maxPlanDays": "Longest plan (days)",
       "maxUsers": "Max users",
       "maxUsersPerAccount": "Users per account",
       "mayEditUsers": "May edit and delete users",
@@ -3160,6 +3159,15 @@
         "all": "Mọi người dùng",
         "readAll": "Xem tất cả, chỉ đổi người dùng của mình",
         "own": "Chỉ người dùng của mình"
+      },
+      "minUserGB": "Smallest quota per user",
+      "maxUserGB": "Largest quota per user",
+      "minPlanDays": "Shortest plan (days)",
+      "minDevicesPerUser": "Fewest devices per user",
+      "bound": {
+        "quota": "{range} per user",
+        "days": "{range} days",
+        "devices": "{range} devices"
       }
     },
     "usage": {

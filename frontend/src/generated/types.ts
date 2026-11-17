@@ -1686,7 +1686,11 @@ export interface Role {
   id: number;
   maxDevicesPerUser: number;
   maxPlanDays: number;
+  maxUserBytes: number;
   maxUsersPerAccount: number;
+  minDevicesPerUser: number;
+  minPlanDays: number;
+  minUserBytes: number;
   name: string;
   permissions: string[];
   tier: string;

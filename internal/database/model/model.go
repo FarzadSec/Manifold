@@ -93,18 +93,23 @@ type User struct {
 
 // Role narrows one tier: the permissions it keeps and the caps on what its accounts hand out.
 type Role struct {
-	Id                 int      `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
-	Name               string   `json:"name" gorm:"uniqueIndex;not null" example:"Support"`
-	Description        string   `json:"description"`
-	Tier               string   `json:"tier" gorm:"not null" example:"operator"`
-	Permissions        []string `json:"permissions" gorm:"serializer:json" example:"[\"users:read\"]"`
+	Id          int      `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Name        string   `json:"name" gorm:"uniqueIndex;not null" example:"Support"`
+	Description string   `json:"description"`
+	Tier        string   `json:"tier" gorm:"not null" example:"operator"`
+	Permissions []string `json:"permissions" gorm:"serializer:json" example:"[\"users:read\"]"`
 	// Which users the role reads and changes: all (empty) or its own; a reseller is always own.
 	UsersReadScope     string `json:"usersReadScope" gorm:"column:users_read_scope;default:''" example:"all"`
 	UsersWriteScope    string `json:"usersWriteScope" gorm:"column:users_write_scope;default:''" example:"own"`
 	MaxUsersPerAccount int    `json:"maxUsersPerAccount" gorm:"default:0"`
-	MaxDevicesPerUser  int      `json:"maxDevicesPerUser" gorm:"default:0"`
-	MaxPlanDays        int      `json:"maxPlanDays" gorm:"default:0"`
-	CreatedAt          int64    `json:"createdAt" gorm:"autoCreateTime:milli"`
+	// Bounds on what the role's accounts hand out per user; 0 is no bound on that side.
+	MinUserBytes      int64 `json:"minUserBytes" gorm:"default:0" example:"1073741824"`
+	MaxUserBytes      int64 `json:"maxUserBytes" gorm:"default:0" example:"107374182400"`
+	MinPlanDays       int   `json:"minPlanDays" gorm:"default:0"`
+	MaxPlanDays       int   `json:"maxPlanDays" gorm:"default:0"`
+	MinDevicesPerUser int   `json:"minDevicesPerUser" gorm:"default:0"`
+	MaxDevicesPerUser int   `json:"maxDevicesPerUser" gorm:"default:0"`
+	CreatedAt         int64 `json:"createdAt" gorm:"autoCreateTime:milli"`
 }
 
 // Plan is a preset a new user is created from; nothing links the user to it afterwards.

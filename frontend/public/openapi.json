@@ -7578,7 +7578,24 @@
           "maxPlanDays": {
             "type": "integer"
           },
+          "maxUserBytes": {
+            "example": 107374182400,
+            "format": "int64",
+            "type": "integer"
+          },
           "maxUsersPerAccount": {
+            "type": "integer"
+          },
+          "minDevicesPerUser": {
+            "type": "integer"
+          },
+          "minPlanDays": {
+            "type": "integer"
+          },
+          "minUserBytes": {
+            "description": "Bounds on what the role's accounts hand out per user; 0 is no bound on that side.",
+            "example": 1073741824,
+            "format": "int64",
             "type": "integer"
           },
           "name": {
@@ -7614,7 +7631,11 @@
           "id",
           "maxDevicesPerUser",
           "maxPlanDays",
+          "maxUserBytes",
           "maxUsersPerAccount",
+          "minDevicesPerUser",
+          "minPlanDays",
+          "minUserBytes",
           "name",
           "permissions",
           "tier",
@@ -21193,7 +21214,11 @@
                       "id": 1,
                       "maxDevicesPerUser": 0,
                       "maxPlanDays": 0,
+                      "maxUserBytes": 107374182400,
                       "maxUsersPerAccount": 0,
+                      "minDevicesPerUser": 0,
+                      "minPlanDays": 0,
+                      "minUserBytes": 1073741824,
                       "name": "Support",
                       "permissions": [
                         "users:read"
@@ -21261,7 +21286,11 @@
                     "id": 1,
                     "maxDevicesPerUser": 0,
                     "maxPlanDays": 0,
+                    "maxUserBytes": 107374182400,
                     "maxUsersPerAccount": 0,
+                    "minDevicesPerUser": 0,
+                    "minPlanDays": 0,
+                    "minUserBytes": 1073741824,
                     "name": "Support",
                     "permissions": [
                       "users:read"
@@ -21340,7 +21369,11 @@
                     "id": 1,
                     "maxDevicesPerUser": 0,
                     "maxPlanDays": 0,
+                    "maxUserBytes": 107374182400,
                     "maxUsersPerAccount": 0,
+                    "minDevicesPerUser": 0,
+                    "minPlanDays": 0,
+                    "minUserBytes": 1073741824,
                     "name": "Support",
                     "permissions": [
                       "users:read"

@@ -28,7 +28,7 @@ import { postJson, useAccess, useRoles } from '@/api/queries/useAccess';
 import type { Role } from '@/generated/types';
 import PageShell from './PageShell';
 import PermissionPicker from './PermissionPicker';
-import { TIERS, TIER_COLORS } from './accessInfo';
+import { TIERS, TIER_COLORS, boundRange, bytesAsGB, formatBytes } from './accessInfo';
 
 function emptyRole(): Role {
   return {
@@ -40,8 +40,12 @@ function emptyRole(): Role {
     usersReadScope: '',
     usersWriteScope: '',
     maxUsersPerAccount: 0,
-    maxDevicesPerUser: 0,
+    minUserBytes: 0,
+    maxUserBytes: 0,
+    minPlanDays: 0,
     maxPlanDays: 0,
+    minDevicesPerUser: 0,
+    maxDevicesPerUser: 0,
     createdAt: 0,
   };
 }
@@ -167,13 +171,43 @@ function RoleFormModal({
                 </FormField>
               </Col>
             )}
-            <Col xs={24} md={8}>
-              <FormField name="maxDevicesPerUser" label={t('pages.access.maxDevicesPerUser')}>
+          </Row>
+          <Row gutter={12}>
+            <Col xs={12} md={8}>
+              <FormField
+                name="minUserBytes"
+                label={t('pages.access.minUserGB')}
+                transform={bytesAsGB}
+              >
+                <InputNumber min={0} step={10} style={{ width: '100%' }} addonAfter="GB" />
+              </FormField>
+            </Col>
+            <Col xs={12} md={8}>
+              <FormField name="minPlanDays" label={t('pages.access.minPlanDays')}>
                 <InputNumber min={0} style={{ width: '100%' }} />
               </FormField>
             </Col>
-            <Col xs={24} md={8}>
+            <Col xs={12} md={8}>
+              <FormField name="minDevicesPerUser" label={t('pages.access.minDevicesPerUser')}>
+                <InputNumber min={0} style={{ width: '100%' }} />
+              </FormField>
+            </Col>
+            <Col xs={12} md={8}>
+              <FormField
+                name="maxUserBytes"
+                label={t('pages.access.maxUserGB')}
+                transform={bytesAsGB}
+              >
+                <InputNumber min={0} step={10} style={{ width: '100%' }} addonAfter="GB" />
+              </FormField>
+            </Col>
+            <Col xs={12} md={8}>
               <FormField name="maxPlanDays" label={t('pages.access.maxPlanDays')}>
+                <InputNumber min={0} style={{ width: '100%' }} />
+              </FormField>
+            </Col>
+            <Col xs={12} md={8}>
+              <FormField name="maxDevicesPerUser" label={t('pages.access.maxDevicesPerUser')}>
                 <InputNumber min={0} style={{ width: '100%' }} />
               </FormField>
             </Col>
@@ -240,10 +274,25 @@ export default function RolesPage() {
           {r.maxUsersPerAccount > 0 && (
             <Tag>{t('pages.access.usersCap', { n: r.maxUsersPerAccount })}</Tag>
           )}
-          {r.maxDevicesPerUser > 0 && (
-            <Tag>{t('pages.access.devicesCap', { n: r.maxDevicesPerUser })}</Tag>
+          {boundRange(r.minUserBytes, r.maxUserBytes) && (
+            <Tag>
+              {t('pages.access.bound.quota', {
+                range: boundRange(r.minUserBytes, r.maxUserBytes, formatBytes),
+              })}
+            </Tag>
           )}
-          {r.maxPlanDays > 0 && <Tag>{t('pages.access.daysCap', { n: r.maxPlanDays })}</Tag>}
+          {boundRange(r.minPlanDays, r.maxPlanDays) && (
+            <Tag>
+              {t('pages.access.bound.days', { range: boundRange(r.minPlanDays, r.maxPlanDays) })}
+            </Tag>
+          )}
+          {boundRange(r.minDevicesPerUser, r.maxDevicesPerUser) && (
+            <Tag>
+              {t('pages.access.bound.devices', {
+                range: boundRange(r.minDevicesPerUser, r.maxDevicesPerUser),
+              })}
+            </Tag>
+          )}
         </Space>
       ),
     },

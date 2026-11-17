@@ -3050,7 +3050,6 @@
       "customRoles": "自定义角色",
       "cycleSince": "自 {date}",
       "day": "日",
-      "daysCap": "最多 {n} 天",
       "daysCount": "{n} 天",
       "deleteAdminConfirm": "删除此账户？其用户将转给面板并继续工作；其 API 令牌将被删除。",
       "deletePlanConfirm": "删除此套餐？由其创建的用户保留其限制。",
@@ -3077,10 +3076,10 @@
       "length": "时长",
       "lengthDays": "时长（天）",
       "limits": "限制",
-      "limitsHint": "该角色账户可分配内容的上限；0 表示不限制。角色与账户自身值中较严格者生效。",
+      "limitsHint": "该角色账户给每个用户分配内容的范围；0 表示该侧不限。上限同时禁止不限量用户。角色与账户自身值中较严格者生效。",
       "logChanges": "记录管理员变更",
-      "maxDevicesPerUser": "每用户设备数",
-      "maxPlanDays": "套餐时长（天）",
+      "maxDevicesPerUser": "每用户最多设备",
+      "maxPlanDays": "最长套餐（天）",
       "maxUsers": "最多用户数",
       "maxUsersPerAccount": "每账户用户数",
       "mayEditUsers": "可编辑和删除用户",
@@ -3160,6 +3159,15 @@
         "all": "所有用户",
         "readAll": "可查看所有用户，只能修改自己的",
         "own": "只有自己的用户"
+      },
+      "minUserGB": "每用户最小流量",
+      "maxUserGB": "每用户最大流量",
+      "minPlanDays": "最短套餐（天）",
+      "minDevicesPerUser": "每用户最少设备",
+      "bound": {
+        "quota": "每用户 {range}",
+        "days": "{range} 天",
+        "devices": "{range} 台设备"
       }
     },
     "usage": {

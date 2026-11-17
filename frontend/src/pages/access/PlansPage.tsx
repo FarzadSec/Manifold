@@ -30,7 +30,7 @@ import { postJson, usePlans } from '@/api/queries/useAccess';
 import { useInboundOptions } from '@/api/queries/useInboundOptions';
 import type { Plan } from '@/generated/types';
 import PageShell from './PageShell';
-import { GIB, formatBytes } from './accessInfo';
+import { bytesAsGB, formatBytes } from './accessInfo';
 import ClientCycleFields from '@/pages/clients/ClientCycleFields';
 
 function emptyPlan(): Plan {
@@ -60,11 +60,6 @@ function emptyPlan(): Plan {
     createdAt: 0,
   };
 }
-
-const bytesAsGB = {
-  input: (v: unknown) => (Number(v) || 0) / GIB,
-  output: (v: unknown) => Math.round((Number(v) || 0) * GIB),
-};
 
 function PlanFormModal({
   open,

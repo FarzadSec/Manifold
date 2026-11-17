@@ -7552,7 +7552,24 @@ export const SCHEMAS: Record<string, unknown> = {
       "maxPlanDays": {
         "type": "integer"
       },
+      "maxUserBytes": {
+        "example": 107374182400,
+        "format": "int64",
+        "type": "integer"
+      },
       "maxUsersPerAccount": {
+        "type": "integer"
+      },
+      "minDevicesPerUser": {
+        "type": "integer"
+      },
+      "minPlanDays": {
+        "type": "integer"
+      },
+      "minUserBytes": {
+        "description": "Bounds on what the role's accounts hand out per user; 0 is no bound on that side.",
+        "example": 1073741824,
+        "format": "int64",
         "type": "integer"
       },
       "name": {
@@ -7588,7 +7605,11 @@ export const SCHEMAS: Record<string, unknown> = {
       "id",
       "maxDevicesPerUser",
       "maxPlanDays",
+      "maxUserBytes",
       "maxUsersPerAccount",
+      "minDevicesPerUser",
+      "minPlanDays",
+      "minUserBytes",
       "name",
       "permissions",
       "tier",

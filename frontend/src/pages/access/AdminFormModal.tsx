@@ -10,7 +10,7 @@ import DateTimePicker from '@/components/form/DateTimePicker';
 import type { AdminInput, AdminView, Plan, Role } from '@/generated/types';
 import { useInboundOptions } from '@/api/queries/useInboundOptions';
 import { postJson } from '@/api/queries/useAccess';
-import { GIB, TIERS, WEEKDAYS } from './accessInfo';
+import { TIERS, WEEKDAYS, bytesAsGB } from './accessInfo';
 
 interface AdminFormModalProps {
   open: boolean;
@@ -54,11 +54,6 @@ function fromView(a: AdminView): AdminInput {
     allowedInboundIds: a.allowedInboundIds ?? [],
   };
 }
-
-const bytesAsGB = {
-  input: (v: unknown) => (Number(v) || 0) / GIB,
-  output: (v: unknown) => Math.round((Number(v) || 0) * GIB),
-};
 
 const msAsDay = {
   input: (v: unknown) => (Number(v) > 0 ? dayjs(Number(v)) : null),

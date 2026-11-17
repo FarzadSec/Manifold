@@ -314,8 +314,13 @@ func (s *RoleService) Save(r *model.Role) error {
 			return common.NewError("the tier does not include permission " + p)
 		}
 	}
-	if r.MaxUsersPerAccount < 0 || r.MaxDevicesPerUser < 0 || r.MaxPlanDays < 0 {
+	if r.MaxUsersPerAccount < 0 || r.MaxDevicesPerUser < 0 || r.MaxPlanDays < 0 ||
+		r.MinUserBytes < 0 || r.MaxUserBytes < 0 || r.MinPlanDays < 0 || r.MinDevicesPerUser < 0 {
 		return common.NewError("role limits cannot be negative")
+	}
+	if r.MaxUserBytes > 0 && r.MinUserBytes > r.MaxUserBytes || r.MaxPlanDays > 0 && r.MinPlanDays > r.MaxPlanDays ||
+		r.MaxDevicesPerUser > 0 && r.MinDevicesPerUser > r.MaxDevicesPerUser {
+		return common.NewError("a role's floor cannot be above its ceiling")
 	}
 	if r.Tier == access.TierReseller {
 		r.UsersReadScope, r.UsersWriteScope = access.ScopeOwn, access.ScopeOwn

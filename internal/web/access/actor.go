@@ -73,6 +73,14 @@ func (a *Actor) IsReseller() bool {
 	return a != nil && a.Tier == TierReseller
 }
 
+// Bounds is the role whose limits hold the actor's users, nil when none does.
+func (a *Actor) Bounds() *model.Role {
+	if a == nil {
+		return nil
+	}
+	return a.Role
+}
+
 // IsMainAdmin reports whether the actor is on the main admin tier.
 func (a *Actor) IsMainAdmin() bool {
 	return a != nil && a.Tier == TierAdmin

@@ -15,6 +15,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/access"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
@@ -84,11 +85,15 @@ func refuse(c *gin.Context, err error) {
 // the ways its account allows; an actor that reaches every user passes untouched.
 func guardClientAccess(c *gin.Context) {
 	actor := access.ActorFrom(c)
+	route := c.Request.Method + " " + relAPIPath(c.FullPath())
 	if !actor.ReadsOwnOnly() && !actor.WritesOwnOnly() {
+		if err := checkRoleBounds(c, service.ClientAccess{Actor: actor}, route); err != nil {
+			refuse(c, err)
+			return
+		}
 		c.Next()
 		return
 	}
-	route := c.Request.Method + " " + relAPIPath(c.FullPath())
 	kind, ok := resellerClientRoutes[route]
 	if !ok {
 		if !actor.IsReseller() {
@@ -164,6 +169,10 @@ func guardClientAccess(c *gin.Context) {
 			refuse(c, err)
 			return
 		}
+		if err := checkRoleBounds(c, ca, route); err != nil {
+			refuse(c, err)
+			return
+		}
 	case "POST /clients/update", "POST /clients/update/:email":
 		if err := checkResellerEdit(c, ca, emails[0]); err != nil {
 			refuse(c, err)
@@ -176,19 +185,35 @@ func guardClientAccess(c *gin.Context) {
 // limitKeys are the fields a plans-only reseller may not change on its users.
 var limitKeys = []string{"totalGB", "expiryTime", "limitIp", "userLimit", "speedLimit", "limitHwid", "reset", "resetDay", "resetWeekday", "resetMax", "trafficReset", "trafficResetDay"}
 
-// checkResellerEdit applies a reseller's allowance to an edit before the body reaches the handler.
-func checkResellerEdit(c *gin.Context, ca service.ClientAccess, email string) error {
+// readBody returns a JSON body and puts it back for the handler.
+func readBody(c *gin.Context) (map[string]json.RawMessage, error) {
 	raw, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	c.Request.Body = io.NopCloser(bytes.NewReader(raw))
 	var body map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &body); err != nil {
+		return nil, err
+	}
+	return body, nil
+}
+
+func recordByEmail(email string) (model.ClientRecord, error) {
+	var rec model.ClientRecord
+	err := database.GetDB().Where("LOWER(email) = ?", strings.ToLower(email)).First(&rec).Error
+	return rec, err
+}
+
+// checkResellerEdit applies a reseller's allowance and its role's bounds to an edit before the
+// body reaches the handler.
+func checkResellerEdit(c *gin.Context, ca service.ClientAccess, email string) error {
+	body, err := readBody(c)
+	if err != nil {
 		return err
 	}
-	var rec model.ClientRecord
-	if err := database.GetDB().Where("LOWER(email) = ?", strings.ToLower(email)).First(&rec).Error; err != nil {
+	rec, err := recordByEmail(email)
+	if err != nil {
 		return err
 	}
 	stored := map[string]any{
@@ -196,7 +221,6 @@ func checkResellerEdit(c *gin.Context, ca service.ClientAccess, email string) er
 		"reset": rec.Reset, "resetDay": rec.ResetDay, "resetWeekday": rec.ResetWeekday, "resetMax": rec.ResetMax,
 		"trafficReset": rec.TrafficReset, "trafficResetDay": rec.TrafficResetDay,
 	}
-	changed := false
 	for _, k := range limitKeys {
 		v, ok := body[k]
 		if !ok {
@@ -204,12 +228,10 @@ func checkResellerEdit(c *gin.Context, ca service.ClientAccess, email string) er
 		}
 		want, _ := json.Marshal(stored[k])
 		if !bytes.Equal(bytes.TrimSpace(v), want) {
-			changed = true
-		}
-	}
-	if changed {
-		if err := ca.CheckMayChangeLimits(); err != nil {
-			return err
+			if err := ca.CheckMayChangeLimits(); err != nil {
+				return err
+			}
+			break
 		}
 	}
 	if v, ok := body["enable"]; ok && string(bytes.TrimSpace(v)) == "true" && !rec.Enable {
@@ -217,15 +239,94 @@ func checkResellerEdit(c *gin.Context, ca service.ClientAccess, email string) er
 			return err
 		}
 	}
-	expiry, hwid := rec.ExpiryTime, rec.LimitHwid
+	return ca.CheckChange(editChange(body, rec), time.Now())
+}
+
+// editChange is the bounded limits an edit body changes; a value it repeats is not checked.
+func editChange(body map[string]json.RawMessage, rec model.ClientRecord) service.UserChange {
+	var ch service.UserChange
+	if v, ok := body["totalGB"]; ok {
+		var total int64
+		if json.Unmarshal(v, &total) == nil && total != rec.TotalGB {
+			ch.Total = &total
+		}
+	}
 	if v, ok := body["expiryTime"]; ok {
-		_ = json.Unmarshal(v, &expiry)
+		var expiry int64
+		if json.Unmarshal(v, &expiry) == nil && expiry != rec.ExpiryTime {
+			ch.Expiry = &expiry
+		}
 	}
 	if v, ok := body["limitHwid"]; ok {
-		_ = json.Unmarshal(v, &hwid)
+		var devices int
+		if json.Unmarshal(v, &devices) == nil && devices != rec.LimitHwid {
+			ch.Devices = &devices
+		}
 	}
-	if changed {
-		return ca.CheckUpdate(expiry, hwid, time.Now())
+	return ch
+}
+
+// checkRoleBounds holds an edit or a bulk change inside the bounds of the actor's role.
+func checkRoleBounds(c *gin.Context, ca service.ClientAccess, route string) error {
+	if ca.Actor.Bounds() == nil {
+		return nil
+	}
+	switch route {
+	case "POST /clients/update", "POST /clients/update/:email":
+		email := c.Param("email")
+		if email == "" {
+			email = c.Query("email")
+		}
+		body, err := readBody(c)
+		if err != nil {
+			return err
+		}
+		rec, err := recordByEmail(email)
+		if err != nil {
+			return nil
+		}
+		return ca.CheckChange(editChange(body, rec), time.Now())
+	case "POST /clients/bulkAdjust":
+		return checkBulkBounds(c, ca)
+	}
+	return nil
+}
+
+// checkBulkBounds checks each selected user as the bulk change would leave it.
+func checkBulkBounds(c *gin.Context, ca service.ClientAccess) error {
+	raw, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		return err
+	}
+	c.Request.Body = io.NopCloser(bytes.NewReader(raw))
+	var req struct {
+		Emails    []string `json:"emails"`
+		AddDays   int      `json:"addDays"`
+		AddBytes  int64    `json:"addBytes"`
+		LimitHwid *int     `json:"limitHwid"`
+	}
+	if err := json.Unmarshal(raw, &req); err != nil {
+		return err
+	}
+	now := time.Now()
+	for _, email := range req.Emails {
+		rec, err := recordByEmail(email)
+		if err != nil {
+			continue
+		}
+		var ch service.UserChange
+		if req.AddDays != 0 && rec.ExpiryTime > 0 {
+			expiry := rec.ExpiryTime + int64(req.AddDays)*24*int64(time.Hour/time.Millisecond)
+			ch.Expiry = &expiry
+		}
+		if req.AddBytes != 0 && rec.TotalGB > 0 {
+			total := rec.TotalGB + req.AddBytes
+			ch.Total = &total
+		}
+		ch.Devices = req.LimitHwid
+		if err := ca.CheckChange(ch, now); err != nil {
+			return common.NewError(email + ": " + err.Error())
+		}
 	}
 	return nil
 }

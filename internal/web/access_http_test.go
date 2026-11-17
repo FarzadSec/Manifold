@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -345,5 +347,62 @@ func TestOperatorRoleScopesWhichUsersItReaches(t *testing.T) {
 	}
 	if reachable(book, http.MethodGet, "/clients/groups") {
 		t.Fatal("an own-users operator read every group")
+	}
+}
+
+// A role bounds what its accounts hand out, on creation, on an edit and on a bulk change,
+// whatever the tier: a quota, a plan length and a device count each between a floor and a ceiling.
+func TestRoleLimitsBoundWhatItsAccountsHandOut(t *testing.T) {
+	f := newAccessFixture(t)
+	const gb = int64(1) << 30
+	role := model.Role{
+		Name: "bounded", Tier: access.TierOperator, Permissions: []string{access.UsersWrite},
+		MinUserBytes: gb, MaxUserBytes: 10 * gb, MinPlanDays: 7, MaxPlanDays: 30, MinDevicesPerUser: 1, MaxDevicesPerUser: 3,
+	}
+	if err := database.GetDB().Create(&role).Error; err != nil {
+		t.Fatal(err)
+	}
+	acc := f.account(t, model.User{Username: "bounded", Tier: access.TierOperator, RoleId: role.Id})
+	tok := f.token(t, "bounded", panel.TokenAccess{UserId: acc.Id})
+	day := int64(24 * 60 * 60 * 1000)
+	expiry := func(days int64) int64 { return time.Now().UnixMilli() + days*day }
+	add := func(email string, total, expiryMs int64, hwid int) apiReply {
+		body := `{"client":{"email":"` + email + `","id":"` + uuidFor(email) + `","enable":true,"totalGB":` + strconv.FormatInt(total, 10) +
+			`,"expiryTime":` + strconv.FormatInt(expiryMs, 10) + `,"limitHwid":` + strconv.Itoa(hwid) + `},"inboundIds":[` + itoa(f.inbound.Id) + `]}`
+		_, reply := f.call(t, tok, http.MethodPost, "/clients/add", body)
+		return reply
+	}
+	if reply := add("fits", 5*gb, expiry(10), 2); !reply.Success {
+		t.Fatalf("a user inside every bound was refused: %s", reply.Msg)
+	}
+	for name, reply := range map[string]apiReply{
+		"unlimited quota": add("q0", 0, expiry(10), 2),
+		"quota above":     add("q1", 20*gb, expiry(10), 2),
+		"quota below":     add("q2", gb/2, expiry(10), 2),
+		"plan too short":  add("d1", 5*gb, expiry(3), 2),
+		"plan too long":   add("d2", 5*gb, expiry(40), 2),
+		"no expiry":       add("d3", 5*gb, 0, 2),
+		"devices above":   add("h1", 5*gb, expiry(10), 5),
+		"no device limit": add("h2", 5*gb, expiry(10), 0),
+	} {
+		if reply.Success {
+			t.Errorf("%s was accepted", name)
+		}
+	}
+	if _, reply := f.call(t, tok, http.MethodPost, "/clients/update/fits", `{"totalGB":`+strconv.FormatInt(20*gb, 10)+`}`); reply.Success {
+		t.Error("an edit past the quota ceiling was accepted")
+	}
+	if _, reply := f.call(t, tok, http.MethodPost, "/clients/update/fits", `{"comment":"vip"}`); !reply.Success {
+		t.Errorf("an edit that changes no limit was refused: %s", reply.Msg)
+	}
+	if _, reply := f.call(t, tok, http.MethodPost, "/clients/bulkAdjust", `{"emails":["fits"],"addDays":30}`); reply.Success {
+		t.Error("a bulk change past the longest plan was accepted")
+	}
+	adminTok := f.token(t, "admin", panel.TokenAccess{UserId: f.owner.Id})
+	if reply := f.addClient(t, adminTok, "legacy"); !reply.Success {
+		t.Fatalf("admin add: %s", reply.Msg)
+	}
+	if _, reply := f.call(t, tok, http.MethodPost, "/clients/update/legacy", `{"comment":"vip","totalGB":0,"expiryTime":0,"limitHwid":0}`); !reply.Success {
+		t.Errorf("an edit repeating an unbounded user's own limits was refused: %s", reply.Msg)
 	}
 }

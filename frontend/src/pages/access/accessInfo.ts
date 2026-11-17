@@ -39,6 +39,19 @@ export function permKey(perm: string): string {
   return `pages.access.perm.${perm.replace(':', '_')}`;
 }
 
+export const bytesAsGB = {
+  input: (v: unknown) => (Number(v) || 0) / GIB,
+  output: (v: unknown) => Math.round((Number(v) || 0) * GIB),
+};
+
+// boundRange shows a min/max pair where 0 is an open side; '' when both are open.
+export function boundRange(min: number, max: number, show: (n: number) => string = String): string {
+  if (min > 0 && max > 0) return `${show(min)}–${show(max)}`;
+  if (max > 0) return `≤ ${show(max)}`;
+  if (min > 0) return `≥ ${show(min)}`;
+  return '';
+}
+
 export function formatBytes(bytes: number): string {
   if (!bytes) return '0';
   const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];

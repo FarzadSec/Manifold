@@ -121,43 +121,60 @@ func (ca ClientAccess) AllowedInboundIDs() ([]int, error) {
 	return acc.AllowedInboundIds, nil
 }
 
-// checkDevices enforces a role's device cap: a user with no device limit is refused, not capped.
-func (ca ClientAccess) checkDevices(limitHwid int) error {
-	if ca.Actor.Role == nil || ca.Actor.Role.MaxDevicesPerUser == 0 {
+// UserChange is the limits an operation sets on a user; nil leaves one as it is, unchecked.
+type UserChange struct {
+	Total   *int64
+	Expiry  *int64
+	Devices *int
+}
+
+// CheckChange holds what an operation sets inside the bounds of the actor's role: a ceiling
+// refuses an unlimited value, a floor a limited value below it.
+func (ca ClientAccess) CheckChange(ch UserChange, now time.Time) error {
+	role := ca.Actor.Bounds()
+	if role == nil {
 		return nil
 	}
-	if limitHwid == 0 || limitHwid > ca.Actor.Role.MaxDevicesPerUser {
-		return common.NewErrorf("this account's role allows at most %d devices per user", ca.Actor.Role.MaxDevicesPerUser)
+	if ch.Total != nil {
+		total := *ch.Total
+		if role.MaxUserBytes > 0 && (total <= 0 || total > role.MaxUserBytes) {
+			return common.NewErrorf("this account's role gives each user at most %s", common.FormatTraffic(role.MaxUserBytes))
+		}
+		if role.MinUserBytes > 0 && total > 0 && total < role.MinUserBytes {
+			return common.NewErrorf("this account's role gives each user at least %s", common.FormatTraffic(role.MinUserBytes))
+		}
+	}
+	if ch.Expiry != nil {
+		days := planDays(*ch.Expiry, now)
+		if role.MaxPlanDays > 0 && (days < 0 || days > int64(role.MaxPlanDays)) {
+			return common.NewErrorf("this account's role sells plans of at most %d days", role.MaxPlanDays)
+		}
+		if role.MinPlanDays > 0 && days >= 0 && days < int64(role.MinPlanDays) {
+			return common.NewErrorf("this account's role sells plans of at least %d days", role.MinPlanDays)
+		}
+	}
+	if ch.Devices != nil {
+		devices := *ch.Devices
+		if role.MaxDevicesPerUser > 0 && (devices <= 0 || devices > role.MaxDevicesPerUser) {
+			return common.NewErrorf("this account's role allows at most %d devices per user", role.MaxDevicesPerUser)
+		}
+		if role.MinDevicesPerUser > 0 && devices > 0 && devices < role.MinDevicesPerUser {
+			return common.NewErrorf("this account's role allows at least %d devices per user", role.MinDevicesPerUser)
+		}
 	}
 	return nil
 }
 
-// checkLength enforces a role's longest plan, counted from first use or from now.
-func (ca ClientAccess) checkLength(expiry int64, now time.Time) error {
-	if ca.Actor.Role == nil || ca.Actor.Role.MaxPlanDays == 0 {
-		return nil
-	}
-	var days int64
+// planDays is a plan's length counted from first use or from now; -1 when it never ends.
+func planDays(expiry int64, now time.Time) int64 {
 	switch {
 	case expiry == 0:
-		days = -1
+		return -1
 	case expiry < 0:
-		days = -expiry / dayMs
+		return -expiry / dayMs
 	default:
-		days = (expiry - now.UnixMilli() + dayMs - 1) / dayMs
+		return (expiry - now.UnixMilli() + dayMs - 1) / dayMs
 	}
-	if days < 0 || days > int64(ca.Actor.Role.MaxPlanDays) {
-		return common.NewErrorf("this account's role sells plans of at most %d days", ca.Actor.Role.MaxPlanDays)
-	}
-	return nil
-}
-
-// CheckUpdate applies the device and length caps to an edit of an existing user.
-func (ca ClientAccess) CheckUpdate(expiry int64, limitHwid int, now time.Time) error {
-	if err := ca.checkDevices(limitHwid); err != nil {
-		return err
-	}
-	return ca.checkLength(expiry, now)
 }
 
 // PrepareCreate applies a plan, picks the owner and checks every limit before users are
@@ -211,13 +228,10 @@ func (ca ClientAccess) PrepareCreate(payloads []*ClientCreatePayload, planID, re
 			}
 			p.InboundIds = narrowed
 		}
+		if err := ca.CheckChange(UserChange{Total: &p.Client.TotalGB, Expiry: &p.Client.ExpiryTime, Devices: &p.LimitHwid}, now); err != nil {
+			return 0, err
+		}
 		if ca.reseller() {
-			if err := ca.checkDevices(p.LimitHwid); err != nil {
-				return 0, err
-			}
-			if err := ca.checkLength(p.Client.ExpiryTime, now); err != nil {
-				return 0, err
-			}
 			var taken int64
 			if err := database.GetDB().Model(&model.ClientRecord{}).
 				Where("LOWER(email) = ? AND owner_id <> ?", strings.ToLower(strings.TrimSpace(p.Client.Email)), ca.Actor.UserId).
