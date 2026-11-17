@@ -106,7 +106,7 @@ func ValidPattern(pattern string) bool {
 			return false
 		}
 		for _, r := range label {
-			if !(r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '-') {
+			if (r < 'a' || r > 'z') && (r < '0' || r > '9') && r != '-' {
 				return false
 			}
 		}
@@ -153,7 +153,8 @@ func (m *Manager) Apply(listeners []Listener) {
 			r.routes.Store(&l)
 			continue
 		}
-		ln, err := net.Listen("tcp", l.addr())
+		var lc net.ListenConfig
+		ln, err := lc.Listen(context.Background(), "tcp", l.addr())
 		if err != nil {
 			m.errors[id] = err.Error()
 			continue
