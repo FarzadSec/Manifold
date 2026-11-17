@@ -15,7 +15,7 @@ import (
 // the instance whose ticker keeps the status warm.
 func NewMetricsController(api *gin.RouterGroup, server *service.ServerService) {
 	api.GET("/metrics", func(c *gin.Context) {
-		fams, err := service.Metrics(server, service.MetricsOptions{PerUser: c.Query("users") == "1"}, time.Now())
+		fams, err := service.Metrics(server.CurrentStatus(), service.MetricsOptions{PerUser: c.Query("users") == "1"}, time.Now())
 		if err != nil {
 			c.String(http.StatusInternalServerError, "# %v\n", err)
 			return

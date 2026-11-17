@@ -73,6 +73,13 @@ func seedSummary(t *testing.T, now time.Time) {
 	})
 }
 
+func testStatus() *Status {
+	st := &Status{Cpu: 12.5, Loads: []float64{0.5, 0.4, 0.3}, PanelVersion: "0.10.0"}
+	st.Xray.State, st.Xray.Version = Running, "26.1.1"
+	st.Mem.Current, st.Mem.Total = 512, 1024
+	return st
+}
+
 func TestSummaryCountsEachState(t *testing.T) {
 	setupBulkDB(t)
 	now := time.Now()
@@ -96,7 +103,7 @@ func TestMetricsExposeStatesInboundsAndOptInUsers(t *testing.T) {
 	now := time.Now()
 	seedSummary(t, now)
 	scrape := func(perUser bool) string {
-		fams, err := Metrics(&ServerService{}, MetricsOptions{PerUser: perUser}, now)
+		fams, err := Metrics(testStatus(), MetricsOptions{PerUser: perUser}, now)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -109,6 +116,8 @@ func TestMetricsExposeStatesInboundsAndOptInUsers(t *testing.T) {
 	out := scrape(false)
 	for _, line := range []string{
 		`manifold_users{state="limited"} 1`,
+		`manifold_build_info{version="0.10.0",xray="26.1.1"} 1`,
+		`manifold_load{period="5m"} 0.4`,
 		`manifold_users{state="active"} 2`,
 		`manifold_traffic_today_bytes 1024`,
 		`manifold_inbound_traffic_bytes_total{tag="in-4433",protocol="vless",node="",direction="down"} 22`,
@@ -134,7 +143,7 @@ func TestGrafanaDashboardReadsMetricsTheScrapeHas(t *testing.T) {
 	setupBulkDB(t)
 	now := time.Now()
 	seedSummary(t, now)
-	fams, err := Metrics(&ServerService{}, MetricsOptions{PerUser: true}, now)
+	fams, err := Metrics(testStatus(), MetricsOptions{PerUser: true}, now)
 	if err != nil {
 		t.Fatal(err)
 	}

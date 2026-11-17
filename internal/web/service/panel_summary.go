@@ -114,15 +114,14 @@ type MetricsOptions struct {
 	PerUser bool
 }
 
-// Metrics is everything a Prometheus scrape gets: this server, Xray, users, inbounds,
-// nodes, webhooks and backups.
-func Metrics(server *ServerService, opt MetricsOptions, now time.Time) ([]*metrics.Family, error) {
+// Metrics is everything a Prometheus scrape gets: this server (from st, when there is
+// one), Xray, users, inbounds, nodes, webhooks and backups.
+func Metrics(st *Status, opt MetricsOptions, now time.Time) ([]*metrics.Family, error) {
 	db := database.GetDB()
 	sum, err := Summary(now)
 	if err != nil {
 		return nil, err
 	}
-	st := server.CurrentStatus()
 	var fams []*metrics.Family
 	add := func(f *metrics.Family) { fams = append(fams, f) }
 
