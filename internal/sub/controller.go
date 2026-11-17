@@ -11,17 +11,16 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 	"unicode"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/subtheme"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
 
@@ -40,14 +39,6 @@ func writeSubError(c *gin.Context, err error) {
 		return
 	}
 	c.Status(http.StatusInternalServerError)
-}
-
-// cachedSubTemplate holds a parsed custom subscription template together with
-// the modification time of the file it was parsed from, so the cache can be
-// invalidated when an admin edits the template on disk.
-type cachedSubTemplate struct {
-	tmpl    *template.Template
-	modTime time.Time
 }
 
 // SUBController handles HTTP requests for subscription links and JSON configurations.
@@ -92,8 +83,7 @@ type SUBController struct {
 	clientService   service.ClientService
 	settingService  service.SettingService
 
-	subTemplateMu    sync.RWMutex
-	subTemplateCache map[string]*cachedSubTemplate
+	themes subtheme.Loader
 
 	releaseSettingsCache func()
 }
@@ -360,7 +350,6 @@ func NewSUBController(g *gin.RouterGroup, options ...SUBControllerOption) *SUBCo
 		singboxAutoDetect: config.subSingboxAutoDetect,
 		singboxUserAgent:  compileUserAgentRegex("sing-box", config.subSingboxUserAgentRegex, service.DefaultSubSingboxUserAgentRegex),
 
-		subTemplateCache:     map[string]*cachedSubTemplate{},
 		releaseSettingsCache: releaseSettingsCache,
 	}
 	a.subSingboxService = NewSubSingboxService(a.subClashService, config.subSingboxTemplate)
@@ -376,10 +365,12 @@ func (a *SUBController) initRouter(g *gin.RouterGroup) {
 	gLink.HEAD(":subid", a.subs)
 	gLink.GET(":subid/hwid-status", a.hwidStatus)
 	gLink.HEAD(":subid/hwid-status", a.hwidStatus)
+	gLink.GET(":subid/theme/*file", a.themeAsset)
 	if a.jsonEnabled {
 		gJson := g.Group(a.subJsonPath, setNoCacheHeaders)
 		gJson.GET(":subid", a.subJsons)
 		gJson.HEAD(":subid", a.subJsons)
+		gJson.GET(":subid/theme/*file", a.themeAsset)
 	}
 	if a.singboxEnabled {
 		if owner := a.configuredSubscriptionPathOwner(a.subSingboxPath); owner != "" {
@@ -389,12 +380,14 @@ func (a *SUBController) initRouter(g *gin.RouterGroup) {
 			gSingbox := g.Group(a.subSingboxPath, setNoCacheHeaders)
 			gSingbox.GET(":subid", a.subSingbox)
 			gSingbox.HEAD(":subid", a.subSingbox)
+			gSingbox.GET(":subid/theme/*file", a.themeAsset)
 		}
 	}
 	if a.clashEnabled {
 		gClash := g.Group(a.subClashPath, setNoCacheHeaders)
 		gClash.GET(":subid", a.subClashs)
 		gClash.HEAD(":subid", a.subClashs)
+		gClash.GET(":subid/theme/*file", a.themeAsset)
 		if sameSubscriptionPath(a.subClashPath, subMihomoPath) {
 			// The configured Clash path already provides the full Mihomo profile.
 		} else if owner := a.configuredSubscriptionPathOwner(subMihomoPath); owner != "" {
@@ -403,6 +396,7 @@ func (a *SUBController) initRouter(g *gin.RouterGroup) {
 			gMihomo := g.Group(subMihomoPath, setNoCacheHeaders)
 			gMihomo.GET(":subid", a.subClashs)
 			gMihomo.HEAD(":subid", a.subClashs)
+			gMihomo.GET(":subid/theme/*file", a.themeAsset)
 		}
 		if owner := a.configuredSubscriptionPathOwner(subClashLegacyPath); owner != "" {
 			logger.Warningf("Legacy Clash subscription alias %q is unavailable because it conflicts with the configured %s path", subClashLegacyPath, owner)
@@ -410,6 +404,7 @@ func (a *SUBController) initRouter(g *gin.RouterGroup) {
 			gLegacy := g.Group(subClashLegacyPath, setNoCacheHeaders)
 			gLegacy.GET(":subid", a.subClashLegacy)
 			gLegacy.HEAD(":subid", a.subClashLegacy)
+			gLegacy.GET(":subid/theme/*file", a.themeAsset)
 		}
 	}
 }
@@ -461,6 +456,7 @@ func (a *SUBController) maybeServeSubInfo(c *gin.Context) bool {
 	}
 	info := a.subPageContext(page)
 	delete(info, "links")
+	delete(info, "configs")
 	info["emails"] = dedupeEmails(page.Emails)
 	c.JSON(http.StatusOK, info)
 	return true
@@ -483,6 +479,11 @@ func (a *SUBController) buildSubPageData(c *gin.Context) (PageData, bool) {
 	if !a.clashEnabled {
 		subClashURL = ""
 	}
+	subSingboxURL := ""
+	if a.singboxEnabled {
+		singboxURI, _ := a.settingService.GetSubSingboxURI()
+		subSingboxURL = subReq.BuildFormatURL(a.subSingboxPath, singboxURI, subId)
+	}
 	basePath, exists := c.Get("base_path")
 	if !exists {
 		basePath = "/"
@@ -491,6 +492,7 @@ func (a *SUBController) buildSubPageData(c *gin.Context) (PageData, bool) {
 	metadata := a.metadataForSubRequest(func() *SubService { return subReq }, subId, "")
 	page := subReq.BuildPageData(subId, hostHeader, traffic, lastOnline, subs, emails, subURL, subJsonURL, subClashURL, basePathStr, metadata.Title, metadata.SupportURL)
 	page.SubAnnounce = metadata.Announce
+	page.SubSingboxUrl = subSingboxURL
 	return page, true
 }
 
@@ -671,25 +673,8 @@ func (a *SUBController) serveSubPage(c *gin.Context, basePath string, page PageD
 	}
 
 	subData := a.subPageContext(page)
-
-	// When an admin has configured a custom subscription theme, render it
-	// instead of the default SPA. We render into a buffer first so a template
-	// that fails mid-execution can't leave a partially-written (corrupt)
-	// response — on any error we log and fall through to the default page.
-	if themeDir, _ := a.settingService.GetSubThemeDir(); themeDir != "" {
-		if tmpl, err := a.loadSubTemplate(themeDir); err != nil {
-			logger.Error("sub: custom template parse failed, using default page:", err)
-		} else if tmpl == nil {
-			logger.Warning("sub: subThemeDir set but no usable template found, using default page:", themeDir)
-		} else {
-			var buf bytes.Buffer
-			if execErr := tmpl.Execute(&buf, subData); execErr != nil {
-				logger.Error("sub: custom template execution failed, using default page:", execErr)
-			} else {
-				c.Data(http.StatusOK, "text/html; charset=utf-8", buf.Bytes())
-				return
-			}
-		}
+	if a.serveThemePage(c, subData) {
+		return
 	}
 
 	subDataJSON, err := json.Marshal(subData)
@@ -729,6 +714,15 @@ func (a *SUBController) subPageContext(page PageData) map[string]any {
 	}
 	subUpdates, _ := a.settingService.GetSubUpdates()
 	updateHours, _ := strconv.Atoi(subUpdates)
+	loc, err := a.settingService.GetTimeLocation()
+	if err != nil || loc == nil {
+		loc = time.UTC
+	}
+	now := time.Now()
+	usedPercent := 0
+	if page.TotalByte > 0 {
+		usedPercent = int(min(100, (page.UploadByte+page.DownloadByte)*100/page.TotalByte))
+	}
 
 	return map[string]any{
 		"sId":           page.SId,
@@ -754,6 +748,12 @@ func (a *SUBController) subPageContext(page PageData) map[string]any {
 		"emails":        page.Emails,
 		"datepicker":    datepicker,
 		"announce":      page.SubAnnounce,
+		"subSingboxUrl": page.SubSingboxUrl,
+		"status":        pageStatus(page, now),
+		"expireText":    expiryText(page.Expire, datepicker, loc),
+		"daysLeft":      daysLeft(page.Expire, now),
+		"usedPercent":   usedPercent,
+		"configs":       pageConfigs(page.Result),
 	}
 }
 
@@ -811,47 +811,18 @@ func setNoCacheHeaders(c *gin.Context) {
 	c.Header("Expires", "0")
 }
 
-// loadSubTemplate returns the parsed custom subscription template located in
-// themeDir, preferring sub.html over index.html. Parsed templates are cached and
-// only re-parsed when the underlying file's modification time changes, so admin
-// edits are picked up without paying a disk read + HTML parse on every request.
-//
-// It returns (nil, nil) when themeDir is not a usable directory or contains no
-// template file — the caller should fall back to the default page. A non-nil
-// error means a template file exists but failed to parse.
+// loadSubTemplate returns the page of the theme folder themeDir, sub.html over index.html,
+// parsed again only when the file changes; (nil, nil) when the folder holds no page.
 func (a *SUBController) loadSubTemplate(themeDir string) (*template.Template, error) {
 	info, err := os.Stat(themeDir)
 	if err != nil || !info.IsDir() {
 		return nil, nil
 	}
-
-	templatePath := filepath.Join(themeDir, "index.html")
-	if _, err := os.Stat(filepath.Join(themeDir, "sub.html")); err == nil {
-		templatePath = filepath.Join(themeDir, "sub.html")
-	}
-
-	fi, err := os.Stat(templatePath)
-	if err != nil {
+	tmpl, err := a.themes.Load(os.DirFS(themeDir), "dir:"+themeDir)
+	if errors.Is(err, subtheme.ErrNoPage) {
 		return nil, nil
 	}
-	modTime := fi.ModTime()
-
-	a.subTemplateMu.RLock()
-	cached := a.subTemplateCache[templatePath]
-	a.subTemplateMu.RUnlock()
-	if cached != nil && cached.modTime.Equal(modTime) {
-		return cached.tmpl, nil
-	}
-
-	tmpl, err := template.ParseFiles(templatePath)
-	if err != nil {
-		return nil, err
-	}
-
-	a.subTemplateMu.Lock()
-	a.subTemplateCache[templatePath] = &cachedSubTemplate{tmpl: tmpl, modTime: modTime}
-	a.subTemplateMu.Unlock()
-	return tmpl, nil
+	return tmpl, err
 }
 
 // subJsons handles HTTP requests for JSON subscription configurations. The

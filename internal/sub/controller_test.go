@@ -27,7 +27,7 @@ var testDistFS = fstest.MapFS{
 // newTestSUBController builds a controller with just the bits loadSubTemplate
 // needs, so the template tests don't require a database.
 func newTestSUBController() *SUBController {
-	return &SUBController{subTemplateCache: map[string]*cachedSubTemplate{}}
+	return &SUBController{}
 }
 
 type subscriptionTestRouterConfig struct {

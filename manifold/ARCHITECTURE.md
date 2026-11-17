@@ -1,9 +1,12 @@
 # Manifold — Architecture and Roadmap
 
-Version 0.11 · 2026-11-17 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnels, full backups and the access model delivered; see 8.1 to 8.6 for what they leave open
+Version 0.12 · 2026-11-17 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnels, full backups and the access model delivered; see 8.1 to 8.6 for what they leave open
 
 Decision log:
 
+- 2026-11-17 — Subscription links are built from a domain plan: a list of hosts (the first for new links, all accepted), a reseller's own domain, and a wildcard that gives each user a host of its own, `k` and nine base-36 characters of an HMAC of the user and the domain, so one blocked name costs one customer and the name never gives the subscription away
+- 2026-11-17 — sing-box is a format of its own (`/singbox/`), built from the entries the Clash format collects and merged into an operator base profile, instead of a second link builder that would drift from the Clash one
+- 2026-11-17 — Subscription page themes are Go `html/template` pages in a folder with their files, as the base code's single custom folder already was. Two are built into the binary; a catalogue in this repository (`sub-themes/catalog.json`) lists more, installed into `/etc/manifold/sub-themes` only once every file has arrived and the page parses. NX Panel's own theme catalogue is not used: its themes are written for its data model
 - 2026-11-17 — The speed limit is one nftables table per host (`manifold_speed`, `internal/speedlimit`), not shaping inside each engine: Xray has no per-user limiter, and one table gives a user one budget per direction across every engine on the host, the way NX Panel's applies on each node separately. Each user has two `limit` objects; packets find theirs through maps keyed by socket mark (Xray), tunnel address (WireGuard, OpenVPN) and ppp interface (L2TP). A change touches only the entries that moved, because replacing a limit object refills its bucket.
 - 2026-11-17 — A limited Xray user's traffic goes out of a socket carrying the mark `0x4e000000 | client id`. After the admin's own rules have decided the target, a stateless dialer (freedom, VLESS, VMess, Trojan, Shadowsocks, SOCKS, HTTP, Hysteria) is copied for the user with the mark set; a balancer, a WireGuard or MASQUE outbound, a chain or an outbound with its own mark is reached through a marked loopback SOCKS hop that hands the connection to the real target. Copies of WireGuard would fight over one peer session. Every copied rule keeps its conditions and order, so the user is routed exactly as before.
 
@@ -237,6 +240,12 @@ This is the contract Mirza Bot will sync against, so it is frozen before the bot
 - nft: the output hook copies the mark to the connection and polices what the socket sends; the input hook polices the replies; the forward hook polices tunnel addresses and ppp interfaces. The burst is half a second of the rate and never under 128 KiB, the largest GSO packet.
 - The job applies the table every 5 seconds, and at once when an OpenVPN or L2TP session comes up or goes away; a table removed from outside is installed again within a minute.
 
+### 4.12 Subscriptions (built, 0.8.0)
+
+- Domain plan: `subDomains` (one per line, `*.` for a host per user), a reseller's `users.sub_domain`, and a wildcard in `subURI` behind a CDN. `LoadSubHostPlan` builds the links; the subscription server's host check accepts every host of the plan and rereads it every 30 seconds.
+- Formats: raw, Xray JSON, Clash/Mihomo, and sing-box 1.12 (`internal/sub/singbox_service.go`), each with its own path and User-Agent auto-detection on the main link; sing-box is tried before Clash.
+- Page themes: `subTheme` is `builtin:<name>`, `installed:<name>` or empty for the panel's page; `subThemeDir` (a folder of the admin's own) overrides it. The page and its files are served at `<subscription>/theme/<file>`; the page source and hidden files never are. `internal/subtheme` holds the helpers (`t`, `qr`, `bytes`, `b64`, `dataURI`, `default`, `percent`), the catalogue client and the installer.
+
 ## 5. Gap analysis
 
 "3x-ui today" was checked against the source on 2026-11-14.
@@ -390,9 +399,14 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - The speed limit does not reach MTProto (its own sidecar) or traffic a routing script decides.
 - Usage history rows are kept per email; a user deleted and recreated under the same name within a day of the daily prune inherits the old rows.
 
+### 8.8 Open items after subscriptions (0.8.0)
+
+- A theme is one for the whole panel; NX's brandings (a theme per reseller or per host) are not built.
+- The theme catalogue lists one theme beyond the two built in; more are added to `sub-themes/` in this repository.
+- sing-box profiles are checked against the format in tests, not yet by running a sing-box binary in CI.
+
 ### 8.6 Open items after the access model
 
-- A reseller's subscription domain is stored but not yet used: links are built on the panel's subscription address until several subscription domains exist (section 4 of the NX comparison).
 - The token rate limit counts in the panel's memory, so it starts again when the panel restarts.
 - Translations of the new pages exist in English, Persian, Russian and Simplified Chinese; the other ten locales show English.
 - A reseller's users stay on the nodes they were on; nodes are not yet limited per reseller beyond the allowed inbounds.

@@ -163,6 +163,10 @@ func run(root, outDir string) error {
 			StructAllow: setOf("TunnelSettings", "PortForward", "TunnelStatus"),
 		},
 		{
+			Path:        resolveRel(root, "internal/subtheme"),
+			StructAllow: setOf("Theme", "CatalogTheme"),
+		},
+		{
 			Path:        resolveRel(root, "internal/tuic"),
 			StructAllow: setOf("TuicServerSettings", "TuicClientSettings"),
 		},

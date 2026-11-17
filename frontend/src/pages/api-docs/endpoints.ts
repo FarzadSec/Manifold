@@ -2651,6 +2651,39 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'GET',
+        path: '/panel/api/setting/subThemes',
+        summary:
+          'The subscription page themes to pick from: the built-in ones, then the ones installed from a catalogue.',
+        responseSchema: 'Theme',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/setting/subThemes/catalog',
+        summary:
+          'Read the theme catalogue (subThemeCatalogURL, empty for the Manifold repository) through the egress proxy; each entry says which version is installed.',
+        responseSchema: 'CatalogTheme',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/setting/subThemes/install',
+        summary:
+          'Download a catalogue theme into the themes folder. An older copy is replaced only once every file has arrived and the page parses.',
+        params: [
+          { name: 'name', in: 'body', type: 'string', desc: 'Theme name in the catalogue.' },
+        ],
+        body: '{\n  "name": "neon"\n}',
+        responseSchema: 'Theme',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/setting/subThemes/remove',
+        summary:
+          'Delete an installed theme. When it was the one in use, the page goes back to the panel page.',
+        params: [{ name: 'name', in: 'body', type: 'string', desc: 'Installed theme name.' }],
+        body: '{\n  "name": "neon"\n}',
+      },
+      {
+        method: 'GET',
         path: '/panel/api/setting/getDefaultJsonConfig',
         summary:
           'Return the built-in default Xray JSON config template that ships with this panel version.',

@@ -3382,6 +3382,7 @@ type PageData struct {
 	SubUrl        string
 	SubJsonUrl    string
 	SubClashUrl   string
+	SubSingboxUrl string
 	SubTitle      string
 	SubSupportUrl string
 	SubAnnounce   string
@@ -3454,23 +3455,32 @@ func (s *SubService) BuildURLs(subPath, subJsonPath, subClashPath, subId string)
 	base := s.settingService.BuildSubURIBase(s.address)
 
 	subURL = s.buildSingleURL(configuredSubURI, base, subPath, subId)
-
-	// When subURI is explicitly configured (reverse-proxy setup), use its
-	// scheme+host as the base for JSON and Clash URLs so they match the
-	// reverse-proxy endpoint instead of the raw sub-server port. Fall back
-	// to the request-derived base if subURI is empty or can't be parsed
-	// into a scheme+host (e.g. a malformed value with no scheme).
-	jsonClashBase := base
-	if configuredSubURI != "" {
-		if derived := s.extractBaseFromURI(configuredSubURI); derived != "" {
-			jsonClashBase = derived
-		}
-	}
-
-	subJsonURL = s.buildSingleURL(configuredSubJsonURI, jsonClashBase, subJsonPath, subId)
-	subClashURL = s.buildSingleURL(configuredSubClashURI, jsonClashBase, subClashPath, subId)
+	formatBase := s.formatBase(configuredSubURI, base)
+	subJsonURL = s.buildSingleURL(configuredSubJsonURI, formatBase, subJsonPath, subId)
+	subClashURL = s.buildSingleURL(configuredSubClashURI, formatBase, subClashPath, subId)
 
 	return subURL, subJsonURL, subClashURL
+}
+
+// formatBase is where the other formats live: behind a reverse proxy (subURI set) its
+// scheme and host, not the raw sub-server port; base when subURI has no scheme and host.
+func (s *SubService) formatBase(configuredSubURI, base string) string {
+	if configuredSubURI != "" {
+		if derived := s.extractBaseFromURI(configuredSubURI); derived != "" {
+			return derived
+		}
+	}
+	return base
+}
+
+// BuildFormatURL is one more format's address, on the base the JSON and Clash ones use.
+func (s *SubService) BuildFormatURL(formatPath, configuredURI, subId string) string {
+	if subId == "" {
+		return ""
+	}
+	configuredSubURI, _ := s.settingService.GetSubURI()
+	base := s.formatBase(configuredSubURI, s.settingService.BuildSubURIBase(s.address))
+	return s.buildSingleURL(configuredURI, base, formatPath, subId)
 }
 
 // extractBaseFromURI extracts scheme://host from a configured URI.

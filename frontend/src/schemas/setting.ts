@@ -62,6 +62,8 @@ export const AllSettingSchema = z
     subSingboxAutoDetect: z.boolean().optional(),
     subSingboxUserAgentRegex: z.string().max(2048).optional(),
     subSingboxTemplate: z.string().optional(),
+    subTheme: z.string().optional(),
+    subThemeCatalogURL: z.string().optional(),
     subTitle: z.string().optional(),
     subSupportUrl: z.string().optional(),
     subProfileMode: SubProfileModeSchema.optional(),

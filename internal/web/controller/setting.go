@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/subtheme"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/crypto"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/middleware"
@@ -41,6 +43,10 @@ type updateSettingForm struct {
 	ClearLdapPassword    bool   `json:"clearLdapPassword" form:"clearLdapPassword"`
 	ClearSmtpPassword    bool   `json:"clearSmtpPassword" form:"clearSmtpPassword"`
 	ClearDiscordBotToken bool   `json:"clearDiscordBotToken" form:"clearDiscordBotToken"`
+}
+
+type subThemeForm struct {
+	Name string `json:"name" form:"name"`
 }
 
 type validateRegexForm struct {
@@ -83,6 +89,10 @@ func (a *SettingController) initRouter(g *gin.RouterGroup) {
 	g.POST("/testTgBot", a.testTgBot)
 	g.POST("/tgBotCapabilities", a.tgBotCapabilities)
 	g.POST("/testDiscord", a.testDiscord)
+	g.GET("/subThemes", a.listSubThemes)
+	g.GET("/subThemes/catalog", a.subThemeCatalog)
+	g.POST("/subThemes/install", a.installSubTheme)
+	g.POST("/subThemes/remove", a.removeSubTheme)
 }
 
 func (a *SettingController) validateRegex(c *gin.Context) {
@@ -464,4 +474,51 @@ func (a *SettingController) testDiscord(c *gin.Context) {
 		return
 	}
 	jsonMsg(c, I18nWeb(c, "pages.settings.discordTestSuccess"), nil)
+}
+
+func (a *SettingController) listSubThemes(c *gin.Context) {
+	jsonObj(c, subtheme.List(), nil)
+}
+
+// subThemeCatalog reads the theme catalogue through the panel's egress proxy.
+func (a *SettingController) subThemeCatalog(c *gin.Context) {
+	catalogURL, _ := a.settingService.GetSubThemeCatalogURL()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 20*time.Second)
+	defer cancel()
+	themes, err := subtheme.FetchCatalog(ctx, a.settingService.NewProxiedHTTPClient(20*time.Second), catalogURL)
+	jsonMsgObj(c, I18nWeb(c, "pages.settings.subThemeCatalog"), themes, err)
+}
+
+func (a *SettingController) installSubTheme(c *gin.Context) {
+	form := &subThemeForm{}
+	if err := c.ShouldBind(form); err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.settings.subThemeInstall"), err)
+		return
+	}
+	catalogURL, _ := a.settingService.GetSubThemeCatalogURL()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Minute)
+	defer cancel()
+	theme, err := subtheme.Install(ctx, a.settingService.NewProxiedHTTPClient(time.Minute), catalogURL, form.Name)
+	jsonMsgObj(c, I18nWeb(c, "pages.settings.subThemeInstall"), theme, err)
+}
+
+// removeSubTheme deletes an installed theme; the page goes back to the panel's own
+// when that theme was the one in use.
+func (a *SettingController) removeSubTheme(c *gin.Context) {
+	form := &subThemeForm{}
+	if err := c.ShouldBind(form); err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.settings.subThemeRemove"), err)
+		return
+	}
+	if err := subtheme.Remove(form.Name); err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.settings.subThemeRemove"), err)
+		return
+	}
+	if current, _ := a.settingService.GetSubTheme(); current == subtheme.InstalledPrefix+form.Name {
+		if err := a.settingService.SetSubTheme(""); err != nil {
+			jsonMsg(c, I18nWeb(c, "pages.settings.subThemeRemove"), err)
+			return
+		}
+	}
+	jsonMsg(c, I18nWeb(c, "pages.settings.subThemeRemove"), nil)
 }

@@ -90,6 +90,8 @@ export class AllSetting {
   subJsonFinalMask = '';
   subJsonObservatory = '';
   subThemeDir = '';
+  subTheme = '';
+  subThemeCatalogURL = '';
   subHideSettings = false;
   subHappAutoDetect = false;
   subHappProviderId = '';

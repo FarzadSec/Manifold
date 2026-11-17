@@ -203,6 +203,8 @@ var defaultValueMap = map[string]string{
 	"subJsonFinalMask":            "",
 	"subJsonObservatory":          "",
 	"subThemeDir":                 "",
+	"subTheme":                    "",
+	"subThemeCatalogURL":          "",
 	"datepicker":                  "gregorian",
 	"warp":                        "",
 	"warpUpdateInterval":          "0",
@@ -1339,6 +1341,19 @@ func (s *SettingService) GetSubJsonObservatory() (string, error) {
 
 func (s *SettingService) GetSubThemeDir() (string, error) {
 	return s.getString("subThemeDir")
+}
+
+// GetSubTheme is the theme the subscription page is drawn with; "" is the panel's own page.
+func (s *SettingService) GetSubTheme() (string, error) {
+	return s.getString("subTheme")
+}
+
+func (s *SettingService) SetSubTheme(id string) error {
+	return s.setString("subTheme", id)
+}
+
+func (s *SettingService) GetSubThemeCatalogURL() (string, error) {
+	return s.getString("subThemeCatalogURL")
 }
 
 func (s *SettingService) GetDatepicker() (string, error) {

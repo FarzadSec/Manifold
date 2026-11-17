@@ -1,0 +1,17 @@
+{
+  "themes": [
+    {
+      "name": "neon",
+      "version": "1.0.0",
+      "title": {"en": "Neon", "fa": "نئون", "ru": "Неон", "zh": "霓虹"},
+      "description": {
+        "en": "Black with pink and cyan glow, monospace type.",
+        "fa": "زمینه مشکی با درخشش صورتی و فیروزه‌ای، فونت هم‌عرض.",
+        "ru": "Чёрный фон с розовым и голубым свечением, моноширинный шрифт.",
+        "zh": "黑底配粉色与青色光晕,等宽字体。"
+      },
+      "author": "FarzadSec",
+      "files": ["index.html", "style.css"]
+    }
+  ]
+}

@@ -232,6 +232,8 @@ Every account keeps its keys, UUIDs, passwords and certificates, so **what decid
 
 **sing-box profile** (Settings → Subscription, on by default at `/singbox/`) serves the same entries as a full sing-box profile for SFA, SFI, Hiddify and Karing: a `proxy` selector, an `auto` URL test, and WireGuard as an endpoint. **Base profile** takes a profile of your own whose DNS, inbounds and route are kept as written. With **Serve sing-box apps on the main link** on, those apps get the profile from the ordinary link. The QR window shows the sing-box link on its own tab.
 
+**Page theme** decides what a user sees when the subscription link is opened in a browser. **Aurora** (dark) and **Paper** (light) are built in; **Catalogue** lists more themes from the Manifold repository, installed with one click and updated when a newer version appears. Where GitHub is blocked, **Catalogue address** can point at a mirror of `sub-themes/catalog.json`. Every theme shows usage, expiry, the subscription QR code, buttons that add the subscription to Happ, v2rayNG, Hiddify, Streisand, sing-box and Clash, and each configuration with its own QR code, in English, Persian (right to left), Russian or Chinese, from `?lang=` or the browser. **Custom theme folder** still takes a folder of your own and overrides the picked theme; writing one is described in `sub-themes/README.md`.
+
 The subscription server is on by default and listens on its own port (2096). Its address, path and the extra formats (JSON and Clash, both off by default) are set under Panel Settings. Open that port in the firewall before handing out subscription links.
 
 ## Several servers

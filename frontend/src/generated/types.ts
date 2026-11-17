@@ -228,6 +228,8 @@ export interface AllSetting {
   subSingboxURI: string;
   subSingboxUserAgentRegex: string;
   subSupportUrl: string;
+  subTheme: string;
+  subThemeCatalogURL: string;
   subThemeDir: string;
   subTitle: string;
   subTrafficDepletedTemplate: string;
@@ -426,6 +428,8 @@ export interface AllSettingView {
   subSingboxURI: string;
   subSingboxUserAgentRegex: string;
   subSupportUrl: string;
+  subTheme: string;
+  subThemeCatalogURL: string;
   subThemeDir: string;
   subTitle: string;
   subTrafficDepletedTemplate: string;
@@ -523,6 +527,18 @@ export interface BackupFile {
 export interface Blocker {
   code: BlockerCode;
   detail?: string;
+}
+
+export interface CatalogTheme {
+  author?: string;
+  description: Record<string, string>;
+  files: string[];
+  installed?: string;
+  name: string;
+  path?: string;
+  preview?: string;
+  title: Record<string, string>;
+  version: string;
 }
 
 export interface Client {
@@ -1345,6 +1361,14 @@ export interface TgBotCapabilities {
   inlineEnabled: boolean;
   running: boolean;
   username: string;
+}
+
+export interface Theme {
+  builtin: boolean;
+  id: string;
+  name: string;
+  title: string;
+  version?: string;
 }
 
 export interface Traffic {

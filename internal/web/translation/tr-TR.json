@@ -2041,7 +2041,21 @@
       "subSingboxAutoDetectDesc": "Apps the pattern below names get the sing-box profile from the ordinary subscription link, before the Clash check.",
       "subSingboxUserAgentRegex": "sing-box app pattern",
       "subSingboxTemplate": "Base profile",
-      "subSingboxTemplateDesc": "The sing-box profile the entries are merged into: its DNS, inbounds and route stay as written, and a proxy selector with the user's entries is added to its outbounds. Empty uses the built-in profile for sing-box 1.12 and later."
+      "subSingboxTemplateDesc": "The sing-box profile the entries are merged into: its DNS, inbounds and route stay as written, and a proxy selector with the user's entries is added to its outbounds. Empty uses the built-in profile for sing-box 1.12 and later.",
+      "subTheme": "Page theme",
+      "subThemeDesc": "How the subscription page looks when a user opens the link in a browser. Aurora and Paper are built in; Catalogue installs more with one click.",
+      "subThemePanel": "Panel page (default)",
+      "subThemeCatalog": "Catalogue",
+      "subThemeCatalogURL": "Catalogue address",
+      "subThemeCatalogURLDesc": "Empty reads the catalogue in the Manifold repository on GitHub. Point it at a mirror where GitHub is blocked; it is read through the panel's egress proxy. Save the settings after changing it.",
+      "subThemeCatalogFailed": "The catalogue could not be read. Check the address and the panel's egress proxy.",
+      "subThemeCatalogEmpty": "The catalogue lists no themes.",
+      "subThemeInstall": "Install",
+      "subThemeUpdate": "Update",
+      "subThemeRemove": "Remove",
+      "subThemeInstalled": "{name} is installed. Pick it under Page theme and save.",
+      "subThemeInstalledTag": "Installed",
+      "subThemeMissing": "not found, the panel page is shown"
     },
     "xray": {
       "save": "Kaydet",

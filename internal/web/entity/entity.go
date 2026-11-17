@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/subtheme"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/cronspec"
 )
@@ -141,6 +142,8 @@ type AllSetting struct {
 	SubJsonFinalMask            string `json:"subJsonFinalMask" form:"subJsonFinalMask"`
 	SubJsonObservatory          string `json:"subJsonObservatory" form:"subJsonObservatory"`
 	SubThemeDir                 string `json:"subThemeDir" form:"subThemeDir"`
+	SubTheme                    string `json:"subTheme" form:"subTheme"`
+	SubThemeCatalogURL          string `json:"subThemeCatalogURL" form:"subThemeCatalogURL"`
 	SubHideSettings             bool   `json:"subHideSettings" form:"subHideSettings"`
 
 	// Happ client customization settings (app-management / routing / UX).
@@ -376,6 +379,12 @@ func (s *AllSetting) CheckValid() error {
 	}
 	if t := strings.TrimSpace(s.SubSingboxTemplate); t != "" && !json.Valid([]byte(t)) {
 		return common.NewError("the sing-box base profile is not valid JSON")
+	}
+	if !subtheme.ValidID(s.SubTheme) {
+		return common.NewError("unknown subscription page theme:", s.SubTheme)
+	}
+	if u := strings.TrimSpace(s.SubThemeCatalogURL); u != "" && !strings.HasPrefix(u, "https://") && !strings.HasPrefix(u, "http://") {
+		return common.NewError("the theme catalogue address must start with https://")
 	}
 	if !strings.HasPrefix(s.SubClashPath, "/") {
 		s.SubClashPath = "/" + s.SubClashPath

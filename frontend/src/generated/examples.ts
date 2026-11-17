@@ -225,6 +225,8 @@ export const EXAMPLES: Record<string, unknown> = {
     "subSingboxURI": "",
     "subSingboxUserAgentRegex": "",
     "subSupportUrl": "",
+    "subTheme": "",
+    "subThemeCatalogURL": "",
     "subThemeDir": "",
     "subTitle": "",
     "subTrafficDepletedTemplate": "",
@@ -422,6 +424,8 @@ export const EXAMPLES: Record<string, unknown> = {
     "subSingboxURI": "",
     "subSingboxUserAgentRegex": "",
     "subSupportUrl": "",
+    "subTheme": "",
+    "subThemeCatalogURL": "",
     "subThemeDir": "",
     "subTitle": "",
     "subTrafficDepletedTemplate": "",
@@ -542,6 +546,19 @@ export const EXAMPLES: Record<string, unknown> = {
   "Blocker": {
     "code": "tools",
     "detail": "awg"
+  },
+  "CatalogTheme": {
+    "author": "FarzadSec",
+    "description": {},
+    "files": [
+      ""
+    ],
+    "installed": "0.9.0",
+    "name": "neon",
+    "path": "",
+    "preview": "",
+    "title": {},
+    "version": "1.0.0"
   },
   "Client": {
     "adTag": "0123456789abcdef0123456789abcdef",
@@ -1510,6 +1527,13 @@ export const EXAMPLES: Record<string, unknown> = {
     "inlineEnabled": true,
     "running": true,
     "username": "manifold_bot"
+  },
+  "Theme": {
+    "builtin": true,
+    "id": "builtin:aurora",
+    "name": "aurora",
+    "title": "Aurora",
+    "version": "1.0.0"
   },
   "Traffic": {
     "Down": 2097152,

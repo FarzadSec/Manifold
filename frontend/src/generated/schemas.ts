@@ -780,6 +780,12 @@ export const SCHEMAS: Record<string, unknown> = {
       "subSupportUrl": {
         "type": "string"
       },
+      "subTheme": {
+        "type": "string"
+      },
+      "subThemeCatalogURL": {
+        "type": "string"
+      },
       "subThemeDir": {
         "type": "string"
       },
@@ -1036,6 +1042,8 @@ export const SCHEMAS: Record<string, unknown> = {
       "subSingboxURI",
       "subSingboxUserAgentRegex",
       "subSupportUrl",
+      "subTheme",
+      "subThemeCatalogURL",
       "subThemeDir",
       "subTitle",
       "subTrafficDepletedTemplate",
@@ -1600,6 +1608,12 @@ export const SCHEMAS: Record<string, unknown> = {
       "subSupportUrl": {
         "type": "string"
       },
+      "subTheme": {
+        "type": "string"
+      },
+      "subThemeCatalogURL": {
+        "type": "string"
+      },
       "subThemeDir": {
         "type": "string"
       },
@@ -1864,6 +1878,8 @@ export const SCHEMAS: Record<string, unknown> = {
       "subSingboxURI",
       "subSingboxUserAgentRegex",
       "subSupportUrl",
+      "subTheme",
+      "subThemeCatalogURL",
       "subThemeDir",
       "subTitle",
       "subTrafficDepletedTemplate",
@@ -2190,6 +2206,59 @@ export const SCHEMAS: Record<string, unknown> = {
     },
     "required": [
       "code"
+    ],
+    "type": "object"
+  },
+  "CatalogTheme": {
+    "description": "CatalogTheme is one theme a catalogue offers. Files sit beside the catalogue in a\ndirectory named after the theme, or in Path when it says otherwise.",
+    "properties": {
+      "author": {
+        "example": "FarzadSec",
+        "type": "string"
+      },
+      "description": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "type": "object"
+      },
+      "files": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "installed": {
+        "example": "0.9.0",
+        "type": "string"
+      },
+      "name": {
+        "example": "neon",
+        "type": "string"
+      },
+      "path": {
+        "type": "string"
+      },
+      "preview": {
+        "type": "string"
+      },
+      "title": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "type": "object"
+      },
+      "version": {
+        "example": "1.0.0",
+        "type": "string"
+      }
+    },
+    "required": [
+      "description",
+      "files",
+      "name",
+      "title",
+      "version"
     ],
     "type": "object"
   },
@@ -5977,6 +6046,38 @@ export const SCHEMAS: Record<string, unknown> = {
       "inlineEnabled",
       "running",
       "username"
+    ],
+    "type": "object"
+  },
+  "Theme": {
+    "description": "Theme is one entry of the panel's theme picker.",
+    "properties": {
+      "builtin": {
+        "example": true,
+        "type": "boolean"
+      },
+      "id": {
+        "example": "builtin:aurora",
+        "type": "string"
+      },
+      "name": {
+        "example": "aurora",
+        "type": "string"
+      },
+      "title": {
+        "example": "Aurora",
+        "type": "string"
+      },
+      "version": {
+        "example": "1.0.0",
+        "type": "string"
+      }
+    },
+    "required": [
+      "builtin",
+      "id",
+      "name",
+      "title"
     ],
     "type": "object"
   },

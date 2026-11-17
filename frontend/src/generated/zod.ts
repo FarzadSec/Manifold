@@ -250,6 +250,8 @@ export const AllSettingSchema = z.object({
   subSingboxURI: z.string(),
   subSingboxUserAgentRegex: z.string(),
   subSupportUrl: z.string(),
+  subTheme: z.string(),
+  subThemeCatalogURL: z.string(),
   subThemeDir: z.string(),
   subTitle: z.string(),
   subTrafficDepletedTemplate: z.string(),
@@ -449,6 +451,8 @@ export const AllSettingViewSchema = z.object({
   subSingboxURI: z.string(),
   subSingboxUserAgentRegex: z.string(),
   subSupportUrl: z.string(),
+  subTheme: z.string(),
+  subThemeCatalogURL: z.string(),
   subThemeDir: z.string(),
   subTitle: z.string(),
   subTrafficDepletedTemplate: z.string(),
@@ -556,6 +560,19 @@ export const BlockerSchema = z.object({
   detail: z.string().optional(),
 });
 export type Blocker = z.infer<typeof BlockerSchema>;
+
+export const CatalogThemeSchema = z.object({
+  author: z.string().optional(),
+  description: z.record(z.string(), z.string()),
+  files: z.array(z.string()),
+  installed: z.string().optional(),
+  name: z.string(),
+  path: z.string().optional(),
+  preview: z.string().optional(),
+  title: z.record(z.string(), z.string()),
+  version: z.string(),
+});
+export type CatalogTheme = z.infer<typeof CatalogThemeSchema>;
 
 export const ClientSchema = z.object({
   adTag: z.string().optional(),
@@ -1437,6 +1454,15 @@ export const TgBotCapabilitiesSchema = z.object({
   username: z.string(),
 });
 export type TgBotCapabilities = z.infer<typeof TgBotCapabilitiesSchema>;
+
+export const ThemeSchema = z.object({
+  builtin: z.boolean(),
+  id: z.string(),
+  name: z.string(),
+  title: z.string(),
+  version: z.string().optional(),
+});
+export type Theme = z.infer<typeof ThemeSchema>;
 
 export const TrafficSchema = z.object({
   Down: z.number().int(),

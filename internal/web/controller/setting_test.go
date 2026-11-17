@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/dbtest"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/subtheme"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/crypto"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/locale"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
@@ -235,5 +237,49 @@ func TestTestDiscordEndpoint(t *testing.T) {
 
 	if !strings.Contains(resp.Body.String(), `"success":true`) || !strings.Contains(resp.Body.String(), "pages.settings.discordTestSuccess") {
 		t.Fatalf("expected success, got %s", resp.Body.String())
+	}
+}
+
+// Removing the theme in use must put the page back on the panel's own, not leave the
+// setting naming a theme that is gone; removing another theme leaves the pick alone.
+func TestRemovingTheThemeInUseReturnsThePanelPage(t *testing.T) {
+	t.Setenv("XUI_DB_FOLDER", t.TempDir())
+	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
+	for _, name := range []string{"neon", "other"} {
+		dir := filepath.Join(subtheme.Root(), name)
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "index.html"), []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	settings := service.SettingService{}
+	if err := settings.SetSubTheme("installed:neon"); err != nil {
+		t.Fatal(err)
+	}
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	NewSettingController(router.Group("/panel/api"))
+	remove := func(name string) {
+		req := httptest.NewRequest(http.MethodPost, "/panel/api/setting/subThemes/remove", strings.NewReader(`{"name":"`+name+`"}`))
+		req.Header.Set("Content-Type", "application/json")
+		resp := httptest.NewRecorder()
+		router.ServeHTTP(resp, req)
+		if !strings.Contains(resp.Body.String(), `"success":true`) {
+			t.Fatalf("remove %s: %s", name, resp.Body.String())
+		}
+	}
+
+	remove("other")
+	if got, _ := settings.GetSubTheme(); got != "installed:neon" {
+		t.Fatalf("removing another theme changed the pick to %q", got)
+	}
+	remove("neon")
+	if got, _ := settings.GetSubTheme(); got != "" {
+		t.Fatalf("after removing the theme in use the pick is %q, want the panel page", got)
+	}
+	if _, err := os.Stat(filepath.Join(subtheme.Root(), "neon")); !os.IsNotExist(err) {
+		t.Fatalf("theme folder still there: %v", err)
 	}
 }

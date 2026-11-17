@@ -806,6 +806,12 @@
           "subSupportUrl": {
             "type": "string"
           },
+          "subTheme": {
+            "type": "string"
+          },
+          "subThemeCatalogURL": {
+            "type": "string"
+          },
           "subThemeDir": {
             "type": "string"
           },
@@ -1062,6 +1068,8 @@
           "subSingboxURI",
           "subSingboxUserAgentRegex",
           "subSupportUrl",
+          "subTheme",
+          "subThemeCatalogURL",
           "subThemeDir",
           "subTitle",
           "subTrafficDepletedTemplate",
@@ -1626,6 +1634,12 @@
           "subSupportUrl": {
             "type": "string"
           },
+          "subTheme": {
+            "type": "string"
+          },
+          "subThemeCatalogURL": {
+            "type": "string"
+          },
           "subThemeDir": {
             "type": "string"
           },
@@ -1890,6 +1904,8 @@
           "subSingboxURI",
           "subSingboxUserAgentRegex",
           "subSupportUrl",
+          "subTheme",
+          "subThemeCatalogURL",
           "subThemeDir",
           "subTitle",
           "subTrafficDepletedTemplate",
@@ -2216,6 +2232,59 @@
         },
         "required": [
           "code"
+        ],
+        "type": "object"
+      },
+      "CatalogTheme": {
+        "description": "CatalogTheme is one theme a catalogue offers. Files sit beside the catalogue in a\ndirectory named after the theme, or in Path when it says otherwise.",
+        "properties": {
+          "author": {
+            "example": "FarzadSec",
+            "type": "string"
+          },
+          "description": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "files": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "installed": {
+            "example": "0.9.0",
+            "type": "string"
+          },
+          "name": {
+            "example": "neon",
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "preview": {
+            "type": "string"
+          },
+          "title": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "version": {
+            "example": "1.0.0",
+            "type": "string"
+          }
+        },
+        "required": [
+          "description",
+          "files",
+          "name",
+          "title",
+          "version"
         ],
         "type": "object"
       },
@@ -6003,6 +6072,38 @@
           "inlineEnabled",
           "running",
           "username"
+        ],
+        "type": "object"
+      },
+      "Theme": {
+        "description": "Theme is one entry of the panel's theme picker.",
+        "properties": {
+          "builtin": {
+            "example": true,
+            "type": "boolean"
+          },
+          "id": {
+            "example": "builtin:aurora",
+            "type": "string"
+          },
+          "name": {
+            "example": "aurora",
+            "type": "string"
+          },
+          "title": {
+            "example": "Aurora",
+            "type": "string"
+          },
+          "version": {
+            "example": "1.0.0",
+            "type": "string"
+          }
+        },
+        "required": [
+          "builtin",
+          "id",
+          "name",
+          "title"
         ],
         "type": "object"
       },
@@ -18626,6 +18727,212 @@
                 "example": {
                   "success": true,
                   "msg": "Test notification sent successfully"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/setting/subThemes": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "The subscription page themes to pick from: the built-in ones, then the ones installed from a catalogue.",
+        "operationId": "get_panel_api_setting_subThemes",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/Theme"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "builtin": true,
+                    "id": "builtin:aurora",
+                    "name": "aurora",
+                    "title": "Aurora",
+                    "version": "1.0.0"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/setting/subThemes/catalog": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Read the theme catalogue (subThemeCatalogURL, empty for the Manifold repository) through the egress proxy; each entry says which version is installed.",
+        "operationId": "get_panel_api_setting_subThemes_catalog",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/CatalogTheme"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "author": "FarzadSec",
+                    "description": {},
+                    "files": [
+                      ""
+                    ],
+                    "installed": "0.9.0",
+                    "name": "neon",
+                    "path": "",
+                    "preview": "",
+                    "title": {},
+                    "version": "1.0.0"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/setting/subThemes/install": {
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Download a catalogue theme into the themes folder. An older copy is replaced only once every file has arrived and the page parses.",
+        "operationId": "post_panel_api_setting_subThemes_install",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Theme name in the catalogue."
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              },
+              "example": {
+                "name": "neon"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/Theme"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "builtin": true,
+                    "id": "builtin:aurora",
+                    "name": "aurora",
+                    "title": "Aurora",
+                    "version": "1.0.0"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/setting/subThemes/remove": {
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Delete an installed theme. When it was the one in use, the page goes back to the panel page.",
+        "operationId": "post_panel_api_setting_subThemes_remove",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Installed theme name."
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              },
+              "example": {
+                "name": "neon"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
                 }
               }
             }

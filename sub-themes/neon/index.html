@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="{{ .lang }}" dir="{{ .dir }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="dark">
+<title>Neon</title>
+<link rel="stylesheet" href="{{ .assetBase }}/style.css">
+</head>
+<body>
+<main class="wrap">
+  <header class="card head">
+    <div>
+      <h1>{{ default (t .lang "subscription") .subTitle }}</h1>
+      <p class="state state-{{ .status }}">
+        <span class="dot{{ if .isOnline }} on{{ end }}" aria-hidden="true"></span>
+        <span>{{ t .lang .status }}</span>
+        <span class="sep">·</span>
+        <span>{{ if .isOnline }}{{ t .lang "online" }}{{ else }}{{ t .lang "offline" }}{{ end }}</span>
+      </p>
+    </div>
+    {{ with .subSupportUrl }}<a class="btn ghost" href="{{ . }}" target="_blank" rel="noopener">{{ t $.lang "support" }}</a>{{ end }}
+  </header>
+
+  {{ with .announce }}<section class="card notice">{{ . }}</section>{{ end }}
+
+  <section class="grid">
+    <div class="card stat">
+      <div class="stat-top">
+        <span class="label">{{ t .lang "used" }}</span>
+        <span class="value"><bdi>{{ .used }}</bdi> <small>/ <bdi>{{ if .totalByte }}{{ .total }}{{ else }}{{ t .lang "unlimited" }}{{ end }}</bdi></small></span>
+      </div>
+      {{ if .totalByte }}
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ .usedPercent }}"><span style="width: {{ .usedPercent }}%"></span></div>
+      <div class="stat-foot"><span>{{ t .lang "remaining" }}</span><bdi>{{ .remained }}</bdi></div>
+      {{ end }}
+      <div class="stat-foot"><span>↑ {{ t .lang "upload" }} <bdi>{{ .upload }}</bdi></span><span>↓ {{ t .lang "download" }} <bdi>{{ .download }}</bdi></span></div>
+    </div>
+    <div class="card stat">
+      <div class="stat-top">
+        <span class="label">{{ t .lang "expires" }}</span>
+        {{ if .expire }}
+        <span class="value"><bdi>{{ .expireText }}</bdi></span>
+        {{ else }}
+        <span class="value">{{ t .lang "never" }}</span>
+        {{ end }}
+      </div>
+      {{ if .expire }}<div class="stat-foot"><span><bdi>{{ .daysLeft }}</bdi> {{ t .lang "daysLeft" }}</span></div>{{ end }}
+    </div>
+  </section>
+
+  <section class="card sub">
+    {{ $code := qr .subUrl }}
+    {{ if $code }}<figure class="qr-box">{{ $code }}<figcaption>{{ t .lang "scan" }}</figcaption></figure>{{ end }}
+    <div class="sub-actions">
+      <button class="btn primary" type="button" data-copy="{{ .subUrl }}">{{ t .lang "copyLink" }}</button>
+      <h2>{{ t .lang "addToApp" }}</h2>
+      <div class="apps">
+        <a class="app" href="happ://add/{{ .subUrl }}">Happ</a>
+        <a class="app" href="v2rayng://install-sub?url={{ .subUrl }}">v2rayNG</a>
+        <a class="app" href="hiddify://import/{{ .subUrl }}">Hiddify</a>
+        <a class="app" href="streisand://import/{{ .subUrl }}">Streisand</a>
+        {{ with .subSingboxUrl }}<a class="app" href="sing-box://import-remote-profile?url={{ . }}">sing-box</a>{{ end }}
+        {{ with .subClashUrl }}<a class="app" href="clash://install-config?url={{ . }}">Clash</a>{{ end }}
+      </div>
+    </div>
+  </section>
+
+  {{ if .configs }}
+  <section class="card">
+    <h2>{{ t .lang "configs" }}</h2>
+    <ul class="configs">
+      {{ range .configs }}
+      <li>
+        <details>
+          <summary>
+            <span class="proto">{{ .Protocol }}</span>
+            <bdi class="name">{{ .Name }}</bdi>
+            <button class="btn small" type="button" data-copy="{{ .Link }}">{{ t $.lang "copy" }}</button>
+          </summary>
+          {{ $c := qr .Link }}{{ if $c }}<div class="qr-box small">{{ $c }}</div>{{ end }}
+        </details>
+      </li>
+      {{ end }}
+    </ul>
+  </section>
+  {{ end }}
+
+  {{ if or .subJsonUrl .subClashUrl .subSingboxUrl }}
+  <section class="card">
+    <h2>{{ t .lang "formats" }}</h2>
+    <div class="formats">
+      {{ with .subSingboxUrl }}<button class="btn ghost" type="button" data-copy="{{ . }}">sing-box</button>{{ end }}
+      {{ with .subClashUrl }}<button class="btn ghost" type="button" data-copy="{{ . }}">Clash / Mihomo</button>{{ end }}
+      {{ with .subJsonUrl }}<button class="btn ghost" type="button" data-copy="{{ . }}">Xray JSON</button>{{ end }}
+    </div>
+  </section>
+  {{ end }}
+</main>
+<script>
+(function () {
+  var copied = {{ t .lang "copied" }};
+  function fallback(text, done) {
+    var area = document.createElement("textarea");
+    area.value = text;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.opacity = "0";
+    document.body.appendChild(area);
+    area.select();
+    try { if (document.execCommand("copy")) { done(); } } catch (e) {}
+    document.body.removeChild(area);
+  }
+  document.addEventListener("click", function (event) {
+    var button = event.target.closest("[data-copy]");
+    if (!button) { return; }
+    event.preventDefault();
+    var text = button.getAttribute("data-copy");
+    var label = button.textContent;
+    var done = function () {
+      button.textContent = copied;
+      button.classList.add("done");
+      setTimeout(function () { button.textContent = label; button.classList.remove("done"); }, 1500);
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(done, function () { fallback(text, done); });
+    } else {
+      fallback(text, done);
+    }
+  });
+})();
+</script>
+</body>
+</html>

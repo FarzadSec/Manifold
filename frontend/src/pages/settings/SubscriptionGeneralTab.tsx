@@ -20,6 +20,7 @@ import { catTabLabel } from './catTabLabel';
 import { sanitizePath, normalizePath } from './uriPath';
 import HappSettingsContent from './HappSettingsContent';
 import IncySettingsContent from './IncySettingsContent';
+import SubThemeField from './SubThemeField';
 import { remoteSourceBadge } from './subscriptionShared';
 
 interface SubscriptionGeneralTabProps {
@@ -397,6 +398,18 @@ export default function SubscriptionGeneralTab({
                   multiline
                   rows={3}
                   metadataOnly
+                />
+              </SettingListItem>
+              <SettingListItem
+                paddings="small"
+                title={t('pages.settings.subTheme')}
+                description={t('pages.settings.subThemeDesc')}
+              >
+                <SubThemeField
+                  value={allSetting.subTheme}
+                  onChange={(id) => updateSetting({ subTheme: id })}
+                  catalogURL={allSetting.subThemeCatalogURL}
+                  onCatalogURLChange={(url) => updateSetting({ subThemeCatalogURL: url })}
                 />
               </SettingListItem>
               <SettingListItem
