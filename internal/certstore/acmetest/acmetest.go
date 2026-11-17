@@ -19,8 +19,10 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -53,7 +55,8 @@ type CA struct {
 	mu       sync.Mutex
 	authzs   []*fakeAuthz
 	ordered  []string
-	csrNames []string
+	profile  string
+	profiles []string
 	accepted []string
 	leafDER  []byte
 	orders   int
@@ -62,6 +65,7 @@ type CA struct {
 
 type fakeAuthz struct {
 	domain   string
+	ip       bool
 	wildcard bool
 	token    string
 	status   string
@@ -110,8 +114,25 @@ func (ca *CA) Ordered() []string {
 	return append([]string{}, ca.ordered...)
 }
 
-// LeafLife is how long the certificates this CA issues last.
-var LeafLife = 90 * 24 * time.Hour
+// Profiles is the profile each order asked for, "" for none.
+func (ca *CA) Profiles() []string {
+	ca.mu.Lock()
+	defer ca.mu.Unlock()
+	return append([]string{}, ca.profiles...)
+}
+
+// LeafLife is how long the certificates this CA issues last; ShortLife is the
+// shortlived profile's, which Let's Encrypt requires for an IP address.
+var (
+	LeafLife  = 90 * 24 * time.Hour
+	ShortLife = 160 * time.Hour
+)
+
+func (ca *CA) problem(w http.ResponseWriter, kind, detail string) {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(http.StatusBadRequest)
+	_ = json.NewEncoder(w).Encode(map[string]any{"type": "urn:ietf:params:acme:error:" + kind, "detail": detail, "status": http.StatusBadRequest})
+}
 
 func (ca *CA) jws() (protected map[string]any, payload []byte) {
 	var jws struct{ Protected, Payload string }
@@ -163,15 +184,18 @@ func (ca *CA) writeJSON(w http.ResponseWriter, code int, v any) {
 func (ca *CA) authzJSON(i int) map[string]any {
 	a := ca.authzs[i]
 	chals := []map[string]any{}
-	types := []string{"http-01", "tls-alpn-01", "dns-01"}
-	if a.wildcard {
+	types, idType := []string{"http-01", "tls-alpn-01", "dns-01"}, "dns"
+	switch {
+	case a.wildcard:
 		types = []string{"dns-01"}
+	case a.ip:
+		types, idType = []string{"http-01", "tls-alpn-01"}, "ip"
 	}
 	for _, typ := range types {
 		chals = append(chals, map[string]any{"type": typ, "url": ca.url(fmt.Sprintf("/chal/%d/%s", i, typ)), "token": a.token, "status": a.status})
 	}
 	return map[string]any{
-		"identifier": map[string]string{"type": "dns", "value": a.domain},
+		"identifier": map[string]string{"type": idType, "value": a.domain},
 		"status":     a.status, "wildcard": a.wildcard, "challenges": chals,
 	}
 }
@@ -199,7 +223,9 @@ func (ca *CA) serve(w http.ResponseWriter, r *http.Request) {
 		ca.writeJSON(w, http.StatusOK, map[string]any{
 			"newNonce": ca.url("/nonce"), "newAccount": ca.url("/acct"), "newOrder": ca.url("/order"),
 			"revokeCert": ca.url("/revoke"), "keyChange": ca.url("/kc"),
-			"meta": map[string]any{"termsOfService": ca.url("/tos")},
+			"meta": map[string]any{"termsOfService": ca.url("/tos"), "profiles": map[string]string{
+				"classic": "90 days", "shortlived": "160 hours",
+			}},
 		})
 	case p == "/nonce":
 		w.WriteHeader(http.StatusOK)
@@ -209,13 +235,30 @@ func (ca *CA) serve(w http.ResponseWriter, r *http.Request) {
 		ca.writeJSON(w, http.StatusCreated, map[string]any{"status": "valid"})
 	case p == "/order" && r.Method == http.MethodPost:
 		ca.orders++
-		var req struct{ Identifiers []struct{ Value string } }
+		var req struct {
+			Identifiers []struct{ Type, Value string }
+			Profile     string
+		}
 		_ = json.Unmarshal(ca.payload(r), &req)
-		ca.authzs = nil
+		if req.Profile != "" && req.Profile != "classic" && req.Profile != "shortlived" {
+			ca.problem(w, "invalidProfile", "no profile "+req.Profile)
+			return
+		}
+		ca.profiles = append(ca.profiles, req.Profile)
+		ca.authzs, ca.profile = nil, req.Profile
 		for i, id := range req.Identifiers {
+			ip := net.ParseIP(id.Value) != nil
+			switch {
+			case ip && id.Type != "ip", !ip && id.Type != "dns":
+				ca.problem(w, "rejectedIdentifier", fmt.Sprintf("%s is not a %s identifier", id.Value, id.Type))
+				return
+			case ip && req.Profile != "shortlived":
+				ca.problem(w, "rejectedIdentifier", "an IP address needs the shortlived profile")
+				return
+			}
 			ca.ordered = append(ca.ordered, id.Value)
 			wild := strings.HasPrefix(id.Value, "*.")
-			ca.authzs = append(ca.authzs, &fakeAuthz{domain: strings.TrimPrefix(id.Value, "*."), wildcard: wild, token: fmt.Sprintf("tok%d", i), status: "pending"})
+			ca.authzs = append(ca.authzs, &fakeAuthz{domain: strings.TrimPrefix(id.Value, "*."), ip: ip, wildcard: wild, token: fmt.Sprintf("tok%d", i), status: "pending"})
 		}
 		w.Header().Set("Location", ca.url("/order/1"))
 		ca.writeJSON(w, http.StatusCreated, ca.orderJSON("pending"))
@@ -255,7 +298,10 @@ func (ca *CA) serve(w http.ResponseWriter, r *http.Request) {
 			ca.t.Errorf("bad CSR: %v", err)
 			return
 		}
-		ca.csrNames = csr.DNSNames
+		if err := ca.checkCSR(csr); err != nil {
+			ca.problem(w, "badCSR", err.Error())
+			return
+		}
 		w.Header().Set("Location", ca.url("/order/1"))
 		ca.writeJSON(w, http.StatusOK, ca.orderJSON("valid"))
 		ca.issued(csr)
@@ -270,10 +316,40 @@ func (ca *CA) serve(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// checkCSR wants the order's identifiers, IPs as IP SANs, and a common name that is
+// one of its DNS names, as Boulder does.
+func (ca *CA) checkCSR(csr *x509.CertificateRequest) error {
+	var named []string
+	for _, a := range ca.authzs {
+		want := a.domain
+		if a.wildcard {
+			want = "*." + want
+		}
+		named = append(named, want)
+	}
+	got := append([]string{}, csr.DNSNames...)
+	for _, ip := range csr.IPAddresses {
+		got = append(got, ip.String())
+	}
+	slices.Sort(got)
+	slices.Sort(named)
+	if !slices.Equal(got, named) {
+		return fmt.Errorf("the CSR names %v, the order %v", got, named)
+	}
+	if cn := csr.Subject.CommonName; cn != "" && !slices.Contains(csr.DNSNames, cn) {
+		return fmt.Errorf("common name %q is not one of the CSR's DNS names", cn)
+	}
+	return nil
+}
+
 func (ca *CA) issued(csr *x509.CertificateRequest) {
+	life := LeafLife
+	if ca.profile == "shortlived" {
+		life = ShortLife
+	}
 	tmpl := &x509.Certificate{
 		SerialNumber: big.NewInt(time.Now().UnixNano()), Subject: pkix.Name{CommonName: csr.Subject.CommonName},
-		DNSNames: csr.DNSNames, NotBefore: time.Now().Add(-time.Minute), NotAfter: time.Now().Add(LeafLife),
+		DNSNames: csr.DNSNames, IPAddresses: csr.IPAddresses, NotBefore: time.Now().Add(-time.Minute), NotAfter: time.Now().Add(life),
 		KeyUsage: x509.KeyUsageDigitalSignature, ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 	}
 	der, err := x509.CreateCertificate(rand.Reader, tmpl, ca.caCert, csr.PublicKey, ca.caKey)

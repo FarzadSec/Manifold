@@ -3271,7 +3271,7 @@
       "nameHint": "存放文件的目录：/etc/manifold/certs/<name>/。",
       "nameAuto": "第一个域名",
       "domains": "域名",
-      "domainsHint": "逐个输入并回车。*.example.com 覆盖所有子域名但不含 example.com 本身；两者都需要时请都添加。",
+      "domainsHint": "逐个输入并回车。*.example.com 覆盖所有子域名但不含 example.com 本身；两者都需要时请都添加。也可以填写服务器 IP 地址（通过 HTTP-01）：Let's Encrypt 会签发自动续期的六天证书。",
       "needDomain": "请至少添加一个域名",
       "badDomain": "其中有一个不是域名",
       "wildcardDns": "通配符只能通过 DNS-01 验证",
@@ -3317,7 +3317,8 @@
       "fromStore": "从证书库",
       "saveFailed": "无法保存证书",
       "issueFailed": "无法开始签发",
-      "deleteFailed": "无法删除证书"
+      "deleteFailed": "无法删除证书",
+      "ipHttp": "IP 地址只能通过 HTTP-01 验证"
     },
     "import": {
       "intro": "从 Marzban、PasarGuard、Marzneshin、3x-ui、x-ui、s-ui、Hiddify 或 Remnawave 迁移用户。每个用户保留 UUID 或密码、配额、用量、到期和重置周期，旧订阅链接在这里继续可用。",

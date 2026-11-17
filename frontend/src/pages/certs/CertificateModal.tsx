@@ -8,7 +8,7 @@ import { FormField, rhfZodValidate } from '@/components/form/rhf';
 import type { CertificateView } from '@/generated/types';
 import {
   CertDomainsSchema,
-  wildcardNeedsDNS,
+  challengeMismatch,
   type CertificateFormValues,
 } from '@/schemas/certificate';
 
@@ -106,7 +106,9 @@ export default function CertificateModal({
             rules={{
               validate: (v: string[]) => {
                 const shape = rhfZodValidate(CertDomainsSchema)(v);
-                return shape === true ? wildcardNeedsDNS(v, methods.getValues('challenge')) : shape;
+                return shape === true
+                  ? challengeMismatch(v, methods.getValues('challenge'))
+                  : shape;
               },
             }}
           >

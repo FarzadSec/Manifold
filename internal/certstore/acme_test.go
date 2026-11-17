@@ -88,3 +88,37 @@ func TestIssueRefusesAWildcardWithoutDNSAndReportsAFailedProof(t *testing.T) {
 		t.Fatalf("a challenge the CA cannot reach gave %v", err)
 	}
 }
+
+// Let's Encrypt only issues an IP address under the shortlived profile, proven over
+// HTTP-01, with the address as an IP SAN and never as the common name.
+func TestIssueGetsAnIPAddressCertificate(t *testing.T) {
+	ca := acmetest.New(t)
+	solver := &HTTP01{Addr: "127.0.0.1:0"}
+	ca.Reach = func(string) string { return solver.BoundAddr().String() }
+	res, err := issueWith(t, ca, solver, "203.0.113.7", "2001:db8::7")
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err := Inspect(res.CertPEM, res.KeyPEM)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(info.Domains, []string{"203.0.113.7", "2001:db8::7"}) {
+		t.Fatalf("the certificate names %v", info.Domains)
+	}
+	if life := info.NotAfter.Sub(info.NotBefore); life > 7*24*time.Hour {
+		t.Fatalf("an IP certificate lasts %v; the CA gave the classic profile", life)
+	}
+	if got := ca.Profiles(); !slices.Equal(got, []string{"shortlived"}) {
+		t.Fatalf("orders asked for profiles %v", got)
+	}
+
+	for _, solver := range []Solver{&TLSALPN01{Addr: "127.0.0.1:0"}, &DNS01{Provider: &acmetest.Zone{}}} {
+		if _, err := issueWith(t, ca, solver, "panel.example.com", "203.0.113.7"); err == nil || !strings.Contains(err.Error(), "only HTTP-01") {
+			t.Fatalf("an IP address over %s gave %v", solver.Type(), err)
+		}
+	}
+	if ca.Orders() != 1 {
+		t.Fatal("the CA was asked before the request was checked")
+	}
+}

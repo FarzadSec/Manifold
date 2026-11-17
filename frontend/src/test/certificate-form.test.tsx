@@ -64,6 +64,30 @@ describe('certificate form', () => {
     await screen.findByText('A wildcard can only be proved with DNS-01');
     expect(onSave).not.toHaveBeenCalled();
   });
+
+  it('takes an IP address over HTTP-01 and refuses it over DNS-01', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+    const ipCert = { ...stored, name: '203.0.113.9', domains: ['203.0.113.9', '2001:db8::9'] };
+    const { unmount } = renderWithProviders(
+      <CertificateModal
+        open
+        editing={{ ...ipCert, challenge: 'http-01' }}
+        nodes={[]}
+        onSave={onSave}
+        onClose={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
+    unmount();
+
+    renderWithProviders(
+      <CertificateModal open editing={ipCert} nodes={[]} onSave={onSave} onClose={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await screen.findByText('An IP address can only be proved with HTTP-01');
+    expect(onSave).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('certificate expiry', () => {
@@ -75,5 +99,17 @@ describe('certificate expiry', () => {
     expect(screen.getByText('10 days left').closest('.ant-tag')?.className).toContain('orange');
     rerender(<ExpiryTag cert={{ ...stored, notAfter: Date.now() - day }} />);
     expect(screen.getByText('Expired').closest('.ant-tag')?.className).toContain('red');
+  });
+
+  it('measures a six-day IP certificate against its own life', () => {
+    const hour = 3_600_000;
+    const now = Date.now();
+    const sixDay = { ...stored, notBefore: now - 10 * hour, notAfter: now + 150 * hour };
+    const { rerender } = renderWithProviders(<ExpiryTag cert={sixDay} />);
+    expect(screen.getByText('6 days left').closest('.ant-tag')?.className).toContain('green');
+    rerender(
+      <ExpiryTag cert={{ ...sixDay, notBefore: now - 140 * hour, notAfter: now + 20 * hour }} />,
+    );
+    expect(screen.getByText('0 days left').closest('.ant-tag')?.className).toContain('orange');
   });
 });

@@ -26,6 +26,8 @@ import (
 const (
 	LetsEncrypt        = "https://acme-v02.api.letsencrypt.org/directory"
 	LetsEncryptStaging = "https://acme-staging-v02.api.letsencrypt.org/directory"
+	// ShortLived is the profile Let's Encrypt requires for an IP address (160 hours).
+	ShortLived = "shortlived"
 )
 
 // Solver answers one kind of challenge for the domains of an order.
@@ -60,10 +62,25 @@ func Issue(ctx context.Context, req Request) (Result, error) {
 	if req.Solver == nil {
 		return Result{}, errors.New("no challenge solver")
 	}
+	var ids []acme.AuthzID
+	var names []string
+	var ips []net.IP
 	for _, d := range req.Domains {
+		if ip := net.ParseIP(d); ip != nil {
+			if req.Solver.Type() != "http-01" {
+				return Result{}, fmt.Errorf("%s is an IP address, which only HTTP-01 can prove", d)
+			}
+			ids, ips = append(ids, acme.AuthzID{Type: "ip", Value: ip.String()}), append(ips, ip)
+			continue
+		}
 		if strings.HasPrefix(d, "*.") && req.Solver.Type() != "dns-01" {
 			return Result{}, fmt.Errorf("%s is a wildcard, which only DNS-01 can prove", d)
 		}
+		ids, names = append(ids, acme.AuthzID{Type: "dns", Value: d}), append(names, d)
+	}
+	var orderOpts []acme.OrderOption
+	if len(ips) > 0 {
+		orderOpts = append(orderOpts, acme.WithOrderIssuanceProfile(ShortLived))
 	}
 	defer req.Solver.Close()
 	log := req.Log
@@ -90,7 +107,7 @@ func Issue(ctx context.Context, req Request) (Result, error) {
 	if _, err := client.Register(ctx, acct, acme.AcceptTOS); err != nil && !errors.Is(err, acme.ErrAccountAlreadyExists) {
 		return Result{}, fmt.Errorf("register the ACME account: %w", err)
 	}
-	order, err := client.AuthorizeOrder(ctx, acme.DomainIDs(req.Domains...))
+	order, err := client.AuthorizeOrder(ctx, ids, orderOpts...)
 	if err != nil {
 		return Result{}, fmt.Errorf("open the order: %w", err)
 	}
@@ -106,10 +123,11 @@ func Issue(ctx context.Context, req Request) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
-	csr, err := x509.CreateCertificateRequest(rand.Reader, &x509.CertificateRequest{
-		Subject:  pkix.Name{CommonName: strings.TrimPrefix(req.Domains[0], "*.")},
-		DNSNames: req.Domains,
-	}, certKey)
+	tmpl := &x509.CertificateRequest{DNSNames: names, IPAddresses: ips}
+	if len(names) > 0 {
+		tmpl.Subject = pkix.Name{CommonName: strings.TrimPrefix(names[0], "*.")}
+	}
+	csr, err := x509.CreateCertificateRequest(rand.Reader, tmpl, certKey)
 	if err != nil {
 		return Result{}, err
 	}

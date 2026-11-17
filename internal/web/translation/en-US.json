@@ -3271,7 +3271,7 @@
       "nameHint": "The folder the files are kept in, /etc/manifold/certs/<name>/.",
       "nameAuto": "The first domain",
       "domains": "Domains",
-      "domainsHint": "Type each and press Enter. *.example.com covers every subdomain but not example.com itself; add both if you need both.",
+      "domainsHint": "Type each and press Enter. *.example.com covers every subdomain but not example.com itself; add both if you need both. A server IP address works too, over HTTP-01: Let's Encrypt gives it a six-day certificate that renews on its own.",
       "needDomain": "Add at least one domain",
       "badDomain": "One of these is not a domain name",
       "wildcardDns": "A wildcard can only be proved with DNS-01",
@@ -3317,7 +3317,8 @@
       "fromStore": "From the certificate store",
       "saveFailed": "Could not save the certificate",
       "issueFailed": "Could not start the order",
-      "deleteFailed": "Could not delete the certificate"
+      "deleteFailed": "Could not delete the certificate",
+      "ipHttp": "An IP address can only be proved with HTTP-01"
     },
     "import": {
       "intro": "Bring users over from Marzban, PasarGuard, Marzneshin, 3x-ui, x-ui, s-ui, Hiddify or Remnawave. Each keeps its UUID or password, quota, usage, expiry and reset cycle, and its old subscription link keeps working here.",

@@ -17,7 +17,7 @@ import { useNodesQuery } from '@/api/queries/useNodesQuery';
 import type { CertificateView } from '@/generated/types';
 import { useDatepicker } from '@/hooks/useDatepicker';
 import PageShell from '@/pages/access/PageShell';
-import { daysLeft } from '@/schemas/certificate';
+import { daysLeft, expiryColor } from '@/schemas/certificate';
 import { HttpUtil, IntlUtil } from '@/utils';
 import CertificateModal from './CertificateModal';
 import UploadCertModal from './UploadCertModal';
@@ -34,7 +34,7 @@ export function ExpiryTag({ cert }: { cert: CertificateView }) {
   }
   if (!cert.notAfter) return <Tag>{t('pages.certs.notIssued')}</Tag>;
   const days = daysLeft(cert.notAfter);
-  const color = days < 0 ? 'red' : days < 14 ? 'orange' : 'green';
+  const color = expiryColor(cert.notBefore, cert.notAfter);
   return (
     <Tooltip title={IntlUtil.formatDate(cert.notAfter, datepicker)}>
       <Tag color={color}>

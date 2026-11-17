@@ -83,7 +83,10 @@ func Inspect(certPEM, keyPEM []byte) (Info, error) {
 	if err != nil {
 		return Info{}, err
 	}
-	domains := leaf.DNSNames
+	domains := append([]string{}, leaf.DNSNames...)
+	for _, ip := range leaf.IPAddresses {
+		domains = append(domains, ip.String())
+	}
 	if len(domains) == 0 && leaf.Subject.CommonName != "" {
 		domains = []string{leaf.Subject.CommonName}
 	}

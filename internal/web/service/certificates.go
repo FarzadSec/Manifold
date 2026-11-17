@@ -24,11 +24,20 @@ import (
 )
 
 const (
-	renewBefore     = 30 * 24 * time.Hour
-	warnBefore      = 14 * 24 * time.Hour
 	retryFailedEach = 12 * time.Hour
 	issueTimeout    = 10 * time.Minute
 )
+
+// renewWindow is the last third of a certificate's life, as Let's Encrypt advises: 30 days
+// of a 90-day one, about 53 hours of a 160-hour IP one.
+func renewWindow(c model.Certificate) time.Duration {
+	return min(time.Duration(c.NotAfter-c.NotBefore)*time.Millisecond/3, 30*24*time.Hour)
+}
+
+// warnWindow is when a certificate that will not renew on its own is reported.
+func warnWindow(c model.Certificate) time.Duration {
+	return min(time.Duration(c.NotAfter-c.NotBefore)*time.Millisecond/6, 14*24*time.Hour)
+}
 
 // CertificateService keeps the certificate store: ACME orders, uploads, renewals and
 // the copies on nodes.
@@ -139,6 +148,41 @@ func checkNodes(ids []int) ([]int, error) {
 	return out, nil
 }
 
+// certNames checks and normalizes the names a certificate is ordered for, and the name
+// it is stored under: the first of them unless one is given.
+func certNames(in CertificateInput) (string, []string, error) {
+	name := strings.ToLower(strings.TrimSpace(in.Name))
+	domains := []string{}
+	for _, d := range in.Domains {
+		d = strings.ToLower(strings.TrimSuffix(strings.TrimSpace(d), "."))
+		if ip := net.ParseIP(d); ip != nil {
+			if in.Challenge != "http-01" {
+				return "", nil, common.NewError(d, "is an IP address, which only HTTP-01 can prove")
+			}
+			d = ip.String()
+		} else if d != "" && !hostname.MatchString(d) {
+			return "", nil, common.NewError("not a domain name:", d)
+		}
+		if d == "" || slices.Contains(domains, d) {
+			continue
+		}
+		if strings.HasPrefix(d, "*.") && in.Challenge != "dns-01" {
+			return "", nil, common.NewError(d, "is a wildcard, which only DNS-01 can prove")
+		}
+		domains = append(domains, d)
+	}
+	if len(domains) == 0 {
+		return "", nil, common.NewError("a certificate needs at least one domain")
+	}
+	if name == "" {
+		name = strings.ReplaceAll(strings.TrimPrefix(domains[0], "*."), ":", "-")
+	}
+	if !certstore.ValidName(name) {
+		return "", nil, common.NewError("a certificate name is lowercase letters, digits, dots and dashes")
+	}
+	return name, domains, nil
+}
+
 // Save stores an ACME certificate's settings; Issue gets it.
 func (s *CertificateService) Save(in CertificateInput) (CertificateView, error) {
 	var c model.Certificate
@@ -152,29 +196,9 @@ func (s *CertificateService) Save(in CertificateInput) (CertificateView, error) 
 		}
 		c = stored
 	}
-	name := strings.ToLower(strings.TrimSpace(in.Name))
-	domains := []string{}
-	for _, d := range in.Domains {
-		d = strings.ToLower(strings.TrimSuffix(strings.TrimSpace(d), "."))
-		if d == "" || slices.Contains(domains, d) {
-			continue
-		}
-		if !hostname.MatchString(d) {
-			return CertificateView{}, common.NewError("not a domain name:", d)
-		}
-		if strings.HasPrefix(d, "*.") && in.Challenge != "dns-01" {
-			return CertificateView{}, common.NewError(d, "is a wildcard, which only DNS-01 can prove")
-		}
-		domains = append(domains, d)
-	}
-	if len(domains) == 0 {
-		return CertificateView{}, common.NewError("a certificate needs at least one domain")
-	}
-	if name == "" {
-		name = strings.TrimPrefix(domains[0], "*.")
-	}
-	if !certstore.ValidName(name) {
-		return CertificateView{}, common.NewError("a certificate name is lowercase letters, digits, dots and dashes")
+	name, domains, err := certNames(in)
+	if err != nil {
+		return CertificateView{}, err
 	}
 	if c.Id == 0 || c.Name != name {
 		var taken int64
@@ -284,6 +308,23 @@ func issuing(id int) bool {
 	return certJobs.running[id]
 }
 
+// claimIssue marks an order as running, and is false when one already runs for id.
+func claimIssue(id int) bool {
+	certJobs.Lock()
+	defer certJobs.Unlock()
+	if certJobs.running[id] {
+		return false
+	}
+	certJobs.running[id] = true
+	return true
+}
+
+func releaseIssue(id int) {
+	certJobs.Lock()
+	defer certJobs.Unlock()
+	delete(certJobs.running, id)
+}
+
 // Issue starts an order for a certificate and returns at once; the list shows how it went.
 func (s *CertificateService) Issue(id int) error {
 	c, err := s.get(id)
@@ -293,23 +334,61 @@ func (s *CertificateService) Issue(id int) error {
 	if c.Source != "acme" {
 		return common.NewError("an uploaded certificate cannot be issued")
 	}
-	certJobs.Lock()
-	if certJobs.running[id] {
-		certJobs.Unlock()
+	if !claimIssue(id) {
 		return common.NewError("this certificate is already being issued")
 	}
-	certJobs.running[id] = true
-	certJobs.Unlock()
 	database.GetDB().Model(&model.Certificate{}).Where("id = ?", id).Update("issuing", true)
 	go func() {
-		defer func() {
-			certJobs.Lock()
-			delete(certJobs.running, id)
-			certJobs.Unlock()
-		}()
+		defer releaseIssue(id)
 		_ = s.issue(c)
 	}()
 	return nil
+}
+
+// IssueNow runs an order to the end before returning, for the command line.
+func (s *CertificateService) IssueNow(id int) (CertificateView, error) {
+	c, err := s.get(id)
+	if err != nil {
+		return CertificateView{}, err
+	}
+	if c.Source != "acme" {
+		return CertificateView{}, common.NewError("an uploaded certificate cannot be issued")
+	}
+	if !claimIssue(id) {
+		return CertificateView{}, common.NewError("this certificate is already being issued")
+	}
+	defer releaseIssue(id)
+	if err := s.issue(c); err != nil {
+		return CertificateView{}, err
+	}
+	c, err = s.get(id)
+	return certView(c), err
+}
+
+// IssueForPanel issues a certificate and serves the panel with it. The same names again
+// reissue the same entry, which the renewal job keeps fresh from then on.
+func (s *CertificateService) IssueForPanel(in CertificateInput) (CertificateView, error) {
+	if in.Id == 0 {
+		if name, _, err := certNames(in); err == nil {
+			var stored model.Certificate
+			if database.GetDB().Where("name = ? AND source = ?", name, "acme").Limit(1).Find(&stored).Error == nil {
+				in.Id = stored.Id
+			}
+		}
+	}
+	saved, err := s.Save(in)
+	if err != nil {
+		return CertificateView{}, err
+	}
+	view, err := s.IssueNow(saved.Id)
+	if err != nil {
+		return saved, err
+	}
+	settings := &SettingService{}
+	if err := settings.SetCertFile(view.CertFile); err != nil {
+		return view, err
+	}
+	return view, settings.SetKeyFile(view.KeyFile)
 }
 
 func solverFor(c model.Certificate) (certstore.Solver, error) {
@@ -498,18 +577,13 @@ func (s *CertificateService) RenewDue(now time.Time) {
 		}
 		left := time.UnixMilli(c.NotAfter).Sub(now)
 		auto := c.Source == "acme" && c.AutoRenew
-		if auto && left < renewBefore && !issuing(c.Id) &&
-			(c.LastError == "" || now.Sub(time.UnixMilli(c.LastRun)) >= retryFailedEach) {
-			certJobs.Lock()
-			certJobs.running[c.Id] = true
-			certJobs.Unlock()
+		if auto && left < renewWindow(c) &&
+			(c.LastError == "" || now.Sub(time.UnixMilli(c.LastRun)) >= retryFailedEach) && claimIssue(c.Id) {
 			_ = s.issue(c)
-			certJobs.Lock()
-			delete(certJobs.running, c.Id)
-			certJobs.Unlock()
+			releaseIssue(c.Id)
 			continue
 		}
-		if c.NotAfter > 0 && left < warnBefore && now.Sub(time.UnixMilli(c.WarnedAt)) >= 24*time.Hour {
+		if c.NotAfter > 0 && left < warnWindow(c) && now.Sub(time.UnixMilli(c.WarnedAt)) >= 24*time.Hour {
 			database.GetDB().Model(&model.Certificate{}).Where("id = ?", c.Id).Update("warned_at", now.UnixMilli())
 			publishCert(eventbus.EventCertExpiring, c, nil)
 		}

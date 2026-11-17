@@ -2,10 +2,18 @@ import { z } from 'zod';
 
 const domain = /^(\*\.)?([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i;
 
+export function isIPAddress(value: string): boolean {
+  const v = value.trim();
+  return z.ipv4().safeParse(v).success || z.ipv6().safeParse(v).success;
+}
+
 export const CertDomainsSchema = z
   .array(z.string())
   .min(1, 'pages.certs.needDomain')
-  .refine((list) => list.every((d) => domain.test(d.trim())), 'pages.certs.badDomain');
+  .refine(
+    (list) => list.every((d) => domain.test(d.trim()) || isIPAddress(d)),
+    'pages.certs.badDomain',
+  );
 
 export const CertificateFormSchema = z
   .object({
@@ -25,11 +33,20 @@ export const CertificateFormSchema = z
 
 export type CertificateFormValues = z.infer<typeof CertificateFormSchema>;
 
-// wildcardNeedsDNS is the message for a wildcard asked over HTTP-01 or TLS-ALPN-01.
-export function wildcardNeedsDNS(domains: string[], challenge: string): string | true {
-  return challenge !== 'dns-01' && domains.some((d) => d.trim().startsWith('*.'))
-    ? 'pages.certs.wildcardDns'
-    : true;
+// challengeMismatch: a wildcard is proved only by DNS-01, an IP address only by HTTP-01.
+export function challengeMismatch(domains: string[], challenge: string): string | true {
+  if (challenge !== 'dns-01' && domains.some((d) => d.trim().startsWith('*.'))) {
+    return 'pages.certs.wildcardDns';
+  }
+  if (challenge !== 'http-01' && domains.some(isIPAddress)) return 'pages.certs.ipHttp';
+  return true;
+}
+
+// expiryColor warns in the last sixth of a certificate's life, at most two weeks ahead.
+export function expiryColor(notBefore: number, notAfter: number, now = Date.now()): string {
+  const left = notAfter - now;
+  if (left < 0) return 'red';
+  return left < Math.min(14 * 86_400_000, (notAfter - notBefore) / 6) ? 'orange' : 'green';
 }
 
 // daysLeft rounds down, so a certificate that expires today has 0 days left.

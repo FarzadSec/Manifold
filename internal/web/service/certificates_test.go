@@ -8,7 +8,9 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"math/big"
+	"net"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -113,7 +115,9 @@ func TestRenewDueRenewsNearExpiryAndBacksOffAfterAFailure(t *testing.T) {
 	if ca.Orders() != 1 {
 		t.Fatalf("a certificate with %s left was renewed", time.UnixMilli(first.NotAfter).Sub(now))
 	}
-	database.GetDB().Model(&model.Certificate{}).Where("id = ?", view.Id).Update("not_after", now.Add(10*24*time.Hour).UnixMilli())
+	database.GetDB().Model(&model.Certificate{}).Where("id = ?", view.Id).Updates(map[string]any{
+		"not_before": now.Add(-80 * 24 * time.Hour).UnixMilli(), "not_after": now.Add(10 * 24 * time.Hour).UnixMilli(),
+	})
 	s.RenewDue(now)
 	if ca.Orders() != 2 {
 		t.Fatalf("orders after a due renewal: %d", ca.Orders())
@@ -175,5 +179,64 @@ func TestSaveRefusesAWildcardWithoutDNSAndUploadChecksThePair(t *testing.T) {
 	}
 	if _, err := s.Save(CertificateInput{Id: view.Id, Domains: []string{"own.example.com"}, Challenge: "http-01"}); err == nil {
 		t.Fatal("an uploaded certificate was turned into an ACME one in place")
+	}
+}
+
+// The CLI's way back into a panel without a domain: an IP certificate it serves at once,
+// renewed by the job within the 160 hours it lasts rather than on the 90-day schedule.
+func TestIssueForPanelServesAnIPCertificateAndRenewsItWithinItsShortLife(t *testing.T) {
+	setupBulkDB(t)
+	ca, _ := useFakeCA(t)
+	port := freeTCPPort(t)
+	ca.Reach = func(string) string { return net.JoinHostPort("127.0.0.1", strconv.Itoa(port)) }
+	s := &CertificateService{}
+	in := CertificateInput{Domains: []string{"203.0.113.9"}, Challenge: "http-01", Port: port, AutoRenew: true}
+	view, err := s.IssueForPanel(in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	settings := &SettingService{}
+	certFile, _ := settings.GetCertFile()
+	keyFile, _ := settings.GetKeyFile()
+	if certFile != view.CertFile || keyFile != view.KeyFile {
+		t.Fatalf("the panel serves %s / %s, the store keeps %s / %s", certFile, keyFile, view.CertFile, view.KeyFile)
+	}
+	certPEM, _ := os.ReadFile(certFile)
+	keyPEM, _ := os.ReadFile(keyFile)
+	info, err := certstore.Inspect(certPEM, keyPEM)
+	if err != nil || strings.Join(info.Domains, ",") != "203.0.113.9" {
+		t.Fatalf("the panel's files hold %+v (%v)", info, err)
+	}
+
+	again, err := s.IssueForPanel(in)
+	if err != nil || again.Id != view.Id || ca.Orders() != 2 {
+		t.Fatalf("issuing again for the same address gave id %d (want %d), %d orders, %v", again.Id, view.Id, ca.Orders(), err)
+	}
+
+	issued := time.UnixMilli(again.NotBefore)
+	s.RenewDue(issued.Add(time.Hour))
+	var c model.Certificate
+	database.GetDB().First(&c, view.Id)
+	if ca.Orders() != 2 || c.WarnedAt != 0 {
+		t.Fatalf("a 160-hour certificate an hour old was renewed (%d orders) or warned about (%d)", ca.Orders(), c.WarnedAt)
+	}
+	s.RenewDue(issued.Add(110 * time.Hour))
+	if ca.Orders() != 3 {
+		t.Fatal("a 160-hour certificate with 50 hours left was not renewed")
+	}
+}
+
+func TestSaveTakesAnIPAddressOverHTTP01Only(t *testing.T) {
+	setupBulkDB(t)
+	s := &CertificateService{}
+	if _, err := s.Save(CertificateInput{Domains: []string{"203.0.113.9"}, Challenge: "tls-alpn-01"}); err == nil || !strings.Contains(err.Error(), "only HTTP-01") {
+		t.Fatalf("an IP address over TLS-ALPN-01 was saved: %v", err)
+	}
+	view, err := s.Save(CertificateInput{Domains: []string{"2001:DB8:0::9"}, Challenge: "http-01"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Name != "2001-db8--9" || strings.Join(view.Domains, ",") != "2001:db8::9" {
+		t.Fatalf("saved %q for %v", view.Name, view.Domains)
 	}
 }
