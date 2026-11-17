@@ -108,6 +108,7 @@ export const AdminInputSchema = z.object({
   brandSupportUrl: z.string(),
   brandTitle: z.string(),
   deniedPermissions: z.array(z.string()),
+  disabled: z.boolean(),
   expiresAt: z.number().int(),
   grantedPermissions: z.array(z.string()),
   inboundsLimited: z.boolean(),
@@ -137,6 +138,7 @@ export const AdminViewSchema = z.object({
   cycleStart: z.number().int(),
   cycleUsed: z.number().int(),
   deniedPermissions: z.array(z.string()),
+  disabled: z.boolean(),
   expiresAt: z.number().int(),
   grantedPermissions: z.array(z.string()),
   id: z.number().int(),
@@ -161,6 +163,7 @@ export const AdminViewSchema = z.object({
   totalUsed: z.number().int(),
   twoFactorEnabled: z.boolean(),
   username: z.string(),
+  usersOff: z.boolean(),
   volumeBytes: z.number().int(),
 });
 export type AdminView = z.infer<typeof AdminViewSchema>;
@@ -1825,6 +1828,8 @@ export const RoleSchema = z.object({
   description: z.string(),
   id: z.number().int(),
   inboundsLimited: z.boolean(),
+  keepUsersWhenLimited: z.boolean(),
+  lockWhenLimited: z.boolean(),
   maxDevicesPerUser: z.number().int(),
   maxPlanDays: z.number().int(),
   maxUserBytes: z.number().int(),
@@ -1836,6 +1841,7 @@ export const RoleSchema = z.object({
   permissions: z.array(z.string()),
   plansOnly: z.boolean(),
   tier: z.string(),
+  usersOffWhenDisabled: z.boolean(),
   usersReadScope: z.string(),
   usersWriteScope: z.string(),
 });
@@ -2086,6 +2092,7 @@ export const UserSchema = z.object({
   cycleStart: z.number().int(),
   cycleUsed: z.number().int(),
   deniedPermissions: z.array(z.string()),
+  disabled: z.boolean(),
   expiresAt: z.number().int(),
   grantedPermissions: z.array(z.string()),
   id: z.number().int(),
@@ -2108,6 +2115,7 @@ export const UserSchema = z.object({
   totalUsed: z.number().int(),
   twoFactorEnabled: z.boolean(),
   username: z.string(),
+  usersOff: z.boolean(),
   volumeBytes: z.number().int(),
 });
 export type User = z.infer<typeof UserSchema>;

@@ -3,6 +3,7 @@ package panel
 import (
 	"slices"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -33,6 +34,7 @@ type AdminInput struct {
 	Tier              string `json:"tier" example:"reseller"`
 	RoleId            int    `json:"roleId" example:"0"`
 	Remark            string `json:"remark"`
+	Disabled          bool   `json:"disabled" example:"false"`
 	VolumeBytes       int64  `json:"volumeBytes" example:"1099511627776"`
 	ResetCycle        string `json:"resetCycle" example:"monthly"`
 	ResetDay          int    `json:"resetDay" example:"1"`
@@ -177,7 +179,7 @@ func (s *AdminService) validate(in *AdminInput, id int) error {
 
 func (in *AdminInput) apply(u *model.User) {
 	u.Username, u.Tier, u.RoleId, u.Remark = in.Username, in.Tier, in.RoleId, in.Remark
-	u.GrantedPermissions, u.DeniedPermissions = in.GrantedPermissions, in.DeniedPermissions
+	u.GrantedPermissions, u.DeniedPermissions, u.Disabled = in.GrantedPermissions, in.DeniedPermissions, in.Disabled
 	u.VolumeBytes, u.ResetCycle, u.ResetDay, u.ResetMonth = in.VolumeBytes, in.ResetCycle, in.ResetDay, in.ResetMonth
 	u.ExpiresAt, u.MaxUsers, u.MayEditUsers, u.PlansOnly = in.ExpiresAt, in.MaxUsers, in.MayEditUsers, in.PlansOnly
 	u.AllowedPlanIds, u.InboundsLimited, u.AllowedInboundIds = in.AllowedPlanIds, in.InboundsLimited, in.AllowedInboundIds
@@ -219,7 +221,10 @@ func (s *AdminService) Update(id int, in AdminInput) error {
 	if u.IsOwner && in.Tier != access.TierAdmin {
 		return common.NewError("the panel owner stays a main admin")
 	}
-	relogin := u.Tier != in.Tier || u.RoleId != in.RoleId
+	if u.IsOwner && in.Disabled {
+		return common.NewError("the panel owner cannot be switched off")
+	}
+	relogin := u.Tier != in.Tier || u.RoleId != in.RoleId || in.Disabled && !u.Disabled
 	if in.Password != "" {
 		if len(in.Password) < MinAdminPasswordLength {
 			return common.NewErrorf("the password needs at least %d characters", MinAdminPasswordLength)
@@ -230,18 +235,14 @@ func (s *AdminService) Update(id int, in AdminInput) error {
 		}
 		u.Password, relogin = hash, true
 	}
-	wasReseller := u.Tier == access.TierReseller
 	in.apply(&u)
 	if relogin {
 		u.LoginEpoch++
 	}
-	if wasReseller && u.Tier != access.TierReseller {
-		u.Suspended = ""
-		if err := s.resellerService.RestoreUsers(&s.inboundService, u.Id); err != nil {
-			return err
-		}
+	if err := db.Save(&u).Error; err != nil {
+		return err
 	}
-	return db.Save(&u).Error
+	return s.resellerService.EnforceAccount(&s.inboundService, u.Id, time.Now())
 }
 
 // Delete removes an account; its users pass to the panel and its tokens are deleted.

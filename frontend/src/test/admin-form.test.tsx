@@ -4,7 +4,7 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import AdminFormModal from '@/pages/access/AdminFormModal';
 import { overrideChoices } from '@/pages/access/PermissionOverrides';
 import { HttpUtil, Msg } from '@/utils';
-import type { Role } from '@/generated/types';
+import type { AdminView, Role } from '@/generated/types';
 import {
   chooseSelectOption,
   listSelectOptions,
@@ -36,16 +36,31 @@ const READER: Role = {
   allowedPlanIds: [],
   inboundsLimited: false,
   allowedInboundIds: [],
+  usersOffWhenDisabled: false,
+  keepUsersWhenLimited: false,
+  lockWhenLimited: false,
   createdAt: 0,
 };
 
-function renderForm() {
+const OWNER = {
+  id: 1,
+  username: 'owner',
+  tier: 'admin',
+  roleId: 0,
+  isOwner: true,
+  remark: '',
+  disabled: false,
+  roleName: 'Main admin',
+  ownedUsers: 0,
+} as unknown as AdminView;
+
+function renderForm(admin: AdminView | null = null) {
   vi.spyOn(HttpUtil, 'get').mockResolvedValue(new Msg(true, '', []));
   const post = vi.spyOn(HttpUtil, 'post').mockResolvedValue(new Msg(true, '', null));
   renderWithProviders(
     <AdminFormModal
       open
-      admin={null}
+      admin={admin}
       roles={[READER]}
       plans={[]}
       ceilings={CEILINGS}
@@ -53,10 +68,13 @@ function renderForm() {
     />,
     { queryClient: makeTestQueryClient() },
   );
-  fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'desk' } });
-  fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'long-password' } });
-  chooseSelectOption(screen.getByLabelText('Tier').id, 'Operator');
-  return () => post.mock.calls.find(([url]) => url === '/panel/api/access/admins/add')?.[1];
+  if (!admin) {
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'desk' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'long-password' } });
+    chooseSelectOption(screen.getByLabelText('Tier').id, 'Operator');
+  }
+  return () =>
+    post.mock.calls.find(([url]) => String(url).startsWith('/panel/api/access/admins/'))?.[1];
 }
 
 // The pickers offer what the role leaves out to add, and what it gives to take away.
@@ -97,4 +115,18 @@ it('counts the read a role write implies as held', () => {
     grantable: ['plans:write'],
     deniable: ['users:read', 'users:write'],
   });
+});
+
+// An admin switches an account off from its form; the owner has no such switch.
+it('switches an account off, but never the owner', async () => {
+  const saved = renderForm();
+  fireEvent.click(screen.getByRole('switch', { name: 'Switched off' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  await waitFor(() => expect(saved()).toBeTruthy());
+  expect(saved()).toEqual(expect.objectContaining({ disabled: true }));
+});
+
+it('offers the owner no switch-off', () => {
+  renderForm({ ...OWNER });
+  expect(screen.queryByRole('switch', { name: 'Switched off' })).toBeNull();
 });

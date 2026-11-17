@@ -68,6 +68,7 @@ export interface AdminInput {
   brandSupportUrl: string;
   brandTitle: string;
   deniedPermissions: string[];
+  disabled: boolean;
   expiresAt: number;
   grantedPermissions: string[];
   inboundsLimited: boolean;
@@ -96,6 +97,7 @@ export interface AdminView {
   cycleStart: number;
   cycleUsed: number;
   deniedPermissions: string[];
+  disabled: boolean;
   expiresAt: number;
   grantedPermissions: string[];
   id: number;
@@ -120,6 +122,7 @@ export interface AdminView {
   totalUsed: number;
   twoFactorEnabled: boolean;
   username: string;
+  usersOff: boolean;
   volumeBytes: number;
 }
 
@@ -1691,6 +1694,8 @@ export interface Role {
   description: string;
   id: number;
   inboundsLimited: boolean;
+  keepUsersWhenLimited: boolean;
+  lockWhenLimited: boolean;
   maxDevicesPerUser: number;
   maxPlanDays: number;
   maxUserBytes: number;
@@ -1702,6 +1707,7 @@ export interface Role {
   permissions: string[];
   plansOnly: boolean;
   tier: string;
+  usersOffWhenDisabled: boolean;
   usersReadScope: string;
   usersWriteScope: string;
 }
@@ -1931,6 +1937,7 @@ export interface User {
   cycleStart: number;
   cycleUsed: number;
   deniedPermissions: string[];
+  disabled: boolean;
   expiresAt: number;
   grantedPermissions: string[];
   id: number;
@@ -1953,6 +1960,7 @@ export interface User {
   totalUsed: number;
   twoFactorEnabled: boolean;
   username: string;
+  usersOff: boolean;
   volumeBytes: number;
 }
 

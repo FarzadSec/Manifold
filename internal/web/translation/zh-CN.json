@@ -156,7 +156,9 @@
         "emptyPassword": "请输入密码",
         "wrongUsernameOrPassword": "用户名、密码或双重验证码无效。",
         "successLogin": "您已成功登录您的账户。",
-        "accountExpired": "此账户已过期"
+        "accountExpired": "此账户已过期",
+        "accountDisabled": "此账户已停用。",
+        "accountLimited": "此账户额度已用尽，续期后可再次登录。"
       }
     },
     "index": {
@@ -3173,7 +3175,12 @@
       "overridesHint": "仅对此账户添加角色未包含的权限，或移除某些权限；上限仍由层级决定。",
       "granted": "额外允许",
       "denied": "移除",
-      "overridden": "+{added} / −{removed} 项权限"
+      "overridden": "+{added} / −{removed} 项权限",
+      "disabled": "已停用",
+      "disabledHint": "已停用的账户无法登录，其令牌也会失效。除非角色同时停用其用户，否则用户保持启用。",
+      "usersOffWhenDisabled": "账户停用期间同时停用其用户",
+      "keepUsersWhenLimited": "额度用尽时保持其用户启用",
+      "lockWhenLimited": "额度用尽期间禁止登录"
     },
     "usage": {
       "menu": "用量",

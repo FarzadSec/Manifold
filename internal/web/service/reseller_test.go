@@ -170,3 +170,64 @@ func TestEnforceStartsANewCycle(t *testing.T) {
 		t.Fatalf("after the new cycle used=%d suspended=%q, want 0 and none", got.CycleUsed, got.Suspended)
 	}
 }
+
+// A role decides what a used-up allowance and a switch-off do to an account's users; lifting
+// the cause brings back the users the panel switched off.
+func TestRolePoliciesDecideWhenAnAccountsUsersGoOff(t *testing.T) {
+	cases := []struct {
+		name     string
+		tier     string
+		role     *model.Role
+		limited  bool
+		disabled bool
+		wantOff  bool
+	}{
+		{"used up without a role", access.TierReseller, nil, true, false, true},
+		{"used up, the role keeps users on", access.TierReseller, &model.Role{KeepUsersWhenLimited: true}, true, false, false},
+		{"switched off without a role", access.TierReseller, nil, false, true, false},
+		{"switched off, the role turns users off", access.TierReseller, &model.Role{UsersOffWhenDisabled: true}, false, true, true},
+		{"an operator switched off, the role turns users off", access.TierOperator, &model.Role{UsersOffWhenDisabled: true}, false, true, true},
+	}
+	for i, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			setupBulkDB(t)
+			db := database.GetDB()
+			acc := model.User{Username: "acc", Tier: tc.tier, Disabled: tc.disabled, ResetCycle: CycleNone}
+			if tc.limited {
+				acc.VolumeBytes, acc.CycleUsed = 1000, 1500
+			}
+			if tc.role != nil {
+				tc.role.Name, tc.role.Tier = "policy", tc.tier
+				if err := db.Create(tc.role).Error; err != nil {
+					t.Fatal(err)
+				}
+				acc.RoleId = tc.role.Id
+			}
+			if err := db.Create(&acc).Error; err != nil {
+				t.Fatal(err)
+			}
+			svc, inboundSvc, resellers := &ClientService{}, &InboundService{}, &ResellerService{}
+			seedOwnedClient(t, svc, 53100+i, "u@x", acc.Id, true)
+
+			if err := resellers.Enforce(inboundSvc, time.Now()); err != nil {
+				t.Fatalf("Enforce: %v", err)
+			}
+			if off := !recordEnableOf(t, svc, "u@x"); off != tc.wantOff {
+				t.Fatalf("user off = %v, want %v", off, tc.wantOff)
+			}
+			if got := usedOf(t, acc.Id).UsersOff; got != tc.wantOff {
+				t.Fatalf("usersOff = %v, want %v", got, tc.wantOff)
+			}
+			if err := db.Model(&model.User{}).Where("id = ?", acc.Id).
+				Updates(map[string]any{"volume_bytes": 0, "disabled": false}).Error; err != nil {
+				t.Fatal(err)
+			}
+			if err := resellers.Enforce(inboundSvc, time.Now()); err != nil {
+				t.Fatalf("Enforce after lifting: %v", err)
+			}
+			if !recordEnableOf(t, svc, "u@x") || usedOf(t, acc.Id).UsersOff {
+				t.Fatal("lifting the cause did not bring the user back on")
+			}
+		})
+	}
+}

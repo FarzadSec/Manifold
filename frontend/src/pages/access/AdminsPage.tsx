@@ -118,6 +118,7 @@ export default function AdminsPage() {
           <Tag color={TIER_COLORS[a.tier]}>
             {a.roleId ? a.roleName : t(`pages.access.tier.${a.tier}`)}
           </Tag>
+          {a.disabled && <Tag color="red">{t('pages.access.disabled')}</Tag>}
           {(a.grantedPermissions?.length ?? 0) + (a.deniedPermissions?.length ?? 0) > 0 && (
             <Tag>
               {t('pages.access.overridden', {

@@ -61,6 +61,8 @@ type User struct {
 	RoleId  int    `json:"roleId" gorm:"default:0"`
 	IsOwner bool   `json:"isOwner" gorm:"default:false"`
 	Remark  string `json:"remark"`
+	// Disabled is set by an admin: the account cannot sign in until it is switched back on.
+	Disabled bool `json:"disabled" gorm:"default:false"`
 	// Changes to what the role gives this one account, inside its tier's ceiling.
 	GrantedPermissions []string `json:"grantedPermissions" gorm:"serializer:json;column:granted_permissions" example:"[\"plans:write\"]"`
 	DeniedPermissions  []string `json:"deniedPermissions" gorm:"serializer:json;column:denied_permissions" example:"[\"users:write\"]"`
@@ -85,10 +87,12 @@ type User struct {
 	BrandSupportUrl   string `json:"brandSupportUrl"`
 	BrandAnnounce     string `json:"brandAnnounce"`
 
-	CycleStart  int64  `json:"cycleStart" gorm:"default:0"`
-	CycleUsed   int64  `json:"cycleUsed" gorm:"default:0"`
-	TotalUsed   int64  `json:"totalUsed" gorm:"default:0"`
-	Suspended   string `json:"suspended" gorm:"default:''"`
+	CycleStart int64  `json:"cycleStart" gorm:"default:0"`
+	CycleUsed  int64  `json:"cycleUsed" gorm:"default:0"`
+	TotalUsed  int64  `json:"totalUsed" gorm:"default:0"`
+	Suspended  string `json:"suspended" gorm:"default:''"`
+	// UsersOff records that the panel switched this account's users off and owes them a restore.
+	UsersOff    bool   `json:"usersOff" gorm:"default:false"`
 	LastLoginAt int64  `json:"lastLoginAt" gorm:"default:0"`
 	LastLoginIp string `json:"lastLoginIp"`
 	CreatedAt   int64  `json:"createdAt" gorm:"autoCreateTime:milli"`
@@ -117,7 +121,11 @@ type Role struct {
 	AllowedPlanIds    []int `json:"allowedPlanIds" gorm:"serializer:json;column:allowed_plan_ids" example:"[1,2]"`
 	InboundsLimited   bool  `json:"inboundsLimited" gorm:"default:false"`
 	AllowedInboundIds []int `json:"allowedInboundIds" gorm:"serializer:json;column:allowed_inbound_ids" example:"[1]"`
-	CreatedAt         int64 `json:"createdAt" gorm:"autoCreateTime:milli"`
+	// What an account's switch-off or used-up allowance does to it and to its users.
+	UsersOffWhenDisabled bool  `json:"usersOffWhenDisabled" gorm:"default:false"`
+	KeepUsersWhenLimited bool  `json:"keepUsersWhenLimited" gorm:"default:false"`
+	LockWhenLimited      bool  `json:"lockWhenLimited" gorm:"default:false"`
+	CreatedAt            int64 `json:"createdAt" gorm:"autoCreateTime:milli"`
 }
 
 // Plan is a preset a new user is created from; nothing links the user to it afterwards.

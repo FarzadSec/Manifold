@@ -156,7 +156,9 @@
         "emptyPassword": "請輸入密碼",
         "wrongUsernameOrPassword": "用戶名、密碼或雙重驗證碼無效。",
         "successLogin": "您已成功登入您的帳戶。",
-        "accountExpired": "This account has expired"
+        "accountExpired": "This account has expired",
+        "accountDisabled": "This account is switched off.",
+        "accountLimited": "This account's allowance is used up. It can sign in again once it is renewed."
       }
     },
     "index": {
@@ -3173,7 +3175,12 @@
       "overridesHint": "Add what its role leaves out, or take something away, for this account alone. Its tier still sets the limit.",
       "granted": "Also allow",
       "denied": "Take away",
-      "overridden": "+{added} / −{removed} permissions"
+      "overridden": "+{added} / −{removed} permissions",
+      "disabled": "Switched off",
+      "disabledHint": "A switched-off account cannot sign in and its tokens stop working. Its users stay on unless its role switches them off too.",
+      "usersOffWhenDisabled": "Switch its users off while the account is off",
+      "keepUsersWhenLimited": "Keep its users on when the allowance runs out",
+      "lockWhenLimited": "Lock sign-in while the allowance is used up"
     },
     "usage": {
       "menu": "Usage",

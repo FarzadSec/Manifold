@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"net/http"
 	"text/template"
 	"time"
@@ -109,7 +110,7 @@ func (a *IndexController) login(c *gin.Context) {
 	user, checkErr := a.userService.CheckUser(form.Username, form.Password, form.TwoFactorCode)
 	if user != nil {
 		if _, err := access.Resolve(user); err != nil {
-			pureJsonMsg(c, http.StatusOK, false, I18nWeb(c, "pages.login.toasts.accountExpired"))
+			pureJsonMsg(c, http.StatusOK, false, I18nWeb(c, loginRefusal(err)))
 			return
 		}
 	}
@@ -190,4 +191,16 @@ func (a *IndexController) csrfToken(c *gin.Context) {
 func (a *IndexController) getTwoFactorEnable(c *gin.Context) {
 	status, err := a.settingService.AnyTwoFactorEnabled()
 	jsonObj(c, status, err)
+}
+
+// loginRefusal names why a known account with the right password still may not sign in.
+func loginRefusal(err error) string {
+	switch {
+	case errors.Is(err, access.ErrAccountDisabled):
+		return "pages.login.toasts.accountDisabled"
+	case errors.Is(err, access.ErrAccountLimited):
+		return "pages.login.toasts.accountLimited"
+	default:
+		return "pages.login.toasts.accountExpired"
+	}
 }

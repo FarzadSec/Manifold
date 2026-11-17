@@ -1549,7 +1549,7 @@ func runSeeders(isUsersEmpty bool) error {
 	}
 
 	if empty && isUsersEmpty {
-		seeders := []string{"UserPasswordHash", "ClientsTable", "InboundClientsArrayFix", "InboundClientTgIdFix2", "InboundClientSubIdFix", "FreedomFinalRulesReverseFix", "FreedomFinalRulesPrivateEgressBlock", "UppercaseFreedomFinalRulesFix", "FreedomFinalRuleDelayFix", "InboundRealityFinalmaskTcpStrip", "ApiTokensHash", "LegacyProxySettingsCleanup", "SessionSecretRotation", "OutboundRemovedKeysFix", "FreedomDomainStrategyFix", "DNSOutboundLegacyKeysFix", "DNSOutboundQTypeZeroFix", "WireguardDomainStrategyFix", "XdnsFinalmaskNamesAddrsFix", "UDPHopClientMaskFix", "HostVerifyPeerCertByNameBoolFix", "HostMihomoX25519Reset", "WireguardPeersToClients", "MtprotoSecretsToClients", "NodeInboundsAdopted", "NodeDownNotified", "ResetIpLimitNoFail2ban", "ClientGroupNameTrim", "OwnerlessClientHwidPurge", "ClientForwardedPortsBackfill", "TwoFactorPerAccount", "ClientWeeklyResetOnSunday", "ClientUserLimitSplit", "AppLocationsByInbound"}
+		seeders := []string{"UserPasswordHash", "ClientsTable", "InboundClientsArrayFix", "InboundClientTgIdFix2", "InboundClientSubIdFix", "FreedomFinalRulesReverseFix", "FreedomFinalRulesPrivateEgressBlock", "UppercaseFreedomFinalRulesFix", "FreedomFinalRuleDelayFix", "InboundRealityFinalmaskTcpStrip", "ApiTokensHash", "LegacyProxySettingsCleanup", "SessionSecretRotation", "OutboundRemovedKeysFix", "FreedomDomainStrategyFix", "DNSOutboundLegacyKeysFix", "DNSOutboundQTypeZeroFix", "WireguardDomainStrategyFix", "XdnsFinalmaskNamesAddrsFix", "UDPHopClientMaskFix", "HostVerifyPeerCertByNameBoolFix", "HostMihomoX25519Reset", "WireguardPeersToClients", "MtprotoSecretsToClients", "NodeInboundsAdopted", "NodeDownNotified", "ResetIpLimitNoFail2ban", "ClientGroupNameTrim", "OwnerlessClientHwidPurge", "ClientForwardedPortsBackfill", "TwoFactorPerAccount", "ClientWeeklyResetOnSunday", "ClientUserLimitSplit", "AppLocationsByInbound", "AccountUsersOffFromSuspension"}
 		for _, name := range seeders {
 			if err := db.Create(&model.HistoryOfSeeders{SeederName: name}).Error; err != nil {
 				return err
@@ -1764,6 +1764,12 @@ func runSeeders(isUsersEmpty bool) error {
 
 	if !slices.Contains(seedersHistory, "AppLocationsByInbound") {
 		if err := locationsFromServerNames(); err != nil {
+			return err
+		}
+	}
+
+	if !slices.Contains(seedersHistory, "AccountUsersOffFromSuspension") {
+		if err := usersOffFromSuspension(); err != nil {
 			return err
 		}
 	}
@@ -2229,6 +2235,18 @@ func locationsFromServerNames() error {
 			}
 		}
 		return tx.Create(&model.HistoryOfSeeders{SeederName: "AppLocationsByInbound"}).Error
+	})
+}
+
+// usersOffFromSuspension records, for a reseller already out of allowance, that its users
+// are off, which its suspension alone used to mean.
+func usersOffFromSuspension() error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&model.User{}).Where("tier = ? AND suspended <> ?", "reseller", "").
+			Update("users_off", true).Error; err != nil {
+			return err
+		}
+		return tx.Create(&model.HistoryOfSeeders{SeederName: "AccountUsersOffFromSuspension"}).Error
 	})
 }
 

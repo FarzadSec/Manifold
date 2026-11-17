@@ -132,3 +132,36 @@ it('saves the plans and inbounds a role sells from', async () => {
     }),
   );
 });
+
+// What switching off and running out do is set per role; the allowance only exists for resellers.
+it('saves what switching off and running out do to a role', async () => {
+  renderPage();
+  const post = vi.spyOn(HttpUtil, 'post').mockResolvedValue(new Msg(true, '', null));
+  fireEvent.click(await screen.findByRole('button', { name: /Add role/ }));
+  fireEvent.change(await screen.findByLabelText('Name'), { target: { value: 'Shop' } });
+  expect(
+    screen.queryByRole('switch', { name: 'Lock sign-in while the allowance is used up' }),
+  ).toBeNull();
+  chooseSelectOption(screen.getByLabelText('Based on').id, 'Reseller');
+  fireEvent.click(
+    screen.getByRole('switch', { name: 'Switch its users off while the account is off' }),
+  );
+  fireEvent.click(
+    screen.getByRole('switch', { name: 'Keep its users on when the allowance runs out' }),
+  );
+  fireEvent.click(
+    screen.getByRole('switch', { name: 'Lock sign-in while the allowance is used up' }),
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+  const saved = () => post.mock.calls.find(([url]) => url === '/panel/api/access/roles/add');
+  await waitFor(() => expect(saved()).toBeTruthy());
+  expect(saved()?.[1]).toEqual(
+    expect.objectContaining({
+      tier: 'reseller',
+      usersOffWhenDisabled: true,
+      keepUsersWhenLimited: true,
+      lockWhenLimited: true,
+    }),
+  );
+});

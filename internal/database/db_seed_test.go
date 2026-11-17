@@ -637,3 +637,39 @@ func TestAppLocationsByServerBecomeLocationsOfItsInbounds(t *testing.T) {
 		t.Fatal("the server-keyed table is still there")
 	}
 }
+
+// A reseller already out of allowance had its users off with nothing but its suspension to
+// say so; the upgrade records it, so renewing brings them back.
+func TestSuspendedResellersKeepTheirUsersOffOnUpgrade(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "x-ui.db")
+	if err := InitDB(dbPath); err != nil {
+		t.Fatalf("InitDB: %v", err)
+	}
+	t.Cleanup(func() { _ = CloseDB() })
+	accounts := []model.User{
+		{Username: "spent", Tier: "reseller", Suspended: "volume"},
+		{Username: "fine", Tier: "reseller"},
+		{Username: "staff", Tier: "operator", Suspended: "volume"},
+	}
+	if err := db.Create(&accounts).Error; err != nil {
+		t.Fatalf("seed accounts: %v", err)
+	}
+	if err := db.Where("seeder_name = ?", "AccountUsersOffFromSuspension").Delete(&model.HistoryOfSeeders{}).Error; err != nil {
+		t.Fatalf("clear seeder history: %v", err)
+	}
+	if err := CloseDB(); err != nil {
+		t.Fatalf("CloseDB: %v", err)
+	}
+	if err := InitDB(dbPath); err != nil {
+		t.Fatalf("reopen InitDB: %v", err)
+	}
+	for name, want := range map[string]bool{"spent": true, "fine": false, "staff": false} {
+		var u model.User
+		if err := db.Where("username = ?", name).First(&u).Error; err != nil {
+			t.Fatalf("read %s: %v", name, err)
+		}
+		if u.UsersOff != want {
+			t.Errorf("%s usersOff = %v, want %v", name, u.UsersOff, want)
+		}
+	}
+}

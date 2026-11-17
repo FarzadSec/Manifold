@@ -14,6 +14,7 @@ import {
   Row,
   Select,
   Space,
+  Switch,
   Table,
   Tag,
   Typography,
@@ -51,6 +52,9 @@ function emptyRole(): Role {
     allowedPlanIds: [],
     inboundsLimited: false,
     allowedInboundIds: [],
+    usersOffWhenDisabled: false,
+    keepUsersWhenLimited: false,
+    lockWhenLimited: false,
     createdAt: 0,
   };
 }
@@ -232,6 +236,39 @@ function RoleFormModal({
           </Row>
           <Row gutter={12}>
             <SellsFromFields plans={plans} />
+          </Row>
+          <Row gutter={12}>
+            <Col xs={24} md={tier === 'reseller' ? 8 : 24}>
+              <FormField
+                name="usersOffWhenDisabled"
+                label={t('pages.access.usersOffWhenDisabled')}
+                valueProp="checked"
+              >
+                <Switch />
+              </FormField>
+            </Col>
+            {tier === 'reseller' && (
+              <>
+                <Col xs={24} md={8}>
+                  <FormField
+                    name="keepUsersWhenLimited"
+                    label={t('pages.access.keepUsersWhenLimited')}
+                    valueProp="checked"
+                  >
+                    <Switch />
+                  </FormField>
+                </Col>
+                <Col xs={24} md={8}>
+                  <FormField
+                    name="lockWhenLimited"
+                    label={t('pages.access.lockWhenLimited')}
+                    valueProp="checked"
+                  >
+                    <Switch />
+                  </FormField>
+                </Col>
+              </>
+            )}
           </Row>
         </Form>
       </FormProvider>

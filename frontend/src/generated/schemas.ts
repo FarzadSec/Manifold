@@ -231,6 +231,10 @@ export const SCHEMAS: Record<string, unknown> = {
         },
         "type": "array"
       },
+      "disabled": {
+        "example": false,
+        "type": "boolean"
+      },
       "expiresAt": {
         "example": 0,
         "format": "int64",
@@ -310,6 +314,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "brandSupportUrl",
       "brandTitle",
       "deniedPermissions",
+      "disabled",
       "expiresAt",
       "grantedPermissions",
       "inboundsLimited",
@@ -373,6 +378,10 @@ export const SCHEMAS: Record<string, unknown> = {
           "type": "string"
         },
         "type": "array"
+      },
+      "disabled": {
+        "description": "Disabled is set by an admin: the account cannot sign in until it is switched back on.",
+        "type": "boolean"
       },
       "expiresAt": {
         "format": "int64",
@@ -460,6 +469,10 @@ export const SCHEMAS: Record<string, unknown> = {
       "username": {
         "type": "string"
       },
+      "usersOff": {
+        "description": "UsersOff records that the panel switched this account's users off and owes them a restore.",
+        "type": "boolean"
+      },
       "volumeBytes": {
         "description": "A reseller's allowance: traffic per cycle, account expiry and the users it may own.",
         "format": "int64",
@@ -476,6 +489,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "cycleStart",
       "cycleUsed",
       "deniedPermissions",
+      "disabled",
       "expiresAt",
       "grantedPermissions",
       "id",
@@ -500,6 +514,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "totalUsed",
       "twoFactorEnabled",
       "username",
+      "usersOff",
       "volumeBytes"
     ],
     "type": "object"
@@ -7610,6 +7625,12 @@ export const SCHEMAS: Record<string, unknown> = {
       "inboundsLimited": {
         "type": "boolean"
       },
+      "keepUsersWhenLimited": {
+        "type": "boolean"
+      },
+      "lockWhenLimited": {
+        "type": "boolean"
+      },
       "maxDevicesPerUser": {
         "type": "integer"
       },
@@ -7657,6 +7678,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "operator",
         "type": "string"
       },
+      "usersOffWhenDisabled": {
+        "description": "What an account's switch-off or used-up allowance does to it and to its users.",
+        "type": "boolean"
+      },
       "usersReadScope": {
         "description": "Which users the role reads and changes: all (empty) or its own; a reseller is always own.",
         "example": "all",
@@ -7674,6 +7699,8 @@ export const SCHEMAS: Record<string, unknown> = {
       "description",
       "id",
       "inboundsLimited",
+      "keepUsersWhenLimited",
+      "lockWhenLimited",
       "maxDevicesPerUser",
       "maxPlanDays",
       "maxUserBytes",
@@ -7685,6 +7712,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "permissions",
       "plansOnly",
       "tier",
+      "usersOffWhenDisabled",
       "usersReadScope",
       "usersWriteScope"
     ],
@@ -8645,6 +8673,10 @@ export const SCHEMAS: Record<string, unknown> = {
         },
         "type": "array"
       },
+      "disabled": {
+        "description": "Disabled is set by an admin: the account cannot sign in until it is switched back on.",
+        "type": "boolean"
+      },
       "expiresAt": {
         "format": "int64",
         "type": "integer"
@@ -8722,6 +8754,10 @@ export const SCHEMAS: Record<string, unknown> = {
       "username": {
         "type": "string"
       },
+      "usersOff": {
+        "description": "UsersOff records that the panel switched this account's users off and owes them a restore.",
+        "type": "boolean"
+      },
       "volumeBytes": {
         "description": "A reseller's allowance: traffic per cycle, account expiry and the users it may own.",
         "format": "int64",
@@ -8738,6 +8774,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "cycleStart",
       "cycleUsed",
       "deniedPermissions",
+      "disabled",
       "expiresAt",
       "grantedPermissions",
       "id",
@@ -8760,6 +8797,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "totalUsed",
       "twoFactorEnabled",
       "username",
+      "usersOff",
       "volumeBytes"
     ],
     "type": "object"

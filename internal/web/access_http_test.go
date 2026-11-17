@@ -576,3 +576,65 @@ func TestAccountOverridesChangeWhatItsRoleGives(t *testing.T) {
 		t.Errorf("a denial locked the panel owner out: %s", reply.Msg)
 	}
 }
+
+// A switched-off account is refused at once, and so is one out of allowance when its role
+// locks it; switching an account off turns its users off when its role says so.
+func TestSwitchedOffAndLockedAccountsAreRefused(t *testing.T) {
+	f := newAccessFixture(t)
+	db := database.GetDB()
+	perms := []string{access.UsersRead, access.UsersWrite}
+	lock := model.Role{Name: "locked", Tier: access.TierReseller, Permissions: perms, LockWhenLimited: true}
+	shut := model.Role{Name: "shut", Tier: access.TierReseller, Permissions: perms, UsersOffWhenDisabled: true}
+	for _, r := range []*model.Role{&lock, &shut} {
+		if err := db.Create(r).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	tokenFor := func(u model.User) (model.User, string) {
+		acc := f.account(t, u)
+		return acc, f.token(t, u.Username, panel.TokenAccess{UserId: acc.Id})
+	}
+	_, off := tokenFor(model.User{Username: "off", Tier: access.TierOperator, Disabled: true})
+	_, locked := tokenFor(model.User{Username: "locked", Tier: access.TierReseller, RoleId: lock.Id, Suspended: access.SuspendedVolume})
+	_, limited := tokenFor(model.User{Username: "limited", Tier: access.TierReseller, RoleId: shut.Id, Suspended: access.SuspendedVolume})
+	for name, want := range map[string]int{off: http.StatusUnauthorized, locked: http.StatusUnauthorized, limited: http.StatusOK} {
+		if code, _ := f.call(t, name, http.MethodGet, "/clients/list", ""); code != want {
+			t.Errorf("a request answered %d, want %d", code, want)
+		}
+	}
+
+	seller, sellerTok := tokenFor(model.User{Username: "seller", Tier: access.TierReseller, RoleId: shut.Id, MayEditUsers: true})
+	if reply := f.addClient(t, sellerTok, "bought"); !reply.Success {
+		t.Fatalf("add: %s", reply.Msg)
+	}
+	adminTok := f.token(t, "admin", panel.TokenAccess{UserId: f.owner.Id})
+	update := func(disabled bool) {
+		t.Helper()
+		body := `{"username":"seller","tier":"reseller","roleId":` + itoa(shut.Id) + `,"resetCycle":"none","mayEditUsers":true,"disabled":` + strconv.FormatBool(disabled) + `}`
+		if _, reply := f.call(t, adminTok, http.MethodPost, "/access/admins/update/"+itoa(seller.Id), body); !reply.Success {
+			t.Fatalf("update: %s", reply.Msg)
+		}
+	}
+	enabled := func() bool {
+		var rec model.ClientRecord
+		if err := db.Where("email = ?", "bought").First(&rec).Error; err != nil {
+			t.Fatal(err)
+		}
+		return rec.Enable
+	}
+	update(true)
+	if enabled() {
+		t.Error("switching the account off left its user on, though its role turns users off")
+	}
+	if code, _ := f.call(t, sellerTok, http.MethodGet, "/clients/list", ""); code != http.StatusUnauthorized {
+		t.Errorf("the switched-off account's token still answered %d", code)
+	}
+	update(false)
+	if !enabled() {
+		t.Error("switching the account back on did not bring its user back")
+	}
+	ownerBody := `{"username":"` + f.owner.Username + `","tier":"admin","resetCycle":"none","disabled":true}`
+	if _, reply := f.call(t, adminTok, http.MethodPost, "/access/admins/update/"+itoa(f.owner.Id), ownerBody); reply.Success {
+		t.Error("the panel owner was switched off")
+	}
+}

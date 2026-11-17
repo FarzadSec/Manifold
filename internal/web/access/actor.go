@@ -9,8 +9,12 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 )
 
-// ErrAccountExpired refuses a reseller whose account is past its expiry, at login and per request.
-var ErrAccountExpired = errors.New("this account has expired")
+// Why an account is refused at login and on every request.
+var (
+	ErrAccountExpired  = errors.New("this account has expired")
+	ErrAccountDisabled = errors.New("this account is switched off")
+	ErrAccountLimited  = errors.New("this account's allowance is used up")
+)
 
 const actorKey = "access_actor"
 
@@ -109,6 +113,9 @@ func Resolve(user *model.User) (*Actor, error) {
 	if user.Tier == TierReseller && user.Suspended == SuspendedExpired {
 		return nil, ErrAccountExpired
 	}
+	if user.Disabled && !user.IsOwner {
+		return nil, ErrAccountDisabled
+	}
 	tier := user.Tier
 	if !ValidTier(tier) {
 		tier = TierAdmin
@@ -124,6 +131,9 @@ func Resolve(user *model.User) (*Actor, error) {
 		}
 		if role.Tier != tier {
 			return nil, errors.New("the account's role belongs to another tier")
+		}
+		if role.LockWhenLimited && tier == TierReseller && user.Suspended != "" {
+			return nil, ErrAccountLimited
 		}
 		actor.Role = &role
 		actor.Perms = NewSet(tier, role.Permissions)

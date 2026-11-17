@@ -257,6 +257,10 @@
             },
             "type": "array"
           },
+          "disabled": {
+            "example": false,
+            "type": "boolean"
+          },
           "expiresAt": {
             "example": 0,
             "format": "int64",
@@ -336,6 +340,7 @@
           "brandSupportUrl",
           "brandTitle",
           "deniedPermissions",
+          "disabled",
           "expiresAt",
           "grantedPermissions",
           "inboundsLimited",
@@ -399,6 +404,10 @@
               "type": "string"
             },
             "type": "array"
+          },
+          "disabled": {
+            "description": "Disabled is set by an admin: the account cannot sign in until it is switched back on.",
+            "type": "boolean"
           },
           "expiresAt": {
             "format": "int64",
@@ -486,6 +495,10 @@
           "username": {
             "type": "string"
           },
+          "usersOff": {
+            "description": "UsersOff records that the panel switched this account's users off and owes them a restore.",
+            "type": "boolean"
+          },
           "volumeBytes": {
             "description": "A reseller's allowance: traffic per cycle, account expiry and the users it may own.",
             "format": "int64",
@@ -502,6 +515,7 @@
           "cycleStart",
           "cycleUsed",
           "deniedPermissions",
+          "disabled",
           "expiresAt",
           "grantedPermissions",
           "id",
@@ -526,6 +540,7 @@
           "totalUsed",
           "twoFactorEnabled",
           "username",
+          "usersOff",
           "volumeBytes"
         ],
         "type": "object"
@@ -7636,6 +7651,12 @@
           "inboundsLimited": {
             "type": "boolean"
           },
+          "keepUsersWhenLimited": {
+            "type": "boolean"
+          },
+          "lockWhenLimited": {
+            "type": "boolean"
+          },
           "maxDevicesPerUser": {
             "type": "integer"
           },
@@ -7683,6 +7704,10 @@
             "example": "operator",
             "type": "string"
           },
+          "usersOffWhenDisabled": {
+            "description": "What an account's switch-off or used-up allowance does to it and to its users.",
+            "type": "boolean"
+          },
           "usersReadScope": {
             "description": "Which users the role reads and changes: all (empty) or its own; a reseller is always own.",
             "example": "all",
@@ -7700,6 +7725,8 @@
           "description",
           "id",
           "inboundsLimited",
+          "keepUsersWhenLimited",
+          "lockWhenLimited",
           "maxDevicesPerUser",
           "maxPlanDays",
           "maxUserBytes",
@@ -7711,6 +7738,7 @@
           "permissions",
           "plansOnly",
           "tier",
+          "usersOffWhenDisabled",
           "usersReadScope",
           "usersWriteScope"
         ],
@@ -8671,6 +8699,10 @@
             },
             "type": "array"
           },
+          "disabled": {
+            "description": "Disabled is set by an admin: the account cannot sign in until it is switched back on.",
+            "type": "boolean"
+          },
           "expiresAt": {
             "format": "int64",
             "type": "integer"
@@ -8748,6 +8780,10 @@
           "username": {
             "type": "string"
           },
+          "usersOff": {
+            "description": "UsersOff records that the panel switched this account's users off and owes them a restore.",
+            "type": "boolean"
+          },
           "volumeBytes": {
             "description": "A reseller's allowance: traffic per cycle, account expiry and the users it may own.",
             "format": "int64",
@@ -8764,6 +8800,7 @@
           "cycleStart",
           "cycleUsed",
           "deniedPermissions",
+          "disabled",
           "expiresAt",
           "grantedPermissions",
           "id",
@@ -8786,6 +8823,7 @@
           "totalUsed",
           "twoFactorEnabled",
           "username",
+          "usersOff",
           "volumeBytes"
         ],
         "type": "object"
@@ -20966,6 +21004,7 @@
                       "deniedPermissions": [
                         "users:write"
                       ],
+                      "disabled": false,
                       "expiresAt": 0,
                       "grantedPermissions": [
                         "plans:write"
@@ -20992,6 +21031,7 @@
                       "totalUsed": 0,
                       "twoFactorEnabled": false,
                       "username": "",
+                      "usersOff": false,
                       "volumeBytes": 0
                     }
                   ]
@@ -21066,6 +21106,7 @@
                     "deniedPermissions": [
                       "users:write"
                     ],
+                    "disabled": false,
                     "expiresAt": 0,
                     "grantedPermissions": [
                       "plans:write"
@@ -21092,6 +21133,7 @@
                     "totalUsed": 0,
                     "twoFactorEnabled": false,
                     "username": "",
+                    "usersOff": false,
                     "volumeBytes": 0
                   }
                 }
@@ -21325,6 +21367,8 @@
                       "description": "",
                       "id": 1,
                       "inboundsLimited": false,
+                      "keepUsersWhenLimited": false,
+                      "lockWhenLimited": false,
                       "maxDevicesPerUser": 0,
                       "maxPlanDays": 0,
                       "maxUserBytes": 107374182400,
@@ -21338,6 +21382,7 @@
                       ],
                       "plansOnly": false,
                       "tier": "operator",
+                      "usersOffWhenDisabled": false,
                       "usersReadScope": "all",
                       "usersWriteScope": "own"
                     }
@@ -21406,6 +21451,8 @@
                     "description": "",
                     "id": 1,
                     "inboundsLimited": false,
+                    "keepUsersWhenLimited": false,
+                    "lockWhenLimited": false,
                     "maxDevicesPerUser": 0,
                     "maxPlanDays": 0,
                     "maxUserBytes": 107374182400,
@@ -21419,6 +21466,7 @@
                     ],
                     "plansOnly": false,
                     "tier": "operator",
+                    "usersOffWhenDisabled": false,
                     "usersReadScope": "all",
                     "usersWriteScope": "own"
                   }
@@ -21498,6 +21546,8 @@
                     "description": "",
                     "id": 1,
                     "inboundsLimited": false,
+                    "keepUsersWhenLimited": false,
+                    "lockWhenLimited": false,
                     "maxDevicesPerUser": 0,
                     "maxPlanDays": 0,
                     "maxUserBytes": 107374182400,
@@ -21511,6 +21561,7 @@
                     ],
                     "plansOnly": false,
                     "tier": "operator",
+                    "usersOffWhenDisabled": false,
                     "usersReadScope": "all",
                     "usersWriteScope": "own"
                   }

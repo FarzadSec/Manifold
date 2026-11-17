@@ -28,6 +28,7 @@ function emptyInput(): AdminInput {
     tier: 'reseller',
     roleId: 0,
     remark: '',
+    disabled: false,
     volumeBytes: 0,
     resetCycle: 'monthly',
     resetDay: 1,
@@ -165,11 +166,23 @@ export default function AdminFormModal({
                 <Select options={roleOptions} />
               </FormField>
             </Col>
-            <Col xs={24}>
+            <Col xs={24} md={admin?.isOwner ? 24 : 16}>
               <FormField name="remark" label={t('pages.access.remark')}>
                 <Input maxLength={200} />
               </FormField>
             </Col>
+            {!admin?.isOwner && (
+              <Col xs={24} md={8}>
+                <FormField
+                  name="disabled"
+                  label={t('pages.access.disabled')}
+                  valueProp="checked"
+                  tooltip={t('pages.access.disabledHint')}
+                >
+                  <Switch />
+                </FormField>
+              </Col>
+            )}
           </Row>
 
           {!admin?.isOwner && (

@@ -99,6 +99,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "deniedPermissions": [
       "users:write"
     ],
+    "disabled": false,
     "expiresAt": 0,
     "grantedPermissions": [
       "plans:write"
@@ -134,6 +135,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "deniedPermissions": [
       "users:write"
     ],
+    "disabled": false,
     "expiresAt": 0,
     "grantedPermissions": [
       "plans:write"
@@ -160,6 +162,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "totalUsed": 0,
     "twoFactorEnabled": false,
     "username": "",
+    "usersOff": false,
     "volumeBytes": 0
   },
   "AllSetting": {
@@ -1996,6 +1999,8 @@ export const EXAMPLES: Record<string, unknown> = {
     "description": "",
     "id": 1,
     "inboundsLimited": false,
+    "keepUsersWhenLimited": false,
+    "lockWhenLimited": false,
     "maxDevicesPerUser": 0,
     "maxPlanDays": 0,
     "maxUserBytes": 107374182400,
@@ -2009,6 +2014,7 @@ export const EXAMPLES: Record<string, unknown> = {
     ],
     "plansOnly": false,
     "tier": "operator",
+    "usersOffWhenDisabled": false,
     "usersReadScope": "all",
     "usersWriteScope": "own"
   },
@@ -2301,6 +2307,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "deniedPermissions": [
       "users:write"
     ],
+    "disabled": false,
     "expiresAt": 0,
     "grantedPermissions": [
       "plans:write"
@@ -2325,6 +2332,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "totalUsed": 0,
     "twoFactorEnabled": false,
     "username": "",
+    "usersOff": false,
     "volumeBytes": 0
   },
   "UserCounts": {

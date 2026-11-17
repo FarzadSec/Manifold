@@ -111,24 +111,94 @@ func resellerSuspension(r *model.User, nowMs int64) string {
 // ResellerService keeps every reseller inside its allowance.
 type ResellerService struct{}
 
-// Enforce starts new cycles, then switches a reseller's users off when it runs out and back on
-// when it is renewed; users switched off by hand are never touched.
+// Enforce starts new cycles, then switches an account's users off when its allowance runs out
+// or it is switched off, as its role says, and back on after; users off by hand stay off.
 func (s *ResellerService) Enforce(inboundSvc *InboundService, now time.Time) error {
 	db := database.GetDB()
-	var resellers []model.User
-	if err := db.Where("tier = ?", access.TierReseller).Find(&resellers).Error; err != nil {
+	var accounts []model.User
+	if err := db.Where("tier = ? OR disabled = ? OR users_off = ?", access.TierReseller, true, true).
+		Find(&accounts).Error; err != nil {
 		return err
 	}
 	var errs []error
-	for i := range resellers {
-		if err := s.enforceOne(db, inboundSvc, &resellers[i], now); err != nil {
+	for i := range accounts {
+		if err := s.enforceOne(db, inboundSvc, &accounts[i], now); err != nil {
 			errs = append(errs, err)
 		}
 	}
 	return errors.Join(errs...)
 }
 
+// EnforceAccount applies Enforce to one account at once, after an admin changes it.
+func (s *ResellerService) EnforceAccount(inboundSvc *InboundService, id int, now time.Time) error {
+	db := database.GetDB()
+	var acc model.User
+	if err := db.First(&acc, id).Error; err != nil {
+		return err
+	}
+	return s.enforceOne(db, inboundSvc, &acc, now)
+}
+
+// usersOffFor reports whether an account's users must be off: a used-up allowance switches
+// them off unless the role keeps them, a switched-off account only when the role says so.
+func usersOffFor(acc *model.User, role *model.Role, suspended string) bool {
+	if suspended != "" && (role == nil || !role.KeepUsersWhenLimited) {
+		return true
+	}
+	return acc.Disabled && role != nil && role.UsersOffWhenDisabled
+}
+
 func (s *ResellerService) enforceOne(db *gorm.DB, inboundSvc *InboundService, r *model.User, now time.Time) error {
+	want := ""
+	if r.Tier == access.TierReseller {
+		if err := startCycle(db, r, now); err != nil {
+			return err
+		}
+		want = resellerSuspension(r, now.UnixMilli())
+	}
+	if off := usersOffFor(r, roleOf(*r), want); off != r.UsersOff {
+		if err := s.switchUsers(db, inboundSvc, r, off); err != nil {
+			return err
+		}
+	}
+	if want == r.Suspended {
+		return nil
+	}
+	if want == access.SuspendedExpired {
+		if err := db.Exec(`UPDATE users SET login_epoch = login_epoch + 1 WHERE id = ?`, r.Id).Error; err != nil {
+			return err
+		}
+	}
+	return db.Model(&model.User{}).Where("id = ?", r.Id).Update("suspended", want).Error
+}
+
+// switchUsers turns an account's enabled users off, marking them, or turns the marked ones back on.
+func (s *ResellerService) switchUsers(db *gorm.DB, inboundSvc *InboundService, r *model.User, off bool) error {
+	if !off {
+		if err := s.restoreUsers(db, inboundSvc, r.Id); err != nil {
+			return err
+		}
+		return db.Model(&model.User{}).Where("id = ?", r.Id).Update("users_off", false).Error
+	}
+	var emails []string
+	if err := db.Model(&model.ClientRecord{}).Where("owner_id = ? AND enable = ?", r.Id, true).
+		Pluck("email", &emails).Error; err != nil {
+		return err
+	}
+	if len(emails) > 0 {
+		if _, _, err := (&ClientService{}).BulkSetEnable(inboundSvc, emails, false); err != nil {
+			return err
+		}
+		if err := db.Model(&model.ClientRecord{}).Where("owner_id = ? AND email IN ?", r.Id, emails).
+			Update("owner_suspended", true).Error; err != nil {
+			return err
+		}
+	}
+	logger.Infof("account %q: %d users switched off", r.Username, len(emails))
+	return db.Model(&model.User{}).Where("id = ?", r.Id).Update("users_off", true).Error
+}
+
+func startCycle(db *gorm.DB, r *model.User, now time.Time) error {
 	if r.ResetCycle != "" && r.ResetCycle != CycleNone {
 		start := CycleStartAt(now, r.ResetCycle, r.ResetDay, r.ResetMonth).UnixMilli()
 		if start > r.CycleStart {
@@ -139,42 +209,7 @@ func (s *ResellerService) enforceOne(db *gorm.DB, inboundSvc *InboundService, r 
 			r.CycleStart, r.CycleUsed = start, 0
 		}
 	}
-	want := resellerSuspension(r, now.UnixMilli())
-	if want == r.Suspended {
-		return nil
-	}
-	clientSvc := ClientService{}
-	if want != "" {
-		var emails []string
-		if err := db.Model(&model.ClientRecord{}).Where("owner_id = ? AND enable = ?", r.Id, true).
-			Pluck("email", &emails).Error; err != nil {
-			return err
-		}
-		if len(emails) > 0 {
-			if _, _, err := clientSvc.BulkSetEnable(inboundSvc, emails, false); err != nil {
-				return err
-			}
-			if err := db.Model(&model.ClientRecord{}).Where("owner_id = ? AND email IN ?", r.Id, emails).
-				Update("owner_suspended", true).Error; err != nil {
-				return err
-			}
-		}
-		if want == access.SuspendedExpired {
-			if err := db.Exec(`UPDATE users SET login_epoch = login_epoch + 1 WHERE id = ?`, r.Id).Error; err != nil {
-				return err
-			}
-		}
-		logger.Infof("reseller %q is out of its allowance (%s): %d users switched off", r.Username, want, len(emails))
-	} else if err := s.restoreUsers(db, inboundSvc, r.Id); err != nil {
-		return err
-	}
-	return db.Model(&model.User{}).Where("id = ?", r.Id).Update("suspended", want).Error
-}
-
-// RestoreUsers switches back on the users a reseller's suspension switched off, when the
-// account stops being a reseller.
-func (s *ResellerService) RestoreUsers(inboundSvc *InboundService, ownerID int) error {
-	return s.restoreUsers(database.GetDB(), inboundSvc, ownerID)
+	return nil
 }
 
 // restoreUsers switches back on the users a reseller's suspension switched off.
