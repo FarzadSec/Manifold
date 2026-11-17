@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -80,6 +81,9 @@ func (a *ClientController) initRouter(g *gin.RouterGroup) {
 	g.POST("/delOrphans", a.delOrphans)
 	g.POST("/resetAllTraffics", a.resetAllTraffics)
 	g.POST("/delDepleted", a.delDepleted)
+	g.POST("/delExpired", a.delExpired)
+	g.POST("/exportCsv", a.exportCsv)
+	g.POST("/configPack", a.configPack)
 	g.POST("/bulkAdjust", a.bulkAdjust)
 	g.POST("/bulkEnable", a.bulkEnable)
 	g.POST("/bulkDisable", a.bulkDisable)
@@ -412,6 +416,9 @@ type bulkAdjustRequest struct {
 	Flow      string   `json:"flow"`
 	LimitHwid *int     `json:"limitHwid"`
 	AdTag     string   `json:"adTag"`
+	// SpeedLimit and LimitIp set the same value on every client; absent leaves it.
+	SpeedLimit *int `json:"speedLimit"`
+	LimitIp    *int `json:"limitIp"`
 }
 
 func (a *ClientController) bulkAdjust(c *gin.Context) {
@@ -420,7 +427,8 @@ func (a *ClientController) bulkAdjust(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
-	result, needRestart, err := a.clientService.BulkAdjust(&a.inboundService, req.Emails, req.AddDays, req.AddBytes, req.Flow, req.LimitHwid, req.AdTag)
+	result, needRestart, err := a.clientService.BulkAdjustWithLimits(&a.inboundService, req.Emails, req.AddDays, req.AddBytes, req.Flow, req.LimitHwid, req.AdTag,
+		service.BulkLimits{SpeedLimit: req.SpeedLimit, LimitIP: req.LimitIp})
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
@@ -585,6 +593,90 @@ func (a *ClientController) delDepleted(c *gin.Context) {
 		a.xrayService.SetToNeedRestart()
 	}
 	notifyClientsChanged()
+}
+
+type delExpiredRequest struct {
+	Days   int  `json:"days"`
+	DryRun bool `json:"dryRun"`
+}
+
+// delExpired deletes users that expired more than the given days ago, or only counts them.
+func (a *ClientController) delExpired(c *gin.Context) {
+	var req delExpiredRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	count, needRestart, err := a.clientService.DelExpired(&a.inboundService, req.Days, req.DryRun, time.Now())
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	jsonObj(c, gin.H{"count": count}, nil)
+	if needRestart {
+		a.xrayService.SetToNeedRestart()
+	}
+	if !req.DryRun && count > 0 {
+		notifyClientsChanged()
+	}
+}
+
+type exportRequest struct {
+	Emails []string `json:"emails"`
+	// All exports every user the account may see, instead of Emails.
+	All bool `json:"all"`
+}
+
+// exportScope reads which users an export covers; a reseller's never reach past its own.
+func exportScope(c *gin.Context) ([]string, int, bool) {
+	var req exportRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return nil, 0, false
+	}
+	owner := -1
+	if actor := access.ActorFrom(c); actor.OwnsOnly() {
+		owner = actor.UserId
+	}
+	if req.All {
+		return nil, owner, true
+	}
+	if len(req.Emails) == 0 {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), errUserNotFound)
+		return nil, 0, false
+	}
+	return req.Emails, owner, true
+}
+
+// exportCsv answers a CSV list of users with their subscription links. Every export is
+// audited, change logging or not: the links are as good as the accounts.
+func (a *ClientController) exportCsv(c *gin.Context) {
+	emails, owner, ok := exportScope(c)
+	if !ok {
+		return
+	}
+	text, err := a.clientService.ExportCSV(emails, owner, time.Now())
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	recordAudit(c, "users", service.AuditExport, "csv", gin.H{"users": max(len(emails), strings.Count(text, "\n")-1)})
+	jsonObj(c, text, nil)
+}
+
+// configPack answers a zip, base64 encoded, of every selected user's client configurations.
+func (a *ClientController) configPack(c *gin.Context) {
+	emails, owner, ok := exportScope(c)
+	if !ok {
+		return
+	}
+	pack, err := a.clientService.ConfigPack(&a.inboundService, resolveHost(c), emails, owner)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	recordAudit(c, "users", service.AuditExport, "config pack", gin.H{"users": len(emails)})
+	jsonObj(c, base64.StdEncoding.EncodeToString(pack), nil)
 }
 
 // export returns every client as a {client, inboundIds} list in the standard

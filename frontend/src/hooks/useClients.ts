@@ -176,6 +176,12 @@ export interface UseClientsOptions {
   list?: boolean;
 }
 
+/** Limits a bulk change sets to the same value on every client; null leaves one as it is. */
+export interface BulkLimits {
+  speedLimit?: number | null;
+  limitIp?: number | null;
+}
+
 export function useClients(options: UseClientsOptions = {}) {
   const withList = options.list ?? true;
   const queryClient = useQueryClient();
@@ -427,6 +433,8 @@ export function useClients(options: UseClientsOptions = {}) {
       flow?: string;
       limitHwid?: number | null;
       adTag?: string;
+      speedLimit?: number | null;
+      limitIp?: number | null;
     }): Promise<Msg<BulkAdjustResult>> => {
       const raw = await HttpUtil.post('/panel/api/clients/bulkAdjust', payload, JSON_HEADERS);
       return parseMsg(raw, BulkAdjustResultSchema, 'clients/bulkAdjust');
@@ -602,9 +610,19 @@ export function useClients(options: UseClientsOptions = {}) {
       flow = '',
       limitHwid?: number | null,
       adTag?: string,
+      limits?: BulkLimits,
     ) => {
       if (!Array.isArray(emails) || emails.length === 0) return Promise.resolve(null);
-      return bulkAdjustMut.mutateAsync({ emails, addDays, addBytes, flow, limitHwid, adTag });
+      return bulkAdjustMut.mutateAsync({
+        emails,
+        addDays,
+        addBytes,
+        flow,
+        limitHwid,
+        adTag,
+        ...(limits?.speedLimit != null ? { speedLimit: limits.speedLimit } : {}),
+        ...(limits?.limitIp != null ? { limitIp: limits.limitIp } : {}),
+      });
     },
     [bulkAdjustMut],
   );

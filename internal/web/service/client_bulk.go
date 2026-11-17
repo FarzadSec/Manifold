@@ -307,6 +307,16 @@ type bulkAdjustEntry struct {
 	newExpiry   int64
 	applyTotal  bool
 	newTotal    int64
+	applySpeed  bool
+	newSpeed    int
+	applyIP     bool
+	newIP       int
+}
+
+// BulkLimits sets limits to the same value on every selected client; nil leaves one as it is.
+type BulkLimits struct {
+	SpeedLimit *int
+	LimitIP    *int
 }
 
 // bulkFlowClear is the directive that strips the XTLS flow from every selected
@@ -336,6 +346,11 @@ var bulkFlowAllowed = map[string]struct{}{
 // settings JSON is parsed and written exactly once regardless of how
 // many target emails it contains.
 func (s *ClientService) BulkAdjust(inboundSvc *InboundService, emails []string, addDays int, addBytes int64, flow string, limitHwid *int, adTag string) (BulkAdjustResult, bool, error) {
+	return s.BulkAdjustWithLimits(inboundSvc, emails, addDays, addBytes, flow, limitHwid, adTag, BulkLimits{})
+}
+
+// BulkAdjustWithLimits is BulkAdjust that also sets the speed and address limits.
+func (s *ClientService) BulkAdjustWithLimits(inboundSvc *InboundService, emails []string, addDays int, addBytes int64, flow string, limitHwid *int, adTag string, limits BulkLimits) (BulkAdjustResult, bool, error) {
 	result := BulkAdjustResult{}
 	if len(emails) == 0 {
 		return result, false, nil
@@ -352,10 +367,19 @@ func (s *ClientService) BulkAdjust(inboundSvc *InboundService, emails []string, 
 		zero := 0
 		limitHwid = &zero
 	}
+	if limits.SpeedLimit != nil {
+		if err := validateClientSpeedLimit(*limits.SpeedLimit); err != nil {
+			return result, false, err
+		}
+	}
+	if limits.LimitIP != nil && *limits.LimitIP < 0 {
+		return result, false, common.NewError("the address limit cannot be negative")
+	}
 	adjustFlow := flow != ""
 	adjustHwid := limitHwid != nil
 	adjustAdTag := adTag != ""
-	if addDays == 0 && addBytes == 0 && !adjustFlow && !adjustHwid && !adjustAdTag {
+	setLimits := limits.SpeedLimit != nil || limits.LimitIP != nil
+	if addDays == 0 && addBytes == 0 && !adjustFlow && !adjustHwid && !adjustAdTag && !setLimits {
 		return result, false, common.NewError("no adjustment specified")
 	}
 
@@ -383,6 +407,12 @@ func (s *ClientService) BulkAdjust(inboundSvc *InboundService, emails []string, 
 	plan := map[string]*bulkAdjustEntry{}
 	for email, rec := range recordsByEmail {
 		entry := &bulkAdjustEntry{record: rec}
+		if limits.SpeedLimit != nil {
+			entry.applySpeed, entry.newSpeed = true, *limits.SpeedLimit
+		}
+		if limits.LimitIP != nil {
+			entry.applyIP, entry.newIP = true, *limits.LimitIP
+		}
 		if addDays != 0 {
 			switch {
 			case rec.ExpiryTime == 0:
@@ -428,7 +458,7 @@ func (s *ClientService) BulkAdjust(inboundSvc *InboundService, emails []string, 
 				}
 			}
 		}
-		if entry.applyExpiry || entry.applyTotal || adjustFlow || adjustHwid || adjustAdTag {
+		if entry.applyExpiry || entry.applyTotal || adjustFlow || adjustHwid || adjustAdTag || setLimits {
 			plan[email] = entry
 		}
 	}
@@ -443,7 +473,7 @@ func (s *ClientService) BulkAdjust(inboundSvc *InboundService, emails []string, 
 	plannedIds := make([]int, 0, len(plan))
 	recordIdToEmail := make(map[int]string, len(plan))
 	for email, entry := range plan {
-		if entry.applyExpiry || entry.applyTotal || adjustFlow || adjustAdTag {
+		if entry.applyExpiry || entry.applyTotal || adjustFlow || adjustAdTag || setLimits {
 			plannedIds = append(plannedIds, entry.record.Id)
 			recordIdToEmail[entry.record.Id] = email
 		}
@@ -563,6 +593,21 @@ func (s *ClientService) BulkAdjust(inboundSvc *InboundService, emails []string, 
 				continue
 			}
 		}
+		if entry.applySpeed || entry.applyIP {
+			cols := map[string]any{}
+			if entry.applySpeed {
+				cols["speed_limit"] = entry.newSpeed
+			}
+			if entry.applyIP {
+				cols["limit_ip"] = entry.newIP
+			}
+			if err := db.Model(&model.ClientRecord{}).Where("email = ?", email).UpdateColumns(cols).Error; err != nil {
+				if _, already := skippedReasons[email]; !already {
+					skippedReasons[email] = err.Error()
+				}
+				continue
+			}
+		}
 		if adjustAdTag && adTagHonored[email] {
 			if err := db.Model(&model.ClientRecord{}).Where("email = ?", email).UpdateColumn("ad_tag", wantAdTag).Error; err != nil {
 				if _, already := skippedReasons[email]; !already {
@@ -572,7 +617,7 @@ func (s *ClientService) BulkAdjust(inboundSvc *InboundService, emails []string, 
 			}
 		}
 		// Counted when expiry/total changed, flow was honored, adTag was honored, or limitHwid was adjusted.
-		if len(updates) > 0 || flowHonored[email] || adTagHonored[email] || adjustHwid {
+		if len(updates) > 0 || flowHonored[email] || adTagHonored[email] || adjustHwid || entry.applySpeed || entry.applyIP {
 			adjusted[email] = struct{}{}
 		}
 	}
@@ -740,6 +785,14 @@ func (s *ClientService) bulkAdjustInboundClients(
 		}
 		if entry.applyTotal {
 			c["totalGB"] = entry.newTotal
+			clientChanged = true
+		}
+		if entry.applySpeed {
+			c["speedLimit"] = entry.newSpeed
+			clientChanged = true
+		}
+		if entry.applyIP {
+			c["limitIp"] = entry.newIP
 			clientChanged = true
 		}
 		if flow != "" {
@@ -1560,6 +1613,31 @@ func (s *ClientService) DelDepleted(inboundSvc *InboundService) (int, bool, erro
 		return res.Deleted, needRestart, err
 	}
 	return res.Deleted, needRestart, nil
+}
+
+// expiredLongAgo lists users whose fixed expiry passed more than days ago; a length that
+// starts on first use and auto-renewing users are never in it.
+func expiredLongAgo(days int, now time.Time) ([]string, error) {
+	cutoff := now.Add(-time.Duration(days) * 24 * time.Hour).UnixMilli()
+	var emails []string
+	err := database.GetDB().Model(xray.ClientTraffic{}).
+		Where("reset = 0 AND reset_day = 0 AND reset_weekday = 0 AND expiry_time > 0 AND expiry_time < ?", cutoff).
+		Order("email").Pluck("email", &emails).Error
+	return emails, err
+}
+
+// DelExpired deletes the users that expired more than days ago, whatever switched them
+// off; with dryRun it only counts them.
+func (s *ClientService) DelExpired(inboundSvc *InboundService, days int, dryRun bool, now time.Time) (int, bool, error) {
+	if days < 0 {
+		return 0, false, common.NewError("days cannot be negative")
+	}
+	emails, err := expiredLongAgo(days, now)
+	if err != nil || dryRun || len(emails) == 0 {
+		return len(emails), false, err
+	}
+	res, needRestart, err := s.BulkDelete(inboundSvc, emails, false)
+	return res.Deleted, needRestart, err
 }
 
 type BulkSetEnableResult struct {

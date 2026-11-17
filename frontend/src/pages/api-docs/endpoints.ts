@@ -1547,6 +1547,30 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'POST',
+        path: '/panel/api/clients/delExpired',
+        summary:
+          'Delete every client whose fixed expiry passed more than `days` ago, switched off or not. A length counted from the first connection that never started, and auto-renewing clients, are left alone. With dryRun the clients are only counted.',
+        body: '{\n  "days": 30,\n  "dryRun": true\n}',
+        response: '{\n  "success": true,\n  "obj": {\n    "count": 4\n  }\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/clients/exportCsv',
+        summary:
+          'A CSV list of users, one row each with its subscription link, for the named emails or, with all, every user the account may see (a reseller only its own). Every export is written to the audit log.',
+        body: '{\n  "emails": ["alice", "bob"],\n  "all": false\n}',
+        response: '{\n  "success": true,\n  "obj": "name,enabled,...\\nalice,true,..."\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/clients/configPack',
+        summary:
+          'A zip, base64 encoded, with a folder per user: its subscription link, its share links and the files dedicated apps open (an OpenVPN .ovpn, a WireGuard .conf). Same selection as exportCsv; audited.',
+        body: '{\n  "emails": ["alice"]\n}',
+        response: '{\n  "success": true,\n  "obj": "UEsDBBQ..."\n}',
+      },
+      {
+        method: 'POST',
         path: '/panel/api/clients/delOrphans',
         summary:
           'Delete every client that is not attached to any inbound, along with its traffic record, IP log, HWID devices, and external links. Useful for clearing clients left unattached after their inbounds were removed. Returns the deleted count. Cannot be undone.',

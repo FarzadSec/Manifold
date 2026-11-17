@@ -369,6 +369,8 @@ export const ClientBulkAdjustFormSchema = z
     flow: z.string().optional().default(''),
     limitHwid: z.number().int().min(0).nullable().optional(),
     adTag: z.string().optional().default(''),
+    speedLimit: z.number().int().min(0).max(100000).nullable().optional(),
+    limitIp: z.number().int().min(0).nullable().optional(),
   })
   .refine(
     (v) =>
@@ -376,6 +378,8 @@ export const ClientBulkAdjustFormSchema = z
       v.addGB !== 0 ||
       v.flow !== '' ||
       (v.limitHwid !== undefined && v.limitHwid !== null) ||
+      (v.speedLimit !== undefined && v.speedLimit !== null) ||
+      (v.limitIp !== undefined && v.limitIp !== null) ||
       (v.adTag !== undefined && v.adTag.trim() !== ''),
     {
       error: 'pages.clients.bulkAdjustNothing',

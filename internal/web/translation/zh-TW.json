@@ -1217,7 +1217,15 @@
         "every": "Reset every (days)",
         "everyHint": "Counted from the last reset, or from when the user was created.",
         "dayHint": "A day the month does not have falls on its last day."
-      }
+      },
+      "delExpired": "Delete expired users…",
+      "delExpiredDays": "Expired more than (days) ago",
+      "delExpiredHint": "Switched-off users count too. A length counted from the first connection that never started, and auto-renewing users, are kept. Filters do not apply.",
+      "delExpiredCount": "{count} users will be deleted",
+      "bulkLimitsHint": "Speed and address limits are set to the same value on every selected user; leave one empty to keep it.",
+      "csvAll": "Download CSV of all users",
+      "csvSelected": "Download CSV",
+      "configPack": "Download config pack"
     },
     "groups": {
       "name": "名稱",

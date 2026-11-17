@@ -41,6 +41,9 @@ import {
   LinkOutlined,
   MoreOutlined,
   PlusOutlined,
+  FieldTimeOutlined,
+  FileExcelOutlined,
+  FileZipOutlined,
   LineChartOutlined,
   QrcodeOutlined,
   RestOutlined,
@@ -75,7 +78,7 @@ import ClientTrafficCell from '@/components/clients/ClientTrafficCell';
 import ClientSpeedTag, { isActiveSpeed } from '@/components/clients/ClientSpeedTag';
 import ClientCardComment from '@/components/clients/ClientCardComment';
 import AppSidebar from '@/layouts/AppSidebar';
-import { IntlUtil, SizeFormatter } from '@/utils';
+import { FileManager, HttpUtil, IntlUtil, SizeFormatter } from '@/utils';
 import { setMessageInstance } from '@/utils/messageBus';
 import { LazyMount } from '@/components/utility';
 import {
@@ -93,6 +96,7 @@ const SubLinksModal = lazy(() => import('./SubLinksModal'));
 const BulkAddToGroupModal = lazy(() => import('./BulkAddToGroupModal'));
 const ChangeOwnerModal = lazy(() => import('./ChangeOwnerModal'));
 const ClientUsageModal = lazy(() => import('./ClientUsageModal'));
+const DelExpiredModal = lazy(() => import('./DelExpiredModal'));
 
 // Menu entries that act on every user, or on the panel's own labels: never a reseller's.
 const STAFF_MENU_KEYS = new Set([
@@ -103,6 +107,7 @@ const STAFF_MENU_KEYS = new Set([
   'import',
   'resetAll',
   'delDepleted',
+  'delExpired',
   'delOrphans',
 ]);
 const BulkAttachInboundsModal = lazy(() => import('./BulkAttachInboundsModal'));
@@ -463,6 +468,7 @@ export default function ClientsPage() {
   const [ownerFilter, setOwnerFilter] = useState(searchParams.get('owner') ?? '');
   const [changeOwnerOpen, setChangeOwnerOpen] = useState(false);
   const [usageEmail, setUsageEmail] = useState('');
+  const [delExpiredOpen, setDelExpiredOpen] = useState(false);
   const onShowUsage = useCallback((email: string) => setUsageEmail(email), []);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
@@ -866,6 +872,29 @@ export default function ClientsPage() {
         if (msg?.success) messageApi.success(t('pages.clients.toasts.allTrafficsReset'));
       },
     });
+  }
+
+  // Both exports carry every subscription link they list; the server audits each one.
+  async function downloadExport(
+    kind: 'exportCsv' | 'configPack',
+    body: { emails?: string[]; all?: boolean },
+  ) {
+    const msg = await HttpUtil.post<string>(`/panel/api/clients/${kind}`, body, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!msg?.success || typeof msg.obj !== 'string') {
+      messageApi.error(msg?.msg || t('somethingWentWrong'));
+      return;
+    }
+    const stamp = new Date().toISOString().slice(0, 10);
+    if (kind === 'exportCsv') {
+      FileManager.downloadTextFile(msg.obj, `users-${stamp}.csv`, {
+        type: 'text/csv;charset=utf-8',
+      });
+      return;
+    }
+    const bytes = Uint8Array.from(atob(msg.obj), (ch) => ch.charCodeAt(0));
+    FileManager.downloadTextFile(bytes, `configs-${stamp}.zip`, { type: 'application/zip' });
   }
 
   function onDelDepleted() {
@@ -1522,6 +1551,24 @@ export default function ClientsPage() {
                                         onClick: () => setSubLinksOpen(true),
                                       },
                                       {
+                                        key: 'csv',
+                                        icon: <FileExcelOutlined aria-hidden />,
+                                        label: t('pages.clients.csvSelected'),
+                                        onClick: () =>
+                                          void downloadExport('exportCsv', {
+                                            emails: selectedRowKeys,
+                                          }),
+                                      },
+                                      {
+                                        key: 'configPack',
+                                        icon: <FileZipOutlined aria-hidden />,
+                                        label: t('pages.clients.configPack'),
+                                        onClick: () =>
+                                          void downloadExport('configPack', {
+                                            emails: selectedRowKeys,
+                                          }),
+                                      },
+                                      {
                                         key: 'changeOwner',
                                         icon: <UserSwitchOutlined aria-hidden />,
                                         label: t('pages.access.changeOwner'),
@@ -1538,6 +1585,13 @@ export default function ClientsPage() {
                                         icon: <UsergroupAddOutlined aria-hidden />,
                                         label: t('pages.clients.bulk'),
                                         onClick: () => setBulkAddOpen(true),
+                                      },
+                                      {
+                                        key: 'csvAll',
+                                        icon: <FileExcelOutlined aria-hidden />,
+                                        label: t('pages.clients.csvAll'),
+                                        onClick: () =>
+                                          void downloadExport('exportCsv', { all: true }),
                                       },
                                       {
                                         key: 'export',
@@ -1564,6 +1618,13 @@ export default function ClientsPage() {
                                         label: t('pages.clients.delDepleted'),
                                         danger: true,
                                         onClick: onDelDepleted,
+                                      },
+                                      {
+                                        key: 'delExpired',
+                                        icon: <FieldTimeOutlined aria-hidden />,
+                                        label: t('pages.clients.delExpired'),
+                                        danger: true,
+                                        onClick: () => setDelExpiredOpen(true),
                                       },
                                       {
                                         key: 'delOrphans',
@@ -2041,7 +2102,7 @@ export default function ClientsPage() {
             open={bulkAdjustOpen}
             count={selectedRowKeys.length}
             onOpenChange={setBulkAdjustOpen}
-            onSubmit={async (addDays, addBytes, flow, limitHwid, adTag) => {
+            onSubmit={async (addDays, addBytes, flow, limitHwid, adTag, limits) => {
               const msg = await bulkAdjust(
                 [...selectedRowKeys],
                 addDays,
@@ -2049,6 +2110,7 @@ export default function ClientsPage() {
                 flow,
                 limitHwid,
                 adTag,
+                limits,
               );
               if (msg?.success) {
                 setSelectedRowKeys([]);
@@ -2066,6 +2128,9 @@ export default function ClientsPage() {
             subSettings={subSettings}
             onOpenChange={setSubLinksOpen}
           />
+        </LazyMount>
+        <LazyMount when={delExpiredOpen}>
+          <DelExpiredModal open={delExpiredOpen} onClose={() => setDelExpiredOpen(false)} />
         </LazyMount>
         <LazyMount when={usageEmail !== ''}>
           <ClientUsageModal

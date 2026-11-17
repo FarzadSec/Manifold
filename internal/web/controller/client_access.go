@@ -27,6 +27,8 @@ const (
 	targetEmailRead
 	targetEmailWrite
 	targetBodyWrite
+	// targetBodyRead checks the users a body names, or none when it asks for all of its own.
+	targetBodyRead
 	targetSubID
 	targetRecordID
 )
@@ -68,6 +70,8 @@ var resellerClientRoutes = map[string]resellerTarget{
 	"POST /clients/bulkEnable":           targetBodyWrite,
 	"POST /clients/bulkDisable":          targetBodyWrite,
 	"POST /clients/bulkResetTraffic":     targetBodyWrite,
+	"POST /clients/exportCsv":            targetBodyRead,
+	"POST /clients/configPack":           targetBodyRead,
 }
 
 var errUserNotFound = errors.New("user not found")
@@ -99,7 +103,7 @@ func guardClientAccess(c *gin.Context) {
 			email = c.Query("email")
 		}
 		emails = []string{email}
-	case targetBodyWrite:
+	case targetBodyWrite, targetBodyRead:
 		raw, err := io.ReadAll(c.Request.Body)
 		if err != nil {
 			refuse(c, err)
@@ -108,9 +112,13 @@ func guardClientAccess(c *gin.Context) {
 		c.Request.Body = io.NopCloser(bytes.NewReader(raw))
 		var body struct {
 			Emails []string `json:"emails"`
+			All    bool     `json:"all"`
 		}
 		_ = json.Unmarshal(raw, &body)
 		emails = body.Emails
+		if kind == targetBodyRead && body.All && len(emails) == 0 {
+			kind = targetNone
+		}
 	case targetSubID:
 		if err := database.GetDB().Model(&model.ClientRecord{}).Where("sub_id = ?", c.Param("subId")).
 			Pluck("email", &emails).Error; err != nil {

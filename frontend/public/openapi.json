@@ -11777,6 +11777,156 @@
         }
       }
     },
+    "/panel/api/clients/delExpired": {
+      "post": {
+        "tags": [
+          "Clients"
+        ],
+        "summary": "Delete every client whose fixed expiry passed more than `days` ago, switched off or not. A length counted from the first connection that never started, and auto-renewing clients, are left alone. With dryRun the clients are only counted.",
+        "operationId": "post_panel_api_clients_delExpired",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "days": 30,
+                "dryRun": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "count": 4
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/clients/exportCsv": {
+      "post": {
+        "tags": [
+          "Clients"
+        ],
+        "summary": "A CSV list of users, one row each with its subscription link, for the named emails or, with all, every user the account may see (a reseller only its own). Every export is written to the audit log.",
+        "operationId": "post_panel_api_clients_exportCsv",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "emails": [
+                  "alice",
+                  "bob"
+                ],
+                "all": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": "name,enabled,...\nalice,true,..."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/clients/configPack": {
+      "post": {
+        "tags": [
+          "Clients"
+        ],
+        "summary": "A zip, base64 encoded, with a folder per user: its subscription link, its share links and the files dedicated apps open (an OpenVPN .ovpn, a WireGuard .conf). Same selection as exportCsv; audited.",
+        "operationId": "post_panel_api_clients_configPack",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "emails": [
+                  "alice"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": "UEsDBBQ..."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/clients/delOrphans": {
       "post": {
         "tags": [

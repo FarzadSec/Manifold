@@ -6,6 +6,12 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { ClientBulkAdjustFormSchema, type ClientBulkAdjustFormValues } from '@/schemas/client';
 import { TLS_FLOW_CONTROL } from '@/schemas/primitives/flow';
 import { FormField } from '@/components/form/rhf';
+import type { BulkLimits } from '@/hooks/useClients';
+
+// An emptied number field reaches the form as null, '' or undefined: all mean "leave it".
+function optionalCount(v: unknown): number | null {
+  return v === null || v === undefined || v === '' ? null : Math.trunc(Number(v));
+}
 
 const GB = 1024 * 1024 * 1024;
 
@@ -17,6 +23,8 @@ const EMPTY: ClientBulkAdjustFormValues = {
   flow: '',
   limitHwid: null,
   adTag: '',
+  speedLimit: null,
+  limitIp: null,
 };
 
 interface ClientBulkAdjustModalProps {
@@ -29,6 +37,7 @@ interface ClientBulkAdjustModalProps {
     flow: string,
     limitHwid?: number | null,
     adTag?: string,
+    limits?: BulkLimits,
   ) => Promise<{ adjusted: number; skipped?: { email: string; reason: string }[] } | null>;
 }
 
@@ -60,16 +69,29 @@ export default function ClientBulkAdjustModal({
           ? Math.trunc(Number(values.limitHwid))
           : null,
       adTag: values.adTag?.trim() ?? '',
+      speedLimit: optionalCount(values.speedLimit),
+      limitIp: optionalCount(values.limitIp),
     });
     if (!validated.success) {
       messageApi.warning(t(validated.error.issues[0]?.message ?? 'somethingWentWrong'));
       return;
     }
-    const { addDays: days, addGB: gb, flow: flowValue, limitHwid, adTag } = validated.data;
+    const {
+      addDays: days,
+      addGB: gb,
+      flow: flowValue,
+      limitHwid,
+      adTag,
+      speedLimit,
+      limitIp,
+    } = validated.data;
     setSubmitting(true);
     try {
       const bytes = Math.trunc(gb * GB);
-      const result = await onSubmit(days, bytes, flowValue, limitHwid, adTag);
+      const result = await onSubmit(days, bytes, flowValue, limitHwid, adTag, {
+        speedLimit,
+        limitIp,
+      });
       if (!result) return;
       const ok = result.adjusted ?? 0;
       const skipped = result.skipped?.length ?? 0;
@@ -124,6 +146,35 @@ export default function ClientBulkAdjustModal({
                   { value: FLOW_CLEAR, label: t('pages.clients.bulkFlowDisable') },
                   ...Object.values(TLS_FLOW_CONTROL).map((k) => ({ value: k, label: k })),
                 ]}
+              />
+            </FormField>
+            <FormField
+              name="speedLimit"
+              label={t('pages.clients.speedLimit')}
+              tooltip={t('pages.clients.speedLimitDesc')}
+              extra={t('pages.clients.bulkLimitsHint')}
+            >
+              <InputNumber
+                style={{ width: '100%' }}
+                min={0}
+                max={100000}
+                step={1}
+                precision={0}
+                addonAfter="Mbps"
+                placeholder={t('pages.clients.bulkFlowNoChange')}
+              />
+            </FormField>
+            <FormField
+              name="limitIp"
+              label={t('pages.clients.limitIp')}
+              tooltip={t('pages.clients.limitIpDesc')}
+            >
+              <InputNumber
+                style={{ width: '100%' }}
+                min={0}
+                step={1}
+                precision={0}
+                placeholder={t('pages.clients.bulkFlowNoChange')}
               />
             </FormField>
             <FormField

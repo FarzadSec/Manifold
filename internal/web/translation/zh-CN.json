@@ -1217,7 +1217,15 @@
         "every": "每隔(天)重置",
         "everyHint": "从上次重置,或从用户创建时起计算。",
         "dayHint": "某月没有的日期按该月最后一天计算。"
-      }
+      },
+      "delExpired": "删除已过期用户…",
+      "delExpiredDays": "过期超过(天)",
+      "delExpiredHint": "已停用的用户也计算在内。从首次连接开始计时但尚未开始的用户,以及自动续期的用户会保留。筛选条件不生效。",
+      "delExpiredCount": "将删除 {count} 个用户",
+      "bulkLimitsHint": "限速和地址限制会对所有选中用户设为相同值;留空则保持不变。",
+      "csvAll": "下载全部用户 CSV",
+      "csvSelected": "下载 CSV",
+      "configPack": "下载配置包"
     },
     "groups": {
       "name": "名称",

@@ -250,3 +250,33 @@ func TestTokenRateLimit(t *testing.T) {
 		t.Fatalf("third request = %d, want 429", code)
 	}
 }
+
+// An export carries every subscription link it lists, so a reseller's covers its own users only.
+func TestResellerExportsOnlyItsOwnUsers(t *testing.T) {
+	f := newAccessFixture(t)
+	seller := f.account(t, model.User{Username: "seller", Tier: access.TierReseller, MayEditUsers: true})
+	adminTok := f.token(t, "admin", panel.TokenAccess{UserId: f.owner.Id})
+	sellerTok := f.token(t, "seller", panel.TokenAccess{UserId: seller.Id})
+	if reply := f.addClient(t, adminTok, "house"); !reply.Success {
+		t.Fatalf("admin create: %s", reply.Msg)
+	}
+	if reply := f.addClient(t, sellerTok, "bought"); !reply.Success {
+		t.Fatalf("reseller create: %s", reply.Msg)
+	}
+	_, reply := f.call(t, sellerTok, http.MethodPost, "/clients/exportCsv", `{"all":true}`)
+	var text string
+	if err := json.Unmarshal(reply.Obj, &text); err != nil || !reply.Success {
+		t.Fatalf("reseller export: %s %s", reply.Msg, reply.Obj)
+	}
+	if !strings.Contains(text, "\nbought,") || strings.Contains(text, "house") {
+		t.Fatalf("reseller export =\n%s\nwant only its own user", text)
+	}
+	if _, reply := f.call(t, sellerTok, http.MethodPost, "/clients/configPack", `{"emails":["house"]}`); reply.Success {
+		t.Fatal("reseller exported another owner's configs")
+	}
+	_, reply = f.call(t, adminTok, http.MethodPost, "/clients/exportCsv", `{"all":true}`)
+	_ = json.Unmarshal(reply.Obj, &text)
+	if !strings.Contains(text, "house") || !strings.Contains(text, "bought,true,,seller,") {
+		t.Fatalf("admin export =\n%s\nwant both users with the reseller as owner", text)
+	}
+}
