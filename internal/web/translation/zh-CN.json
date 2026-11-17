@@ -897,7 +897,17 @@
         "keysReplaced": "保存此入站后将使用新密钥。",
         "clientProfile": "客户端配置文件",
         "clientDirectives": "配置文件附加行",
-        "clientDirectivesHint": "添加到此入站的每个配置文件，每行一条 OpenVPN 指令，例如 sndbuf 0。面板自身写入的行会被拒绝。"
+        "clientDirectivesHint": "添加到此入站的每个配置文件，每行一条 OpenVPN 指令，例如 sndbuf 0。面板自身写入的行会被拒绝。",
+        "tlsVersionMin": "最低 TLS 版本",
+        "tlsVersionMinHint": "TLS 1.3 会拒绝早于 OpenVPN 2.5 / OpenSSL 1.1.1 的应用和路由器。",
+        "reneg": "重新协商间隔",
+        "renegHint": "密钥重新协商间隔(秒);0 为默认每小时,-1 为从不。不保存密码的应用每次都会再次询问,适合设为 -1。配置文件使用相同值。",
+        "renegInvalid": "-1、0,或 60 至 604800 秒",
+        "maxClients": "最多连接设备",
+        "maxClientsHint": "此服务器同时容纳的设备数(所有用户合计);0 为不限。每个用户自己的设备限制仍然有效。",
+        "searchDomains": "搜索域",
+        "searchDomainsHint": "推送给设备,使 fileserver 之类的短名在这些域内解析。最多八个。",
+        "searchDomainInvalid": "不是域名"
       },
       "wireguard": {
         "interface": "接口名称",

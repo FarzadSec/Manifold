@@ -60,6 +60,26 @@ export const OpenvpnServerSchema = z.object({
   dataCiphers: z.array(z.enum(OPENVPN_DATA_CIPHERS)).default([]),
   splitTunnel: z.boolean().default(false),
   tlsMode: z.enum(OPENVPN_TLS_MODES).default('tls-crypt'),
+  tlsVersionMin: z.enum(['', '1.2', '1.3']).default(''),
+  // -1 switches renegotiation off; 0 keeps OpenVPN's hourly default.
+  renegSec: z
+    .number()
+    .int()
+    .default(0)
+    .refine((v) => v === 0 || v === -1 || (v >= 60 && v <= 604800), {
+      message: 'pages.inbounds.openvpn.renegInvalid',
+    }),
+  maxClients: z.number().int().min(0).default(0),
+  searchDomains: z
+    .array(
+      z
+        .string()
+        .regex(/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*\.?$/i, {
+          message: 'pages.inbounds.openvpn.searchDomainInvalid',
+        }),
+    )
+    .max(8)
+    .default([]),
   serverName: z.string().optional(),
   clientDirectives: z.string().default(''),
   caCert: z.string().default(''),

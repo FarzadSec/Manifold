@@ -140,7 +140,17 @@ func renderServerConfig(inst Instance, f files) string {
 	default:
 		line("tls-crypt %s", quoted(f.tlsCrypt))
 	}
-	line("tls-version-min 1.2")
+	tlsMin := inst.TLSVersionMin
+	if tlsMin == "" {
+		tlsMin = "1.2"
+	}
+	line("tls-version-min %s", tlsMin)
+	if reneg := renegLine(inst.RenegSec); reneg != "" {
+		line("%s", reneg)
+	}
+	if inst.MaxClients > 0 {
+		line("max-clients %d", inst.MaxClients)
+	}
 	if len(inst.DataCiphers) > 0 {
 		line("data-ciphers %s", strings.Join(inst.DataCiphers, ":"))
 	}
@@ -175,6 +185,20 @@ func renderServerConfig(inst Instance, f files) string {
 	for _, dns := range inst.DNS {
 		line(`push "dhcp-option DNS %s"`, dns)
 	}
+	for _, domain := range inst.SearchDomains {
+		line(`push "dhcp-option DOMAIN %s"`, domain)
+	}
 	line("verb 3")
 	return b.String()
+}
+
+// renegLine is the reneg-sec directive for a setting; "" keeps OpenVPN's default.
+func renegLine(renegSec int) string {
+	switch {
+	case renegSec == RenegNever:
+		return "reneg-sec 0"
+	case renegSec > 0:
+		return "reneg-sec " + strconv.Itoa(renegSec)
+	}
+	return ""
 }

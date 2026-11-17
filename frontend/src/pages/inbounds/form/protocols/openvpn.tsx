@@ -255,6 +255,51 @@ export default function OpenvpnFields() {
         />
       </FormField>
 
+      <FormField
+        name={['settings', 'server', 'tlsVersionMin']}
+        label={t('pages.inbounds.openvpn.tlsVersionMin')}
+        tooltip={t('pages.inbounds.openvpn.tlsVersionMinHint')}
+      >
+        <NativeSelect
+          options={[
+            { label: 'TLS 1.2', value: '' },
+            { label: 'TLS 1.3', value: '1.3' },
+          ]}
+        />
+      </FormField>
+
+      <FormField
+        name={['settings', 'server', 'renegSec']}
+        label={t('pages.inbounds.openvpn.reneg')}
+        tooltip={t('pages.inbounds.openvpn.renegHint')}
+        rules={{ validate: rhfZodValidate(OpenvpnServerSchema.shape.renegSec) }}
+      >
+        <InputNumber
+          min={-1}
+          max={604800}
+          placeholder="3600"
+          addonAfter="s"
+          style={{ width: '100%' }}
+        />
+      </FormField>
+
+      <FormField
+        name={['settings', 'server', 'maxClients']}
+        label={t('pages.inbounds.openvpn.maxClients')}
+        tooltip={t('pages.inbounds.openvpn.maxClientsHint')}
+      >
+        <InputNumber min={0} placeholder="0" style={{ width: '100%' }} />
+      </FormField>
+
+      <FormField
+        name={['settings', 'server', 'searchDomains']}
+        label={t('pages.inbounds.openvpn.searchDomains')}
+        tooltip={t('pages.inbounds.openvpn.searchDomainsHint')}
+        rules={{ validate: rhfZodValidate(OpenvpnServerSchema.shape.searchDomains) }}
+      >
+        <Select mode="tags" tagRender={selectTagRender} open={false} placeholder="corp.example" />
+      </FormField>
+
       {hasKeys && (
         <Alert
           type="warning"

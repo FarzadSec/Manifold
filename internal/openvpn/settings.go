@@ -42,7 +42,13 @@ const (
 	minMTU, maxMTU       = 576, 9000
 	minMSSFix, maxMSSFix = 512, 9000
 	maxDirectivesBytes   = 4096
+	// RenegNever switches renegotiation off; 0 leaves OpenVPN's hourly default.
+	RenegNever               = -1
+	minRenegSec, maxRenegSec = 60, 7 * 24 * 3600
+	maxSearchDomains         = 8
 )
+
+var domainPattern = regexp.MustCompile(`^(?i)[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$`)
 
 // ServerSettings is the "server" block of an OpenVPN inbound's settings.
 type ServerSettings struct {
@@ -59,6 +65,12 @@ type ServerSettings struct {
 	// SplitTunnel stops pushing the default route, so only the VPN subnet goes through it.
 	SplitTunnel bool   `json:"splitTunnel,omitempty" example:"false"`
 	TLSMode     string `json:"tlsMode,omitempty" example:"tls-crypt"`
+	// TLSVersionMin is the oldest TLS the server accepts, 1.2 when empty.
+	TLSVersionMin string `json:"tlsVersionMin,omitempty" example:"1.2"`
+	RenegSec      int    `json:"renegSec,omitempty" example:"0"`
+	MaxClients    int    `json:"maxClients,omitempty" example:"0"`
+	// SearchDomains are pushed so a short name resolves inside them.
+	SearchDomains []string `json:"searchDomains,omitempty" example:"[\"corp.example\"]"`
 	// ServerName is the server certificate's common name, which profiles verify.
 	ServerName string `json:"serverName,omitempty" example:"manifold-openvpn-server"`
 	// ClientDirectives are extra lines for every profile of this inbound.
@@ -254,6 +266,9 @@ func NormalizeServer(server, previous *ServerSettings) (*ServerSettings, error) 
 	if out.ClientDirectives, err = parseDirectives(out.ClientDirectives); err != nil {
 		return nil, err
 	}
+	if err := checkSessionOptions(&out); err != nil {
+		return nil, err
+	}
 
 	if !out.hasPKI() && previous != nil && previous.hasPKI() {
 		out.CACert, out.CAKey = previous.CACert, previous.CAKey
@@ -367,4 +382,40 @@ func ServerForProfiles(settings string) *ServerSettings {
 	}
 	redacted := server.ForProfiles()
 	return &redacted
+}
+
+// checkSessionOptions validates the TLS floor, renegotiation, client cap and search domains.
+func checkSessionOptions(s *ServerSettings) error {
+	switch s.TLSVersionMin = strings.TrimSpace(s.TLSVersionMin); s.TLSVersionMin {
+	case "", "1.2", "1.3":
+	default:
+		return fmt.Errorf("openvpn: tlsVersionMin %q must be 1.2 or 1.3", s.TLSVersionMin)
+	}
+	if s.RenegSec != 0 && s.RenegSec != RenegNever && (s.RenegSec < minRenegSec || s.RenegSec > maxRenegSec) {
+		return fmt.Errorf("openvpn: renegSec %d must be -1 for never, 0 for the default or between %d and %d", s.RenegSec, minRenegSec, maxRenegSec)
+	}
+	if s.MaxClients < 0 {
+		return errors.New("openvpn: maxClients cannot be negative")
+	}
+	domains, err := parseSearchDomains(s.SearchDomains)
+	s.SearchDomains = domains
+	return err
+}
+
+func parseSearchDomains(raw []string) ([]string, error) {
+	var out []string
+	for _, entry := range raw {
+		name := strings.ToLower(strings.TrimSuffix(strings.TrimSpace(entry), "."))
+		if name == "" || slices.Contains(out, name) {
+			continue
+		}
+		if len(name) > 253 || !domainPattern.MatchString(name) {
+			return nil, fmt.Errorf("openvpn: search domain %q is not a domain name", entry)
+		}
+		out = append(out, name)
+	}
+	if len(out) > maxSearchDomains {
+		return nil, fmt.Errorf("openvpn: at most %d search domains", maxSearchDomains)
+	}
+	return out, nil
 }

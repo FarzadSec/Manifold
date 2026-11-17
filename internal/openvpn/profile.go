@@ -70,6 +70,9 @@ func (p Profile) Render() string {
 	if p.Server.MSSFix > 0 {
 		line("mssfix %d", p.Server.MSSFix)
 	}
+	if reneg := renegLine(p.Server.RenegSec); reneg != "" {
+		line("%s", reneg)
+	}
 	// Windows would otherwise keep asking the DNS servers outside the tunnel.
 	line("ignore-unknown-option block-outside-dns")
 	line("setenv opt block-outside-dns")

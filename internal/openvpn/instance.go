@@ -36,6 +36,11 @@ type Instance struct {
 	SplitTunnel bool
 	TLSMode     string
 
+	TLSVersionMin string
+	RenegSec      int
+	MaxClients    int
+	SearchDomains []string
+
 	CACert      string
 	ServerCert  string
 	ServerKey   string
@@ -75,6 +80,10 @@ func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 	if err != nil {
 		return Instance{}, false
 	}
+	session := *server
+	if checkSessionOptions(&session) != nil {
+		return Instance{}, false
+	}
 	listen := strings.TrimSpace(ib.Listen)
 	if _, ok := listenAddress(listen); !ok {
 		return Instance{}, false
@@ -87,23 +96,27 @@ func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 		users = append(users, User{Name: c.Email, Password: c.Password, MaxSessions: max(c.LimitIP, 0)})
 	}
 	return Instance{
-		Id:          ib.Id,
-		Tag:         ib.Tag,
-		Listen:      listen,
-		Port:        ib.Port,
-		Proto:       server.Proto,
-		Subnet:      subnet,
-		DNS:         dns,
-		MTU:         server.MTU,
-		MSSFix:      server.MSSFix,
-		DataCiphers: ciphers,
-		SplitTunnel: server.SplitTunnel,
-		TLSMode:     tlsMode,
-		CACert:      server.CACert,
-		ServerCert:  server.ServerCert,
-		ServerKey:   server.ServerKey,
-		TLSCryptKey: server.TLSCryptKey,
-		Users:       users,
+		Id:            ib.Id,
+		Tag:           ib.Tag,
+		Listen:        listen,
+		Port:          ib.Port,
+		Proto:         server.Proto,
+		Subnet:        subnet,
+		DNS:           dns,
+		MTU:           server.MTU,
+		MSSFix:        server.MSSFix,
+		DataCiphers:   ciphers,
+		SplitTunnel:   server.SplitTunnel,
+		TLSMode:       tlsMode,
+		TLSVersionMin: session.TLSVersionMin,
+		RenegSec:      session.RenegSec,
+		MaxClients:    session.MaxClients,
+		SearchDomains: session.SearchDomains,
+		CACert:        server.CACert,
+		ServerCert:    server.ServerCert,
+		ServerKey:     server.ServerKey,
+		TLSCryptKey:   server.TLSCryptKey,
+		Users:         users,
 	}, true
 }
 
@@ -123,6 +136,8 @@ func (inst Instance) structuralFingerprint() string {
 		fmt.Sprint(inst.MTU, "/", inst.MSSFix, "/", inst.SplitTunnel),
 		strings.Join(inst.DataCiphers, ":"),
 		inst.TLSMode,
+		fmt.Sprint(inst.TLSVersionMin, "/", inst.RenegSec, "/", inst.MaxClients),
+		strings.Join(inst.SearchDomains, ","),
 		inst.CACert,
 		inst.ServerCert,
 		inst.ServerKey,

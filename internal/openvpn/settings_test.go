@@ -112,6 +112,10 @@ func TestNormalizeSettingsRejectsWhatOpenVPNWouldRefuse(t *testing.T) {
 		{name: "unknown control channel mode", settings: `{"server":{"tlsMode":"tls-crypt-v2"}}`, wantErr: `tlsMode "tls-crypt-v2" must be`},
 		{name: "extra line with an inline block", settings: `{"server":{"clientDirectives":"<ca>\nx\n</ca>"}}`, wantErr: "is not one OpenVPN directive"},
 		{name: "extra line the panel writes itself", settings: `{"server":{"clientDirectives":"remote evil.example 443"}}`, wantErr: `"remote" is written by the panel`},
+		{name: "TLS floor OpenVPN lacks", settings: `{"server":{"tlsVersionMin":"1.1"}}`, wantErr: `tlsVersionMin "1.1" must be 1.2 or 1.3`},
+		{name: "renegotiation below a minute", settings: `{"server":{"renegSec":30}}`, wantErr: "renegSec 30 must be -1 for never, 0 for the default or between 60 and 604800"},
+		{name: "negative client cap", settings: `{"server":{"maxClients":-2}}`, wantErr: "maxClients cannot be negative"},
+		{name: "search domain with a space", settings: `{"server":{"searchDomains":["corp example"]}}`, wantErr: `search domain "corp example" is not a domain name`},
 		{name: "truncated tls-crypt key", settings: `{"server":{"tlsCryptKey":"-----BEGIN OpenVPN Static key V1-----\nabcd\n-----END OpenVPN Static key V1-----"}}`, wantErr: "tlsCryptKey must hold 256 bytes of hex"},
 	}
 	for _, tt := range tests {

@@ -87,6 +87,28 @@ func TestServerConfigFollowsTheInbound(t *testing.T) {
 			wantNot: []string{`tls-crypt "/opt/manifold/openvpn/7/tls-crypt.key"`, `tls-auth "/opt/manifold/openvpn/7/tls-crypt.key" 0`},
 		},
 		{
+			name:    "the defaults leave renegotiation, clients and TLS 1.2 as OpenVPN has them",
+			want:    []string{"tls-version-min 1.2"},
+			wantNot: []string{"reneg-sec 0", "max-clients 0", `push "dhcp-option DOMAIN `},
+		},
+		{
+			name: "TLS floor, renegotiation, client cap and search domains reach the server",
+			mutate: func(i *Instance) {
+				i.TLSVersionMin, i.RenegSec, i.MaxClients, i.SearchDomains = "1.3", 7200, 50, []string{"corp.example", "lan"}
+			},
+			want: []string{
+				"tls-version-min 1.3", "reneg-sec 7200", "max-clients 50",
+				`push "dhcp-option DOMAIN corp.example"`, `push "dhcp-option DOMAIN lan"`,
+			},
+			wantNot: []string{"tls-version-min 1.2"},
+		},
+		{
+			// Credentials asked again every hour break apps that do not keep them.
+			name:   "renegotiation switched off",
+			mutate: func(i *Instance) { i.RenegSec = RenegNever },
+			want:   []string{"reneg-sec 0"},
+		},
+		{
 			name:    "IPv6 wildcard listens dual-stack",
 			mutate:  func(i *Instance) { i.Listen = "::" },
 			want:    []string{"proto udp6"},
@@ -204,5 +226,19 @@ func TestProfileFollowsTheInboundsProfileOptions(t *testing.T) {
 	profile.Server.TLSMode = TLSModeNone
 	if bare := profile.Render(); strings.Contains(bare, "<tls-auth>") || strings.Contains(bare, "<tls-crypt>") || strings.Contains(bare, "key-direction") {
 		t.Errorf("a profile without a control channel key still carries one:\n%s", bare)
+	}
+}
+
+// Renegotiation is driven by whichever side asks first, so a profile carries the server's choice.
+func TestProfileFollowsTheServersRenegotiation(t *testing.T) {
+	for _, tc := range []struct {
+		reneg int
+		want  string
+	}{{RenegNever, "reneg-sec 0"}, {5400, "reneg-sec 5400"}, {0, ""}} {
+		profile := Profile{Host: "h", Port: 1, Server: ServerSettings{Proto: ProtoUDP, RenegSec: tc.reneg}}.Render()
+		has := strings.Contains(profile, "\nreneg-sec ")
+		if tc.want == "" && has || tc.want != "" && !strings.Contains(profile, "\n"+tc.want+"\n") {
+			t.Errorf("renegSec %d: profile =\n%s", tc.reneg, profile)
+		}
 	}
 }

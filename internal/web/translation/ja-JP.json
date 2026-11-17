@@ -897,7 +897,17 @@
         "keysReplaced": "新しい鍵はこのインバウンドを保存すると使われます。",
         "clientProfile": "クライアントプロファイル",
         "clientDirectives": "プロファイルの追加行",
-        "clientDirectivesHint": "このインバウンドの全プロファイルに追加されます。1 行に OpenVPN のディレクティブ 1 つ（例: sndbuf 0）。パネル自身が書く行は受け付けません。"
+        "clientDirectivesHint": "このインバウンドの全プロファイルに追加されます。1 行に OpenVPN のディレクティブ 1 つ（例: sndbuf 0）。パネル自身が書く行は受け付けません。",
+        "tlsVersionMin": "Oldest TLS",
+        "tlsVersionMinHint": "TLS 1.3 refuses apps and routers older than OpenVPN 2.5 / OpenSSL 1.1.1.",
+        "reneg": "Renegotiate every",
+        "renegHint": "Seconds between key renegotiations; 0 keeps the hourly default, -1 never renegotiates. Apps that do not keep the password ask for it again at each one, so -1 suits them. Profiles carry the same value.",
+        "renegInvalid": "-1, 0, or 60 to 604800 seconds",
+        "maxClients": "Most connected devices",
+        "maxClientsHint": "How many devices this server holds at once, all users together; 0 has no cap. Each user's own device limit still applies.",
+        "searchDomains": "Search domains",
+        "searchDomainsHint": "Pushed to devices so a short name such as fileserver resolves inside them. Up to eight.",
+        "searchDomainInvalid": "Not a domain name"
       },
       "wireguard": {
         "interface": "インターフェース名",
