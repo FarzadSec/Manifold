@@ -172,6 +172,8 @@ func TestProfileCarriesTheLoginOnlyWhenAsked(t *testing.T) {
 		"<auth-user-pass>\nalice\np@ss word\n</auth-user-pass>\n",
 		"<ca>\nCA-PEM\n</ca>\n",
 		"<tls-crypt>\nSTATIC-KEY\n</tls-crypt>\n",
+		// Without it OpenVPN Connect asks for an "external certificate" the login does not use.
+		"\nsetenv CLIENT_CERT 0\n",
 	} {
 		if !strings.Contains(embedded, want) {
 			t.Errorf("embedded profile lacks %q:\n%s", want, embedded)
@@ -187,7 +189,8 @@ func TestProfileCarriesTheLoginOnlyWhenAsked(t *testing.T) {
 	profile.Server.PromptCredentials = true
 	profile.Server.Proto = ProtoUDP
 	prompting := profile.Render()
-	if !strings.Contains(prompting, "\nauth-user-pass\n") || !strings.Contains(prompting, "\nproto udp\n") {
+	if !strings.Contains(prompting, "\nauth-user-pass\n") || !strings.Contains(prompting, "\nproto udp\n") ||
+		!strings.Contains(prompting, "\nsetenv CLIENT_CERT 0\n") {
 		t.Errorf("prompting profile:\n%s", prompting)
 	}
 	if strings.Contains(prompting, "p@ss word") || strings.Contains(prompting, "<auth-user-pass>") {

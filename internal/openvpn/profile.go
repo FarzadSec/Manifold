@@ -76,6 +76,8 @@ func (p Profile) Render() string {
 	// Windows would otherwise keep asking the DNS servers outside the tunnel.
 	line("ignore-unknown-option block-outside-dns")
 	line("setenv opt block-outside-dns")
+	// Logins carry no client certificate; without saying so OpenVPN Connect asks for one.
+	line("setenv CLIENT_CERT 0")
 	line("verb 3")
 	if p.Server.ClientDirectives != "" {
 		b.WriteString(p.Server.ClientDirectives + "\n")
