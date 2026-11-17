@@ -556,22 +556,54 @@ func (s *SubService) resolveInfoNodeRemark(subId string, uniqueEmails []string, 
 }
 
 func (s *SubService) getSubs(subId string) ([]string, []string, int64, xray.ClientTraffic, error) {
+	links, emails, uniqueEmails, lastOnline, traffic, err := s.subLinks(subId)
+	if err != nil {
+		return nil, nil, 0, traffic, err
+	}
 	var result []string
-	var ordered []orderedSubEntry[func() string]
+	if links != nil {
+		result = make([]string, 0, len(links))
+	}
+	for _, l := range links {
+		result = append(result, l.text)
+	}
+	if mode, remark := s.resolveInfoNodeRemark(subId, uniqueEmails, traffic, len(result) > 0); mode != infoNodeNone {
+		dummyLink := fmt.Sprintf("socks://127.0.0.1:1080#%s", strings.ReplaceAll(url.QueryEscape(remark), "+", "%20"))
+		if mode == infoNodeExpired || mode == infoNodeDepleted {
+			return []string{dummyLink}, emails, lastOnline, traffic, nil
+		}
+		result = append([]string{dummyLink}, result...)
+	}
+
+	return result, emails, lastOnline, traffic, nil
+}
+
+// subLink is one rendered entry of a subscription and the inbound behind it,
+// nil for a client's external link.
+type subLink struct {
+	text    string
+	inbound *model.Inbound
+}
+
+// subLinks renders a subscription's entries; nil means no account owns subId,
+// while an account whose protocols no app imports gets an empty, non-nil list.
+func (s *SubService) subLinks(subId string) ([]subLink, []string, []string, int64, xray.ClientTraffic, error) {
+	var result []subLink
+	var ordered []orderedSubEntry[func() subLink]
 	var emails []string
 	var traffic xray.ClientTraffic
 	var hasEnabledClient bool
 	inbounds, err := s.getInboundsBySubId(subId)
 	if err != nil {
-		return nil, nil, 0, traffic, err
+		return nil, nil, nil, 0, traffic, err
 	}
 	externalLinks, err := s.getClientExternalLinksBySubId(subId)
 	if err != nil {
-		return nil, nil, 0, traffic, err
+		return nil, nil, nil, 0, traffic, err
 	}
 
 	if len(inbounds) == 0 && len(externalLinks) == 0 {
-		return nil, nil, 0, traffic, nil
+		return nil, nil, nil, 0, traffic, nil
 	}
 
 	seenEmails := make(map[string]struct{})
@@ -609,13 +641,13 @@ func (s *SubService) getSubs(subId string) ([]string, []string, int64, xray.Clie
 					continue
 				}
 				for _, variant := range variants {
-					render := func() string {
+					render := func() subLink {
 						if variant.host != nil {
-							return s.linkFromHosts(inbound, client, variant.endpoint(s, inbound))
+							return subLink{s.linkFromHosts(inbound, client, variant.endpoint(s, inbound)), inbound}
 						}
-						return s.GetLink(inbound, client.Email)
+						return subLink{s.GetLink(inbound, client.Email), inbound}
 					}
-					ordered = append(ordered, orderedSubEntry[func() string]{variant.order, render})
+					ordered = append(ordered, orderedSubEntry[func() subLink]{variant.order, render})
 				}
 			} else if effectiveEps, bound := s.clientHostEndpoints(inbound, client, "raw", hostEps); bound && len(effectiveEps) == 0 {
 				seenEmails[client.Email] = struct{}{}
@@ -629,11 +661,11 @@ func (s *SubService) getSubs(subId string) ([]string, []string, int64, xray.Clie
 				link = s.GetLink(inbound, client.Email)
 			}
 			if !s.hostsFirst && s.keepLink(link) {
-				result = append(result, link)
+				result = append(result, subLink{text: link, inbound: inbound})
 			}
 			// An account whose protocols a proxy app cannot import still exists: an empty list, not a 404.
 			if result == nil {
-				result = []string{}
+				result = []subLink{}
 			}
 			emails = append(emails, client.Email)
 			seenEmails[client.Email] = struct{}{}
@@ -644,8 +676,8 @@ func (s *SubService) getSubs(subId string) ([]string, []string, int64, xray.Clie
 			if s.rendered.spent() {
 				break
 			}
-			if link := render(); s.keepLink(link) {
-				result = append(result, link)
+			if entry := render(); s.keepLink(entry.text) {
+				result = append(result, entry)
 			}
 		}
 	}
@@ -656,13 +688,13 @@ func (s *SubService) getSubs(subId string) ([]string, []string, int64, xray.Clie
 		if !ext.Active {
 			seenEmails[ext.Email] = struct{}{}
 			if result == nil {
-				result = []string{}
+				result = []subLink{}
 			}
 			continue
 		}
 		for _, el := range expandEntry(ext) {
 			if link := applyRemarkToLink(el.Link, el.Name); link != "" {
-				result = append(result, link)
+				result = append(result, subLink{text: link})
 				emails = append(emails, ext.Email)
 				seenEmails[ext.Email] = struct{}{}
 			}
@@ -676,16 +708,7 @@ func (s *SubService) getSubs(subId string) ([]string, []string, int64, xray.Clie
 	slices.Sort(uniqueEmails)
 	traffic, lastOnline := s.AggregateTrafficByEmails(uniqueEmails)
 	traffic.Enable = hasEnabledClient
-
-	if mode, remark := s.resolveInfoNodeRemark(subId, uniqueEmails, traffic, len(result) > 0); mode != infoNodeNone {
-		dummyLink := fmt.Sprintf("socks://127.0.0.1:1080#%s", strings.ReplaceAll(url.QueryEscape(remark), "+", "%20"))
-		if mode == infoNodeExpired || mode == infoNodeDepleted {
-			return []string{dummyLink}, emails, lastOnline, traffic, nil
-		}
-		result = append([]string{dummyLink}, result...)
-	}
-
-	return result, emails, lastOnline, traffic, nil
+	return result, emails, uniqueEmails, lastOnline, traffic, nil
 }
 
 // inboundLinks builds the share links for every distinct client of one inbound
