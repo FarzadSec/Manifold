@@ -3764,56 +3764,28 @@ export const sections: readonly Section[] = [
     id: 'app',
     title: 'App',
     description:
-      'How the app shows this panel and its nodes as locations. The app itself signs in on the subscription server (see Subscription Server → app/v1); app access is switched on with the appEnable setting.',
+      "The locations the app offers. A location (Germany, say) gathers the inbounds that serve it, on any protocol and any server; an inbound serves one location at most, and one in none is still used by the app's quick connect. The app itself signs in on the subscription server (see Subscription Server → app/v1); app access is switched on with the appEnable setting.",
     endpoints: [
       {
         method: 'GET',
         path: '/panel/api/app/locations',
-        summary:
-          'List the location of this panel (nodeId 0) and of every node. A node with no saved name goes by its node name.',
+        summary: 'List the locations, each with the ids of the inbounds that serve it.',
         responseSchema: 'AppLocation',
         responseSchemaArray: true,
       },
       {
         method: 'POST',
         path: '/panel/api/app/locations',
-        summary: 'Save the location of this panel or of a node.',
-        params: [
-          {
-            name: 'nodeId',
-            in: 'body (form)',
-            type: 'integer',
-            desc: '0 for this panel, otherwise a node id.',
-          },
-          {
-            name: 'name',
-            in: 'body (form)',
-            type: 'string',
-            desc: 'Name shown in the app.',
-            optional: true,
-          },
-          {
-            name: 'countryCode',
-            in: 'body (form)',
-            type: 'string',
-            desc: 'Two-letter ISO 3166 country code, for the flag.',
-            optional: true,
-          },
-          {
-            name: 'city',
-            in: 'body (form)',
-            type: 'string',
-            desc: 'City shown under the name.',
-            optional: true,
-          },
-          {
-            name: 'timezone',
-            in: 'body (form)',
-            type: 'string',
-            desc: 'IANA timezone of the server (e.g. Europe/Berlin), which the app can give the device while connected.',
-            optional: true,
-          },
-        ],
+        summary:
+          'Create a location (id 0 or absent) or replace one, its inbounds included. Refused when the name is empty, the country is not a two-letter ISO 3166 code, the timezone is unknown, an inbound does not exist or already serves another location.',
+        body: '{\n  "id": 0,\n  "name": "Germany",\n  "countryCode": "DE",\n  "city": "Frankfurt",\n  "timezone": "Europe/Berlin",\n  "inboundIds": [3, 7, 12]\n}',
+        responseSchema: 'AppLocation',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/app/locations/del/:id',
+        summary: 'Delete a location. Its inbounds stay, serving no location.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Location id.' }],
       },
     ],
   },

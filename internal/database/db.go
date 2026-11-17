@@ -77,6 +77,7 @@ func allModels() []any {
 		&model.ClientHwid{},
 		&model.AppSession{},
 		&model.AppLocation{},
+		&model.AppLocationInbound{},
 		&model.ClientExternalLink{},
 		&model.ClientGroup{},
 		&model.InboundFallback{},
@@ -1548,7 +1549,7 @@ func runSeeders(isUsersEmpty bool) error {
 	}
 
 	if empty && isUsersEmpty {
-		seeders := []string{"UserPasswordHash", "ClientsTable", "InboundClientsArrayFix", "InboundClientTgIdFix2", "InboundClientSubIdFix", "FreedomFinalRulesReverseFix", "FreedomFinalRulesPrivateEgressBlock", "UppercaseFreedomFinalRulesFix", "FreedomFinalRuleDelayFix", "InboundRealityFinalmaskTcpStrip", "ApiTokensHash", "LegacyProxySettingsCleanup", "SessionSecretRotation", "OutboundRemovedKeysFix", "FreedomDomainStrategyFix", "DNSOutboundLegacyKeysFix", "DNSOutboundQTypeZeroFix", "WireguardDomainStrategyFix", "XdnsFinalmaskNamesAddrsFix", "UDPHopClientMaskFix", "HostVerifyPeerCertByNameBoolFix", "HostMihomoX25519Reset", "WireguardPeersToClients", "MtprotoSecretsToClients", "NodeInboundsAdopted", "NodeDownNotified", "ResetIpLimitNoFail2ban", "ClientGroupNameTrim", "OwnerlessClientHwidPurge", "ClientForwardedPortsBackfill", "TwoFactorPerAccount", "ClientWeeklyResetOnSunday", "ClientUserLimitSplit"}
+		seeders := []string{"UserPasswordHash", "ClientsTable", "InboundClientsArrayFix", "InboundClientTgIdFix2", "InboundClientSubIdFix", "FreedomFinalRulesReverseFix", "FreedomFinalRulesPrivateEgressBlock", "UppercaseFreedomFinalRulesFix", "FreedomFinalRuleDelayFix", "InboundRealityFinalmaskTcpStrip", "ApiTokensHash", "LegacyProxySettingsCleanup", "SessionSecretRotation", "OutboundRemovedKeysFix", "FreedomDomainStrategyFix", "DNSOutboundLegacyKeysFix", "DNSOutboundQTypeZeroFix", "WireguardDomainStrategyFix", "XdnsFinalmaskNamesAddrsFix", "UDPHopClientMaskFix", "HostVerifyPeerCertByNameBoolFix", "HostMihomoX25519Reset", "WireguardPeersToClients", "MtprotoSecretsToClients", "NodeInboundsAdopted", "NodeDownNotified", "ResetIpLimitNoFail2ban", "ClientGroupNameTrim", "OwnerlessClientHwidPurge", "ClientForwardedPortsBackfill", "TwoFactorPerAccount", "ClientWeeklyResetOnSunday", "ClientUserLimitSplit", "AppLocationsByInbound"}
 		for _, name := range seeders {
 			if err := db.Create(&model.HistoryOfSeeders{SeederName: name}).Error; err != nil {
 				return err
@@ -1757,6 +1758,12 @@ func runSeeders(isUsersEmpty bool) error {
 
 	if !slices.Contains(seedersHistory, "ClientUserLimitSplit") {
 		if err := splitClientUserLimit(); err != nil {
+			return err
+		}
+	}
+
+	if !slices.Contains(seedersHistory, "AppLocationsByInbound") {
+		if err := locationsFromServerNames(); err != nil {
 			return err
 		}
 	}
@@ -2167,6 +2174,61 @@ func splitClientUserLimit() error {
 			}
 		}
 		return tx.Create(&model.HistoryOfSeeders{SeederName: "ClientUserLimitSplit"}).Error
+	})
+}
+
+type serverAppLocation struct {
+	NodeID      int    `gorm:"column:node_id"`
+	Name        string `gorm:"column:name"`
+	CountryCode string `gorm:"column:country_code"`
+	City        string `gorm:"column:city"`
+	Timezone    string `gorm:"column:timezone"`
+}
+
+func (serverAppLocation) TableName() string { return "app_locations" }
+
+// An app location once named one server (node 0 being this panel); each becomes a location
+// holding that server's inbounds, named after the node when it had no name of its own.
+func locationsFromServerNames() error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		if tx.Migrator().HasTable(&serverAppLocation{}) {
+			var named []serverAppLocation
+			if err := tx.Order("node_id").Find(&named).Error; err != nil {
+				return err
+			}
+			for _, old := range named {
+				loc := model.AppLocation{Name: old.Name, CountryCode: old.CountryCode, City: old.City, Timezone: old.Timezone}
+				inbounds := tx.Model(&model.Inbound{}).Order("id")
+				if old.NodeID == 0 {
+					inbounds = inbounds.Where("node_id IS NULL OR node_id = 0")
+				} else {
+					inbounds = inbounds.Where("node_id = ?", old.NodeID)
+					var names []string
+					if err := tx.Model(&model.Node{}).Where("id = ?", old.NodeID).Pluck("name", &names).Error; err != nil {
+						return err
+					}
+					if loc.Name == "" && len(names) > 0 {
+						loc.Name = names[0]
+					}
+				}
+				var ids []int
+				if err := inbounds.Pluck("id", &ids).Error; err != nil {
+					return err
+				}
+				if err := tx.Create(&loc).Error; err != nil {
+					return err
+				}
+				for _, id := range ids {
+					if err := tx.Create(&model.AppLocationInbound{InboundID: id, LocationID: loc.Id}).Error; err != nil {
+						return err
+					}
+				}
+			}
+			if err := tx.Migrator().DropTable(&serverAppLocation{}); err != nil {
+				return err
+			}
+		}
+		return tx.Create(&model.HistoryOfSeeders{SeederName: "AppLocationsByInbound"}).Error
 	})
 }
 

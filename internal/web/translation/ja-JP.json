@@ -1904,7 +1904,7 @@
         "menu": "アプリ",
         "enable": "アプリでのアクセス",
         "enableDesc": "顧客はサブスクリプションリンクとユーザー名でアプリにサインインします。サインインした端末は、そのリンクの他のアプリと同じ端末数上限の枠を1つ使います。",
-        "locationsDesc": "アプリでこのサーバーと各ノードをどう表示するか。タイムゾーンは接続中にアプリが端末へ設定できるものです。",
+        "locationsDesc": "ロケーションはアプリが表示する場所(例: ドイツ)です。その場所を担うインバウンドを、プロトコルやサーバーを問わずリンクします。どのロケーションにも属さないインバウンドもアプリのクイック接続には使われます。",
         "server": "サーバー",
         "thisServer": "このサーバー",
         "nodeLabel": "ノード #{id}",
@@ -1915,8 +1915,24 @@
         "toasts": {
           "locations": "アプリのロケーションを読み込み中",
           "save": "アプリのロケーションを保存中",
-          "saved": "アプリのロケーションを保存しました"
-        }
+          "saved": "アプリのロケーションを保存しました",
+          "delete": "アプリのロケーションを削除中",
+          "deleted": "アプリのロケーションを削除しました"
+        },
+        "timezoneDesc": "接続中にアプリが端末へ渡せるタイムゾーン。",
+        "addLocation": "ロケーションを追加",
+        "editLocation": "ロケーションを編集",
+        "location": "ロケーション",
+        "inbound": "インバウンド",
+        "inbounds": "インバウンド",
+        "inboundsDesc": "この場所を担う、任意のプロトコル・サーバーのインバウンド。1 つのインバウンドは最大 1 つのロケーションに属します。",
+        "noInbounds": "インバウンドなし",
+        "noLocations": "ロケーションなし",
+        "noLocation": "ロケーションなし",
+        "locationOf": "{name} のロケーション",
+        "mapping": "どこに何が属するか",
+        "mappingDesc": "各インバウンドと、それが属するロケーション。ここで別のロケーションを選ぶとインバウンドを移動できます。",
+        "deleteConfirm": "このロケーションを削除しますか?インバウンドは残り、どのロケーションにも属さなくなります。"
       },
       "subCalendarExpireInclusive": "Month-end subscription expiry display",
       "subCalendarExpireInclusiveDesc": "Default off. For clients renewing on day 1 with a midnight cutoff in the panel timezone, report the previous month's last second in subscription expiry headers. Actual cutoff and renewals are unchanged. Clients use their own timezone and may consider the subscription expired one second early.",

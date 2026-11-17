@@ -1904,7 +1904,7 @@
         "menu": "应用",
         "enable": "应用访问",
         "enableDesc": "客户使用订阅链接和用户名登录应用。每台登录的设备占用该链接其他应用共用的同一设备上限中的一个名额。",
-        "locationsDesc": "应用如何显示本服务器和各节点。时区是应用在连接期间可为设备设置的时区。",
+        "locationsDesc": "位置是应用展示的地点,例如德国。把服务该地点的每个入站都关联到它,协议和服务器不限。不属于任何位置的入站仍会用于应用的快速连接。",
         "server": "服务器",
         "thisServer": "本服务器",
         "nodeLabel": "节点 #{id}",
@@ -1915,8 +1915,24 @@
         "toasts": {
           "locations": "正在加载应用位置",
           "save": "正在保存应用位置",
-          "saved": "应用位置已保存"
-        }
+          "saved": "应用位置已保存",
+          "delete": "正在删除应用位置",
+          "deleted": "应用位置已删除"
+        },
+        "timezoneDesc": "应用在连接期间可提供给设备的时区。",
+        "addLocation": "添加位置",
+        "editLocation": "编辑位置",
+        "location": "位置",
+        "inbound": "入站",
+        "inbounds": "入站",
+        "inboundsDesc": "服务此地点的任意协议、任意服务器的入站。每个入站最多属于一个位置。",
+        "noInbounds": "暂无入站",
+        "noLocations": "暂无位置",
+        "noLocation": "无位置",
+        "locationOf": "{name} 的位置",
+        "mapping": "各入站的去向",
+        "mappingDesc": "每个入站及其所属位置。在此选择其他位置即可移动入站。",
+        "deleteConfirm": "删除此位置?其入站将保留,但不属于任何位置。"
       },
       "subCalendarExpireInclusive": "订阅到期日期显示为月底",
       "subCalendarExpireInclusiveDesc": "默认关闭。对于按每月 1 日续期、且到期时间为面板时区午夜的客户端，订阅到期时间报告为上月最后一秒。真实截止时间和续期不变。客户端使用自身时区，可能提前一秒显示过期。",

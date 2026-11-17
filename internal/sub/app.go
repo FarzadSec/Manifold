@@ -31,24 +31,33 @@ type AppAccount struct {
 	Devices     int    `json:"devices" example:"1"`
 }
 
-// AppConfig is one entry of the subscription. Outbound is set when Xray can run
-// it; LocationID names its server and is absent on a client's external link.
+// AppConfig is one entry of the subscription. Outbound is set when Xray can run it;
+// LocationID is absent when its inbound serves no location, as on an external link.
 type AppConfig struct {
 	Protocol   string         `json:"protocol" example:"vless"`
 	Name       string         `json:"name" example:"vless-de"`
 	Link       string         `json:"link" example:"vless://11111111-2222-4333-8444-555555555555@de.example.com:8443?type=tcp#vless-de"`
-	LocationID *int           `json:"locationId,omitempty" example:"0"`
+	LocationID *int           `json:"locationId,omitempty" example:"1"`
 	Outbound   map[string]any `json:"outbound,omitempty"`
+}
+
+// AppPlace is a location as the app sees it, without the panel's inbound ids.
+type AppPlace struct {
+	ID          int    `json:"id" example:"1"`
+	Name        string `json:"name" example:"Germany"`
+	CountryCode string `json:"countryCode" example:"DE"`
+	City        string `json:"city" example:"Frankfurt"`
+	Timezone    string `json:"timezone" example:"Europe/Berlin"`
 }
 
 // AppProfile is what GET .../app/v1/profile answers a signed-in device.
 type AppProfile struct {
-	Account    AppAccount          `json:"account"`
-	Title      string              `json:"title,omitempty" example:"DataCraft"`
-	SupportURL string              `json:"supportUrl,omitempty" example:"https://t.me/support"`
-	Announce   string              `json:"announce,omitempty" example:"Maintenance on Friday"`
-	Locations  []model.AppLocation `json:"locations"`
-	Configs    []AppConfig         `json:"configs"`
+	Account    AppAccount  `json:"account"`
+	Title      string      `json:"title,omitempty" example:"DataCraft"`
+	SupportURL string      `json:"supportUrl,omitempty" example:"https://t.me/support"`
+	Announce   string      `json:"announce,omitempty" example:"Maintenance on Friday"`
+	Locations  []AppPlace  `json:"locations"`
+	Configs    []AppConfig `json:"configs"`
 }
 
 type appLoginRequest struct {
@@ -156,12 +165,23 @@ func (a *SUBController) appProfile(c *gin.Context) {
 		appServiceError(c, err)
 		return
 	}
-	configs := appConfigs(links)
-	locations := []model.AppLocation{}
+	locationOf, err := a.appService.LocationOfInbounds()
+	if err != nil {
+		appServiceError(c, err)
+		return
+	}
+	configs := appConfigs(links, locationOf)
+	locations := []AppPlace{}
 	if ids := appLocationIDs(configs); len(ids) > 0 {
-		if locations, err = a.appService.Locations(ids...); err != nil {
+		all, err := a.appService.Locations()
+		if err != nil {
 			appServiceError(c, err)
 			return
+		}
+		for _, loc := range all {
+			if slices.Contains(ids, loc.Id) {
+				locations = append(locations, AppPlace{ID: loc.Id, Name: loc.Name, CountryCode: loc.CountryCode, City: loc.City, Timezone: loc.Timezone})
+			}
 		}
 	}
 	devices, _, err := a.clientService.HwidSlotStatusForSubID(subID)
@@ -202,7 +222,7 @@ func (a *SUBController) appLogout(c *gin.Context) {
 
 // appConfigs splits the subscription's entries into one config per line, an
 // entry rendering a line per endpoint, with the Xray outbound of each it can run.
-func appConfigs(links []subLink) []AppConfig {
+func appConfigs(links []subLink, locationOf map[int]int) []AppConfig {
 	configs := []AppConfig{}
 	for _, entry := range links {
 		for line := range strings.SplitSeq(entry.text, "\n") {
@@ -212,11 +232,9 @@ func appConfigs(links []subLink) []AppConfig {
 			}
 			cfg := AppConfig{Link: line, Name: linkDisplayName(line)}
 			if entry.inbound != nil {
-				nodeID := 0
-				if entry.inbound.NodeID != nil {
-					nodeID = *entry.inbound.NodeID
+				if id, ok := locationOf[entry.inbound.Id]; ok {
+					cfg.LocationID = &id
 				}
-				cfg.LocationID = &nodeID
 				if cfg.Name == "" {
 					cfg.Name = entry.inbound.Remark
 				}

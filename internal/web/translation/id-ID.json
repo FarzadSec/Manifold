@@ -1904,7 +1904,7 @@
         "menu": "Aplikasi",
         "enable": "Akses aplikasi",
         "enableDesc": "Pelanggan masuk ke aplikasi dengan tautan langganan dan nama pengguna mereka. Setiap perangkat yang masuk memakai satu slot dari batas perangkat yang sama dengan aplikasi lain pada tautan itu.",
-        "locationsDesc": "Cara aplikasi menampilkan server ini dan setiap node. Zona waktu adalah yang dapat diberikan aplikasi ke perangkat selama terhubung.",
+        "locationsDesc": "Lokasi adalah tempat yang ditawarkan aplikasi, misalnya Jerman. Tautkan setiap inbound yang melayani tempat itu, dengan protokol apa pun dan di server mana pun. Inbound tanpa lokasi tetap dipakai oleh sambungan cepat aplikasi.",
         "server": "Server",
         "thisServer": "Server ini",
         "nodeLabel": "Node #{id}",
@@ -1915,8 +1915,24 @@
         "toasts": {
           "locations": "Memuat lokasi aplikasi",
           "save": "Menyimpan lokasi aplikasi",
-          "saved": "Lokasi aplikasi disimpan"
-        }
+          "saved": "Lokasi aplikasi disimpan",
+          "delete": "Menghapus lokasi aplikasi",
+          "deleted": "Lokasi aplikasi dihapus"
+        },
+        "timezoneDesc": "Zona waktu yang dapat diberikan aplikasi ke perangkat selama tersambung.",
+        "addLocation": "Tambah lokasi",
+        "editLocation": "Ubah lokasi",
+        "location": "Lokasi",
+        "inbound": "Inbound",
+        "inbounds": "Inbound",
+        "inboundsDesc": "Inbound dari protokol dan server apa pun yang melayani tempat ini. Satu inbound melayani paling banyak satu lokasi.",
+        "noInbounds": "Belum ada inbound",
+        "noLocations": "Belum ada lokasi",
+        "noLocation": "Tanpa lokasi",
+        "locationOf": "Lokasi {name}",
+        "mapping": "Apa melayani di mana",
+        "mappingDesc": "Setiap inbound dan lokasi yang dilayaninya. Pilih lokasi lain di sini untuk memindahkan inbound.",
+        "deleteConfirm": "Hapus lokasi ini? Inbound-nya tetap ada tanpa lokasi."
       },
       "subCalendarExpireInclusive": "Month-end subscription expiry display",
       "subCalendarExpireInclusiveDesc": "Default off. For clients renewing on day 1 with a midnight cutoff in the panel timezone, report the previous month's last second in subscription expiry headers. Actual cutoff and renewals are unchanged. Clients use their own timezone and may consider the subscription expired one second early.",

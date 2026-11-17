@@ -1904,7 +1904,7 @@
         "menu": "Застосунок",
         "enable": "Доступ через застосунок",
         "enableDesc": "Клієнти входять у застосунок за посиланням підписки та ім'ям користувача. Кожен пристрій, що увійшов, займає місце в тому самому ліміті пристроїв, що й інші застосунки цього посилання.",
-        "locationsDesc": "Як застосунок показує цей сервер і кожен вузол. Часовий пояс — той, який застосунок може встановити пристрою під час підключення.",
+        "locationsDesc": "Локація — місце, яке показує застосунок, наприклад Німеччина. Прив'яжіть до неї кожен вхідний, що обслуговує це місце, на будь-якому протоколі й сервері. Вхідний без локації все одно використовується швидким підключенням застосунку.",
         "server": "Сервер",
         "thisServer": "Цей сервер",
         "nodeLabel": "Вузол #{id}",
@@ -1915,8 +1915,24 @@
         "toasts": {
           "locations": "Завантаження локацій застосунку",
           "save": "Збереження локації застосунку",
-          "saved": "Локацію застосунку збережено"
-        }
+          "saved": "Локацію застосунку збережено",
+          "delete": "Видалення локації застосунку",
+          "deleted": "Локацію застосунку видалено"
+        },
+        "timezoneDesc": "Часовий пояс, який застосунок може передати пристрою під час підключення.",
+        "addLocation": "Додати локацію",
+        "editLocation": "Змінити локацію",
+        "location": "Локація",
+        "inbound": "Вхідний",
+        "inbounds": "Вхідні",
+        "inboundsDesc": "Вхідні будь-якого протоколу й сервера, що обслуговують це місце. Вхідний обслуговує не більше однієї локації.",
+        "noInbounds": "Ще немає вхідних",
+        "noLocations": "Ще немає локацій",
+        "noLocation": "Без локації",
+        "locationOf": "Локація {name}",
+        "mapping": "Що де обслуговує",
+        "mappingDesc": "Кожен вхідний і його локація. Виберіть тут іншу локацію, щоб перенести вхідний.",
+        "deleteConfirm": "Видалити цю локацію? Її вхідні залишаться без локації."
       },
       "subCalendarExpireInclusive": "Month-end subscription expiry display",
       "subCalendarExpireInclusiveDesc": "Default off. For clients renewing on day 1 with a midnight cutoff in the panel timezone, report the previous month's last second in subscription expiry headers. Actual cutoff and renewals are unchanged. Clients use their own timezone and may consider the subscription expired one second early.",

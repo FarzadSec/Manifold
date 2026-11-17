@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"testing"
 
@@ -573,5 +574,69 @@ func TestSessionCapsMoveToTheUserLimitOnUpgrade(t *testing.T) {
 		if p.UserLimit != want {
 			t.Errorf("plan %s userLimit = %d, want %d", name, p.UserLimit, want)
 		}
+	}
+}
+
+// A location used to name one server; it now gathers inbounds, so an upgrade turns each
+// named server into a location holding that server's inbounds.
+func TestAppLocationsByServerBecomeLocationsOfItsInbounds(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "x-ui.db")
+	if err := InitDB(dbPath); err != nil {
+		t.Fatalf("InitDB: %v", err)
+	}
+	t.Cleanup(func() { _ = CloseDB() })
+	node := &model.Node{Name: "de-fra-1", Address: "de.example.com", Port: 2053}
+	if err := db.Create(node).Error; err != nil {
+		t.Fatal(err)
+	}
+	nodeID := node.Id
+	inbounds := []*model.Inbound{
+		{Tag: "vless-ir", Port: 443, Protocol: model.VLESS, Enable: true, Settings: `{"clients":[]}`},
+		{Tag: "ovpn-ir", Port: 1194, Protocol: model.OpenVPN, Enable: true, Settings: `{"clients":[]}`},
+		{Tag: "vless-de", Port: 443, Protocol: model.VLESS, Enable: true, Settings: `{"clients":[]}`, NodeID: &nodeID},
+	}
+	for _, ib := range inbounds {
+		if err := db.Create(ib).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := db.Exec(`CREATE TABLE app_locations (node_id integer PRIMARY KEY, name text, country_code text, city text, timezone text)`).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Exec(`INSERT INTO app_locations VALUES (0, 'Iran', 'IR', 'Tehran', 'Asia/Tehran'), (?, '', 'DE', 'Frankfurt', '')`, nodeID).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Where("seeder_name = ?", "AppLocationsByInbound").Delete(&model.HistoryOfSeeders{}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := CloseDB(); err != nil {
+		t.Fatal(err)
+	}
+	if err := InitDB(dbPath); err != nil {
+		t.Fatalf("reopen InitDB: %v", err)
+	}
+
+	var locations []model.AppLocation
+	if err := db.Order("id").Find(&locations).Error; err != nil {
+		t.Fatal(err)
+	}
+	var links []model.AppLocationInbound
+	if err := db.Order("inbound_id").Find(&links).Error; err != nil {
+		t.Fatal(err)
+	}
+	if len(locations) != 2 || locations[0].Name != "Iran" || locations[0].Timezone != "Asia/Tehran" ||
+		locations[1].Name != "de-fra-1" || locations[1].City != "Frankfurt" || locations[1].CountryCode != "DE" {
+		t.Fatalf("locations = %+v, want Iran and the node under its name", locations)
+	}
+	want := []model.AppLocationInbound{
+		{InboundID: inbounds[0].Id, LocationID: locations[0].Id},
+		{InboundID: inbounds[1].Id, LocationID: locations[0].Id},
+		{InboundID: inbounds[2].Id, LocationID: locations[1].Id},
+	}
+	if !reflect.DeepEqual(links, want) {
+		t.Fatalf("links = %+v, want %+v", links, want)
+	}
+	if db.Migrator().HasTable("app_locations") {
+		t.Fatal("the server-keyed table is still there")
 	}
 }

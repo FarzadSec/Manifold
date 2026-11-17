@@ -1904,7 +1904,7 @@
         "menu": "Uygulama",
         "enable": "Uygulama erişimi",
         "enableDesc": "Müşteriler uygulamaya abonelik bağlantısı ve kullanıcı adıyla giriş yapar. Giriş yapan her cihaz, bağlantının diğer uygulamalarıyla aynı cihaz sınırından bir yer kaplar.",
-        "locationsDesc": "Uygulamanın bu sunucuyu ve her düğümü nasıl gösterdiği. Saat dilimi, uygulamanın bağlıyken cihaza verebileceği dilimdir.",
+        "locationsDesc": "Konum, uygulamanın sunduğu bir yerdir, örneğin Almanya. O yere hizmet eden her girişi, protokol ve sunucu fark etmeksizin bağlayın. Hiçbir konumda olmayan giriş yine de uygulamanın hızlı bağlantısında kullanılır.",
         "server": "Sunucu",
         "thisServer": "Bu sunucu",
         "nodeLabel": "Düğüm #{id}",
@@ -1915,8 +1915,24 @@
         "toasts": {
           "locations": "Uygulama konumları yükleniyor",
           "save": "Uygulama konumu kaydediliyor",
-          "saved": "Uygulama konumu kaydedildi"
-        }
+          "saved": "Uygulama konumu kaydedildi",
+          "delete": "Uygulama konumu siliniyor",
+          "deleted": "Uygulama konumu silindi"
+        },
+        "timezoneDesc": "Uygulamanın bağlıyken cihaza verebileceği saat dilimi.",
+        "addLocation": "Konum ekle",
+        "editLocation": "Konumu düzenle",
+        "location": "Konum",
+        "inbound": "Giriş",
+        "inbounds": "Girişler",
+        "inboundsDesc": "Bu yere hizmet eden her protokol ve sunucudaki girişler. Bir giriş en fazla bir konuma hizmet eder.",
+        "noInbounds": "Henüz giriş yok",
+        "noLocations": "Henüz konum yok",
+        "noLocation": "Konum yok",
+        "locationOf": "{name} konumu",
+        "mapping": "Ne nereye hizmet ediyor",
+        "mappingDesc": "Her giriş ve hizmet ettiği konum. Bir girişi taşımak için burada başka bir konum seçin.",
+        "deleteConfirm": "Bu konum silinsin mi? Girişleri konumsuz kalır."
       },
       "subCalendarExpireInclusive": "Month-end subscription expiry display",
       "subCalendarExpireInclusiveDesc": "Default off. For clients renewing on day 1 with a midnight cutoff in the panel timezone, report the previous month's last second in subscription expiry headers. Actual cutoff and renewals are unchanged. Clients use their own timezone and may consider the subscription expired one second early.",

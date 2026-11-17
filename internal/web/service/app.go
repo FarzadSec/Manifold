@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
+	"slices"
 	"strings"
 	"time"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 // AppService signs devices in to the app API. A subscription link and the
@@ -24,14 +24,17 @@ type AppService struct {
 }
 
 var (
-	ErrAppDisabled    = errors.New("app access is off")
-	ErrAppBadLogin    = errors.New("the username does not belong to this subscription link")
-	ErrAppBadDevice   = errors.New("the device id is missing or malformed")
-	ErrAppDeviceLimit = errors.New("the subscription's device limit is reached")
-	ErrAppSession     = errors.New("the session is not valid")
-	ErrAppUnknownNode = errors.New("no such node")
-	ErrAppBadCountry  = errors.New("the country must be a two-letter ISO 3166 code")
-	ErrAppBadTimezone = errors.New("the timezone must be an IANA name such as Europe/Berlin")
+	ErrAppDisabled        = errors.New("app access is off")
+	ErrAppBadLogin        = errors.New("the username does not belong to this subscription link")
+	ErrAppBadDevice       = errors.New("the device id is missing or malformed")
+	ErrAppDeviceLimit     = errors.New("the subscription's device limit is reached")
+	ErrAppSession         = errors.New("the session is not valid")
+	ErrAppLocationName    = errors.New("a location needs a name")
+	ErrAppUnknownLocation = errors.New("no such location")
+	ErrAppUnknownInbound  = errors.New("no such inbound")
+	ErrAppInboundTaken    = errors.New("an inbound serves one location only, and this one is in another")
+	ErrAppBadCountry      = errors.New("the country must be a two-letter ISO 3166 code")
+	ErrAppBadTimezone     = errors.New("the timezone must be an IANA name such as Europe/Berlin")
 )
 
 const maxAppDeviceIDLength = 128
@@ -192,77 +195,116 @@ func endAppSessionsTx(tx *gorm.DB, hwidHash string, subIDs ...string) error {
 	return query.Delete(&model.AppSession{}).Error
 }
 
-// Locations returns how the app names each server of nodeIDs, or of this panel
-// and every node when none is given. An unnamed node goes by its node name.
-func (s *AppService) Locations(nodeIDs ...int) ([]model.AppLocation, error) {
+// Locations lists the places the app offers, each with the inbounds that serve it.
+func (s *AppService) Locations() ([]model.AppLocation, error) {
 	db := database.GetDB()
-	if len(nodeIDs) == 0 {
-		nodeIDs = []int{0}
-		var ids []int
-		if err := db.Model(&model.Node{}).Order("id ASC").Pluck("id", &ids).Error; err != nil {
-			return nil, err
-		}
-		nodeIDs = append(nodeIDs, ids...)
-	}
-	var saved []model.AppLocation
-	if err := db.Where("node_id IN ?", nodeIDs).Find(&saved).Error; err != nil {
+	var locations []model.AppLocation
+	if err := db.Order("sort_order ASC, id ASC").Find(&locations).Error; err != nil {
 		return nil, err
 	}
-	var nodes []model.Node
-	if err := db.Select("id", "name").Where("id IN ?", nodeIDs).Find(&nodes).Error; err != nil {
+	var links []model.AppLocationInbound
+	if err := db.Order("inbound_id ASC").Find(&links).Error; err != nil {
 		return nil, err
 	}
-	byID := make(map[int]model.AppLocation, len(saved))
-	for _, loc := range saved {
-		byID[loc.NodeID] = loc
+	byLocation := make(map[int][]int, len(locations))
+	for _, l := range links {
+		byLocation[l.LocationID] = append(byLocation[l.LocationID], l.InboundID)
 	}
-	nodeNames := make(map[int]string, len(nodes))
-	for _, n := range nodes {
-		nodeNames[n.Id] = n.Name
+	for i := range locations {
+		locations[i].InboundIds = byLocation[locations[i].Id]
+		if locations[i].InboundIds == nil {
+			locations[i].InboundIds = []int{}
+		}
 	}
-	out := make([]model.AppLocation, 0, len(nodeIDs))
-	for _, id := range nodeIDs {
-		loc, ok := byID[id]
-		if !ok {
-			loc = model.AppLocation{NodeID: id}
-		}
-		if loc.Name == "" {
-			loc.Name = nodeNames[id]
-		}
-		out = append(out, loc)
+	return locations, nil
+}
+
+// LocationOfInbounds maps each inbound that serves a location to that location's id.
+func (s *AppService) LocationOfInbounds() (map[int]int, error) {
+	var links []model.AppLocationInbound
+	if err := database.GetDB().Find(&links).Error; err != nil {
+		return nil, err
+	}
+	out := make(map[int]int, len(links))
+	for _, l := range links {
+		out[l.InboundID] = l.LocationID
 	}
 	return out, nil
 }
 
-// SaveLocation stores how the app names this panel (node 0) or a node.
-func (s *AppService) SaveLocation(loc model.AppLocation) error {
+// SaveLocation creates a location (Id 0) or replaces one, inbounds included.
+func (s *AppService) SaveLocation(loc model.AppLocation) (model.AppLocation, error) {
 	loc.Name = strings.TrimSpace(loc.Name)
 	loc.City = strings.TrimSpace(loc.City)
 	loc.CountryCode = strings.ToUpper(strings.TrimSpace(loc.CountryCode))
 	loc.Timezone = strings.TrimSpace(loc.Timezone)
+	if loc.Name == "" {
+		return loc, ErrAppLocationName
+	}
 	if loc.CountryCode != "" && !isCountryCode(loc.CountryCode) {
-		return ErrAppBadCountry
+		return loc, ErrAppBadCountry
 	}
 	if loc.Timezone != "" {
 		if _, err := time.LoadLocation(loc.Timezone); err != nil {
-			return ErrAppBadTimezone
+			return loc, ErrAppBadTimezone
 		}
 	}
-	db := database.GetDB()
-	if loc.NodeID != 0 {
-		var count int64
-		if err := db.Model(&model.Node{}).Where("id = ?", loc.NodeID).Count(&count).Error; err != nil {
+	ids := slices.Compact(slices.Sorted(slices.Values(loc.InboundIds)))
+	err := database.GetDB().Transaction(func(tx *gorm.DB) error {
+		if loc.Id != 0 {
+			var count int64
+			if err := tx.Model(&model.AppLocation{}).Where("id = ?", loc.Id).Count(&count).Error; err != nil {
+				return err
+			}
+			if count == 0 {
+				return ErrAppUnknownLocation
+			}
+		}
+		if len(ids) > 0 {
+			var found int64
+			if err := tx.Model(&model.Inbound{}).Where("id IN ?", ids).Count(&found).Error; err != nil {
+				return err
+			}
+			if int(found) != len(ids) {
+				return ErrAppUnknownInbound
+			}
+			var taken int64
+			if err := tx.Model(&model.AppLocationInbound{}).Where("inbound_id IN ? AND location_id <> ?", ids, loc.Id).
+				Count(&taken).Error; err != nil {
+				return err
+			}
+			if taken > 0 {
+				return ErrAppInboundTaken
+			}
+		}
+		if err := tx.Save(&loc).Error; err != nil {
 			return err
 		}
-		if count == 0 {
-			return ErrAppUnknownNode
+		if err := tx.Where("location_id = ?", loc.Id).Delete(&model.AppLocationInbound{}).Error; err != nil {
+			return err
 		}
+		for _, id := range ids {
+			if err := tx.Create(&model.AppLocationInbound{InboundID: id, LocationID: loc.Id}).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if ids == nil {
+		ids = []int{}
 	}
-	// Save would insert node 0 again: GORM reads a zero primary key as a new row.
-	return db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "node_id"}},
-		DoUpdates: clause.AssignmentColumns([]string{"name", "country_code", "city", "timezone"}),
-	}).Create(&loc).Error
+	loc.InboundIds = ids
+	return loc, err
+}
+
+// DeleteLocation removes a location; its inbounds stay, serving no location.
+func (s *AppService) DeleteLocation(id int) error {
+	return database.GetDB().Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("location_id = ?", id).Delete(&model.AppLocationInbound{}).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&model.AppLocation{}, id).Error
+	})
 }
 
 func isCountryCode(code string) bool {

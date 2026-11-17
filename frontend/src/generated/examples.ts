@@ -605,7 +605,7 @@ export const EXAMPLES: Record<string, unknown> = {
   },
   "AppConfig": {
     "link": "vless://11111111-2222-4333-8444-555555555555@de.example.com:8443?type=tcp#vless-de",
-    "locationId": 0,
+    "locationId": 1,
     "name": "vless-de",
     "outbound": {},
     "protocol": "vless"
@@ -613,8 +613,20 @@ export const EXAMPLES: Record<string, unknown> = {
   "AppLocation": {
     "city": "Frankfurt",
     "countryCode": "DE",
+    "id": 1,
+    "inboundIds": [
+      3,
+      7
+    ],
     "name": "Germany",
-    "nodeId": 0,
+    "sortOrder": 0,
+    "timezone": "Europe/Berlin"
+  },
+  "AppPlace": {
+    "city": "Frankfurt",
+    "countryCode": "DE",
+    "id": 1,
+    "name": "Germany",
     "timezone": "Europe/Berlin"
   },
   "AppProfile": {
@@ -632,7 +644,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "configs": [
       {
         "link": "vless://11111111-2222-4333-8444-555555555555@de.example.com:8443?type=tcp#vless-de",
-        "locationId": 0,
+        "locationId": 1,
         "name": "vless-de",
         "outbound": {},
         "protocol": "vless"
@@ -642,8 +654,8 @@ export const EXAMPLES: Record<string, unknown> = {
       {
         "city": "Frankfurt",
         "countryCode": "DE",
+        "id": 1,
         "name": "Germany",
-        "nodeId": 0,
         "timezone": "Europe/Berlin"
       }
     ],

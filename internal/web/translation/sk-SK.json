@@ -2025,7 +2025,7 @@
         "menu": "Aplikácia",
         "enable": "Prístup cez aplikáciu",
         "enableDesc": "Zákazníci sa do aplikácie prihlasujú odkazom na predplatné a používateľským menom. Každé prihlásené zariadenie zaberá miesto v rovnakom limite zariadení ako ostatné aplikácie odkazu.",
-        "locationsDesc": "Ako aplikácia zobrazuje tento server a každý uzol. Časové pásmo je to, ktoré môže aplikácia nastaviť zariadeniu počas pripojenia.",
+        "locationsDesc": "Lokalita je miesto, ktoré aplikácia ponúka, napríklad Nemecko. Prepojte s ňou každý vstup, ktorý toto miesto obsluhuje, s ľubovoľným protokolom a na ľubovoľnom serveri. Vstup bez lokality sa stále používa pri rýchlom pripojení aplikácie.",
         "server": "Server",
         "thisServer": "Tento server",
         "nodeLabel": "Uzol #{id}",
@@ -2036,8 +2036,24 @@
         "toasts": {
           "locations": "Načítavajú sa umiestnenia aplikácie",
           "save": "Ukladá sa umiestnenie aplikácie",
-          "saved": "Umiestnenie aplikácie uložené"
-        }
+          "saved": "Umiestnenie aplikácie uložené",
+          "delete": "Odstraňuje sa lokalita aplikácie",
+          "deleted": "Lokalita aplikácie odstránená"
+        },
+        "timezoneDesc": "Časové pásmo, ktoré môže aplikácia počas pripojenia odovzdať zariadeniu.",
+        "addLocation": "Pridať lokalitu",
+        "editLocation": "Upraviť lokalitu",
+        "location": "Lokalita",
+        "inbound": "Vstup",
+        "inbounds": "Vstupy",
+        "inboundsDesc": "Vstupy ľubovoľného protokolu a servera, ktoré obsluhujú toto miesto. Vstup obsluhuje najviac jednu lokalitu.",
+        "noInbounds": "Zatiaľ žiadne vstupy",
+        "noLocations": "Zatiaľ žiadne lokality",
+        "noLocation": "Bez lokality",
+        "locationOf": "Lokalita {name}",
+        "mapping": "Čo slúži kde",
+        "mappingDesc": "Každý vstup a lokalita, ktorú obsluhuje. Vyberte tu inú lokalitu na presun vstupu.",
+        "deleteConfirm": "Odstrániť túto lokalitu? Jej vstupy zostanú bez lokality."
       },
       "subCalendarExpireInclusive": "Zobrazenie konca mesačnej platnosti v odbere",
       "subCalendarExpireInclusiveDesc": "Predvolene vypnuté. Pri obnove v 1. deň mesiaca o polnoci v pásme panelu hlási hlavička odberu ako koniec platnosti poslednú sekundu predchádzajúceho mesiaca. Skutočné ukončenie a obnovovanie sa nemení. Klienti používajú vlastné časové pásmo a môžu odber považovať za neplatný o sekundu skôr.",

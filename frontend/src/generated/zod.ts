@@ -619,17 +619,28 @@ export type AppConfig = z.infer<typeof AppConfigSchema>;
 export const AppLocationSchema = z.object({
   city: z.string(),
   countryCode: z.string(),
+  id: z.number().int(),
+  inboundIds: z.array(z.number().int()),
   name: z.string(),
-  nodeId: z.number().int(),
+  sortOrder: z.number().int(),
   timezone: z.string(),
 });
 export type AppLocation = z.infer<typeof AppLocationSchema>;
+
+export const AppPlaceSchema = z.object({
+  city: z.string(),
+  countryCode: z.string(),
+  id: z.number().int(),
+  name: z.string(),
+  timezone: z.string(),
+});
+export type AppPlace = z.infer<typeof AppPlaceSchema>;
 
 export const AppProfileSchema = z.object({
   account: z.lazy(() => AppAccountSchema),
   announce: z.string().optional(),
   configs: z.array(z.lazy(() => AppConfigSchema)),
-  locations: z.array(z.lazy(() => AppLocationSchema)),
+  locations: z.array(z.lazy(() => AppPlaceSchema)),
   supportUrl: z.string().optional(),
   title: z.string().optional(),
 });

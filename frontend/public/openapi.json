@@ -2351,14 +2351,14 @@
         "type": "object"
       },
       "AppConfig": {
-        "description": "AppConfig is one entry of the subscription. Outbound is set when Xray can run\nit; LocationID names its server and is absent on a client's external link.",
+        "description": "AppConfig is one entry of the subscription. Outbound is set when Xray can run it;\nLocationID is absent when its inbound serves no location, as on an external link.",
         "properties": {
           "link": {
             "example": "vless://11111111-2222-4333-8444-555555555555@de.example.com:8443?type=tcp#vless-de",
             "type": "string"
           },
           "locationId": {
-            "example": 0,
+            "example": 1,
             "nullable": true,
             "type": "integer"
           },
@@ -2383,7 +2383,7 @@
         "type": "object"
       },
       "AppLocation": {
-        "description": "AppLocation is how the app names a server: this panel is node 0, a node its id.",
+        "description": "AppLocation is a place the app offers, served by the inbounds linked to it on any\nprotocol or server; InboundIds is kept in AppLocationInbound.",
         "properties": {
           "city": {
             "example": "Frankfurt",
@@ -2393,11 +2393,25 @@
             "example": "DE",
             "type": "string"
           },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "inboundIds": {
+            "example": [
+              3,
+              7
+            ],
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
           "name": {
             "example": "Germany",
             "type": "string"
           },
-          "nodeId": {
+          "sortOrder": {
             "example": 0,
             "type": "integer"
           },
@@ -2409,8 +2423,43 @@
         "required": [
           "city",
           "countryCode",
+          "id",
+          "inboundIds",
           "name",
-          "nodeId",
+          "sortOrder",
+          "timezone"
+        ],
+        "type": "object"
+      },
+      "AppPlace": {
+        "description": "AppPlace is a location as the app sees it, without the panel's inbound ids.",
+        "properties": {
+          "city": {
+            "example": "Frankfurt",
+            "type": "string"
+          },
+          "countryCode": {
+            "example": "DE",
+            "type": "string"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "name": {
+            "example": "Germany",
+            "type": "string"
+          },
+          "timezone": {
+            "example": "Europe/Berlin",
+            "type": "string"
+          }
+        },
+        "required": [
+          "city",
+          "countryCode",
+          "id",
+          "name",
           "timezone"
         ],
         "type": "object"
@@ -2433,7 +2482,7 @@
           },
           "locations": {
             "items": {
-              "$ref": "#/components/schemas/AppLocation"
+              "$ref": "#/components/schemas/AppPlace"
             },
             "type": "array"
           },
@@ -9213,7 +9262,7 @@
     },
     {
       "name": "App",
-      "description": "How the app shows this panel and its nodes as locations. The app itself signs in on the subscription server (see Subscription Server → app/v1); app access is switched on with the appEnable setting."
+      "description": "The locations the app offers. A location (Germany, say) gathers the inbounds that serve it, on any protocol and any server; an inbound serves one location at most, and one in none is still used by the app's quick connect. The app itself signs in on the subscription server (see Subscription Server → app/v1); app access is switched on with the appEnable setting."
     },
     {
       "name": "Subscription Server",
@@ -25763,7 +25812,7 @@
         "tags": [
           "App"
         ],
-        "summary": "List the location of this panel (nodeId 0) and of every node. A node with no saved name goes by its node name.",
+        "summary": "List the locations, each with the ids of the inbounds that serve it.",
         "operationId": "get_panel_api_app_locations",
         "responses": {
           "200": {
@@ -25793,8 +25842,13 @@
                     {
                       "city": "Frankfurt",
                       "countryCode": "DE",
+                      "id": 1,
+                      "inboundIds": [
+                        3,
+                        7
+                      ],
                       "name": "Germany",
-                      "nodeId": 0,
+                      "sortOrder": 0,
                       "timezone": "Europe/Berlin"
                     }
                   ]
@@ -25808,43 +25862,88 @@
         "tags": [
           "App"
         ],
-        "summary": "Save the location of this panel or of a node.",
+        "summary": "Create a location (id 0 or absent) or replace one, its inbounds included. Refused when the name is empty, the country is not a two-letter ISO 3166 code, the timezone is unknown, an inbound does not exist or already serves another location.",
         "operationId": "post_panel_api_app_locations",
         "requestBody": {
           "required": true,
           "content": {
-            "application/x-www-form-urlencoded": {
+            "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "nodeId": {
-                    "type": "integer",
-                    "description": "0 for this panel, otherwise a node id."
-                  },
-                  "name": {
-                    "type": "string",
-                    "description": "Name shown in the app."
-                  },
-                  "countryCode": {
-                    "type": "string",
-                    "description": "Two-letter ISO 3166 country code, for the flag."
-                  },
-                  "city": {
-                    "type": "string",
-                    "description": "City shown under the name."
-                  },
-                  "timezone": {
-                    "type": "string",
-                    "description": "IANA timezone of the server (e.g. Europe/Berlin), which the app can give the device while connected."
-                  }
-                },
-                "required": [
-                  "nodeId"
+                "type": "object"
+              },
+              "example": {
+                "id": 0,
+                "name": "Germany",
+                "countryCode": "DE",
+                "city": "Frankfurt",
+                "timezone": "Europe/Berlin",
+                "inboundIds": [
+                  3,
+                  7,
+                  12
                 ]
               }
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/AppLocation"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "city": "Frankfurt",
+                    "countryCode": "DE",
+                    "id": 1,
+                    "inboundIds": [
+                      3,
+                      7
+                    ],
+                    "name": "Germany",
+                    "sortOrder": 0,
+                    "timezone": "Europe/Berlin"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/app/locations/del/{id}": {
+      "post": {
+        "tags": [
+          "App"
+        ],
+        "summary": "Delete a location. Its inbounds stay, serving no location.",
+        "operationId": "post_panel_api_app_locations_del_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Location id.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -26157,7 +26256,7 @@
                   "configs": [
                     {
                       "link": "vless://11111111-2222-4333-8444-555555555555@de.example.com:8443?type=tcp#vless-de",
-                      "locationId": 0,
+                      "locationId": 1,
                       "name": "vless-de",
                       "outbound": {},
                       "protocol": "vless"
@@ -26167,8 +26266,8 @@
                     {
                       "city": "Frankfurt",
                       "countryCode": "DE",
+                      "id": 1,
                       "name": "Germany",
-                      "nodeId": 0,
                       "timezone": "Europe/Berlin"
                     }
                   ],

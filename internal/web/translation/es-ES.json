@@ -1904,7 +1904,7 @@
         "menu": "App",
         "enable": "Acceso desde la app",
         "enableDesc": "Los clientes inician sesión en la app con su enlace de suscripción y su nombre de usuario. Cada dispositivo con sesión ocupa un lugar del mismo límite de dispositivos que las demás apps del enlace.",
-        "locationsDesc": "Cómo muestra la app este servidor y cada nodo. La zona horaria es la que la app puede dar al dispositivo mientras está conectado.",
+        "locationsDesc": "Una ubicación es un lugar que ofrece la app, como Alemania. Vincula a ella cada entrada que sirve ese lugar, con cualquier protocolo y en cualquier servidor. Una entrada sin ubicación se sigue usando en la conexión rápida de la app.",
         "server": "Servidor",
         "thisServer": "Este servidor",
         "nodeLabel": "Nodo #{id}",
@@ -1915,8 +1915,24 @@
         "toasts": {
           "locations": "Cargando las ubicaciones de la app",
           "save": "Guardando la ubicación de la app",
-          "saved": "Ubicación de la app guardada"
-        }
+          "saved": "Ubicación de la app guardada",
+          "delete": "Eliminando la ubicación de la app",
+          "deleted": "Ubicación de la app eliminada"
+        },
+        "timezoneDesc": "La zona horaria que la app puede dar al dispositivo mientras está conectado.",
+        "addLocation": "Añadir ubicación",
+        "editLocation": "Editar ubicación",
+        "location": "Ubicación",
+        "inbound": "Entrada",
+        "inbounds": "Entradas",
+        "inboundsDesc": "Entradas de cualquier protocolo y servidor que sirven este lugar. Una entrada sirve como mucho una ubicación.",
+        "noInbounds": "Aún sin entradas",
+        "noLocations": "Aún no hay ubicaciones",
+        "noLocation": "Sin ubicación",
+        "locationOf": "Ubicación de {name}",
+        "mapping": "Qué sirve dónde",
+        "mappingDesc": "Cada entrada y la ubicación que sirve. Elige aquí otra ubicación para mover una entrada.",
+        "deleteConfirm": "¿Eliminar esta ubicación? Sus entradas se quedan sin ubicación."
       },
       "subCalendarExpireInclusive": "Month-end subscription expiry display",
       "subCalendarExpireInclusiveDesc": "Default off. For clients renewing on day 1 with a midnight cutoff in the panel timezone, report the previous month's last second in subscription expiry headers. Actual cutoff and renewals are unchanged. Clients use their own timezone and may consider the subscription expired one second early.",

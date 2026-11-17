@@ -200,7 +200,7 @@ func run(root, outDir string) error {
 		},
 		{
 			Path:        resolveRel(root, "internal/sub"),
-			StructAllow: setOf("AppProfile", "AppAccount", "AppConfig"),
+			StructAllow: setOf("AppProfile", "AppAccount", "AppConfig", "AppPlace"),
 		},
 		{
 			Path:        resolveRel(root, "internal/subtheme"),

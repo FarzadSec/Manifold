@@ -2325,14 +2325,14 @@ export const SCHEMAS: Record<string, unknown> = {
     "type": "object"
   },
   "AppConfig": {
-    "description": "AppConfig is one entry of the subscription. Outbound is set when Xray can run\nit; LocationID names its server and is absent on a client's external link.",
+    "description": "AppConfig is one entry of the subscription. Outbound is set when Xray can run it;\nLocationID is absent when its inbound serves no location, as on an external link.",
     "properties": {
       "link": {
         "example": "vless://11111111-2222-4333-8444-555555555555@de.example.com:8443?type=tcp#vless-de",
         "type": "string"
       },
       "locationId": {
-        "example": 0,
+        "example": 1,
         "nullable": true,
         "type": "integer"
       },
@@ -2357,7 +2357,7 @@ export const SCHEMAS: Record<string, unknown> = {
     "type": "object"
   },
   "AppLocation": {
-    "description": "AppLocation is how the app names a server: this panel is node 0, a node its id.",
+    "description": "AppLocation is a place the app offers, served by the inbounds linked to it on any\nprotocol or server; InboundIds is kept in AppLocationInbound.",
     "properties": {
       "city": {
         "example": "Frankfurt",
@@ -2367,11 +2367,25 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "DE",
         "type": "string"
       },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "inboundIds": {
+        "example": [
+          3,
+          7
+        ],
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
       "name": {
         "example": "Germany",
         "type": "string"
       },
-      "nodeId": {
+      "sortOrder": {
         "example": 0,
         "type": "integer"
       },
@@ -2383,8 +2397,43 @@ export const SCHEMAS: Record<string, unknown> = {
     "required": [
       "city",
       "countryCode",
+      "id",
+      "inboundIds",
       "name",
-      "nodeId",
+      "sortOrder",
+      "timezone"
+    ],
+    "type": "object"
+  },
+  "AppPlace": {
+    "description": "AppPlace is a location as the app sees it, without the panel's inbound ids.",
+    "properties": {
+      "city": {
+        "example": "Frankfurt",
+        "type": "string"
+      },
+      "countryCode": {
+        "example": "DE",
+        "type": "string"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "name": {
+        "example": "Germany",
+        "type": "string"
+      },
+      "timezone": {
+        "example": "Europe/Berlin",
+        "type": "string"
+      }
+    },
+    "required": [
+      "city",
+      "countryCode",
+      "id",
+      "name",
       "timezone"
     ],
     "type": "object"
@@ -2407,7 +2456,7 @@ export const SCHEMAS: Record<string, unknown> = {
       },
       "locations": {
         "items": {
-          "$ref": "#/components/schemas/AppLocation"
+          "$ref": "#/components/schemas/AppPlace"
         },
         "type": "array"
       },

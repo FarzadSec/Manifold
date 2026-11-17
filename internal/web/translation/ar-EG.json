@@ -1904,7 +1904,7 @@
         "menu": "التطبيق",
         "enable": "الوصول عبر التطبيق",
         "enableDesc": "يسجّل العملاء الدخول إلى التطبيق برابط الاشتراك واسم المستخدم. كل جهاز يسجّل الدخول يشغل مكانًا من حد الأجهزة نفسه الذي تشترك فيه تطبيقات الرابط الأخرى.",
-        "locationsDesc": "كيف يعرض التطبيق هذا الخادم وكل عقدة. المنطقة الزمنية هي التي يمكن للتطبيق ضبطها على الجهاز أثناء الاتصال.",
+        "locationsDesc": "الموقع مكان يعرضه التطبيق، مثل ألمانيا. اربط به كل مدخل يخدم ذلك المكان، بأي بروتوكول وعلى أي خادم. المدخل الذي لا ينتمي لأي موقع يبقى مستخدمًا في الاتصال السريع للتطبيق.",
         "server": "الخادم",
         "thisServer": "هذا الخادم",
         "nodeLabel": "العقدة #{id}",
@@ -1915,8 +1915,24 @@
         "toasts": {
           "locations": "تحميل مواقع التطبيق",
           "save": "حفظ موقع التطبيق",
-          "saved": "تم حفظ موقع التطبيق"
-        }
+          "saved": "تم حفظ موقع التطبيق",
+          "delete": "حذف موقع التطبيق",
+          "deleted": "تم حذف موقع التطبيق"
+        },
+        "timezoneDesc": "المنطقة الزمنية التي يمكن للتطبيق إعطاؤها للجهاز أثناء الاتصال.",
+        "addLocation": "إضافة موقع",
+        "editLocation": "تعديل الموقع",
+        "location": "الموقع",
+        "inbound": "المدخل",
+        "inbounds": "المداخل",
+        "inboundsDesc": "مداخل بأي بروتوكول وعلى أي خادم تخدم هذا المكان. يخدم المدخل موقعًا واحدًا على الأكثر.",
+        "noInbounds": "لا توجد مداخل بعد",
+        "noLocations": "لا توجد مواقع بعد",
+        "noLocation": "بدون موقع",
+        "locationOf": "موقع {name}",
+        "mapping": "ما الذي يخدم أين",
+        "mappingDesc": "كل مدخل والموقع الذي يخدمه. اختر موقعًا آخر هنا لنقل مدخل.",
+        "deleteConfirm": "حذف هذا الموقع؟ تبقى مداخله ولا تخدم أي موقع."
       },
       "subCalendarExpireInclusive": "Month-end subscription expiry display",
       "subCalendarExpireInclusiveDesc": "Default off. For clients renewing on day 1 with a midnight cutoff in the panel timezone, report the previous month's last second in subscription expiry headers. Actual cutoff and renewals are unchanged. Clients use their own timezone and may consider the subscription expired one second early.",

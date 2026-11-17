@@ -570,8 +570,18 @@ export interface AppConfig {
 export interface AppLocation {
   city: string;
   countryCode: string;
+  id: number;
+  inboundIds: number[];
   name: string;
-  nodeId: number;
+  sortOrder: number;
+  timezone: string;
+}
+
+export interface AppPlace {
+  city: string;
+  countryCode: string;
+  id: number;
+  name: string;
   timezone: string;
 }
 
@@ -579,7 +589,7 @@ export interface AppProfile {
   account: AppAccount;
   announce?: string;
   configs: AppConfig[];
-  locations: AppLocation[];
+  locations: AppPlace[];
   supportUrl?: string;
   title?: string;
 }

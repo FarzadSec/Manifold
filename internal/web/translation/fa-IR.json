@@ -1904,7 +1904,7 @@
         "menu": "اپ",
         "enable": "دسترسی اپ",
         "enableDesc": "مشتری‌ها با لینک اشتراک و نام کاربری خود وارد اپ می‌شوند. هر دستگاهی که وارد اپ شود، یکی از جاهای همان سقف دستگاهی را می‌گیرد که اپ‌های دیگرِ این لینک هم از آن استفاده می‌کنند.",
-        "locationsDesc": "اپ این سرور و هر نود را چطور نشان دهد. منطقه زمانی همان است که اپ هنگام اتصال می‌تواند روی دستگاه بگذارد.",
+        "locationsDesc": "لوکیشن جایی است که اپ نشان می‌دهد، مثل آلمان. هر اینباندی که به آن مکان سرویس می‌دهد را، با هر پروتکل و روی هر سروری، به آن وصل کنید. اینباندی که در هیچ لوکیشنی نیست باز هم در اتصال سریع اپ به کار می‌رود.",
         "server": "سرور",
         "thisServer": "همین سرور",
         "nodeLabel": "نود #{id}",
@@ -1915,8 +1915,24 @@
         "toasts": {
           "locations": "بارگذاری لوکیشن‌های اپ",
           "save": "ذخیره لوکیشن اپ",
-          "saved": "لوکیشن اپ ذخیره شد"
-        }
+          "saved": "لوکیشن اپ ذخیره شد",
+          "delete": "حذف لوکیشن اپ",
+          "deleted": "لوکیشن اپ حذف شد"
+        },
+        "timezoneDesc": "منطقهٔ زمانی که اپ هنگام اتصال می‌تواند به دستگاه بدهد.",
+        "addLocation": "افزودن لوکیشن",
+        "editLocation": "ویرایش لوکیشن",
+        "location": "لوکیشن",
+        "inbound": "اینباند",
+        "inbounds": "اینباندها",
+        "inboundsDesc": "اینباندهای هر پروتکل و هر سروری که به این مکان سرویس می‌دهند. هر اینباند حداکثر در یک لوکیشن است.",
+        "noInbounds": "هنوز اینباندی ندارد",
+        "noLocations": "هنوز لوکیشنی نیست",
+        "noLocation": "بدون لوکیشن",
+        "locationOf": "لوکیشن {name}",
+        "mapping": "چه چیزی به کجا وصل است",
+        "mappingDesc": "همهٔ اینباندها و لوکیشنی که به آن سرویس می‌دهند. برای جابه‌جا کردن یک اینباند، لوکیشن دیگری را همین‌جا انتخاب کنید.",
+        "deleteConfirm": "این لوکیشن حذف شود؟ اینباندهایش می‌مانند و در هیچ لوکیشنی نخواهند بود."
       },
       "subCalendarExpireInclusive": "Month-end subscription expiry display",
       "subCalendarExpireInclusiveDesc": "Default off. For clients renewing on day 1 with a midnight cutoff in the panel timezone, report the previous month's last second in subscription expiry headers. Actual cutoff and renewals are unchanged. Clients use their own timezone and may consider the subscription expired one second early.",

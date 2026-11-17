@@ -2025,7 +2025,7 @@
         "menu": "App",
         "enable": "App access",
         "enableDesc": "Let customers sign in to the app with their subscription link and username. A device signed in to the app takes a slot of the same device limit as the link's other apps.",
-        "locationsDesc": "How the app shows this server and each node. The timezone is the one the app can give the device while it is connected.",
+        "locationsDesc": "A location is a place the app offers, such as Germany. Link to it every inbound that serves that place, on any protocol and any server. An inbound in no location is still used by the app's quick connect.",
         "server": "Server",
         "thisServer": "This server",
         "nodeLabel": "Node #{id}",
@@ -2036,8 +2036,24 @@
         "toasts": {
           "locations": "Loading app locations",
           "save": "Saving the app location",
-          "saved": "App location saved"
-        }
+          "saved": "App location saved",
+          "delete": "Deleting the app location",
+          "deleted": "App location deleted"
+        },
+        "timezoneDesc": "The timezone the app can give the device while it is connected.",
+        "addLocation": "Add location",
+        "editLocation": "Edit location",
+        "location": "Location",
+        "inbound": "Inbound",
+        "inbounds": "Inbounds",
+        "inboundsDesc": "Inbounds of any protocol and server that serve this place. An inbound serves one location at most.",
+        "noInbounds": "No inbounds yet",
+        "noLocations": "No locations yet",
+        "noLocation": "No location",
+        "locationOf": "Location of {name}",
+        "mapping": "What serves where",
+        "mappingDesc": "Every inbound and the location it serves. Choose another location here to move an inbound.",
+        "deleteConfirm": "Delete this location? Its inbounds stay and serve no location."
       },
       "subCalendarExpireInclusive": "Month-end subscription expiry display",
       "subCalendarExpireInclusiveDesc": "Default off. For clients renewing on day 1 with a midnight cutoff in the panel timezone, report the previous month's last second in subscription expiry headers. Actual cutoff and renewals are unchanged. Clients use their own timezone and may consider the subscription expired one second early.",

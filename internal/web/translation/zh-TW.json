@@ -1904,7 +1904,7 @@
         "menu": "應用程式",
         "enable": "應用程式存取",
         "enableDesc": "客戶使用訂閱連結與使用者名稱登入應用程式。每台登入的裝置會占用該連結其他應用程式共用的同一裝置上限中的一個名額。",
-        "locationsDesc": "應用程式如何顯示本伺服器與各節點。時區是應用程式在連線期間可為裝置設定的時區。",
+        "locationsDesc": "位置是應用程式展示的地點,例如德國。把服務該地點的每個入站都連結到它,協定與伺服器不限。不屬於任何位置的入站仍會用於應用程式的快速連線。",
         "server": "伺服器",
         "thisServer": "本伺服器",
         "nodeLabel": "節點 #{id}",
@@ -1915,8 +1915,24 @@
         "toasts": {
           "locations": "正在載入應用程式位置",
           "save": "正在儲存應用程式位置",
-          "saved": "應用程式位置已儲存"
-        }
+          "saved": "應用程式位置已儲存",
+          "delete": "正在刪除應用程式位置",
+          "deleted": "應用程式位置已刪除"
+        },
+        "timezoneDesc": "應用程式在連線期間可提供給裝置的時區。",
+        "addLocation": "新增位置",
+        "editLocation": "編輯位置",
+        "location": "位置",
+        "inbound": "入站",
+        "inbounds": "入站",
+        "inboundsDesc": "服務此地點的任意協定、任意伺服器的入站。每個入站最多屬於一個位置。",
+        "noInbounds": "尚無入站",
+        "noLocations": "尚無位置",
+        "noLocation": "無位置",
+        "locationOf": "{name} 的位置",
+        "mapping": "各入站的去向",
+        "mappingDesc": "每個入站及其所屬位置。在此選擇其他位置即可移動入站。",
+        "deleteConfirm": "刪除此位置?其入站將保留,但不屬於任何位置。"
       },
       "subCalendarExpireInclusive": "訂閱到期日期顯示為月底",
       "subCalendarExpireInclusiveDesc": "預設關閉。對於按每月 1 日續期、且到期時間為面板時區午夜的用戶端，訂閱到期時間回報為上月最後一秒。真實截止時間和續期不變。用戶端使用自身時區，可能提前一秒顯示過期。",

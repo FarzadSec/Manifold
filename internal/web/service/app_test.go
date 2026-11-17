@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
@@ -237,85 +238,112 @@ func TestAppSessionsGoWithTheirSubscription(t *testing.T) {
 	}
 }
 
-func TestAppLocationsNameEveryServerAndKeepWhatWasSaved(t *testing.T) {
-	svc := initAppTestDB(t, true)
+func seedLocationInbounds(t *testing.T) (panelVless, panelOvpn, nodeVless model.Inbound) {
+	t.Helper()
 	db := database.GetDB()
 	node := &model.Node{Name: "de-fra-1", Address: "node1.example.com", Port: 2053}
 	if err := db.Create(node).Error; err != nil {
 		t.Fatalf("seed node: %v", err)
 	}
-	if err := svc.SaveLocation(model.AppLocation{NodeID: 0, Name: " Iran ", CountryCode: "ir", City: "Tehran", Timezone: "Asia/Tehran"}); err != nil {
-		t.Fatalf("save this server: %v", err)
+	nodeID := node.Id
+	inbounds := []*model.Inbound{
+		{Tag: "vless-ir", Port: 8443, Protocol: model.VLESS, Enable: true, Settings: `{"clients":[]}`},
+		{Tag: "ovpn-ir", Port: 1194, Protocol: model.OpenVPN, Enable: true, Settings: `{"clients":[]}`},
+		{Tag: "vless-de", Port: 8443, Protocol: model.VLESS, Enable: true, Settings: `{"clients":[]}`, NodeID: &nodeID},
+	}
+	for _, ib := range inbounds {
+		if err := db.Create(ib).Error; err != nil {
+			t.Fatalf("seed inbound: %v", err)
+		}
+	}
+	return *inbounds[0], *inbounds[1], *inbounds[2]
+}
+
+// A location gathers the inbounds that serve one place, whatever their protocol or server.
+func TestAppLocationsGatherInboundsOfAnyProtocolAndServer(t *testing.T) {
+	svc := initAppTestDB(t, true)
+	vlessIR, ovpnIR, vlessDE := seedLocationInbounds(t)
+
+	iran, err := svc.SaveLocation(model.AppLocation{Name: " Iran ", CountryCode: "ir", City: "Tehran", Timezone: "Asia/Tehran", InboundIds: []int{ovpnIR.Id, vlessIR.Id}})
+	if err != nil {
+		t.Fatalf("save Iran: %v", err)
+	}
+	germany, err := svc.SaveLocation(model.AppLocation{Name: "Germany", CountryCode: "DE", InboundIds: []int{vlessDE.Id}})
+	if err != nil {
+		t.Fatalf("save Germany: %v", err)
 	}
 	got, err := svc.Locations()
 	if err != nil {
 		t.Fatalf("locations: %v", err)
 	}
 	want := []model.AppLocation{
-		{NodeID: 0, Name: "Iran", CountryCode: "IR", City: "Tehran", Timezone: "Asia/Tehran"},
-		{NodeID: node.Id, Name: "de-fra-1"},
+		{Id: iran.Id, Name: "Iran", CountryCode: "IR", City: "Tehran", Timezone: "Asia/Tehran", InboundIds: []int{vlessIR.Id, ovpnIR.Id}},
+		{Id: germany.Id, Name: "Germany", CountryCode: "DE", InboundIds: []int{vlessDE.Id}},
 	}
-	if len(got) != len(want) || got[0] != want[0] || got[1] != want[1] {
+	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("locations = %+v, want %+v", got, want)
 	}
 
-	if err := svc.SaveLocation(model.AppLocation{NodeID: node.Id, City: "Frankfurt"}); err != nil {
-		t.Fatalf("save the node: %v", err)
+	iran.InboundIds = []int{ovpnIR.Id}
+	if _, err := svc.SaveLocation(iran); err != nil {
+		t.Fatalf("narrow Iran: %v", err)
 	}
-	only, err := svc.Locations(node.Id)
-	if err != nil || len(only) != 1 || only[0] != (model.AppLocation{NodeID: node.Id, Name: "de-fra-1", City: "Frankfurt"}) {
-		t.Fatalf("the node's location keeps its node name: %+v %v", only, err)
+	byInbound, err := svc.LocationOfInbounds()
+	if err != nil {
+		t.Fatal(err)
 	}
-}
-
-func TestAppSaveLocationUpdatesThisPanelsLocation(t *testing.T) {
-	svc := initAppTestDB(t, true)
-	for _, city := range []string{"Tehran", "Mashhad"} {
-		if err := svc.SaveLocation(model.AppLocation{NodeID: 0, City: city}); err != nil {
-			t.Fatalf("save %s: %v", city, err)
-		}
-	}
-	got, err := svc.Locations(0)
-	if err != nil || len(got) != 1 || got[0].City != "Mashhad" {
-		t.Fatalf("locations = %+v %v, want the second save", got, err)
+	if want := map[int]int{ovpnIR.Id: iran.Id, vlessDE.Id: germany.Id}; !reflect.DeepEqual(byInbound, want) {
+		t.Fatalf("location of each inbound = %v, want %v", byInbound, want)
 	}
 }
 
 func TestAppSaveLocationRefusesWhatTheAppCannotUse(t *testing.T) {
 	svc := initAppTestDB(t, true)
+	vlessIR, _, vlessDE := seedLocationInbounds(t)
+	if _, err := svc.SaveLocation(model.AppLocation{Name: "Iran", InboundIds: []int{vlessIR.Id}}); err != nil {
+		t.Fatalf("save Iran: %v", err)
+	}
 	for _, tc := range []struct {
 		name string
 		loc  model.AppLocation
 		want error
 	}{
-		{"unknown node", model.AppLocation{NodeID: 42}, ErrAppUnknownNode},
-		{"three-letter country", model.AppLocation{CountryCode: "IRN"}, ErrAppBadCountry},
-		{"country with a digit", model.AppLocation{CountryCode: "I1"}, ErrAppBadCountry},
-		{"made-up timezone", model.AppLocation{Timezone: "Mars/Olympus"}, ErrAppBadTimezone},
+		{"no name", model.AppLocation{Name: "  "}, ErrAppLocationName},
+		{"three-letter country", model.AppLocation{Name: "x", CountryCode: "IRN"}, ErrAppBadCountry},
+		{"country with a digit", model.AppLocation{Name: "x", CountryCode: "I1"}, ErrAppBadCountry},
+		{"made-up timezone", model.AppLocation{Name: "x", Timezone: "Mars/Olympus"}, ErrAppBadTimezone},
+		{"unknown inbound", model.AppLocation{Name: "x", InboundIds: []int{9999}}, ErrAppUnknownInbound},
+		{"inbound of another location", model.AppLocation{Name: "Germany", InboundIds: []int{vlessDE.Id, vlessIR.Id}}, ErrAppInboundTaken},
+		{"unknown location", model.AppLocation{Id: 77, Name: "x"}, ErrAppUnknownLocation},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			if err := svc.SaveLocation(tc.loc); !errors.Is(err, tc.want) {
+			if _, err := svc.SaveLocation(tc.loc); !errors.Is(err, tc.want) {
 				t.Fatalf("save = %v, want %v", err, tc.want)
 			}
 		})
 	}
 }
 
-func TestDeletingANodeDropsItsAppLocation(t *testing.T) {
+// SQLite hands a deleted inbound's id to the next one, which must not join its location.
+func TestDeletingAnInboundTakesItOutOfItsLocation(t *testing.T) {
 	svc := initAppTestDB(t, true)
-	node := &model.Node{Name: "nl-ams-1", Address: "node2.example.com", Port: 2053}
-	if err := database.GetDB().Create(node).Error; err != nil {
-		t.Fatalf("seed node: %v", err)
+	vlessIR, ovpnIR, _ := seedLocationInbounds(t)
+	iran, err := svc.SaveLocation(model.AppLocation{Name: "Iran", InboundIds: []int{vlessIR.Id, ovpnIR.Id}})
+	if err != nil {
+		t.Fatal(err)
 	}
-	if err := svc.SaveLocation(model.AppLocation{NodeID: node.Id, City: "Amsterdam"}); err != nil {
-		t.Fatalf("save: %v", err)
+	if _, err := (&InboundService{}).DelInbound(vlessIR.Id); err != nil {
+		t.Fatalf("delete inbound: %v", err)
 	}
-	if err := (&NodeService{}).Delete(node.Id); err != nil {
-		t.Fatalf("delete node: %v", err)
+	got, err := svc.Locations()
+	if err != nil || len(got) != 1 || !reflect.DeepEqual(got[0].InboundIds, []int{ovpnIR.Id}) {
+		t.Fatalf("locations = %+v %v, want Iran with the OpenVPN inbound only", got, err)
 	}
-	var left int64
-	database.GetDB().Model(&model.AppLocation{}).Where("node_id = ?", node.Id).Count(&left)
-	if left != 0 {
-		t.Fatal("a deleted node's location would name the next node given its id")
+
+	if err := svc.DeleteLocation(iran.Id); err != nil {
+		t.Fatalf("delete location: %v", err)
+	}
+	if byInbound, err := svc.LocationOfInbounds(); err != nil || len(byInbound) != 0 {
+		t.Fatalf("a deleted location still holds %v (%v)", byInbound, err)
 	}
 }

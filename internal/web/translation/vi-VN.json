@@ -1904,7 +1904,7 @@
         "menu": "Ứng dụng",
         "enable": "Truy cập qua ứng dụng",
         "enableDesc": "Khách hàng đăng nhập ứng dụng bằng liên kết đăng ký và tên người dùng. Mỗi thiết bị đăng nhập chiếm một chỗ trong cùng giới hạn thiết bị với các ứng dụng khác của liên kết.",
-        "locationsDesc": "Cách ứng dụng hiển thị máy chủ này và từng node. Múi giờ là múi giờ ứng dụng có thể đặt cho thiết bị khi đang kết nối.",
+        "locationsDesc": "Vị trí là nơi ứng dụng hiển thị, chẳng hạn Đức. Liên kết mọi inbound phục vụ nơi đó, với bất kỳ giao thức và máy chủ nào. Inbound không thuộc vị trí nào vẫn được dùng cho kết nối nhanh của ứng dụng.",
         "server": "Máy chủ",
         "thisServer": "Máy chủ này",
         "nodeLabel": "Node #{id}",
@@ -1915,8 +1915,24 @@
         "toasts": {
           "locations": "Đang tải vị trí ứng dụng",
           "save": "Đang lưu vị trí ứng dụng",
-          "saved": "Đã lưu vị trí ứng dụng"
-        }
+          "saved": "Đã lưu vị trí ứng dụng",
+          "delete": "Đang xóa vị trí ứng dụng",
+          "deleted": "Đã xóa vị trí ứng dụng"
+        },
+        "timezoneDesc": "Múi giờ ứng dụng có thể đưa cho thiết bị khi đang kết nối.",
+        "addLocation": "Thêm vị trí",
+        "editLocation": "Sửa vị trí",
+        "location": "Vị trí",
+        "inbound": "Inbound",
+        "inbounds": "Inbound",
+        "inboundsDesc": "Các inbound thuộc mọi giao thức và máy chủ phục vụ nơi này. Mỗi inbound phục vụ tối đa một vị trí.",
+        "noInbounds": "Chưa có inbound",
+        "noLocations": "Chưa có vị trí",
+        "noLocation": "Không có vị trí",
+        "locationOf": "Vị trí của {name}",
+        "mapping": "Cái gì phục vụ ở đâu",
+        "mappingDesc": "Mỗi inbound và vị trí nó phục vụ. Chọn vị trí khác tại đây để chuyển một inbound.",
+        "deleteConfirm": "Xóa vị trí này? Các inbound của nó vẫn còn nhưng không thuộc vị trí nào."
       },
       "subCalendarExpireInclusive": "Month-end subscription expiry display",
       "subCalendarExpireInclusiveDesc": "Default off. For clients renewing on day 1 with a midnight cutoff in the panel timezone, report the previous month's last second in subscription expiry headers. Actual cutoff and renewals are unchanged. Clients use their own timezone and may consider the subscription expired one second early.",

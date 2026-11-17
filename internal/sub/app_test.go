@@ -123,10 +123,26 @@ func loginApp(t *testing.T, router *gin.Engine, prefix string) string {
 	return token
 }
 
-func TestAppProfileCarriesTheAccountItsServersAndEveryProtocol(t *testing.T) {
-	nodeID := seedAppAccount(t, true)
-	if err := (&service.AppService{}).SaveLocation(model.AppLocation{NodeID: 0, Name: "Iran", CountryCode: "IR", Timezone: "Asia/Tehran"}); err != nil {
-		t.Fatalf("save location: %v", err)
+func TestAppProfileCarriesTheAccountItsLocationsAndEveryProtocol(t *testing.T) {
+	seedAppAccount(t, true)
+	inboundID := func(tag string) int {
+		var ib model.Inbound
+		if err := database.GetDB().Where("tag = ?", tag).First(&ib).Error; err != nil {
+			t.Fatalf("inbound %s: %v", tag, err)
+		}
+		return ib.Id
+	}
+	appSvc := &service.AppService{}
+	iran, err := appSvc.SaveLocation(model.AppLocation{Name: "Iran", CountryCode: "IR", Timezone: "Asia/Tehran", InboundIds: []int{inboundID("ovpn")}})
+	if err != nil {
+		t.Fatalf("save Iran: %v", err)
+	}
+	germany, err := appSvc.SaveLocation(model.AppLocation{Name: "Germany", CountryCode: "DE", InboundIds: []int{inboundID("vless-de")}})
+	if err != nil {
+		t.Fatalf("save Germany: %v", err)
+	}
+	if _, err := appSvc.SaveLocation(model.AppLocation{Name: "Unused", CountryCode: "NL"}); err != nil {
+		t.Fatalf("save an empty location: %v", err)
 	}
 	router := newAppTestRouter()
 	token := loginApp(t, router, "/sub/")
@@ -142,15 +158,18 @@ func TestAppProfileCarriesTheAccountItsServersAndEveryProtocol(t *testing.T) {
 
 	locations, _ := profile["locations"].([]any)
 	if len(locations) != 2 {
-		t.Fatalf("locations = %v, want this panel and the node", locations)
+		t.Fatalf("locations = %v, want the two that serve this account", locations)
 	}
-	panel, _ := locations[0].(map[string]any)
-	node, _ := locations[1].(map[string]any)
-	if panel["nodeId"] != float64(0) || panel["countryCode"] != "IR" || panel["timezone"] != "Asia/Tehran" {
-		t.Fatalf("this panel's location = %v", panel)
+	first, _ := locations[0].(map[string]any)
+	second, _ := locations[1].(map[string]any)
+	if first["id"] != float64(iran.Id) || first["countryCode"] != "IR" || first["timezone"] != "Asia/Tehran" {
+		t.Fatalf("Iran = %v", first)
 	}
-	if node["nodeId"] != float64(nodeID) || node["name"] != "de-fra-1" {
-		t.Fatalf("the node's location = %v", node)
+	if second["id"] != float64(germany.Id) || second["name"] != "Germany" {
+		t.Fatalf("Germany = %v", second)
+	}
+	if _, leaks := first["inboundIds"]; leaks {
+		t.Fatal("the app is told the panel's inbound ids")
 	}
 
 	byProtocol := map[string]map[string]any{}
@@ -162,14 +181,17 @@ func TestAppProfileCarriesTheAccountItsServersAndEveryProtocol(t *testing.T) {
 	if vless == nil || ovpn == nil || l2tpCfg == nil || len(byProtocol) != 3 {
 		t.Fatalf("configs by protocol = %v, want vless, openvpn and l2tp", byProtocol)
 	}
-	if vless["locationId"] != float64(nodeID) || !strings.HasPrefix(vless["link"].(string), "vless://") {
+	if vless["locationId"] != float64(germany.Id) || !strings.HasPrefix(vless["link"].(string), "vless://") {
 		t.Fatalf("vless config = %v", vless)
 	}
 	outbound, _ := vless["outbound"].(map[string]any)
 	if outbound["protocol"] != "vless" || !strings.Contains(mustJSON(t, outbound), `"de.example.com"`) {
 		t.Fatalf("vless outbound = %v, want an Xray outbound to the node", outbound)
 	}
-	if ovpn["locationId"] != float64(0) || ovpn["outbound"] != nil || ovpn["name"] != "ovpn" || !strings.HasPrefix(ovpn["link"].(string), openvpn.ShareLinkScheme) {
+	if _, placed := l2tpCfg["locationId"]; placed {
+		t.Fatalf("the l2tp inbound serves no location, yet its config has %v", l2tpCfg["locationId"])
+	}
+	if ovpn["locationId"] != float64(iran.Id) || ovpn["outbound"] != nil || ovpn["name"] != "ovpn" || !strings.HasPrefix(ovpn["link"].(string), openvpn.ShareLinkScheme) {
 		t.Fatalf("openvpn config = %v", ovpn)
 	}
 	if want := "l2tp://dana%40example.com:dana-pass-1@vpn.example.com?ipsec=1&psk=shared-key-123#l2tp-dana@example.com"; l2tpCfg["link"] != want {

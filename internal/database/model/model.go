@@ -1312,16 +1312,27 @@ type AppSession struct {
 
 func (AppSession) TableName() string { return "app_sessions" }
 
-// AppLocation is how the app names a server: this panel is node 0, a node its id.
+// AppLocation is a place the app offers, served by the inbounds linked to it on any
+// protocol or server; InboundIds is kept in AppLocationInbound.
 type AppLocation struct {
-	NodeID      int    `json:"nodeId" form:"nodeId" gorm:"column:node_id;primaryKey;autoIncrement:false" example:"0"`
-	Name        string `json:"name" form:"name" example:"Germany"`
-	CountryCode string `json:"countryCode" form:"countryCode" gorm:"column:country_code" example:"DE"`
-	City        string `json:"city" form:"city" example:"Frankfurt"`
-	Timezone    string `json:"timezone" form:"timezone" example:"Europe/Berlin"`
+	Id          int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Name        string `json:"name" example:"Germany"`
+	CountryCode string `json:"countryCode" gorm:"column:country_code" example:"DE"`
+	City        string `json:"city" example:"Frankfurt"`
+	Timezone    string `json:"timezone" example:"Europe/Berlin"`
+	SortOrder   int    `json:"sortOrder" gorm:"column:sort_order;default:0" example:"0"`
+	InboundIds  []int  `json:"inboundIds" gorm:"-" example:"[3,7]"`
 }
 
-func (AppLocation) TableName() string { return "app_locations" }
+func (AppLocation) TableName() string { return "locations" }
+
+// AppLocationInbound links an inbound to the one location it serves.
+type AppLocationInbound struct {
+	InboundID  int `gorm:"column:inbound_id;primaryKey;autoIncrement:false"`
+	LocationID int `gorm:"column:location_id;index"`
+}
+
+func (AppLocationInbound) TableName() string { return "location_inbounds" }
 
 // ClientExternalLink is a per-client entry surfaced in the client's
 // subscription. Two kinds:
