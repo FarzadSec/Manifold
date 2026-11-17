@@ -1,6 +1,6 @@
 # Manifold — Architecture and Roadmap
 
-Version 0.13 · 2026-11-17 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnels, full backups and the access model delivered; see 8.1 to 8.6 for what they leave open
+Version 0.14 · 2026-11-17 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnels, full backups, the access model, limits and usage, subscriptions, nodes, shared ports, scheduled backups, webhooks, monitoring, the certificate store, importers, tunnel groups and the addon groundwork delivered; see 8.1 to 8.14 for what they leave open
 
 Decision log:
 
