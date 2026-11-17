@@ -2087,6 +2087,24 @@ export const sections: readonly Section[] = [
         ],
         responseSchema: 'NodeStatsView',
       },
+      {
+        method: 'POST',
+        path: '/panel/api/nodes/logs/:id',
+        summary:
+          "The last lines of a node panel's own log, read through the node API (the node-sync scope may read it). Poll it for a live view.",
+        params: [
+          { name: 'id', in: 'path', type: 'number', desc: 'Node ID.' },
+          { name: 'count', in: 'body', type: 'number', desc: 'Lines, 10 to 2000.' },
+          {
+            name: 'level',
+            in: 'body',
+            type: 'string',
+            desc: 'debug, info, notice, warning or error: this level and above.',
+          },
+        ],
+        body: '{\n  "count": 200,\n  "level": "info"\n}',
+        response: '{\n  "success": true,\n  "obj": ["2026/11/17 10:00:00 INFO - node started"]\n}',
+      },
     ],
   },
 

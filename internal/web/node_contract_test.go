@@ -301,6 +301,10 @@ func TestMasterNodeContract(t *testing.T) {
 					_, err := master.ListRemoteTags(ctx)
 					return err
 				}, nil},
+				{"FetchLogs reads the node's own log", []string{"FetchLogs"}, func() error {
+					_, err := master.FetchLogs(ctx, 20, "debug")
+					return err
+				}, nil},
 				{"RestartXray is accepted by the node", []string{"RestartXray"}, func() error {
 					// No core binary here: only the node's own restart failure may come back.
 					if err := master.RestartXray(ctx); err != nil && !strings.Contains(err.Error(), "rebooting the Xray") {

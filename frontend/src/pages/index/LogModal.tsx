@@ -12,11 +12,13 @@ import './LogModal.css';
 interface LogModalProps {
   open: boolean;
   onClose: () => void;
+  // A node's own panel log, read through the node API, in place of this panel's.
+  node?: { id: number; name?: string };
 }
 
 const AUTO_UPDATE_INTERVAL = 5000;
 
-export default function LogModal({ open, onClose }: LogModalProps) {
+export default function LogModal({ open, onClose, node }: LogModalProps) {
   const { t } = useTranslation();
   const { isMobile } = useMediaQuery();
   const [rows, setRows] = useState('20');
@@ -28,10 +30,12 @@ export default function LogModal({ open, onClose }: LogModalProps) {
 
   const runRefresh = useCallback(async () => {
     try {
-      const msg = await HttpUtil.post<string[]>(`/panel/api/server/logs/${rows}`, {
-        level,
-        syslog,
-      });
+      const msg = node
+        ? await HttpUtil.post<string[]>(`/panel/api/nodes/logs/${node.id}`, {
+            count: Number(rows),
+            level,
+          })
+        : await HttpUtil.post<string[]>(`/panel/api/server/logs/${rows}`, { level, syslog });
       if (msg?.success) {
         setLogs(msg.obj || []);
       }
@@ -39,7 +43,7 @@ export default function LogModal({ open, onClose }: LogModalProps) {
     } finally {
       setLoading(false);
     }
-  }, [rows, level, syslog]);
+  }, [rows, level, syslog, node]);
 
   const refresh = useCallback(() => {
     setLoading(true);
@@ -73,12 +77,16 @@ export default function LogModal({ open, onClose }: LogModalProps) {
   const parsedLogs = useMemo(() => logs.map(parseLogLine), [logs]);
 
   function download() {
-    FileManager.downloadTextFile(logs.join('\n'), 'x-ui.log');
+    FileManager.downloadTextFile(
+      logs.join('\n'),
+      node ? `node-${node.name || node.id}.log` : 'x-ui.log',
+    );
   }
 
   const titleNode = (
     <>
       {t('pages.index.logs')}
+      {node ? ` · ${node.name || node.id}` : ''}
       <SyncOutlined
         spin={loading}
         className="reload-icon"
@@ -135,9 +143,11 @@ export default function LogModal({ open, onClose }: LogModalProps) {
           </Space.Compact>
         </Form.Item>
         <Form.Item>
-          <Checkbox checked={syslog} onChange={(e) => setSyslog(e.target.checked)}>
-            SysLog
-          </Checkbox>
+          {!node && (
+            <Checkbox checked={syslog} onChange={(e) => setSyslog(e.target.checked)}>
+              SysLog
+            </Checkbox>
+          )}
           <Checkbox checked={autoUpdate} onChange={(e) => setAutoUpdate(e.target.checked)}>
             {t('pages.index.autoUpdate')}
           </Checkbox>

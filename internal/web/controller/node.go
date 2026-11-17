@@ -43,6 +43,7 @@ func (a *NodeController) initRouter(g *gin.RouterGroup) {
 	g.POST("/updatePanel", a.updatePanel)
 	g.GET("/history/:id/:metric/:bucket", a.history)
 	g.GET("/stats/:id", a.stats)
+	g.POST("/logs/:id", a.logs)
 	g.POST("/mtls/ca", a.mtlsCa)
 	g.POST("/mtls/trustCA", a.setMtlsTrustCA)
 	g.POST("/mtls/reloadClient", a.reloadMtlsClient)
@@ -384,4 +385,22 @@ func (a *NodeController) stats(c *gin.Context) {
 	}
 	view, err := a.nodeService.Stats(id, w, now)
 	jsonObj(c, view, err)
+}
+
+func (a *NodeController) logs(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "get"), err)
+		return
+	}
+	var req struct {
+		Count int    `json:"count"`
+		Level string `json:"level"`
+	}
+	if err := c.ShouldBind(&req); err != nil {
+		jsonMsg(c, I18nWeb(c, "get"), err)
+		return
+	}
+	lines, err := a.nodeService.Logs(id, req.Count, req.Level)
+	jsonObj(c, lines, err)
 }

@@ -15296,6 +15296,81 @@
         }
       }
     },
+    "/panel/api/nodes/logs/{id}": {
+      "post": {
+        "tags": [
+          "Nodes"
+        ],
+        "summary": "The last lines of a node panel's own log, read through the node API (the node-sync scope may read it). Poll it for a live view.",
+        "operationId": "post_panel_api_nodes_logs_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Node ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "count": {
+                    "type": "integer",
+                    "description": "Lines, 10 to 2000."
+                  },
+                  "level": {
+                    "type": "string",
+                    "description": "debug, info, notice, warning or error: this level and above."
+                  }
+                },
+                "required": [
+                  "count",
+                  "level"
+                ]
+              },
+              "example": {
+                "count": 200,
+                "level": "info"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    "2026/11/17 10:00:00 INFO - node started"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/tunnels/list": {
       "get": {
         "tags": [

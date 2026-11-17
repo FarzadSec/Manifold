@@ -922,6 +922,28 @@ func (s *NodeService) SetEnable(id int, enable bool) error {
 	return nil
 }
 
+// Logs reads the last lines of a node panel's own log, at level and above.
+func (s *NodeService) Logs(id, count int, level string) ([]string, error) {
+	n, err := s.GetById(id)
+	if err != nil || n == nil {
+		return nil, fmt.Errorf("node not found")
+	}
+	if !n.Enable {
+		return nil, fmt.Errorf("node is disabled")
+	}
+	mgr := runtime.GetManager()
+	if mgr == nil {
+		return nil, fmt.Errorf("runtime manager unavailable")
+	}
+	remote, err := mgr.RemoteFor(n)
+	if err != nil {
+		return nil, err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	return remote.FetchLogs(ctx, min(max(count, 10), 2000), level)
+}
+
 // GetWebCertFiles asks a node for its own web TLS certificate/key file paths,
 // used by "Set Cert from Panel" so a node-assigned inbound gets paths that
 // exist on the node rather than the central panel. See issue #4854.

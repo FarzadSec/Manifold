@@ -158,6 +158,7 @@ var nodeSyncScopeAllow = map[string]map[string]struct{}{
 	"/server/restartXrayService":   {http.MethodPost: {}},
 	"/server/getWebCertFiles":      {http.MethodGet: {}},
 	"/server/descendants":          {http.MethodGet: {}},
+	"/server/logs/:count":          {http.MethodPost: {}},
 	"/clients/resetTraffic/:email": {http.MethodPost: {}},
 	"/clients/bulkResetTraffic":    {http.MethodPost: {}},
 	"/inbounds/resetAllTraffics":   {http.MethodPost: {}},

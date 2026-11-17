@@ -4,6 +4,7 @@ import { Badge, Button, Card, Dropdown, Modal, Space, Switch, Table, Tag, Toolti
 import type { BadgeProps } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
+  FileTextOutlined,
   LineChartOutlined,
   ApartmentOutlined,
   ClusterOutlined,
@@ -25,6 +26,7 @@ import {
 import NodeHistoryPanel from './NodeHistoryPanel';
 import NodeTrafficTags from './NodeTrafficTags';
 import NodeStatsModal from './NodeStatsModal';
+import LogModal from '@/pages/index/LogModal';
 import type { NodeRecord } from '@/api/queries/useNodesQuery';
 import { isPanelUpdateAvailable } from '@/lib/panel-version';
 import { activateOnKey } from '@/utils/a11y';
@@ -197,6 +199,7 @@ export default function NodeList({
   const [showAddress, setShowAddress] = useState(false);
   const [statsNode, setStatsNode] = useState<NodeRow | null>(null);
   const [healthNode, setHealthNode] = useState<NodeRow | null>(null);
+  const [logsNode, setLogsNode] = useState<NodeRow | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
   // Map a direct node's GUID to its display name so a transitive sub-node can show
@@ -257,7 +260,7 @@ export default function NodeList({
       {
         title: t('pages.nodes.actions'),
         align: 'center',
-        width: 226,
+        width: 262,
         render: (_value, record) =>
           record.transitive ? (
             <Tooltip
@@ -301,6 +304,17 @@ export default function NodeList({
                   icon={<LineChartOutlined aria-hidden />}
                   aria-label={t('pages.nodes.stats.menu')}
                   onClick={() => setHealthNode(record)}
+                />
+              </Tooltip>
+              <Tooltip title={t('pages.index.logs')}>
+                <Button
+                  type="text"
+                  size="small"
+                  style={{ fontSize: 16 }}
+                  icon={<FileTextOutlined aria-hidden />}
+                  aria-label={t('pages.index.logs')}
+                  disabled={!record.enable}
+                  onClick={() => setLogsNode(record)}
                 />
               </Tooltip>
               <Tooltip title={t('edit')}>
@@ -721,6 +735,16 @@ export default function NodeList({
                                 onClick: () => setHealthNode(record),
                               },
                               {
+                                key: 'logs',
+                                disabled: !record.enable,
+                                label: (
+                                  <>
+                                    <FileTextOutlined aria-hidden /> {t('pages.index.logs')}
+                                  </>
+                                ),
+                                onClick: () => setLogsNode(record),
+                              },
+                              {
                                 key: 'edit',
                                 label: (
                                   <>
@@ -900,6 +924,7 @@ export default function NodeList({
         nodeTable
       )}
       <NodeStatsModal node={healthNode} onClose={() => setHealthNode(null)} />
+      <LogModal open={!!logsNode} node={logsNode ?? undefined} onClose={() => setLogsNode(null)} />
     </Card>
   );
 }

@@ -769,6 +769,19 @@ func (r *Remote) UpdatePanel(ctx context.Context, dev bool) error {
 	return err
 }
 
+// FetchLogs reads the last count lines of the node panel's own log at level and above.
+func (r *Remote) FetchLogs(ctx context.Context, count int, level string) ([]string, error) {
+	env, err := r.do(ctx, http.MethodPost, "panel/api/server/logs/"+strconv.Itoa(count), url.Values{"level": {level}, "syslog": {"false"}})
+	if err != nil {
+		return nil, err
+	}
+	var lines []string
+	if err := json.Unmarshal(env.Obj, &lines); err != nil {
+		return nil, fmt.Errorf("decode node logs: %w", err)
+	}
+	return lines, nil
+}
+
 // WebCertFiles holds a node's own web TLS certificate and key file paths.
 type WebCertFiles struct {
 	WebCertFile string `json:"webCertFile"`
