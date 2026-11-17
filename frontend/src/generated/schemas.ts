@@ -222,10 +222,29 @@ export const SCHEMAS: Record<string, unknown> = {
       "brandTitle": {
         "type": "string"
       },
+      "deniedPermissions": {
+        "example": [
+          "users:write"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
       "expiresAt": {
         "example": 0,
         "format": "int64",
         "type": "integer"
+      },
+      "grantedPermissions": {
+        "description": "Permissions added to or taken from the role for this account alone.",
+        "example": [
+          "plans:write"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
       },
       "inboundsLimited": {
         "example": false,
@@ -290,7 +309,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "brandAnnounce",
       "brandSupportUrl",
       "brandTitle",
+      "deniedPermissions",
       "expiresAt",
+      "grantedPermissions",
       "inboundsLimited",
       "maxUsers",
       "mayEditUsers",
@@ -344,9 +365,28 @@ export const SCHEMAS: Record<string, unknown> = {
         "format": "int64",
         "type": "integer"
       },
+      "deniedPermissions": {
+        "example": [
+          "users:write"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
       "expiresAt": {
         "format": "int64",
         "type": "integer"
+      },
+      "grantedPermissions": {
+        "description": "Changes to what the role gives this one account, inside its tier's ceiling.",
+        "example": [
+          "plans:write"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
       },
       "id": {
         "type": "integer"
@@ -435,7 +475,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "createdAt",
       "cycleStart",
       "cycleUsed",
+      "deniedPermissions",
       "expiresAt",
+      "grantedPermissions",
       "id",
       "inboundsLimited",
       "isOwner",
@@ -8594,9 +8636,28 @@ export const SCHEMAS: Record<string, unknown> = {
         "format": "int64",
         "type": "integer"
       },
+      "deniedPermissions": {
+        "example": [
+          "users:write"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
       "expiresAt": {
         "format": "int64",
         "type": "integer"
+      },
+      "grantedPermissions": {
+        "description": "Changes to what the role gives this one account, inside its tier's ceiling.",
+        "example": [
+          "plans:write"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
       },
       "id": {
         "type": "integer"
@@ -8676,7 +8737,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "createdAt",
       "cycleStart",
       "cycleUsed",
+      "deniedPermissions",
       "expiresAt",
+      "grantedPermissions",
       "id",
       "inboundsLimited",
       "isOwner",

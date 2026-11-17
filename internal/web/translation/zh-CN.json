@@ -3168,7 +3168,12 @@
         "quota": "每用户 {range}",
         "days": "{range} 天",
         "devices": "{range} 台设备"
-      }
+      },
+      "overrides": "此账户的权限",
+      "overridesHint": "仅对此账户添加角色未包含的权限，或移除某些权限；上限仍由层级决定。",
+      "granted": "额外允许",
+      "denied": "移除",
+      "overridden": "+{added} / −{removed} 项权限"
     },
     "usage": {
       "menu": "用量",

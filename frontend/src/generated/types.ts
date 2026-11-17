@@ -67,7 +67,9 @@ export interface AdminInput {
   brandAnnounce: string;
   brandSupportUrl: string;
   brandTitle: string;
+  deniedPermissions: string[];
   expiresAt: number;
+  grantedPermissions: string[];
   inboundsLimited: boolean;
   maxUsers: number;
   mayEditUsers: boolean;
@@ -93,7 +95,9 @@ export interface AdminView {
   createdAt: number;
   cycleStart: number;
   cycleUsed: number;
+  deniedPermissions: string[];
   expiresAt: number;
+  grantedPermissions: string[];
   id: number;
   inboundsLimited: boolean;
   isOwner: boolean;
@@ -1926,7 +1930,9 @@ export interface User {
   createdAt: number;
   cycleStart: number;
   cycleUsed: number;
+  deniedPermissions: string[];
   expiresAt: number;
+  grantedPermissions: string[];
   id: number;
   inboundsLimited: boolean;
   isOwner: boolean;

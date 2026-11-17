@@ -532,3 +532,47 @@ func listedIDs(t *testing.T, f *accessFixture, tok, path string) []int {
 	slices.Sort(ids)
 	return ids
 }
+
+// An account's own grants and denials change what its role gives it, never past its tier,
+// and never for the panel owner.
+func TestAccountOverridesChangeWhatItsRoleGives(t *testing.T) {
+	f := newAccessFixture(t)
+	db := database.GetDB()
+	reader := model.Role{Name: "reader", Tier: access.TierOperator, Permissions: []string{access.UsersRead}}
+	if err := db.Create(&reader).Error; err != nil {
+		t.Fatal(err)
+	}
+	tokenFor := func(u model.User) string {
+		return f.token(t, u.Username, panel.TokenAccess{UserId: f.account(t, u).Id})
+	}
+	plain := tokenFor(model.User{Username: "plain", Tier: access.TierOperator, RoleId: reader.Id})
+	planner := tokenFor(model.User{Username: "planner", Tier: access.TierOperator, RoleId: reader.Id, GrantedPermissions: []string{access.PlansWrite}})
+	greedy := tokenFor(model.User{Username: "greedy", Tier: access.TierReseller, GrantedPermissions: []string{access.PlansWrite}})
+	blind := tokenFor(model.User{Username: "blind", Tier: access.TierOperator, DeniedPermissions: []string{access.UsersRead}})
+	addPlan := func(tok, name string) int {
+		code, _ := f.call(t, tok, http.MethodPost, "/access/plans/add", `{"name":"`+name+`","days":30}`)
+		return code
+	}
+	if code := addPlan(plain, "p1"); code != http.StatusForbidden {
+		t.Errorf("a read-only role added a plan (status %d)", code)
+	}
+	if code := addPlan(planner, "p2"); code != http.StatusOK {
+		t.Errorf("an account granted plans:write could not add a plan (status %d)", code)
+	}
+	if code := addPlan(greedy, "p3"); code != http.StatusForbidden {
+		t.Errorf("a reseller granted a permission past its tier added a plan (status %d)", code)
+	}
+	if code, _ := f.call(t, blind, http.MethodGet, "/clients/list", ""); code != http.StatusForbidden {
+		t.Errorf("an account denied users:read still listed users (status %d)", code)
+	}
+	if code, _ := f.call(t, blind, http.MethodPost, "/clients/add", `{}`); code != http.StatusForbidden {
+		t.Errorf("an account denied users:read still added users (status %d)", code)
+	}
+	if err := db.Model(&model.User{}).Where("id = ?", f.owner.Id).
+		Update("denied_permissions", `["users:write"]`).Error; err != nil {
+		t.Fatal(err)
+	}
+	if reply := f.addClient(t, f.token(t, "owner", panel.TokenAccess{UserId: f.owner.Id}), "kept"); !reply.Success {
+		t.Errorf("a denial locked the panel owner out: %s", reply.Msg)
+	}
+}

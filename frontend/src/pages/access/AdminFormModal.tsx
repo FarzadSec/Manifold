@@ -9,6 +9,7 @@ import DateTimePicker from '@/components/form/DateTimePicker';
 import type { AdminInput, AdminView, Plan, Role } from '@/generated/types';
 import { postJson } from '@/api/queries/useAccess';
 import { TIERS, WEEKDAYS, bytesAsGB } from './accessInfo';
+import PermissionOverrides, { overrideChoices } from './PermissionOverrides';
 import SellsFromFields from './SellsFromFields';
 
 interface AdminFormModalProps {
@@ -16,6 +17,7 @@ interface AdminFormModalProps {
   admin: AdminView | null;
   roles: Role[];
   plans: Plan[];
+  ceilings: Record<string, string[]>;
   onClose: (saved: boolean) => void;
 }
 
@@ -37,6 +39,8 @@ function emptyInput(): AdminInput {
     allowedPlanIds: [],
     inboundsLimited: false,
     allowedInboundIds: [],
+    grantedPermissions: [],
+    deniedPermissions: [],
     subDomain: '',
     brandTitle: '',
     brandSupportUrl: '',
@@ -51,6 +55,8 @@ function fromView(a: AdminView): AdminInput {
     password: '',
     allowedPlanIds: a.allowedPlanIds ?? [],
     allowedInboundIds: a.allowedInboundIds ?? [],
+    grantedPermissions: a.grantedPermissions ?? [],
+    deniedPermissions: a.deniedPermissions ?? [],
   };
 }
 
@@ -64,6 +70,7 @@ export default function AdminFormModal({
   admin,
   roles,
   plans,
+  ceilings,
   onClose,
 }: AdminFormModalProps) {
   const { t } = useTranslation();
@@ -71,6 +78,7 @@ export default function AdminFormModal({
   const { control, reset, handleSubmit } = methods;
   const tier = useWatch({ control, name: 'tier' });
   const cycle = useWatch({ control, name: 'resetCycle' });
+  const roleId = useWatch({ control, name: 'roleId' });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -85,7 +93,18 @@ export default function AdminFormModal({
     [roles, tier, t],
   );
 
-  async function onSubmit(values: AdminInput) {
+  const ceiling = ceilings[tier] ?? [];
+  const { grantable, deniable } = overrideChoices(
+    ceiling,
+    roles.find((r) => r.id === roleId)?.permissions ?? ceiling,
+  );
+
+  async function onSubmit(input: AdminInput) {
+    const values = {
+      ...input,
+      grantedPermissions: (input.grantedPermissions ?? []).filter((p) => grantable.includes(p)),
+      deniedPermissions: (input.deniedPermissions ?? []).filter((p) => deniable.includes(p)),
+    };
     setSaving(true);
     try {
       const url = admin
@@ -152,6 +171,13 @@ export default function AdminFormModal({
               </FormField>
             </Col>
           </Row>
+
+          {!admin?.isOwner && (
+            <>
+              <Divider titlePlacement="start">{t('pages.access.overrides')}</Divider>
+              <PermissionOverrides grantable={grantable} deniable={deniable} />
+            </>
+          )}
 
           {reseller && (
             <>

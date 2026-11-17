@@ -47,3 +47,23 @@ func TestRoleBoundsCannotCross(t *testing.T) {
 		t.Fatalf("a role with floors and no ceilings was refused: %v", err)
 	}
 }
+
+func TestAccountOverridesStayInsideTheTier(t *testing.T) {
+	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
+	svc := &AdminService{}
+	base := AdminInput{Password: "long-enough-password", ResetCycle: "none"}
+	for name, in := range map[string]AdminInput{
+		"past the tier": {Username: "r1", Tier: access.TierReseller, GrantedPermissions: []string{access.PlansWrite}},
+		"both ways":     {Username: "o1", Tier: access.TierOperator, GrantedPermissions: []string{access.PlansWrite}, DeniedPermissions: []string{access.PlansWrite}},
+		"unknown":       {Username: "o2", Tier: access.TierOperator, DeniedPermissions: []string{"users:fly"}},
+	} {
+		in.Password, in.ResetCycle = base.Password, base.ResetCycle
+		if _, err := svc.Add(in); err == nil {
+			t.Errorf("an account with overrides %s was saved", name)
+		}
+	}
+	ok := AdminInput{Username: "o3", Tier: access.TierOperator, Password: base.Password, GrantedPermissions: []string{access.PlansWrite}, DeniedPermissions: []string{access.UsersWrite}}
+	if _, err := svc.Add(ok); err != nil {
+		t.Fatalf("overrides inside the tier were refused: %v", err)
+	}
+}

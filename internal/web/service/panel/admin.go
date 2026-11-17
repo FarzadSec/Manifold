@@ -44,10 +44,13 @@ type AdminInput struct {
 	AllowedPlanIds    []int  `json:"allowedPlanIds" example:"[1,2]"`
 	InboundsLimited   bool   `json:"inboundsLimited" example:"false"`
 	AllowedInboundIds []int  `json:"allowedInboundIds" example:"[1]"`
-	SubDomain         string `json:"subDomain" example:"sub.example.com"`
-	BrandTitle        string `json:"brandTitle"`
-	BrandSupportUrl   string `json:"brandSupportUrl"`
-	BrandAnnounce     string `json:"brandAnnounce"`
+	// Permissions added to or taken from the role for this account alone.
+	GrantedPermissions []string `json:"grantedPermissions" example:"[\"plans:write\"]"`
+	DeniedPermissions  []string `json:"deniedPermissions" example:"[\"users:write\"]"`
+	SubDomain          string   `json:"subDomain" example:"sub.example.com"`
+	BrandTitle         string   `json:"brandTitle"`
+	BrandSupportUrl    string   `json:"brandSupportUrl"`
+	BrandAnnounce      string   `json:"brandAnnounce"`
 }
 
 // AdminService manages the panel's admin accounts.
@@ -139,6 +142,17 @@ func (s *AdminService) validate(in *AdminInput, id int) error {
 			return common.NewError("the role belongs to another tier")
 		}
 	}
+	ceiling := access.Ceiling(in.Tier)
+	for _, p := range slices.Concat(in.GrantedPermissions, in.DeniedPermissions) {
+		if !slices.Contains(ceiling, p) {
+			return common.NewError("the tier does not include permission " + p)
+		}
+	}
+	for _, p := range in.GrantedPermissions {
+		if slices.Contains(in.DeniedPermissions, p) {
+			return common.NewError("a permission cannot be both added and taken away: " + p)
+		}
+	}
 	switch in.ResetCycle {
 	case "":
 		in.ResetCycle = service.CycleNone
@@ -163,6 +177,7 @@ func (s *AdminService) validate(in *AdminInput, id int) error {
 
 func (in *AdminInput) apply(u *model.User) {
 	u.Username, u.Tier, u.RoleId, u.Remark = in.Username, in.Tier, in.RoleId, in.Remark
+	u.GrantedPermissions, u.DeniedPermissions = in.GrantedPermissions, in.DeniedPermissions
 	u.VolumeBytes, u.ResetCycle, u.ResetDay, u.ResetMonth = in.VolumeBytes, in.ResetCycle, in.ResetDay, in.ResetMonth
 	u.ExpiresAt, u.MaxUsers, u.MayEditUsers, u.PlansOnly = in.ExpiresAt, in.MaxUsers, in.MayEditUsers, in.PlansOnly
 	u.AllowedPlanIds, u.InboundsLimited, u.AllowedInboundIds = in.AllowedPlanIds, in.InboundsLimited, in.AllowedInboundIds

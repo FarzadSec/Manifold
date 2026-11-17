@@ -114,9 +114,19 @@ export default function AdminsPage() {
       title: t('pages.access.role'),
       key: 'role',
       render: (_, a) => (
-        <Tag color={TIER_COLORS[a.tier]}>
-          {a.roleId ? a.roleName : t(`pages.access.tier.${a.tier}`)}
-        </Tag>
+        <Space size={4} wrap>
+          <Tag color={TIER_COLORS[a.tier]}>
+            {a.roleId ? a.roleName : t(`pages.access.tier.${a.tier}`)}
+          </Tag>
+          {(a.grantedPermissions?.length ?? 0) + (a.deniedPermissions?.length ?? 0) > 0 && (
+            <Tag>
+              {t('pages.access.overridden', {
+                added: a.grantedPermissions?.length ?? 0,
+                removed: a.deniedPermissions?.length ?? 0,
+              })}
+            </Tag>
+          )}
+        </Space>
       ),
     },
     {
@@ -255,6 +265,7 @@ export default function AdminsPage() {
         admin={editing}
         roles={roles.data ?? []}
         plans={plans.data ?? []}
+        ceilings={access.me?.tierCeilings ?? {}}
         onClose={(saved) => {
           setFormOpen(false);
           if (saved) void refresh();

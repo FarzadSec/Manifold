@@ -38,10 +38,14 @@ function openSelect(select: HTMLElement) {
   fireEvent.mouseDown(target);
 }
 
-function openDropdownOptions(): string[] {
+function openDropdownOptions(fieldId: string): string[] {
+  // A dropdown closed in this test can stay unhidden while its animation never runs.
+  const own = document.getElementById(`${fieldId}_list`)?.closest('.ant-select-dropdown');
   return Array.from(
-    document.querySelectorAll(
-      '.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option',
+    (own ?? document).querySelectorAll(
+      own
+        ? '.ant-select-item-option'
+        : '.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option',
     ),
   )
     .map((o) => (o.getAttribute('title') ?? o.textContent ?? '').trim())
@@ -57,7 +61,7 @@ export function listSelectOptions(fieldId: string): string[] {
   }
   const select = selectRootForField(fieldId);
   openSelect(select);
-  const opts = openDropdownOptions();
+  const opts = openDropdownOptions(fieldId);
   fireEvent.keyDown(select, { key: 'Escape' });
   return opts;
 }

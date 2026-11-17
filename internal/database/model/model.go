@@ -61,6 +61,9 @@ type User struct {
 	RoleId  int    `json:"roleId" gorm:"default:0"`
 	IsOwner bool   `json:"isOwner" gorm:"default:false"`
 	Remark  string `json:"remark"`
+	// Changes to what the role gives this one account, inside its tier's ceiling.
+	GrantedPermissions []string `json:"grantedPermissions" gorm:"serializer:json;column:granted_permissions" example:"[\"plans:write\"]"`
+	DeniedPermissions  []string `json:"deniedPermissions" gorm:"serializer:json;column:denied_permissions" example:"[\"users:write\"]"`
 
 	TwoFactorEnabled bool   `json:"twoFactorEnabled" gorm:"default:false"`
 	TwoFactorSecret  string `json:"-" gorm:"column:two_factor_secret"`

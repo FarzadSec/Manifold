@@ -135,9 +135,12 @@ func Resolve(user *model.User) (*Actor, error) {
 				actor.WriteScope = ScopeOwn
 			}
 		}
-		return actor, nil
+	} else {
+		actor.Perms = NewSet(tier, Ceiling(tier))
 	}
-	actor.Perms = NewSet(tier, Ceiling(tier))
+	if !user.IsOwner {
+		actor.Perms = actor.Perms.Union(NewSet(tier, user.GrantedPermissions)).Without(user.DeniedPermissions)
+	}
 	return actor, nil
 }
 

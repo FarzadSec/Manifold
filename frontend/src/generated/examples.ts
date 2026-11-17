@@ -96,7 +96,13 @@ export const EXAMPLES: Record<string, unknown> = {
     "brandAnnounce": "",
     "brandSupportUrl": "",
     "brandTitle": "",
+    "deniedPermissions": [
+      "users:write"
+    ],
     "expiresAt": 0,
+    "grantedPermissions": [
+      "plans:write"
+    ],
     "inboundsLimited": false,
     "maxUsers": 100,
     "mayEditUsers": true,
@@ -125,7 +131,13 @@ export const EXAMPLES: Record<string, unknown> = {
     "createdAt": 0,
     "cycleStart": 0,
     "cycleUsed": 0,
+    "deniedPermissions": [
+      "users:write"
+    ],
     "expiresAt": 0,
+    "grantedPermissions": [
+      "plans:write"
+    ],
     "id": 0,
     "inboundsLimited": false,
     "isOwner": false,
@@ -2286,7 +2298,13 @@ export const EXAMPLES: Record<string, unknown> = {
     "createdAt": 0,
     "cycleStart": 0,
     "cycleUsed": 0,
+    "deniedPermissions": [
+      "users:write"
+    ],
     "expiresAt": 0,
+    "grantedPermissions": [
+      "plans:write"
+    ],
     "id": 0,
     "inboundsLimited": false,
     "isOwner": false,

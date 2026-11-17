@@ -120,6 +120,30 @@ func (s Set) Has(p string) bool {
 	return ok
 }
 
+// Union is what either set grants.
+func (s Set) Union(other Set) Set {
+	out := Set{}
+	for p := range s {
+		out[p] = struct{}{}
+	}
+	for p := range other {
+		out[p] = struct{}{}
+	}
+	return out
+}
+
+// Without takes perms away, and with a read the write that cannot stand without it.
+func (s Set) Without(perms []string) Set {
+	out := s.Union(nil)
+	for _, p := range perms {
+		delete(out, p)
+		if base, ok := strings.CutSuffix(p, readSuffix); ok {
+			delete(out, base+writeSuffix)
+		}
+	}
+	return out
+}
+
 // Intersect keeps what both sets grant.
 func (s Set) Intersect(other Set) Set {
 	out := Set{}

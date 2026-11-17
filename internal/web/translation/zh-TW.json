@@ -3168,7 +3168,12 @@
         "quota": "{range} per user",
         "days": "{range} days",
         "devices": "{range} devices"
-      }
+      },
+      "overrides": "Permissions for this account",
+      "overridesHint": "Add what its role leaves out, or take something away, for this account alone. Its tier still sets the limit.",
+      "granted": "Also allow",
+      "denied": "Take away",
+      "overridden": "+{added} / −{removed} permissions"
     },
     "usage": {
       "menu": "Usage",

@@ -248,10 +248,29 @@
           "brandTitle": {
             "type": "string"
           },
+          "deniedPermissions": {
+            "example": [
+              "users:write"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "expiresAt": {
             "example": 0,
             "format": "int64",
             "type": "integer"
+          },
+          "grantedPermissions": {
+            "description": "Permissions added to or taken from the role for this account alone.",
+            "example": [
+              "plans:write"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "inboundsLimited": {
             "example": false,
@@ -316,7 +335,9 @@
           "brandAnnounce",
           "brandSupportUrl",
           "brandTitle",
+          "deniedPermissions",
           "expiresAt",
+          "grantedPermissions",
           "inboundsLimited",
           "maxUsers",
           "mayEditUsers",
@@ -370,9 +391,28 @@
             "format": "int64",
             "type": "integer"
           },
+          "deniedPermissions": {
+            "example": [
+              "users:write"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "expiresAt": {
             "format": "int64",
             "type": "integer"
+          },
+          "grantedPermissions": {
+            "description": "Changes to what the role gives this one account, inside its tier's ceiling.",
+            "example": [
+              "plans:write"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "id": {
             "type": "integer"
@@ -461,7 +501,9 @@
           "createdAt",
           "cycleStart",
           "cycleUsed",
+          "deniedPermissions",
           "expiresAt",
+          "grantedPermissions",
           "id",
           "inboundsLimited",
           "isOwner",
@@ -8620,9 +8662,28 @@
             "format": "int64",
             "type": "integer"
           },
+          "deniedPermissions": {
+            "example": [
+              "users:write"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "expiresAt": {
             "format": "int64",
             "type": "integer"
+          },
+          "grantedPermissions": {
+            "description": "Changes to what the role gives this one account, inside its tier's ceiling.",
+            "example": [
+              "plans:write"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "id": {
             "type": "integer"
@@ -8702,7 +8763,9 @@
           "createdAt",
           "cycleStart",
           "cycleUsed",
+          "deniedPermissions",
           "expiresAt",
+          "grantedPermissions",
           "id",
           "inboundsLimited",
           "isOwner",
@@ -20900,7 +20963,13 @@
                       "createdAt": 0,
                       "cycleStart": 0,
                       "cycleUsed": 0,
+                      "deniedPermissions": [
+                        "users:write"
+                      ],
                       "expiresAt": 0,
+                      "grantedPermissions": [
+                        "plans:write"
+                      ],
                       "id": 0,
                       "inboundsLimited": false,
                       "isOwner": false,
@@ -20994,7 +21063,13 @@
                     "createdAt": 0,
                     "cycleStart": 0,
                     "cycleUsed": 0,
+                    "deniedPermissions": [
+                      "users:write"
+                    ],
                     "expiresAt": 0,
+                    "grantedPermissions": [
+                      "plans:write"
+                    ],
                     "id": 0,
                     "inboundsLimited": false,
                     "isOwner": false,
