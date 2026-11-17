@@ -348,9 +348,9 @@ jobs:
             --port 20540 --path /relay/ --username relay --password relay-pass-123 | tee /tmp/install.log
           grep -q "Manifold Relay" /tmp/install.log
           systemctl is-active manifold
-          grep -qx MANIFOLD_EDITION=tunnel /etc/default/manifold
-          test -x /usr/local/manifold/bin/backpack-linux-amd64
-          if ls /usr/local/manifold/bin/xray-linux-* /usr/local/manifold/bin/*.dat 2>/dev/null; then
+          sudo grep -qx MANIFOLD_EDITION=tunnel /etc/default/manifold
+          sudo test -x /usr/local/manifold/bin/backpack-linux-amd64
+          if sudo sh -c 'ls /usr/local/manifold/bin/xray-linux-* /usr/local/manifold/bin/*.dat' 2>/dev/null; then
             echo "the relay carries the panel's engines" >&2
             exit 1
           fi
@@ -476,5 +476,5 @@ jobs:
           grep -q "Manifold Relay" /tmp/install.log
           systemctl is-active manifold
           test "v$(sudo manifold version)" = "$VERSION"
-          test ! -e /usr/local/manifold/bin/xray-linux-amd64
+          sudo test ! -e /usr/local/manifold/bin/xray-linux-amd64
           sudo manifold tunnel list

@@ -2,15 +2,28 @@ package tunnel
 
 import (
 	"context"
+	"net/netip"
 	"os"
 	"os/exec"
+	"strings"
 	"testing"
+	"time"
 )
 
 // Check answers "is this end working" from outside the panel: the link has to be there
 // and the far end's tunnel address has to answer.
 func TestCheckReportsAnEndFromOutsideThePanel(t *testing.T) {
-	gre := Tunnel{ID: 4, Kind: KindGRE, Enabled: true, Settings: TunnelSettings{PeerIP: "127.0.0.1"}}
+	gre := Tunnel{ID: 4, Kind: KindGRE, Enabled: true, Settings: TunnelSettings{PeerIP: "10.80.0.1"}}
+	var asked []string
+	prev := echoOnce
+	echoOnce = func(target netip.Addr, _ int) result {
+		asked = append(asked, target.String())
+		if target.String() == "10.80.0.1" {
+			return result{rtt: 20 * time.Millisecond}
+		}
+		return result{lost: true}
+	}
+	t.Cleanup(func() { echoOnce = prev })
 
 	useHost(t, &fakeHost{files: map[string]string{}})
 	if st := newManager(t.TempDir(), nil).Check(gre, 1); st.State != StateDown || st.Error == "" {
@@ -23,12 +36,15 @@ func TestCheckReportsAnEndFromOutsideThePanel(t *testing.T) {
 		sysNet("mft4", "statistics/tx_bytes"): "900",
 	}})
 	st := newManager(t.TempDir(), nil).Check(gre, 2)
-	if st.State != StateUp || st.Loss != 0 || st.RxBytes != 1500 || st.TxBytes != 900 {
+	if st.State != StateUp || st.Loss != 0 || st.LatencyMs != 20 || st.RxBytes != 1500 || st.TxBytes != 900 {
 		t.Fatalf("an end whose far side answers reads %+v", st)
+	}
+	if strings.Join(asked, ",") != "10.80.0.1,10.80.0.1" {
+		t.Fatalf("echoes went to %v, want the other end's tunnel address twice", asked)
 	}
 
 	silent := gre
-	silent.Settings.PeerIP = "240.0.0.1"
+	silent.Settings.PeerIP = "10.80.0.5"
 	if st := newManager(t.TempDir(), nil).Check(silent, 1); st.State != StateDown || st.Loss != 100 {
 		t.Fatalf("an end whose far side is silent reads %+v", st)
 	}

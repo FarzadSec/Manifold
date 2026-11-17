@@ -38,12 +38,18 @@ func (m *Manager) Check(t Tunnel, echoes int) TunnelStatus {
 		st.State, st.Error = StateError, "the other end's tunnel address is not set"
 		return st
 	}
-	p := &prober{target: peer}
+	var w window
 	for seq := 1; seq <= echoes; seq++ {
-		p.window.add(p.echo(seq))
+		w.add(echoOnce(peer, seq))
 	}
-	st.Loss, st.LatencyMs, st.State = judge(&p.window)
+	st.Loss, st.LatencyMs, st.State = judge(&w)
 	return st
+}
+
+// echoOnce sends one echo through the tunnel; tests replace it, since ICMP sockets
+// need privileges a test runner may not have.
+var echoOnce = func(target netip.Addr, seq int) result {
+	return (&prober{target: target}).echo(seq)
 }
 
 // judge turns a window of echoes into the loss, latency and state the panel shows.
