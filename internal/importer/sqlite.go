@@ -54,39 +54,37 @@ func ReadSQLite(ctx context.Context, path string) (*Result, error) {
 }
 
 func tableColumns(ctx context.Context, db *sql.DB) (map[string][]string, error) {
-	rows, err := db.QueryContext(ctx, `SELECT name FROM sqlite_master WHERE type = 'table'`)
+	names, err := strings1(ctx, db, `SELECT name FROM sqlite_master WHERE type = 'table'`)
 	if err != nil {
-		return nil, err
-	}
-	var names []string
-	for rows.Next() {
-		var n string
-		if err := rows.Scan(&n); err == nil {
-			names = append(names, n)
-		}
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	out := map[string][]string{}
 	for _, n := range names {
-		cols, err := db.QueryContext(ctx, `SELECT name FROM pragma_table_info(?)`, n)
+		cols, err := strings1(ctx, db, `SELECT name FROM pragma_table_info(?)`, n)
 		if err != nil {
 			return nil, err
 		}
-		for cols.Next() {
-			var c string
-			if err := cols.Scan(&c); err == nil {
-				out[n] = append(out[n], c)
-			}
-		}
-		cols.Close()
-		if err := cols.Err(); err != nil {
-			return nil, err
-		}
+		out[n] = cols
 	}
 	return out, nil
+}
+
+// strings1 reads the first column of a query as text.
+func strings1(ctx context.Context, db *sql.DB, query string, args ...any) ([]string, error) {
+	rows, err := db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var v string
+		if err := rows.Scan(&v); err != nil {
+			return nil, err
+		}
+		out = append(out, v)
+	}
+	return out, rows.Err()
 }
 
 // rowMaps reads a query into maps of column to value, for schemas that differ by version.

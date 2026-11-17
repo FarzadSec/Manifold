@@ -169,7 +169,7 @@ func TestReadMarzbanAPIPagesAndKeepsTheCurrentLink(t *testing.T) {
 		case "/api/admin/token":
 			_ = r.ParseForm()
 			if r.PostForm.Get("username") != "admin" || r.PostForm.Get("password") != "pw" {
-				w.WriteHeader(401)
+				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
 			_, _ = w.Write([]byte(`{"access_token":"tok","token_type":"bearer"}`))
@@ -190,7 +190,7 @@ func TestReadMarzbanAPIPagesAndKeepsTheCurrentLink(t *testing.T) {
 			}
 			_ = json.NewEncoder(w).Encode(map[string]any{"users": users, "total": pageSize + 1})
 		default:
-			w.WriteHeader(404)
+			w.WriteHeader(http.StatusNotFound)
 		}
 	}))
 	defer srv.Close()

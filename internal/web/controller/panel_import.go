@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"io"
 	"os"
 	"time"
@@ -76,7 +77,7 @@ func (a *PanelImportController) file(c *gin.Context) {
 				return
 			}
 		}
-		if rerr == io.EOF {
+		if errors.Is(rerr, io.EOF) {
 			break
 		}
 		if rerr != nil {
