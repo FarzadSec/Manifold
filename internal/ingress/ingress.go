@@ -227,12 +227,11 @@ func handle(client net.Conn, l *Listener) {
 		return
 	}
 	defer target.Close()
+	head := p.bytes
 	if route.ProxyProtocol > 0 {
-		if _, err := target.Write(proxyHeader(route.ProxyProtocol, client.RemoteAddr(), client.LocalAddr())); err != nil {
-			return
-		}
+		head = append(proxyHeader(route.ProxyProtocol, client.RemoteAddr(), client.LocalAddr()), p.bytes...)
 	}
-	if _, err := target.Write(p.bytes); err != nil {
+	if _, err := target.Write(head); err != nil {
 		return
 	}
 	pipe(client, reader, target)
