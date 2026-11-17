@@ -9,6 +9,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/access"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/clientip"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
 
@@ -17,7 +18,7 @@ var auditSvc service.AuditService
 // recordAudit stores one entry for the request's actor, whether or not change logging is on.
 func recordAudit(c *gin.Context, entity, action, target string, detail any) {
 	actor := access.ActorFrom(c)
-	e := model.AuditEntry{Entity: entity, Action: action, Target: target, Ip: getRemoteIp(c)}
+	e := model.AuditEntry{Entity: entity, Action: action, Target: target, Ip: clientip.Of(c)}
 	if actor != nil {
 		e.UserId, e.Username = actor.UserId, actor.Username
 	}

@@ -7,6 +7,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/access"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/clientip"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/middleware"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/panel"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/tgbot"
@@ -264,7 +265,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	// Decode + verify the node config envelope (zstd + X-Config-Sha256) and
 	// advertise support, before CSRF/handlers read the body.
 	api.Use(middleware.ConfigEnvelopeMiddleware())
-	api.Use(middleware.CSRFMiddleware(getRemoteIp))
+	api.Use(middleware.CSRFMiddleware(clientip.Of))
 
 	api.GET("/openapi.json", ServeOpenAPISpec)
 

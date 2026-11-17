@@ -5,6 +5,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/web/clientip"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/middleware"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/session"
@@ -33,7 +34,7 @@ func NewXUIController(g *gin.RouterGroup) *XUIController {
 func (a *XUIController) initRouter(g *gin.RouterGroup) {
 	g = g.Group("/panel")
 	g.Use(a.checkLogin)
-	g.Use(middleware.CSRFMiddleware(getRemoteIp))
+	g.Use(middleware.CSRFMiddleware(clientip.Of))
 
 	g.GET("/", a.panelSPA)
 	g.GET("/inbounds", a.panelSPA)

@@ -10,6 +10,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/loginlimit"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/access"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/clientip"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/middleware"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/panel"
@@ -50,9 +51,9 @@ func (a *IndexController) initRouter(g *gin.RouterGroup) {
 	g.GET("/csrf-token", a.csrfToken)
 
 	// The route carries three short fields; anything longer is refused unread.
-	g.POST("/login", middleware.MaxBodyBytes(16<<10), middleware.CSRFMiddleware(getRemoteIp), a.login)
-	g.POST("/logout", middleware.CSRFMiddleware(getRemoteIp), a.logout)
-	g.POST("/getTwoFactorEnable", middleware.CSRFMiddleware(getRemoteIp), a.getTwoFactorEnable)
+	g.POST("/login", middleware.MaxBodyBytes(16<<10), middleware.CSRFMiddleware(clientip.Of), a.login)
+	g.POST("/logout", middleware.CSRFMiddleware(clientip.Of), a.logout)
+	g.POST("/getTwoFactorEnable", middleware.CSRFMiddleware(clientip.Of), a.getTwoFactorEnable)
 }
 
 // index handles the root route, redirecting logged-in users to the panel or showing the login page.
@@ -82,7 +83,7 @@ func (a *IndexController) login(c *gin.Context) {
 		return
 	}
 
-	remoteIP := getRemoteIp(c)
+	remoteIP := clientip.Of(c)
 	// No stored name is longer; the log buffer, the limiter and the notifiers keep what follows.
 	if len(form.Username) > panel.MaxUsernameLength {
 		logger.Warningf("failed login: IP=%q, reason=%q", remoteIP, "username too long")

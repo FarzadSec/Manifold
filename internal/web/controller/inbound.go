@@ -13,6 +13,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/util/json_util"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/wirecodec"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/access"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/clientip"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/middleware"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/websocket"
@@ -514,7 +515,7 @@ func (a *InboundController) importWireGuard(c *gin.Context) {
 // resolveHost mirrors SubService.ResolveRequest's host: trusted X-Forwarded-Host,
 // else the dialed request Host. X-Real-IP names the visitor, not the panel (#6589).
 func resolveHost(c *gin.Context) string {
-	if isTrustedForwardedRequest(c) {
+	if clientip.ViaTrustedProxy(c) {
 		if h := strings.TrimSpace(c.GetHeader("X-Forwarded-Host")); h != "" {
 			if i := strings.Index(h, ","); i >= 0 {
 				h = strings.TrimSpace(h[:i])

@@ -12,6 +12,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/totp"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/access"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/clientip"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/panel"
 )
@@ -273,7 +274,7 @@ func (a *AccessController) listAudit(c *gin.Context) {
 
 func (a *AccessController) clearAudit(c *gin.Context) {
 	actor := access.ActorFrom(c)
-	err := a.auditService.Clear(model.AuditEntry{UserId: actor.UserId, Username: actor.Username, Ip: getRemoteIp(c)})
+	err := a.auditService.Clear(model.AuditEntry{UserId: actor.UserId, Username: actor.Username, Ip: clientip.Of(c)})
 	jsonMsg(c, I18nWeb(c, "pages.access.auditCleared"), err)
 }
 
