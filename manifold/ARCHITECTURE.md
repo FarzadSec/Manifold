@@ -457,6 +457,7 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 
 ### 8.5 Open items after tunnels and full backups
 
+- Fixed in 0.14.0: BackPack tunnels did not start under the installed service from 0.5.0 on. The service's bin folder is relative to its working directory and BackPack runs in its config's folder, so both paths it was given pointed inside `bin/tunnels`; the tests used absolute temporary paths. The relay smoke test now starts a BackPack end under the unit.
 - No tunnel has run between two real servers: the GRE test uses network namespaces on one runner, and the BackPack test runs both ends on one host over loopback. Real paths (GRE through a provider's filter, BackPack transports through DPI) have to be seen.
 - Only the BackPack reverse transport `tcpmux` and the kernel kind GRE are exercised by a test; the other eleven transports, the layer-3 carriers and GRETAP, IP6GRE, IP6GRETAP, IPIP and SIT are covered by unit tests of their configuration only.
 - A BackPack process dies with the panel, so a panel restart or update interrupts BackPack tunnels for a few seconds while kernel links stay up.
