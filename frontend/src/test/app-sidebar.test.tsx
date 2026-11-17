@@ -74,3 +74,20 @@ test('labels the palette shortcut with the modifier the platform actually uses',
   const chip = view.container.querySelector('.sidebar-command-kbd');
   expect(chip?.textContent).toBe('CtrlK');
 });
+
+test('groups the pages under section headings, and only separates them on the rail', async () => {
+  localStorage.setItem('sidebar-pinned', 'true');
+  const pinned = await renderSidebar();
+  const titles = [
+    ...pinned.container.querySelectorAll('.sider-nav .ant-menu-item-group-title'),
+  ].map((el) => el.textContent);
+  expect(titles).toEqual(['Users', 'Network', 'Operations', 'System']);
+  const certs = screen.getByText('Certificates').closest('.ant-menu-item-group');
+  expect(certs?.querySelector('.ant-menu-item-group-title')?.textContent).toBe('Network');
+  pinned.unmount();
+
+  localStorage.setItem('sidebar-pinned', 'false');
+  const rail = await renderSidebar();
+  expect(rail.container.querySelectorAll('.sider-nav .ant-menu-item-group-title')).toHaveLength(0);
+  expect(rail.container.querySelectorAll('.sider-nav .ant-menu-item-divider')).toHaveLength(4);
+});

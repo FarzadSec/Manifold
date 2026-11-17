@@ -135,7 +135,13 @@
     "backups": "备份",
     "webhooks": "Webhook",
     "certs": "证书",
-    "import": "导入"
+    "import": "导入",
+    "section": {
+      "users": "用户",
+      "network": "网络",
+      "operations": "运维",
+      "system": "系统"
+    }
   },
   "pages": {
     "login": {

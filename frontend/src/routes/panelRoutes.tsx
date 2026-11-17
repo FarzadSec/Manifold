@@ -45,11 +45,16 @@ const RolesPage = lazy(() => import('@/pages/access/RolesPage'));
 const PlansPage = lazy(() => import('@/pages/access/PlansPage'));
 const AuditPage = lazy(() => import('@/pages/access/AuditPage'));
 
+// The sidebar groups pages under these headings, in this order.
+export type RouteSection = 'home' | 'users' | 'network' | 'operations' | 'system';
+export const ROUTE_SECTIONS: RouteSection[] = ['home', 'users', 'network', 'operations', 'system'];
+
 export interface PanelRoute {
   path: string;
   titleKey: string;
   icon: ComponentType;
   component: ComponentType;
+  section: RouteSection;
   // The permission the page needs; staff pages are never a reseller's.
   perm: string;
   staff?: boolean;
@@ -60,6 +65,7 @@ export interface PanelRoute {
 export const PANEL_ROUTES: PanelRoute[] = [
   {
     path: '/',
+    section: 'home',
     titleKey: 'menu.dashboard',
     icon: DashboardOutlined,
     component: IndexPage,
@@ -67,6 +73,7 @@ export const PANEL_ROUTES: PanelRoute[] = [
   },
   {
     path: '/inbounds',
+    section: 'network',
     titleKey: 'menu.inbounds',
     icon: ImportOutlined,
     component: InboundsPage,
@@ -74,6 +81,7 @@ export const PANEL_ROUTES: PanelRoute[] = [
   },
   {
     path: '/clients',
+    section: 'users',
     titleKey: 'menu.clients',
     icon: TeamOutlined,
     component: ClientsPage,
@@ -81,6 +89,7 @@ export const PANEL_ROUTES: PanelRoute[] = [
   },
   {
     path: '/groups',
+    section: 'users',
     titleKey: 'menu.groups',
     icon: TagsOutlined,
     component: GroupsPage,
@@ -89,6 +98,7 @@ export const PANEL_ROUTES: PanelRoute[] = [
   },
   {
     path: '/nodes',
+    section: 'network',
     titleKey: 'menu.nodes',
     icon: ClusterOutlined,
     component: NodesPage,
@@ -96,6 +106,7 @@ export const PANEL_ROUTES: PanelRoute[] = [
   },
   {
     path: '/hosts',
+    section: 'network',
     titleKey: 'menu.hosts',
     icon: GlobalOutlined,
     component: HostsPage,
@@ -103,6 +114,7 @@ export const PANEL_ROUTES: PanelRoute[] = [
   },
   {
     path: '/tunnels',
+    section: 'network',
     titleKey: 'menu.tunnels',
     icon: DeploymentUnitOutlined,
     component: TunnelsPage,
@@ -110,6 +122,7 @@ export const PANEL_ROUTES: PanelRoute[] = [
   },
   {
     path: '/ingress',
+    section: 'network',
     titleKey: 'menu.ingress',
     icon: ShareAltOutlined,
     component: IngressPage,
@@ -118,6 +131,7 @@ export const PANEL_ROUTES: PanelRoute[] = [
   },
   {
     path: '/backups',
+    section: 'operations',
     titleKey: 'menu.backups',
     icon: CloudUploadOutlined,
     component: BackupsPage,
@@ -126,6 +140,7 @@ export const PANEL_ROUTES: PanelRoute[] = [
   },
   {
     path: '/import',
+    section: 'users',
     titleKey: 'menu.import',
     icon: ImportOutlined,
     component: ImportPage,
@@ -134,6 +149,7 @@ export const PANEL_ROUTES: PanelRoute[] = [
   },
   {
     path: '/certs',
+    section: 'network',
     titleKey: 'menu.certs',
     icon: SafetyCertificateOutlined,
     component: CertificatesPage,
@@ -142,6 +158,7 @@ export const PANEL_ROUTES: PanelRoute[] = [
   },
   {
     path: '/webhooks',
+    section: 'operations',
     titleKey: 'menu.webhooks',
     icon: NotificationOutlined,
     component: WebhooksPage,
@@ -149,6 +166,7 @@ export const PANEL_ROUTES: PanelRoute[] = [
   },
   {
     path: '/outbound',
+    section: 'network',
     titleKey: 'menu.outbounds',
     icon: ExportOutlined,
     component: XrayPage,
@@ -156,6 +174,7 @@ export const PANEL_ROUTES: PanelRoute[] = [
   },
   {
     path: '/routing',
+    section: 'network',
     titleKey: 'menu.routing',
     icon: SwapOutlined,
     component: XrayPage,
@@ -163,6 +182,7 @@ export const PANEL_ROUTES: PanelRoute[] = [
   },
   {
     path: '/settings',
+    section: 'system',
     titleKey: 'menu.settings',
     icon: SettingOutlined,
     component: SettingsPage,
@@ -170,6 +190,7 @@ export const PANEL_ROUTES: PanelRoute[] = [
   },
   {
     path: '/xray',
+    section: 'system',
     titleKey: 'menu.xray',
     icon: ToolOutlined,
     component: XrayPage,
@@ -177,6 +198,7 @@ export const PANEL_ROUTES: PanelRoute[] = [
   },
   {
     path: '/admins',
+    section: 'system',
     titleKey: 'menu.admins',
     icon: CrownOutlined,
     component: AdminsPage,
@@ -184,6 +206,7 @@ export const PANEL_ROUTES: PanelRoute[] = [
   },
   {
     path: '/roles',
+    section: 'system',
     titleKey: 'menu.roles',
     icon: SafetyCertificateOutlined,
     component: RolesPage,
@@ -191,6 +214,7 @@ export const PANEL_ROUTES: PanelRoute[] = [
   },
   {
     path: '/plans',
+    section: 'users',
     titleKey: 'menu.plans',
     icon: ProfileOutlined,
     component: PlansPage,
@@ -198,6 +222,7 @@ export const PANEL_ROUTES: PanelRoute[] = [
   },
   {
     path: '/audit',
+    section: 'operations',
     titleKey: 'menu.audit',
     icon: AuditOutlined,
     component: AuditPage,
@@ -205,6 +230,7 @@ export const PANEL_ROUTES: PanelRoute[] = [
   },
   {
     path: '/api-docs',
+    section: 'system',
     titleKey: 'menu.apiDocs',
     icon: ApiOutlined,
     component: ApiDocsPage,

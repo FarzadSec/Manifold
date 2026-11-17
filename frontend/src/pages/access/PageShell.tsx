@@ -19,7 +19,7 @@ export default function PageShell({
   useEffect(() => {
     setMessageInstance(messageApi);
   }, [messageApi]);
-  const pageClass = [className, isDark ? 'is-dark' : '', isUltra ? 'is-ultra' : '']
+  const pageClass = ['panel-page', className, isDark ? 'is-dark' : '', isUltra ? 'is-ultra' : '']
     .filter(Boolean)
     .join(' ');
   return (

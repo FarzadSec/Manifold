@@ -527,3 +527,7 @@
 .index-page .ip-hidden {
   filter: blur(6px);
 }
+
+.index-page .ov-biz-tile.ant-card.ant-card-hoverable:hover {
+  cursor: pointer;
+}

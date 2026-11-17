@@ -299,3 +299,21 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
   background-color: color-mix(in srgb, var(--ant-color-primary) 10%, transparent) !important;
   color: var(--ant-color-primary) !important;
 }
+
+/* Section headings: quiet small caps, so the eye finds a group before an item. */
+.sider-nav .ant-menu-item-group-title,
+.drawer-nav .ant-menu-item-group-title {
+  padding: 14px 20px 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ant-color-text-quaternary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sider-nav .ant-menu-item-divider {
+  margin: 6px 14px;
+}

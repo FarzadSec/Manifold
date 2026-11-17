@@ -135,7 +135,13 @@
     "backups": "پشتیبان‌گیری",
     "webhooks": "وب‌هوک‌ها",
     "certs": "گواهی‌ها",
-    "import": "انتقال از پنل دیگر"
+    "import": "انتقال از پنل دیگر",
+    "section": {
+      "users": "کاربرها",
+      "network": "شبکه",
+      "operations": "عملیات",
+      "system": "سیستم"
+    }
   },
   "pages": {
     "login": {

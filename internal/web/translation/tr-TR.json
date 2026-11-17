@@ -135,7 +135,13 @@
     "backups": "Backups",
     "webhooks": "Webhooks",
     "certs": "Certificates",
-    "import": "Import"
+    "import": "Import",
+    "section": {
+      "users": "Users",
+      "network": "Network",
+      "operations": "Operations",
+      "system": "System"
+    }
   },
   "pages": {
     "login": {

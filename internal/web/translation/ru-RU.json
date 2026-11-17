@@ -135,7 +135,13 @@
     "backups": "Резервные копии",
     "webhooks": "Вебхуки",
     "certs": "Сертификаты",
-    "import": "Импорт"
+    "import": "Импорт",
+    "section": {
+      "users": "Пользователи",
+      "network": "Сеть",
+      "operations": "Операции",
+      "system": "Система"
+    }
   },
   "pages": {
     "login": {

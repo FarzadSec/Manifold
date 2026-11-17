@@ -33,7 +33,7 @@ import { formatPanelVersion } from '@/lib/panel-version';
 import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
 import { useAllSettings } from '@/api/queries/useAllSettings';
 import { useCommandPalette } from '@/components/command-palette/useCommandPalette';
-import { navigableRoutes } from '@/routes/panelRoutes';
+import { ROUTE_SECTIONS, navigableRoutes, type RouteSection } from '@/routes/panelRoutes';
 import { useAccess } from '@/api/queries/useAccess';
 import AccountModal from './AccountModal';
 import './AppSidebar.css';
@@ -151,12 +151,15 @@ export default function AppSidebar() {
   const currentTheme: 'light' | 'dark' = isDark ? 'dark' : 'light';
   const panelVersion = window.X_UI_CUR_VER || '';
 
-  const tabs = useMemo<{ key: string; icon: ComponentType; title: string }[]>(
+  const tabs = useMemo<
+    { key: string; icon: ComponentType; title: string; section?: RouteSection }[]
+  >(
     () => [
       ...navigableRoutes(access).map((route) => ({
         key: route.path,
         icon: route.icon,
         title: t(route.titleKey),
+        section: route.section,
       })),
       { key: ACCOUNT_KEY, icon: UserOutlined, title: t('pages.access.myAccount') },
       { key: LOGOUT_KEY, icon: LogoutOutlined, title: t('logout') },
@@ -287,6 +290,32 @@ export default function AppSidebar() {
     [settingsChildren, xrayChildren],
   );
 
+  // In the full sidebar each section gets a heading; the narrow rail separates them with a line.
+  const sectionedItems = useCallback(
+    (items: typeof tabs, rail: boolean): MenuProps['items'] => {
+      const out: NonNullable<MenuProps['items']> = [];
+      for (const section of ROUTE_SECTIONS) {
+        const inSection = items.filter((tab) => (tab.section ?? 'home') === section);
+        if (inSection.length === 0) continue;
+        const children = toMenuItems(inSection) ?? [];
+        if (section === 'home') {
+          out.push(...children);
+        } else if (rail) {
+          out.push({ type: 'divider', key: `div-${section}` }, ...children);
+        } else {
+          out.push({
+            type: 'group',
+            key: `sec-${section}`,
+            label: t(`menu.section.${section}`),
+            children,
+          });
+        }
+      }
+      return out;
+    },
+    [toMenuItems, t],
+  );
+
   const openLink = useCallback(
     async (key: string) => {
       if (key === ACCOUNT_KEY) {
@@ -397,7 +426,7 @@ export default function AppSidebar() {
           openKeys={railCollapsed ? undefined : openKeys}
           onOpenChange={(keys) => setOpenKeys(keys as string[])}
           className="sider-nav"
-          items={toMenuItems(navItems)}
+          items={sectionedItems(navItems, railCollapsed)}
           onClick={onMenuClick}
         />
         <Menu
@@ -474,7 +503,7 @@ export default function AppSidebar() {
           openKeys={openKeys}
           onOpenChange={(keys) => setOpenKeys(keys as string[])}
           className="drawer-menu drawer-nav"
-          items={toMenuItems(navItems)}
+          items={sectionedItems(navItems, false)}
           onClick={(info) => {
             onMenuClick(info);
             setDrawerOpen(false);
