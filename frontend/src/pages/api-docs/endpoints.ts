@@ -2105,6 +2105,40 @@ export const sections: readonly Section[] = [
         body: '{\n  "count": 200,\n  "level": "info"\n}',
         response: '{\n  "success": true,\n  "obj": ["2026/11/17 10:00:00 INFO - node started"]\n}',
       },
+      {
+        method: 'POST',
+        path: '/panel/api/nodes/ssh/hostKey',
+        summary:
+          "Read a server's SSH host key fingerprint. The handshake stops at the key, so no credential is sent; the admin compares it and passes it to the install.",
+        params: [
+          { name: 'host', in: 'body', type: 'string', desc: 'SSH host.' },
+          {
+            name: 'port',
+            in: 'body',
+            type: 'number',
+            desc: 'SSH port, 22 when 0.',
+            optional: true,
+          },
+        ],
+        body: '{\n  "host": "203.0.113.10",\n  "port": 22\n}',
+        response: '{\n  "success": true,\n  "obj": "SHA256:Zm9vYmFy"\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/nodes/ssh/install',
+        summary:
+          'Install Manifold on a server over SSH and add it as a node, or update an existing node (update: true). A first install gets a self-signed certificate, pinned from its own output over the pinned SSH channel, and a node-admin token. SSH credentials are used for this job only and never stored. Returns the job id.',
+        body: '{\n  "name": "de-fra-1",\n  "address": "203.0.113.10",\n  "panelPort": 2053,\n  "sshPort": 22,\n  "sshUser": "root",\n  "password": "…",\n  "hostKey": "SHA256:Zm9vYmFy"\n}',
+        response: '{\n  "success": true,\n  "obj": "9f2c1a5b7d3e4f60"\n}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/nodes/ssh/job/:id',
+        summary:
+          "An install job's state (running, done or failed), its log so far and the node it added.",
+        params: [{ name: 'id', in: 'path', type: 'string', desc: 'Job id from the install call.' }],
+        responseSchema: 'NodeInstallJob',
+      },
     ],
   },
 

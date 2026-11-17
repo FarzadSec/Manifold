@@ -1267,6 +1267,28 @@ export const EXAMPLES: Record<string, unknown> = {
     "cpu": 12.5,
     "mem": 40.1
   },
+  "NodeInstallJob": {
+    "error": "",
+    "id": "9f2c1a",
+    "log": [
+      ""
+    ],
+    "nodeId": 3,
+    "state": "running"
+  },
+  "NodeInstallRequest": {
+    "address": "203.0.113.10",
+    "hostKey": "SHA256:Zm9vYmFy",
+    "name": "de-fra-1",
+    "nodeId": 0,
+    "panelPort": 2053,
+    "password": "",
+    "privateKey": "",
+    "sshHost": "",
+    "sshPort": 22,
+    "sshUser": "root",
+    "update": false
+  },
   "NodeMutationRequest": {
     "address": "",
     "allowPrivateAddress": false,

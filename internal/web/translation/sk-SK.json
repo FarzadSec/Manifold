@@ -1533,6 +1533,28 @@
         "down": "Not reporting",
         "unwatched": "Not watched",
         "noSamples": "No samples in this window yet"
+      },
+      "install": {
+        "title": "Install over SSH",
+        "updateTitle": "Update {name} over SSH",
+        "install": "Install",
+        "update": "Update over SSH",
+        "panelPortHint": "The port the node's panel listens on, which this panel reaches it at.",
+        "sshHost": "SSH host",
+        "sshHostPlaceholder": "Empty uses the address",
+        "sshPort": "SSH port",
+        "sshUser": "User",
+        "sshUserHint": "root, or a user with passwordless sudo.",
+        "auth": "Sign in with",
+        "password": "Password",
+        "privateKey": "Private key",
+        "notStored": "The password or key is used for this install only and never stored. A first install gives the node a self-signed certificate, which the panel pins, and an API token of the node-admin scope.",
+        "readHostKey": "Read host key",
+        "hostKeyFailed": "Could not read the SSH host key",
+        "compareHostKey": "Compare it with the server's own, from ssh-keygen -lf on its host key files, before accepting. Nothing has been sent to the server yet.",
+        "acceptHostKey": "This is my server's key",
+        "done": "Done. The node list shows it within a few seconds.",
+        "failed": "The install failed"
       }
     },
     "settings": {

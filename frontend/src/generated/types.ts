@@ -1107,6 +1107,28 @@ export interface NodeHealthPoint {
   mem: number;
 }
 
+export interface NodeInstallJob {
+  error?: string;
+  id: string;
+  log: string[];
+  nodeId: number;
+  state: string;
+}
+
+export interface NodeInstallRequest {
+  address: string;
+  hostKey: string;
+  name: string;
+  nodeId: number;
+  panelPort: number;
+  password: string;
+  privateKey: string;
+  sshHost: string;
+  sshPort: number;
+  sshUser: string;
+  update: boolean;
+}
+
 export interface NodeMutationRequest {
   address: string;
   allowPrivateAddress: boolean;

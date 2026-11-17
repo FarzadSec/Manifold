@@ -1182,6 +1182,30 @@ export const NodeHealthPointSchema = z.object({
 });
 export type NodeHealthPoint = z.infer<typeof NodeHealthPointSchema>;
 
+export const NodeInstallJobSchema = z.object({
+  error: z.string().optional(),
+  id: z.string(),
+  log: z.array(z.string()),
+  nodeId: z.number().int(),
+  state: z.string(),
+});
+export type NodeInstallJob = z.infer<typeof NodeInstallJobSchema>;
+
+export const NodeInstallRequestSchema = z.object({
+  address: z.string(),
+  hostKey: z.string(),
+  name: z.string(),
+  nodeId: z.number().int(),
+  panelPort: z.number().int(),
+  password: z.string(),
+  privateKey: z.string(),
+  sshHost: z.string(),
+  sshPort: z.number().int(),
+  sshUser: z.string(),
+  update: z.boolean(),
+});
+export type NodeInstallRequest = z.infer<typeof NodeInstallRequestSchema>;
+
 export const NodeMutationRequestSchema = z.object({
   address: z.string(),
   allowPrivateAddress: z.boolean(),

@@ -4,6 +4,7 @@ import { Badge, Button, Card, Dropdown, Modal, Space, Switch, Table, Tag, Toolti
 import type { BadgeProps } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
+  CodeOutlined,
   FileTextOutlined,
   LineChartOutlined,
   ApartmentOutlined,
@@ -27,6 +28,7 @@ import NodeHistoryPanel from './NodeHistoryPanel';
 import NodeTrafficTags from './NodeTrafficTags';
 import NodeStatsModal from './NodeStatsModal';
 import LogModal from '@/pages/index/LogModal';
+import NodeInstallModal from './NodeInstallModal';
 import type { NodeRecord } from '@/api/queries/useNodesQuery';
 import { isPanelUpdateAvailable } from '@/lib/panel-version';
 import { activateOnKey } from '@/utils/a11y';
@@ -200,6 +202,7 @@ export default function NodeList({
   const [statsNode, setStatsNode] = useState<NodeRow | null>(null);
   const [healthNode, setHealthNode] = useState<NodeRow | null>(null);
   const [logsNode, setLogsNode] = useState<NodeRow | null>(null);
+  const [install, setInstall] = useState<{ node: NodeRow | null } | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
   // Map a direct node's GUID to its display name so a transitive sub-node can show
@@ -623,6 +626,9 @@ export default function NodeList({
         <Button type="primary" icon={<PlusOutlined aria-hidden />} onClick={onAdd}>
           {t('pages.nodes.addNode')}
         </Button>
+        <Button icon={<CodeOutlined aria-hidden />} onClick={() => setInstall({ node: null })}>
+          {t('pages.nodes.install.title')}
+        </Button>
         <Button icon={<SafetyCertificateOutlined aria-hidden />} onClick={onMtls}>
           {t('pages.nodes.mtls.title')}
         </Button>
@@ -733,6 +739,15 @@ export default function NodeList({
                                   </>
                                 ),
                                 onClick: () => setHealthNode(record),
+                              },
+                              {
+                                key: 'sshUpdate',
+                                label: (
+                                  <>
+                                    <CodeOutlined aria-hidden /> {t('pages.nodes.install.update')}
+                                  </>
+                                ),
+                                onClick: () => setInstall({ node: record }),
                               },
                               {
                                 key: 'logs',
@@ -924,6 +939,11 @@ export default function NodeList({
         nodeTable
       )}
       <NodeStatsModal node={healthNode} onClose={() => setHealthNode(null)} />
+      <NodeInstallModal
+        open={!!install}
+        node={install?.node ?? null}
+        onClose={() => setInstall(null)}
+      />
       <LogModal open={!!logsNode} node={logsNode ?? undefined} onClose={() => setLogsNode(null)} />
     </Card>
   );

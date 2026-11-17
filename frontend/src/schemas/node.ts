@@ -116,3 +116,17 @@ export const NodeFormSchema = z
 export type NodeRecord = z.infer<typeof NodeRecordSchema>;
 export type ProbeResult = z.infer<typeof ProbeResultSchema>;
 export type NodeFormValues = z.infer<typeof NodeFormSchema>;
+
+export const NodeInstallFormSchema = z.object({
+  name: z.string().trim().min(1, 'pages.nodes.toasts.fillRequired'),
+  address: z.string().trim().min(1, 'pages.nodes.toasts.fillRequired'),
+  panelPort: z.number().int().min(1).max(65535),
+  sshHost: z.string().trim(),
+  sshPort: z.number().int().min(1).max(65535),
+  sshUser: z.string().trim().min(1, 'pages.nodes.toasts.fillRequired'),
+  auth: z.enum(['password', 'key']),
+  password: z.string(),
+  privateKey: z.string(),
+});
+
+export type NodeInstallFormValues = z.infer<typeof NodeInstallFormSchema>;

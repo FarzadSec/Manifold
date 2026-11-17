@@ -4,6 +4,10 @@ Version 0.12 · 2026-11-17 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnel
 
 Decision log:
 
+- 2026-11-17 — A node is installed over SSH by the panel the admin is signed in to, with credentials used for that job only. The host key is read with a handshake that stops at the key, so nothing is offered before the admin accepts it, and every later login checks that key. The node's self-signed certificate is pinned from the installer's output over that SSH channel, not by a first TLS connection that a man in the middle could answer
+- 2026-11-17 — A node's periodic usage limit switches its enabled inbounds off through the runtime and records which, so the next period switches back on exactly those; an inbound the admin had switched off is never turned on by it. The limit reads the per-node usage history, so it counts raw bytes, before the node's traffic multiplier
+- 2026-11-17 — Node availability is recorded every five minutes as samples; a stretch with no sample is "not watched", never "down", so a panel restart does not read as a node outage
+- 2026-11-17 — API tokens are throttled only when the admin names a rate. A default rate throttled masters that drive nodes with admin tokens
 - 2026-11-17 — Subscription links are built from a domain plan: a list of hosts (the first for new links, all accepted), a reseller's own domain, and a wildcard that gives each user a host of its own, `k` and nine base-36 characters of an HMAC of the user and the domain, so one blocked name costs one customer and the name never gives the subscription away
 - 2026-11-17 — sing-box is a format of its own (`/singbox/`), built from the entries the Clash format collects and merged into an operator base profile, instead of a second link builder that would drift from the Clash one
 - 2026-11-17 — Subscription page themes are Go `html/template` pages in a folder with their files, as the base code's single custom folder already was. Two are built into the binary; a catalogue in this repository (`sub-themes/catalog.json`) lists more, installed into `/etc/manifold/sub-themes` only once every file has arrived and the page parses. NX Panel's own theme catalogue is not used: its themes are written for its data model
@@ -246,6 +250,14 @@ This is the contract Mirza Bot will sync against, so it is frozen before the bot
 - Formats: raw, Xray JSON, Clash/Mihomo, and sing-box 1.12 (`internal/sub/singbox_service.go`), each with its own path and User-Agent auto-detection on the main link; sing-box is tried before Clash.
 - Page themes: `subTheme` is `builtin:<name>`, `installed:<name>` or empty for the panel's page; `subThemeDir` (a folder of the admin's own) overrides it. The page and its files are served at `<subscription>/theme/<file>`; the page source and hidden files never are. `internal/subtheme` holds the helpers (`t`, `qr`, `bytes`, `b64`, `dataURI`, `default`, `percent`), the catalogue client and the installer.
 
+### 4.13 Nodes (built, 0.9.0)
+
+- `nodes.traffic_multiplier` scales the deltas `setRemoteTrafficLocked` charges to quotas and resellers; `client_usage` keeps raw bytes.
+- `nodes.usage_*` hold a weekly, monthly or yearly cap; `NodeUsageLimitJob` (every minute) sums the node's daily usage rows since the period's first day and stops or resumes its inbounds, remembered in `usage_stopped_inbounds`.
+- `node_healths` holds a five-minute sample per enabled node (`NodeHealthJob`), kept 90 days; `/nodes/stats/:id` cuts a window into availability stretches and load points and adds per-user usage.
+- `/nodes/logs/:id` reads the node panel's log through `Remote.FetchLogs`; the node-sync scope may call `/server/logs/:count`.
+- `internal/nodessh` reads host keys and runs scripts over SSH; `NodeService.StartInstall` runs `install.sh` with flags, a self-signed certificate, `manifold cert`, `manifold setting -port -webBasePath` and a node-admin token, as a polled job.
+
 ## 5. Gap analysis
 
 "3x-ui today" was checked against the source on 2026-11-14.
@@ -398,6 +410,12 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - Live connections are not listed per connection: Xray reports online addresses per user, not each connection, and the engines report sessions. A sessions view (OpenVPN and L2TP with disconnect, WireGuard handshakes, Xray addresses) is the planned answer.
 - The speed limit does not reach MTProto (its own sidecar) or traffic a routing script decides.
 - Usage history rows are kept per email; a user deleted and recreated under the same name within a day of the daily prune inherits the old rows.
+
+### 8.9 Open items after nodes (0.9.0)
+
+- SSH install downloads the installer from GitHub on the server; a server that cannot reach GitHub needs the package copied by hand (`install.sh --package`).
+- Node templates (one configuration applied to many nodes) are not built; a node's inbounds are created on it from the master as before.
+- Live connections per node are still not listed (see 8.7).
 
 ### 8.8 Open items after subscriptions (0.8.0)
 

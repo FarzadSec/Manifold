@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/nodessh"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/middleware"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 
@@ -44,6 +46,9 @@ func (a *NodeController) initRouter(g *gin.RouterGroup) {
 	g.GET("/history/:id/:metric/:bucket", a.history)
 	g.GET("/stats/:id", a.stats)
 	g.POST("/logs/:id", a.logs)
+	g.POST("/ssh/hostKey", a.sshHostKey)
+	g.POST("/ssh/install", a.sshInstall)
+	g.GET("/ssh/job/:id", a.sshJob)
 	g.POST("/mtls/ca", a.mtlsCa)
 	g.POST("/mtls/trustCA", a.setMtlsTrustCA)
 	g.POST("/mtls/reloadClient", a.reloadMtlsClient)
@@ -403,4 +408,39 @@ func (a *NodeController) logs(c *gin.Context) {
 	}
 	lines, err := a.nodeService.Logs(id, req.Count, req.Level)
 	jsonObj(c, lines, err)
+}
+
+// sshHostKey reads a server's SSH host key for the admin to accept before any login.
+func (a *NodeController) sshHostKey(c *gin.Context) {
+	var req struct {
+		Host string `json:"host"`
+		Port int    `json:"port"`
+	}
+	if err := c.ShouldBind(&req); err != nil || strings.TrimSpace(req.Host) == "" {
+		jsonMsg(c, I18nWeb(c, "pages.nodes.install.hostKeyFailed"), fmt.Errorf("a host is needed"))
+		return
+	}
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 20*time.Second)
+	defer cancel()
+	key, err := nodessh.HostKey(ctx, strings.TrimSpace(req.Host), req.Port)
+	jsonMsgObj(c, I18nWeb(c, "pages.nodes.install.hostKeyFailed"), key, err)
+}
+
+func (a *NodeController) sshInstall(c *gin.Context) {
+	var req service.NodeInstallRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.nodes.install.failed"), err)
+		return
+	}
+	id, err := a.nodeService.StartInstall(req)
+	jsonMsgObj(c, I18nWeb(c, "pages.nodes.install.failed"), id, err)
+}
+
+func (a *NodeController) sshJob(c *gin.Context) {
+	job, ok := a.nodeService.InstallJob(c.Param("id"))
+	if !ok {
+		jsonMsg(c, I18nWeb(c, "get"), fmt.Errorf("no such install"))
+		return
+	}
+	jsonObj(c, job, nil)
 }

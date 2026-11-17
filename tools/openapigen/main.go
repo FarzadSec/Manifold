@@ -140,6 +140,8 @@ func run(root, outDir string) error {
 				"NodeUsage",
 				"UserUsage",
 				"NodeStatsView",
+				"NodeInstallRequest",
+				"NodeInstallJob",
 				"NodeHealthPoint",
 				"AvailabilityBar",
 			),

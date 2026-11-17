@@ -4913,6 +4913,99 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "NodeInstallJob": {
+    "description": "NodeInstallJob is what an install has done so far.",
+    "properties": {
+      "error": {
+        "type": "string"
+      },
+      "id": {
+        "example": "9f2c1a",
+        "type": "string"
+      },
+      "log": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "nodeId": {
+        "example": 3,
+        "type": "integer"
+      },
+      "state": {
+        "example": "running",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "log",
+      "nodeId",
+      "state"
+    ],
+    "type": "object"
+  },
+  "NodeInstallRequest": {
+    "description": "NodeInstallRequest installs (or updates) Manifold on a server over SSH and adds it as a\nnode. SSH credentials are used for this job only and never stored.",
+    "properties": {
+      "address": {
+        "example": "203.0.113.10",
+        "type": "string"
+      },
+      "hostKey": {
+        "example": "SHA256:Zm9vYmFy",
+        "type": "string"
+      },
+      "name": {
+        "example": "de-fra-1",
+        "type": "string"
+      },
+      "nodeId": {
+        "example": 0,
+        "type": "integer"
+      },
+      "panelPort": {
+        "example": 2053,
+        "type": "integer"
+      },
+      "password": {
+        "type": "string"
+      },
+      "privateKey": {
+        "type": "string"
+      },
+      "sshHost": {
+        "type": "string"
+      },
+      "sshPort": {
+        "example": 22,
+        "type": "integer"
+      },
+      "sshUser": {
+        "example": "root",
+        "type": "string"
+      },
+      "update": {
+        "example": false,
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "address",
+      "hostKey",
+      "name",
+      "nodeId",
+      "panelPort",
+      "password",
+      "privateKey",
+      "sshHost",
+      "sshPort",
+      "sshUser",
+      "update"
+    ],
+    "type": "object"
+  },
   "NodeMutationRequest": {
     "description": "NodeMutationRequest is the node write/probe contract. ApiToken is accepted\nonly as input. On update, nil means keep the stored token; replacement and\nclearing are explicit and mutually exclusive.",
     "properties": {

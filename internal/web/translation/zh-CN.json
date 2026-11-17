@@ -1412,6 +1412,28 @@
         "down": "无响应",
         "unwatched": "未监测",
         "noSamples": "此时间段内尚无采样"
+      },
+      "install": {
+        "title": "通过 SSH 安装",
+        "updateTitle": "通过 SSH 更新 {name}",
+        "install": "安装",
+        "update": "通过 SSH 更新",
+        "panelPortHint": "节点面板监听的端口,本面板通过它连接节点。",
+        "sshHost": "SSH 主机",
+        "sshHostPlaceholder": "留空使用地址",
+        "sshPort": "SSH 端口",
+        "sshUser": "用户",
+        "sshUserHint": "root,或具有免密 sudo 的用户。",
+        "auth": "登录方式",
+        "password": "密码",
+        "privateKey": "私钥",
+        "notStored": "密码或密钥仅用于本次安装,不会保存。首次安装会为节点生成面板固定的自签名证书和 node-admin 权限的 API 令牌。",
+        "readHostKey": "读取主机密钥",
+        "hostKeyFailed": "无法读取 SSH 主机密钥",
+        "compareHostKey": "接受前,请与服务器上对主机密钥文件执行 ssh-keygen -lf 的结果比对。尚未向服务器发送任何内容。",
+        "acceptHostKey": "这是我的服务器的密钥",
+        "done": "完成。几秒内会出现在节点列表中。",
+        "failed": "安装失败"
       }
     },
     "settings": {

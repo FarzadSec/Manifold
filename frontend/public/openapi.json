@@ -4939,6 +4939,99 @@
         ],
         "type": "object"
       },
+      "NodeInstallJob": {
+        "description": "NodeInstallJob is what an install has done so far.",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "id": {
+            "example": "9f2c1a",
+            "type": "string"
+          },
+          "log": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "nodeId": {
+            "example": 3,
+            "type": "integer"
+          },
+          "state": {
+            "example": "running",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "log",
+          "nodeId",
+          "state"
+        ],
+        "type": "object"
+      },
+      "NodeInstallRequest": {
+        "description": "NodeInstallRequest installs (or updates) Manifold on a server over SSH and adds it as a\nnode. SSH credentials are used for this job only and never stored.",
+        "properties": {
+          "address": {
+            "example": "203.0.113.10",
+            "type": "string"
+          },
+          "hostKey": {
+            "example": "SHA256:Zm9vYmFy",
+            "type": "string"
+          },
+          "name": {
+            "example": "de-fra-1",
+            "type": "string"
+          },
+          "nodeId": {
+            "example": 0,
+            "type": "integer"
+          },
+          "panelPort": {
+            "example": 2053,
+            "type": "integer"
+          },
+          "password": {
+            "type": "string"
+          },
+          "privateKey": {
+            "type": "string"
+          },
+          "sshHost": {
+            "type": "string"
+          },
+          "sshPort": {
+            "example": 22,
+            "type": "integer"
+          },
+          "sshUser": {
+            "example": "root",
+            "type": "string"
+          },
+          "update": {
+            "example": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "address",
+          "hostKey",
+          "name",
+          "nodeId",
+          "panelPort",
+          "password",
+          "privateKey",
+          "sshHost",
+          "sshPort",
+          "sshUser",
+          "update"
+        ],
+        "type": "object"
+      },
       "NodeMutationRequest": {
         "description": "NodeMutationRequest is the node write/probe contract. ApiToken is accepted\nonly as input. On update, nil means keep the stored token; replacement and\nclearing are explicit and mutually exclusive.",
         "properties": {
@@ -15364,6 +15457,175 @@
                   "obj": [
                     "2026/11/17 10:00:00 INFO - node started"
                   ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/nodes/ssh/hostKey": {
+      "post": {
+        "tags": [
+          "Nodes"
+        ],
+        "summary": "Read a server's SSH host key fingerprint. The handshake stops at the key, so no credential is sent; the admin compares it and passes it to the install.",
+        "operationId": "post_panel_api_nodes_ssh_hostKey",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "host": {
+                    "type": "string",
+                    "description": "SSH host."
+                  },
+                  "port": {
+                    "type": "integer",
+                    "description": "SSH port, 22 when 0."
+                  }
+                },
+                "required": [
+                  "host"
+                ]
+              },
+              "example": {
+                "host": "203.0.113.10",
+                "port": 22
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": "SHA256:Zm9vYmFy"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/nodes/ssh/install": {
+      "post": {
+        "tags": [
+          "Nodes"
+        ],
+        "summary": "Install Manifold on a server over SSH and add it as a node, or update an existing node (update: true). A first install gets a self-signed certificate, pinned from its own output over the pinned SSH channel, and a node-admin token. SSH credentials are used for this job only and never stored. Returns the job id.",
+        "operationId": "post_panel_api_nodes_ssh_install",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "de-fra-1",
+                "address": "203.0.113.10",
+                "panelPort": 2053,
+                "sshPort": 22,
+                "sshUser": "root",
+                "password": "…",
+                "hostKey": "SHA256:Zm9vYmFy"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": "9f2c1a5b7d3e4f60"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/nodes/ssh/job/{id}": {
+      "get": {
+        "tags": [
+          "Nodes"
+        ],
+        "summary": "An install job's state (running, done or failed), its log so far and the node it added.",
+        "operationId": "get_panel_api_nodes_ssh_job_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Job id from the install call.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/NodeInstallJob"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "error": "",
+                    "id": "9f2c1a",
+                    "log": [
+                      ""
+                    ],
+                    "nodeId": 3,
+                    "state": "running"
+                  }
                 }
               }
             }

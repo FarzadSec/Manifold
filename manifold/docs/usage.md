@@ -240,7 +240,13 @@ The subscription server is on by default and listens on its own port (2096). Its
 
 Install Manifold on each additional server, create an API token there, and add the server on the Nodes page of the main panel. The main panel then sends inbounds and clients to the node and collects its traffic figures, so one account and one quota cover every server.
 
-Update each node with `manifold update` on that node. The update action on the Nodes page is refused by every node: a panel never downloads or runs an updater itself.
+**Install over SSH** (Nodes page) does both steps for you. Give the server's address, the port its panel should listen on, and an SSH user (root, or one with passwordless sudo) with a password or private key. **Read host key** shows the server's SSH fingerprint before anything is sent; compare it with `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` on the server and accept it. The panel then logs in, runs the installer, gives the node a self-signed certificate and pins it from the installer's own output, mints a node-admin token, and adds the node. The log streams in the window. The password or key is used for that install only and never stored; the server needs to reach GitHub to download the installer.
+
+Update each node with `manifold update` on that node, or with **Update over SSH** in the node's menu, which runs the same updater over SSH. The update action on the Nodes page is refused by every node: a panel never downloads or runs an updater itself.
+
+**Traffic multiplier** (node form) counts users' traffic on that node against their quota times the factor: 2 for an expensive route, 0.5 for a cheap one. Usage history keeps the real bytes. **Periodic usage limit** caps the node's own traffic per week, month or year, in either calendar: at the limit the panel switches the node's inbounds off and the list says **Stopped by usage limit**; when the next period starts, or the limit is raised, exactly those inbounds are switched on again. An inbound you had switched off yourself stays off.
+
+**Stats** on a node shows its health over an hour to a whole month: an availability bar (green answered, red not reporting, grey not watched while the panel was off), uptime counted only over watched time, CPU and memory, and each user's traffic through that node, with CSV. Samples are taken every five minutes and kept 90 days. **Logs** reads the node panel's own log at the level you choose.
 
 ## Command line
 
