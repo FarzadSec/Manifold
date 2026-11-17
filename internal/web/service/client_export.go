@@ -194,7 +194,7 @@ func (s *ClientService) ExportCSV(emails []string, owner int, now time.Time) (st
 		return "", err
 	}
 	urls := (&SettingService{}).NewSubURLBuilder()
-	loc := usageLocation(now)
+	loc := usageLocation(database.GetDB(), now)
 	var b bytes.Buffer
 	b.WriteString("\uFEFF")
 	w := csv.NewWriter(&b)

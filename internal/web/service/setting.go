@@ -866,8 +866,16 @@ func (s *SettingService) GetBasePath() (string, error) {
 }
 
 func (s *SettingService) GetTimeLocation() (*time.Location, error) {
-	l, err := s.getString("timeLocation")
-	if err != nil {
+	return timeLocationIn(database.GetDB())
+}
+
+// timeLocationIn reads the time zone through db, so a caller inside a transaction stays on its connection.
+func timeLocationIn(db *gorm.DB) (*time.Location, error) {
+	l := defaultValueMap["timeLocation"]
+	var row model.Setting
+	if err := db.Where("key = ?", "timeLocation").First(&row).Error; err == nil {
+		l = row.Value
+	} else if !database.IsNotFound(err) {
 		return nil, err
 	}
 	location, err := time.LoadLocation(l)

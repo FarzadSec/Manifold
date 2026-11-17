@@ -30,13 +30,13 @@ var usageZone = struct {
 	read time.Time
 }{}
 
-// usageLocation is the panel's time zone, read at most once a minute: traffic is
-// recorded every few seconds and the setting rarely changes.
-func usageLocation(now time.Time) *time.Location {
+// usageLocation is the panel's time zone, read through db at most once a minute: traffic
+// is recorded every few seconds, inside a transaction, and the setting rarely changes.
+func usageLocation(db *gorm.DB, now time.Time) *time.Location {
 	usageZone.Lock()
 	defer usageZone.Unlock()
 	if usageZone.loc == nil || now.Sub(usageZone.read) > time.Minute {
-		loc, err := (&SettingService{}).GetTimeLocation()
+		loc, err := timeLocationIn(db)
 		if err != nil || loc == nil {
 			loc = time.UTC
 		}
@@ -57,7 +57,7 @@ func recordClientUsage(tx *gorm.DB, nodeID int, deltas map[string]usageDelta, no
 		return nil
 	}
 	hour := now.UTC().Truncate(time.Hour).Unix()
-	day := dayStart(now, usageLocation(now)).Unix()
+	day := dayStart(now, usageLocation(tx, now)).Unix()
 	rows := make([]model.ClientUsage, 0, 2*len(deltas))
 	emails := make([]string, 0, len(deltas))
 	for email, d := range deltas {
@@ -123,7 +123,7 @@ func ParseUsageWindow(window, month, calendar string, now time.Time) (UsageWindo
 	if !ok {
 		return UsageWindow{}, errUnknownWindow
 	}
-	loc := usageLocation(now)
+	loc := usageLocation(database.GetDB(), now)
 	var from, to time.Time
 	if calendar == "persian" {
 		from = jalali.Date(y, m, 1, loc)
