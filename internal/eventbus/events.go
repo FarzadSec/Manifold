@@ -44,6 +44,11 @@ const (
 	EventBackupSucceeded  EventType = "backup.succeeded"
 	EventBackupFailed     EventType = "backup.failed"
 
+	// Certificates of the store.
+	EventCertIssued   EventType = "cert.issued"
+	EventCertFailed   EventType = "cert.failed"
+	EventCertExpiring EventType = "cert.expiring"
+
 	// Webhooks: a test a person asked for.
 	EventWebhookTest EventType = "webhook.test"
 )
@@ -56,6 +61,7 @@ var AllEventTypes = []EventType{
 	EventNodeUp, EventNodeDown, EventNodeUsageStopped, EventNodeUsageResumed,
 	EventOutboundUp, EventOutboundDown, EventXrayCrash, EventCPUHigh, EventMemoryHigh,
 	EventLoginAttempt, EventBackupSucceeded, EventBackupFailed,
+	EventCertIssued, EventCertFailed, EventCertExpiring,
 }
 
 // UserEventData describes the user an event is about, as the panel holds it then.

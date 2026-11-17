@@ -634,6 +634,81 @@ export const EXAMPLES: Record<string, unknown> = {
     "title": {},
     "version": "1.0.0"
   },
+  "Certificate": {
+    "autoRenew": true,
+    "challenge": "dns-01",
+    "createdAt": 1763340000000,
+    "dnsProvider": "cloudflare",
+    "domains": [
+      "example.com",
+      "*.example.com"
+    ],
+    "email": "",
+    "id": 1,
+    "issuer": "R11",
+    "issuing": false,
+    "lastError": "",
+    "lastRun": 1763340000000,
+    "name": "example.com",
+    "nodeIds": [
+      2
+    ],
+    "notAfter": 1771116000000,
+    "notBefore": 1763340000000,
+    "port": 0,
+    "source": "acme",
+    "staging": false
+  },
+  "CertificateInput": {
+    "autoRenew": true,
+    "challenge": "dns-01",
+    "dnsProvider": "cloudflare",
+    "dnsToken": null,
+    "domains": [
+      "example.com",
+      "*.example.com"
+    ],
+    "email": "",
+    "id": 0,
+    "name": "example.com",
+    "nodeIds": [],
+    "port": 0,
+    "staging": false
+  },
+  "CertificateUpload": {
+    "cert": "-----BEGIN CERTIFICATE-----…",
+    "key": "-----BEGIN PRIVATE KEY-----…",
+    "name": "example.com",
+    "nodeIds": []
+  },
+  "CertificateView": {
+    "autoRenew": true,
+    "certFile": "/etc/manifold/certs/example.com/fullchain.pem",
+    "challenge": "dns-01",
+    "createdAt": 1763340000000,
+    "dnsProvider": "cloudflare",
+    "domains": [
+      "example.com",
+      "*.example.com"
+    ],
+    "email": "",
+    "hasDnsToken": true,
+    "id": 1,
+    "issuer": "R11",
+    "issuing": false,
+    "keyFile": "/etc/manifold/certs/example.com/privkey.pem",
+    "lastError": "",
+    "lastRun": 1763340000000,
+    "name": "example.com",
+    "nodeIds": [
+      2
+    ],
+    "notAfter": 1771116000000,
+    "notBefore": 1763340000000,
+    "port": 0,
+    "source": "acme",
+    "staging": false
+  },
   "Client": {
     "adTag": "0123456789abcdef0123456789abcdef",
     "allowedIPs": [

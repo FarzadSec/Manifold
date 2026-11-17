@@ -159,6 +159,7 @@ var nodeSyncScopeAllow = map[string]map[string]struct{}{
 	"/server/getWebCertFiles":      {http.MethodGet: {}},
 	"/server/descendants":          {http.MethodGet: {}},
 	"/server/logs/:count":          {http.MethodPost: {}},
+	"/certs/put":                   {http.MethodPost: {}},
 	"/clients/resetTraffic/:email": {http.MethodPost: {}},
 	"/clients/bulkResetTraffic":    {http.MethodPost: {}},
 	"/inbounds/resetAllTraffics":   {http.MethodPost: {}},
@@ -292,6 +293,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	NewBackupController(api.Group("/backups"))
 	NewWebhookController(api.Group("/webhooks"))
 	NewMetricsController(api, &a.serverController.serverService)
+	NewCertificateController(api.Group("/certs"))
 	NewAccessController(api.Group("/access"))
 
 	// Settings + Xray config management live under the API surface too, so the

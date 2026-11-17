@@ -2645,6 +2645,344 @@
         ],
         "type": "object"
       },
+      "Certificate": {
+        "description": "Certificate is one certificate of the store, issued over ACME or uploaded, kept as PEM\nfiles under the panel's folder and copied to the nodes it names.",
+        "properties": {
+          "autoRenew": {
+            "example": true,
+            "type": "boolean"
+          },
+          "challenge": {
+            "example": "dns-01",
+            "type": "string"
+          },
+          "createdAt": {
+            "example": 1763340000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "dnsProvider": {
+            "example": "cloudflare",
+            "type": "string"
+          },
+          "domains": {
+            "example": [
+              "example.com",
+              "*.example.com"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "email": {
+            "type": "string"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "issuer": {
+            "example": "R11",
+            "type": "string"
+          },
+          "issuing": {
+            "example": false,
+            "type": "boolean"
+          },
+          "lastError": {
+            "type": "string"
+          },
+          "lastRun": {
+            "example": 1763340000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "example": "example.com",
+            "type": "string"
+          },
+          "nodeIds": {
+            "example": [
+              2
+            ],
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "notAfter": {
+            "example": 1771116000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "notBefore": {
+            "example": 1763340000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "port": {
+            "example": 0,
+            "type": "integer"
+          },
+          "source": {
+            "example": "acme",
+            "type": "string"
+          },
+          "staging": {
+            "example": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "autoRenew",
+          "challenge",
+          "createdAt",
+          "dnsProvider",
+          "domains",
+          "email",
+          "id",
+          "issuer",
+          "issuing",
+          "lastError",
+          "lastRun",
+          "name",
+          "nodeIds",
+          "notAfter",
+          "notBefore",
+          "port",
+          "source",
+          "staging"
+        ],
+        "type": "object"
+      },
+      "CertificateInput": {
+        "description": "CertificateInput saves an ACME certificate's settings; a nil DNSToken keeps the stored one.",
+        "properties": {
+          "autoRenew": {
+            "example": true,
+            "type": "boolean"
+          },
+          "challenge": {
+            "example": "dns-01",
+            "type": "string"
+          },
+          "dnsProvider": {
+            "example": "cloudflare",
+            "type": "string"
+          },
+          "dnsToken": {
+            "nullable": true,
+            "type": "string"
+          },
+          "domains": {
+            "example": [
+              "example.com",
+              "*.example.com"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "email": {
+            "type": "string"
+          },
+          "id": {
+            "example": 0,
+            "type": "integer"
+          },
+          "name": {
+            "example": "example.com",
+            "type": "string"
+          },
+          "nodeIds": {
+            "example": [],
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "port": {
+            "example": 0,
+            "type": "integer"
+          },
+          "staging": {
+            "example": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "autoRenew",
+          "challenge",
+          "dnsProvider",
+          "domains",
+          "email",
+          "id",
+          "name",
+          "nodeIds",
+          "port",
+          "staging"
+        ],
+        "type": "object"
+      },
+      "CertificateUpload": {
+        "description": "CertificateUpload stores a certificate made elsewhere.",
+        "properties": {
+          "cert": {
+            "example": "-----BEGIN CERTIFICATE-----…",
+            "type": "string"
+          },
+          "key": {
+            "example": "-----BEGIN PRIVATE KEY-----…",
+            "type": "string"
+          },
+          "name": {
+            "example": "example.com",
+            "type": "string"
+          },
+          "nodeIds": {
+            "example": [],
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "cert",
+          "key",
+          "name",
+          "nodeIds"
+        ],
+        "type": "object"
+      },
+      "CertificateView": {
+        "description": "CertificateView is a certificate without its secrets, with the files it is kept in.",
+        "properties": {
+          "autoRenew": {
+            "example": true,
+            "type": "boolean"
+          },
+          "certFile": {
+            "example": "/etc/manifold/certs/example.com/fullchain.pem",
+            "type": "string"
+          },
+          "challenge": {
+            "example": "dns-01",
+            "type": "string"
+          },
+          "createdAt": {
+            "example": 1763340000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "dnsProvider": {
+            "example": "cloudflare",
+            "type": "string"
+          },
+          "domains": {
+            "example": [
+              "example.com",
+              "*.example.com"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "email": {
+            "type": "string"
+          },
+          "hasDnsToken": {
+            "example": true,
+            "type": "boolean"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "issuer": {
+            "example": "R11",
+            "type": "string"
+          },
+          "issuing": {
+            "example": false,
+            "type": "boolean"
+          },
+          "keyFile": {
+            "example": "/etc/manifold/certs/example.com/privkey.pem",
+            "type": "string"
+          },
+          "lastError": {
+            "type": "string"
+          },
+          "lastRun": {
+            "example": 1763340000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "example": "example.com",
+            "type": "string"
+          },
+          "nodeIds": {
+            "example": [
+              2
+            ],
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "notAfter": {
+            "example": 1771116000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "notBefore": {
+            "example": 1763340000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "port": {
+            "example": 0,
+            "type": "integer"
+          },
+          "source": {
+            "example": "acme",
+            "type": "string"
+          },
+          "staging": {
+            "example": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "autoRenew",
+          "certFile",
+          "challenge",
+          "createdAt",
+          "dnsProvider",
+          "domains",
+          "email",
+          "hasDnsToken",
+          "id",
+          "issuer",
+          "issuing",
+          "keyFile",
+          "lastError",
+          "lastRun",
+          "name",
+          "nodeIds",
+          "notAfter",
+          "notBefore",
+          "port",
+          "source",
+          "staging"
+        ],
+        "type": "object"
+      },
       "Client": {
         "description": "Client represents a client configuration for Xray inbounds with traffic limits and settings.",
         "properties": {
@@ -8110,6 +8448,10 @@
     {
       "name": "Nodes",
       "description": "Manage remote Manifold panels acting as nodes for a central panel. All endpoints under /panel/api/nodes."
+    },
+    {
+      "name": "Certificates",
+      "description": "The certificate store: certificates issued by the panel over ACME (Let's Encrypt; HTTP-01, TLS-ALPN-01, or DNS-01 through Cloudflare or ArvanCloud for wildcards) or uploaded, kept as fullchain.pem and privkey.pem under /etc/manifold/certs/<name>/ for inbounds and the panel to read. Renewed 30 days before expiry; a renewal restarts Xray when an inbound reads the files, the panel picks up its own certificate without a restart, and each named node gets a copy. The DNS token, account key and private key are never returned. All endpoints under /panel/api/certs."
     },
     {
       "name": "Webhooks",
@@ -16601,6 +16943,366 @@
                     ],
                     "nodeId": 3,
                     "state": "running"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/certs/list": {
+      "get": {
+        "tags": [
+          "Certificates"
+        ],
+        "summary": "Every certificate with its domains, expiry, last run and file paths.",
+        "operationId": "get_panel_api_certs_list",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CertificateView"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "autoRenew": true,
+                      "certFile": "/etc/manifold/certs/example.com/fullchain.pem",
+                      "challenge": "dns-01",
+                      "createdAt": 1763340000000,
+                      "dnsProvider": "cloudflare",
+                      "domains": [
+                        "example.com",
+                        "*.example.com"
+                      ],
+                      "email": "",
+                      "hasDnsToken": true,
+                      "id": 1,
+                      "issuer": "R11",
+                      "issuing": false,
+                      "keyFile": "/etc/manifold/certs/example.com/privkey.pem",
+                      "lastError": "",
+                      "lastRun": 1763340000000,
+                      "name": "example.com",
+                      "nodeIds": [
+                        2
+                      ],
+                      "notAfter": 1771116000000,
+                      "notBefore": 1763340000000,
+                      "port": 0,
+                      "source": "acme",
+                      "staging": false
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/certs/save": {
+      "post": {
+        "tags": [
+          "Certificates"
+        ],
+        "summary": "Create (id 0) or change an ACME certificate. dnsToken left out keeps the stored one. Saving does not issue: call issue.",
+        "operationId": "post_panel_api_certs_save",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "id": 0,
+                "name": "example.com",
+                "domains": [
+                  "example.com",
+                  "*.example.com"
+                ],
+                "challenge": "dns-01",
+                "dnsProvider": "cloudflare",
+                "dnsToken": "…",
+                "autoRenew": true,
+                "nodeIds": [
+                  2
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/CertificateView"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "autoRenew": true,
+                    "certFile": "/etc/manifold/certs/example.com/fullchain.pem",
+                    "challenge": "dns-01",
+                    "createdAt": 1763340000000,
+                    "dnsProvider": "cloudflare",
+                    "domains": [
+                      "example.com",
+                      "*.example.com"
+                    ],
+                    "email": "",
+                    "hasDnsToken": true,
+                    "id": 1,
+                    "issuer": "R11",
+                    "issuing": false,
+                    "keyFile": "/etc/manifold/certs/example.com/privkey.pem",
+                    "lastError": "",
+                    "lastRun": 1763340000000,
+                    "name": "example.com",
+                    "nodeIds": [
+                      2
+                    ],
+                    "notAfter": 1771116000000,
+                    "notBefore": 1763340000000,
+                    "port": 0,
+                    "source": "acme",
+                    "staging": false
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/certs/upload": {
+      "post": {
+        "tags": [
+          "Certificates"
+        ],
+        "summary": "Store a certificate made elsewhere (PEM chain and key, checked to be a pair); the name defaults to its first domain.",
+        "operationId": "post_panel_api_certs_upload",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/CertificateView"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "autoRenew": true,
+                    "certFile": "/etc/manifold/certs/example.com/fullchain.pem",
+                    "challenge": "dns-01",
+                    "createdAt": 1763340000000,
+                    "dnsProvider": "cloudflare",
+                    "domains": [
+                      "example.com",
+                      "*.example.com"
+                    ],
+                    "email": "",
+                    "hasDnsToken": true,
+                    "id": 1,
+                    "issuer": "R11",
+                    "issuing": false,
+                    "keyFile": "/etc/manifold/certs/example.com/privkey.pem",
+                    "lastError": "",
+                    "lastRun": 1763340000000,
+                    "name": "example.com",
+                    "nodeIds": [
+                      2
+                    ],
+                    "notAfter": 1771116000000,
+                    "notBefore": 1763340000000,
+                    "port": 0,
+                    "source": "acme",
+                    "staging": false
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/certs/issue/{id}": {
+      "post": {
+        "tags": [
+          "Certificates"
+        ],
+        "summary": "Start an ACME order now; the list shows issuing until it ends, then the outcome.",
+        "operationId": "post_panel_api_certs_issue_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Certificate ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/certs/del/{id}": {
+      "post": {
+        "tags": [
+          "Certificates"
+        ],
+        "summary": "Delete a certificate and its files here. Copies on nodes stay, since their inbounds may read them.",
+        "operationId": "post_panel_api_certs_del_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Certificate ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/certs/put": {
+      "post": {
+        "tags": [
+          "Certificates"
+        ],
+        "summary": "Store a copy a master sends to this node (node-sync tokens may call it). The node lists it as from the master and restarts Xray when an inbound reads it.",
+        "operationId": "post_panel_api_certs_put",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Certificate name."
+                  },
+                  "cert": {
+                    "type": "string",
+                    "description": "PEM chain."
+                  },
+                  "key": {
+                    "type": "string",
+                    "description": "PEM private key."
+                  }
+                },
+                "required": [
+                  "name",
+                  "cert",
+                  "key"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
                   }
                 }
               }

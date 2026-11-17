@@ -2619,6 +2619,344 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "Certificate": {
+    "description": "Certificate is one certificate of the store, issued over ACME or uploaded, kept as PEM\nfiles under the panel's folder and copied to the nodes it names.",
+    "properties": {
+      "autoRenew": {
+        "example": true,
+        "type": "boolean"
+      },
+      "challenge": {
+        "example": "dns-01",
+        "type": "string"
+      },
+      "createdAt": {
+        "example": 1763340000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "dnsProvider": {
+        "example": "cloudflare",
+        "type": "string"
+      },
+      "domains": {
+        "example": [
+          "example.com",
+          "*.example.com"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "email": {
+        "type": "string"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "issuer": {
+        "example": "R11",
+        "type": "string"
+      },
+      "issuing": {
+        "example": false,
+        "type": "boolean"
+      },
+      "lastError": {
+        "type": "string"
+      },
+      "lastRun": {
+        "example": 1763340000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "name": {
+        "example": "example.com",
+        "type": "string"
+      },
+      "nodeIds": {
+        "example": [
+          2
+        ],
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "notAfter": {
+        "example": 1771116000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "notBefore": {
+        "example": 1763340000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "port": {
+        "example": 0,
+        "type": "integer"
+      },
+      "source": {
+        "example": "acme",
+        "type": "string"
+      },
+      "staging": {
+        "example": false,
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "autoRenew",
+      "challenge",
+      "createdAt",
+      "dnsProvider",
+      "domains",
+      "email",
+      "id",
+      "issuer",
+      "issuing",
+      "lastError",
+      "lastRun",
+      "name",
+      "nodeIds",
+      "notAfter",
+      "notBefore",
+      "port",
+      "source",
+      "staging"
+    ],
+    "type": "object"
+  },
+  "CertificateInput": {
+    "description": "CertificateInput saves an ACME certificate's settings; a nil DNSToken keeps the stored one.",
+    "properties": {
+      "autoRenew": {
+        "example": true,
+        "type": "boolean"
+      },
+      "challenge": {
+        "example": "dns-01",
+        "type": "string"
+      },
+      "dnsProvider": {
+        "example": "cloudflare",
+        "type": "string"
+      },
+      "dnsToken": {
+        "nullable": true,
+        "type": "string"
+      },
+      "domains": {
+        "example": [
+          "example.com",
+          "*.example.com"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "email": {
+        "type": "string"
+      },
+      "id": {
+        "example": 0,
+        "type": "integer"
+      },
+      "name": {
+        "example": "example.com",
+        "type": "string"
+      },
+      "nodeIds": {
+        "example": [],
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "port": {
+        "example": 0,
+        "type": "integer"
+      },
+      "staging": {
+        "example": false,
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "autoRenew",
+      "challenge",
+      "dnsProvider",
+      "domains",
+      "email",
+      "id",
+      "name",
+      "nodeIds",
+      "port",
+      "staging"
+    ],
+    "type": "object"
+  },
+  "CertificateUpload": {
+    "description": "CertificateUpload stores a certificate made elsewhere.",
+    "properties": {
+      "cert": {
+        "example": "-----BEGIN CERTIFICATE-----…",
+        "type": "string"
+      },
+      "key": {
+        "example": "-----BEGIN PRIVATE KEY-----…",
+        "type": "string"
+      },
+      "name": {
+        "example": "example.com",
+        "type": "string"
+      },
+      "nodeIds": {
+        "example": [],
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "cert",
+      "key",
+      "name",
+      "nodeIds"
+    ],
+    "type": "object"
+  },
+  "CertificateView": {
+    "description": "CertificateView is a certificate without its secrets, with the files it is kept in.",
+    "properties": {
+      "autoRenew": {
+        "example": true,
+        "type": "boolean"
+      },
+      "certFile": {
+        "example": "/etc/manifold/certs/example.com/fullchain.pem",
+        "type": "string"
+      },
+      "challenge": {
+        "example": "dns-01",
+        "type": "string"
+      },
+      "createdAt": {
+        "example": 1763340000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "dnsProvider": {
+        "example": "cloudflare",
+        "type": "string"
+      },
+      "domains": {
+        "example": [
+          "example.com",
+          "*.example.com"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "email": {
+        "type": "string"
+      },
+      "hasDnsToken": {
+        "example": true,
+        "type": "boolean"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "issuer": {
+        "example": "R11",
+        "type": "string"
+      },
+      "issuing": {
+        "example": false,
+        "type": "boolean"
+      },
+      "keyFile": {
+        "example": "/etc/manifold/certs/example.com/privkey.pem",
+        "type": "string"
+      },
+      "lastError": {
+        "type": "string"
+      },
+      "lastRun": {
+        "example": 1763340000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "name": {
+        "example": "example.com",
+        "type": "string"
+      },
+      "nodeIds": {
+        "example": [
+          2
+        ],
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "notAfter": {
+        "example": 1771116000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "notBefore": {
+        "example": 1763340000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "port": {
+        "example": 0,
+        "type": "integer"
+      },
+      "source": {
+        "example": "acme",
+        "type": "string"
+      },
+      "staging": {
+        "example": false,
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "autoRenew",
+      "certFile",
+      "challenge",
+      "createdAt",
+      "dnsProvider",
+      "domains",
+      "email",
+      "hasDnsToken",
+      "id",
+      "issuer",
+      "issuing",
+      "keyFile",
+      "lastError",
+      "lastRun",
+      "name",
+      "nodeIds",
+      "notAfter",
+      "notBefore",
+      "port",
+      "source",
+      "staging"
+    ],
+    "type": "object"
+  },
   "Client": {
     "description": "Client represents a client configuration for Xray inbounds with traffic limits and settings.",
     "properties": {

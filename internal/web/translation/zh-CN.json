@@ -133,7 +133,8 @@
     "audit": "审计日志",
     "ingress": "共享端口",
     "backups": "备份",
-    "webhooks": "Webhook"
+    "webhooks": "Webhook",
+    "certs": "证书"
   },
   "pages": {
     "login": {
@@ -3232,6 +3233,65 @@
       "deleteFailed": "无法删除 Webhook",
       "testFailed": "无法发送测试",
       "replayFailed": "无法重新发送"
+    },
+    "certs": {
+      "intro": "面板从 Let's Encrypt 获取并自动续期的证书，或你上传的证书。入站和面板从下方文件读取；在入站 TLS 设置中通过「从证书库」选择。通配符（*.example.com）需要使用 Cloudflare 或 ArvanCloud 令牌的 DNS-01。",
+      "empty": "还没有证书",
+      "add": "申请证书",
+      "edit": "编辑证书",
+      "saveAndIssue": "保存并签发",
+      "upload": "上传",
+      "name": "名称",
+      "nameHint": "存放文件的目录：/etc/manifold/certs/<name>/。",
+      "nameAuto": "第一个域名",
+      "domains": "域名",
+      "domainsHint": "逐个输入并回车。*.example.com 覆盖所有子域名但不含 example.com 本身；两者都需要时请都添加。",
+      "needDomain": "请至少添加一个域名",
+      "badDomain": "其中有一个不是域名",
+      "wildcardDns": "通配符只能通过 DNS-01 验证",
+      "challenge": "域名验证方式",
+      "challengeHint": {
+        "dns-01": "面板通过 DNS 服务商 API 写入 TXT 记录。适用于 CDN 之后、通配符，且无需空闲端口。",
+        "http-01": "域名必须指向本服务器，签发期间 80 端口需空闲（请先停止 nginx 等）。不能在 CDN 代理之后。",
+        "tls-alpn-01": "域名必须指向本服务器，签发期间 443 端口需空闲，通常意味着 Xray 不在 443 上。"
+      },
+      "dnsProvider": "DNS 服务商",
+      "arvan": "ArvanCloud",
+      "dnsToken": "API 令牌",
+      "tokenHint": {
+        "cloudflare": "具有该区域 Zone → DNS → Edit 权限的 Cloudflare API 令牌（My Profile → API Tokens）。",
+        "arvancloud": "ArvanCloud API 密钥（个人资料 → API 密钥），可带或不带「Apikey」前缀。"
+      },
+      "port": "监听端口",
+      "portHint": "留空为标准端口。只有在标准端口被转发到其他端口时才需要修改。",
+      "email": "联系邮箱",
+      "emailHint": "可选；Let's Encrypt 会就账户问题发邮件。",
+      "autoRenew": "自动续期",
+      "staging": "测试 CA",
+      "stagingHint": "Let's Encrypt 测试环境：无频率限制，但浏览器不信任其证书。用于试验配置。",
+      "nodes": "复制到节点",
+      "nodesHint": "每次续期都会复制到这些节点的相同路径，供其入站读取。",
+      "chain": "证书链（PEM）",
+      "key": "私钥（PEM）",
+      "source": "来源",
+      "uploaded": "已上传",
+      "fromMaster": "来自主面板",
+      "expires": "到期",
+      "daysLeft": "剩余 {count} 天",
+      "expired": "已过期",
+      "notIssued": "尚未签发",
+      "issuing": "签发中…",
+      "auto": "自动续期",
+      "lastFailed": "上次运行失败",
+      "files": "文件",
+      "onNodes": "也在 {nodes} 上",
+      "renewNow": "立即续期",
+      "issueNow": "立即签发",
+      "confirmDelete": "删除此证书及其在本服务器上的文件？",
+      "fromStore": "从证书库",
+      "saveFailed": "无法保存证书",
+      "issueFailed": "无法开始签发",
+      "deleteFailed": "无法删除证书"
     }
   },
   "tgbot": {

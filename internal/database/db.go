@@ -98,6 +98,7 @@ func allModels() []any {
 		&model.BackupTarget{},
 		&model.Webhook{},
 		&model.WebhookDelivery{},
+		&model.Certificate{},
 	}
 }
 

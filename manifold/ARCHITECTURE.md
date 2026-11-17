@@ -4,6 +4,8 @@ Version 0.13 · 2026-11-17 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnel
 
 Decision log:
 
+- 2026-11-17 — Certificates are issued by the panel itself on `golang.org/x/crypto/acme`, already in the module graph, instead of calling acme.sh: one process, errors the panel can show, and renewal that knows which inbounds and nodes read a certificate. The master issues (DNS-01 works from anywhere) and copies the pair to nodes, so a node needs neither a token nor a free port 80
+
 - 2026-11-17 — Metrics are an API route behind `stats:read`, not a second listener with its own secret: tokens already have scopes, an expiry and a rate, and Prometheus sends a bearer token as it is
 
 - 2026-11-17 — Webhooks go through an outbox table, not straight from the bus: a delivery survives a restart, is retried on a schedule, and the log the admin reads is the same rows that are sent. A reseller's webhook is dialled through a connection guard that refuses loopback, private, link-local and shared address space after DNS, because its delivery log shows the answer and would otherwise read this server's own services back
@@ -271,6 +273,12 @@ This is the contract Mirza Bot will sync against.
 - Port checks run both ways: a shared port refuses a local TCP inbound's, the panel's or the subscription server's port, and `checkPortConflictTx` refuses an inbound on a shared port.
 - PROXY protocol v1 and v2 per route, for targets that should see the client address.
 
+### 4.17 Certificate store (built, 0.11.0)
+
+- `internal/certstore`: an ACME client on `golang.org/x/crypto/acme` with HTTP-01, TLS-ALPN-01 and DNS-01 solvers, and DNS providers for Cloudflare and ArvanCloud. `internal/certstore/acmetest` is a CA for tests that checks each challenge for real (an HTTP fetch, an `acme-tls/1` handshake, the TXT record).
+- `certificates`: domains, challenge, provider token, account key and the PEMs (secrets never leave the API). Files under `<data dir>/certs/<name>/`; `CertRenewJob` every six hours renews within 30 days of expiry, retries a failure after 12 hours.
+- A renewal writes the files, asks Xray to restart when an inbound's stream settings name the folder, and copies the pair to the certificate's nodes through `Remote.PutCertificate` (`POST /certs/put`, in the node-sync scope). The panel's own listener reads its certificate through `GetCertificate` and loads the files again when they change.
+
 ### 4.16 Monitoring (built, 0.10.0)
 
 - `GET /panel/api/metrics`: the Prometheus text format, written by `internal/metrics` (no client library: the panel only exposes gauges and counters it already holds). It is an API route, so a scoped token with `stats:read` scrapes it; per-user series only with `?users=1`.
@@ -441,6 +449,12 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - SSH install downloads the installer from GitHub on the server; a server that cannot reach GitHub needs the package copied by hand (`install.sh --package`).
 - Node templates (one configuration applied to many nodes) are not built; a node's inbounds are created on it from the master as before.
 - Live connections per node are still not listed (see 8.7).
+
+### 8.11 Open items after the certificate store (0.11.0)
+
+- DNS providers are Cloudflare and ArvanCloud, checked against their documented APIs with recorded calls, not a live account.
+- HTTP-01 and TLS-ALPN-01 bind the port themselves; they do not yet share it with the panel's shared-port router (4.14) or a web server already on 80.
+- Deleting a certificate leaves the copies on nodes in place.
 
 ### 8.10 Open items after webhooks (0.10.0)
 

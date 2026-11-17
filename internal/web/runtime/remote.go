@@ -782,6 +782,14 @@ func (r *Remote) FetchLogs(ctx context.Context, count int, level string) ([]stri
 	return lines, nil
 }
 
+// PutCertificate stores a certificate on the node under name, where its inbounds read it.
+func (r *Remote) PutCertificate(ctx context.Context, name string, certPEM, keyPEM []byte) error {
+	_, err := r.do(ctx, http.MethodPost, "panel/api/certs/put", map[string]string{
+		"name": name, "cert": string(certPEM), "key": string(keyPEM),
+	})
+	return err
+}
+
 // WebCertFiles holds a node's own web TLS certificate and key file paths.
 type WebCertFiles struct {
 	WebCertFile string `json:"webCertFile"`

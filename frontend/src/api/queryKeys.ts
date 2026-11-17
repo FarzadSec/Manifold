@@ -14,6 +14,9 @@ export const keys = {
   backups: {
     targets: () => ['backups', 'targets'] as const,
   },
+  certs: {
+    list: () => ['certs', 'list'] as const,
+  },
   webhooks: {
     list: () => ['webhooks', 'list'] as const,
     events: () => ['webhooks', 'events'] as const,

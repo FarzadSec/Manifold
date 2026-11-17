@@ -282,6 +282,18 @@ The `manifold` command manages the service and the panel settings; `manifold hel
 
 Everything the interface does goes through the HTTP API. The API Docs page lists every endpoint, and the OpenAPI description is served at `/panel/api/openapi.json`. Requests authenticate with a bearer token; give each integration its own token with the narrowest scope that works.
 
+## Certificates
+
+**Certificates** (sidebar) gets certificates from Let's Encrypt and renews them 30 days before they expire. Give the domains and how to prove them:
+
+- **DNS-01**: the panel writes a TXT record through Cloudflare (an API token with Zone → DNS → Edit) or ArvanCloud (an API key). The only way to get a wildcard (`*.example.com`, which does not cover `example.com` itself; add both). Works behind a CDN and needs no free port.
+- **HTTP-01**: the domain points at this server and port 80 is free while the order runs.
+- **TLS-ALPN-01**: the same on port 443, so only when Xray is not on 443.
+
+Each certificate is kept as `/etc/manifold/certs/<name>/fullchain.pem` and `privkey.pem`. In an inbound's TLS settings, **From the certificate store** fills both paths; for the panel's own HTTPS, put the same paths under Settings. After a renewal Xray restarts if an inbound reads the files, and the panel serves the new certificate within a minute without a restart. Pick nodes under **Copy to nodes** and every renewal is copied to the same path on them. **Upload** keeps a certificate you got elsewhere (the chain and its key, checked to belong together); it is not renewed. The **Test CA** switch uses Let's Encrypt staging, which has no rate limits but is not trusted by browsers.
+
+Webhooks get `cert.issued`, `cert.failed`, and `cert.expiring` (once a day, two weeks ahead, for one that will not renew by itself).
+
 ## Webhooks
 
 **Webhooks** (sidebar) sends events out as they happen. A webhook is your own URL, an [ntfy](https://ntfy.sh) topic (push notifications on a phone) or a Bale chat (a bot token and the chat id; the bot must be in the chat). Pick the events it hears, or none for all of them. **Send a test** queues a `webhook.test` event; the history button shows every delivery with what was sent and what came back, and sends one again.

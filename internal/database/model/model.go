@@ -2015,6 +2015,34 @@ type IngressRoute struct {
 	ProxyProtocol int      `json:"proxyProtocol" example:"0"`
 }
 
+// Certificate is one certificate of the store, issued over ACME or uploaded, kept as PEM
+// files under the panel's folder and copied to the nodes it names.
+type Certificate struct {
+	Id          int      `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Name        string   `json:"name" gorm:"uniqueIndex;not null" example:"example.com"`
+	Domains     []string `json:"domains" gorm:"serializer:json" example:"[\"example.com\",\"*.example.com\"]"`
+	Source      string   `json:"source" example:"acme"`
+	Challenge   string   `json:"challenge" example:"dns-01"`
+	Port        int      `json:"port" example:"0"`
+	DNSProvider string   `json:"dnsProvider" example:"cloudflare"`
+	DNSToken    string   `json:"-"`
+	Email       string   `json:"email" example:""`
+	Staging     bool     `json:"staging" example:"false"`
+	AutoRenew   bool     `json:"autoRenew" example:"true"`
+	NodeIds     []int    `json:"nodeIds" gorm:"serializer:json" example:"[2]"`
+	AccountKey  string   `json:"-"`
+	CertPEM     string   `json:"-"`
+	KeyPEM      string   `json:"-"`
+	Issuer      string   `json:"issuer" example:"R11"`
+	NotBefore   int64    `json:"notBefore" example:"1763340000000"`
+	NotAfter    int64    `json:"notAfter" example:"1771116000000"`
+	Issuing     bool     `json:"issuing" example:"false"`
+	LastRun     int64    `json:"lastRun" example:"1763340000000"`
+	LastError   string   `json:"lastError" example:""`
+	WarnedAt    int64    `json:"-"`
+	CreatedAt   int64    `json:"createdAt" gorm:"autoCreateTime:milli" example:"1763340000000"`
+}
+
 // BackupTarget is where scheduled full backups go: this server, an S3 bucket or another
 // server over SSH. Secrets are write-only and never leave the panel.
 type BackupTarget struct {

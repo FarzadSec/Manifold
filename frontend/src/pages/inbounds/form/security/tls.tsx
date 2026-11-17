@@ -32,6 +32,7 @@ import {
   UTLS_FINGERPRINT,
 } from '@/schemas/primitives';
 import { SockoptStreamSettingsSchema } from '@/schemas/protocols/stream/sockopt';
+import StoreCertPicker from '@/pages/certs/StoreCertPicker';
 
 const { TextArea } = Input;
 
@@ -68,7 +69,7 @@ function CertRow({
   clearCertFiles,
 }: CertRowProps) {
   const { t } = useTranslation();
-  const { control } = useFormContext();
+  const { control, setValue } = useFormContext();
   const useFile = useWatch({
     control,
     name: `streamSettings.tlsSettings.certificates.${index}.useFile`,
@@ -114,6 +115,13 @@ function CertRow({
               <Button type="primary" loading={saving} onClick={() => setCertFromPanel(index)}>
                 {t('pages.inbounds.setDefaultCert')}
               </Button>
+              <StoreCertPicker
+                onPick={(certFile, keyFile) => {
+                  const base = `streamSettings.tlsSettings.certificates.${index}`;
+                  setValue(`${base}.certificateFile`, certFile, { shouldDirty: true });
+                  setValue(`${base}.keyFile`, keyFile, { shouldDirty: true });
+                }}
+              />
               <Button danger onClick={() => clearCertFiles(index)}>
                 {t('clear')}
               </Button>

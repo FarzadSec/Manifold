@@ -133,7 +133,8 @@
     "audit": "Audit log",
     "ingress": "Shared ports",
     "backups": "Backups",
-    "webhooks": "Webhooks"
+    "webhooks": "Webhooks",
+    "certs": "Certificates"
   },
   "pages": {
     "login": {
@@ -3232,6 +3233,65 @@
       "deleteFailed": "Could not delete the webhook",
       "testFailed": "Could not send the test",
       "replayFailed": "Could not send it again"
+    },
+    "certs": {
+      "intro": "Certificates the panel gets from Let's Encrypt and renews by itself, or ones you upload. Inbounds and the panel read them from the files shown; pick one in an inbound's TLS settings with \"From the certificate store\". A wildcard (*.example.com) needs DNS-01 with a Cloudflare or ArvanCloud token.",
+      "empty": "No certificates yet",
+      "add": "Get a certificate",
+      "edit": "Edit certificate",
+      "saveAndIssue": "Save and issue",
+      "upload": "Upload",
+      "name": "Name",
+      "nameHint": "The folder the files are kept in, /etc/manifold/certs/<name>/.",
+      "nameAuto": "The first domain",
+      "domains": "Domains",
+      "domainsHint": "Type each and press Enter. *.example.com covers every subdomain but not example.com itself; add both if you need both.",
+      "needDomain": "Add at least one domain",
+      "badDomain": "One of these is not a domain name",
+      "wildcardDns": "A wildcard can only be proved with DNS-01",
+      "challenge": "Proof of the domain",
+      "challengeHint": {
+        "dns-01": "The panel writes a TXT record through your DNS provider's API. Works behind a CDN, for wildcards, and without any free port.",
+        "http-01": "The domain must point at this server with port 80 free while the order runs (stop nginx or another web server first). Not behind a CDN proxy.",
+        "tls-alpn-01": "The domain must point at this server with port 443 free while the order runs, which usually means Xray is not on 443."
+      },
+      "dnsProvider": "DNS provider",
+      "arvan": "ArvanCloud",
+      "dnsToken": "API token",
+      "tokenHint": {
+        "cloudflare": "A Cloudflare API token with Zone → DNS → Edit on the zone (My Profile → API Tokens).",
+        "arvancloud": "An ArvanCloud API key (Profile → Machine user / API keys), with or without its \"Apikey\" prefix."
+      },
+      "port": "Listen port",
+      "portHint": "Empty for the standard port. Another one only helps when something forwards the standard port to it.",
+      "email": "Contact email",
+      "emailHint": "Optional; Let's Encrypt writes to it about problems with the account.",
+      "autoRenew": "Renew by itself",
+      "staging": "Test CA",
+      "stagingHint": "Let's Encrypt staging: no rate limits, but browsers do not trust what it issues. For trying a setup out.",
+      "nodes": "Copy to nodes",
+      "nodesHint": "Each renewal is copied to these nodes, to the same path, so their inbounds read it too.",
+      "chain": "Certificate chain (PEM)",
+      "key": "Private key (PEM)",
+      "source": "From",
+      "uploaded": "Uploaded",
+      "fromMaster": "From the master",
+      "expires": "Expires",
+      "daysLeft": "{count} days left",
+      "expired": "Expired",
+      "notIssued": "Not issued yet",
+      "issuing": "Issuing…",
+      "auto": "Auto-renew",
+      "lastFailed": "Last run failed",
+      "files": "Files",
+      "onNodes": "Also on {nodes}",
+      "renewNow": "Renew now",
+      "issueNow": "Issue now",
+      "confirmDelete": "Delete this certificate and its files on this server?",
+      "fromStore": "From the certificate store",
+      "saveFailed": "Could not save the certificate",
+      "issueFailed": "Could not start the order",
+      "deleteFailed": "Could not delete the certificate"
     }
   },
   "tgbot": {

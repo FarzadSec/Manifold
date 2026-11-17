@@ -2167,6 +2167,61 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'certs',
+    title: 'Certificates',
+    description:
+      "The certificate store: certificates issued by the panel over ACME (Let's Encrypt; HTTP-01, TLS-ALPN-01, or DNS-01 through Cloudflare or ArvanCloud for wildcards) or uploaded, kept as fullchain.pem and privkey.pem under /etc/manifold/certs/<name>/ for inbounds and the panel to read. Renewed 30 days before expiry; a renewal restarts Xray when an inbound reads the files, the panel picks up its own certificate without a restart, and each named node gets a copy. The DNS token, account key and private key are never returned. All endpoints under /panel/api/certs.",
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/certs/list',
+        summary: 'Every certificate with its domains, expiry, last run and file paths.',
+        responseSchema: 'CertificateView',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/certs/save',
+        summary:
+          'Create (id 0) or change an ACME certificate. dnsToken left out keeps the stored one. Saving does not issue: call issue.',
+        body: '{\n  "id": 0,\n  "name": "example.com",\n  "domains": ["example.com", "*.example.com"],\n  "challenge": "dns-01",\n  "dnsProvider": "cloudflare",\n  "dnsToken": "…",\n  "autoRenew": true,\n  "nodeIds": [2]\n}',
+        responseSchema: 'CertificateView',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/certs/upload',
+        summary:
+          'Store a certificate made elsewhere (PEM chain and key, checked to be a pair); the name defaults to its first domain.',
+        responseSchema: 'CertificateView',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/certs/issue/:id',
+        summary: 'Start an ACME order now; the list shows issuing until it ends, then the outcome.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Certificate ID.' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/certs/del/:id',
+        summary:
+          'Delete a certificate and its files here. Copies on nodes stay, since their inbounds may read them.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Certificate ID.' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/certs/put',
+        summary:
+          'Store a copy a master sends to this node (node-sync tokens may call it). The node lists it as from the master and restarts Xray when an inbound reads it.',
+        params: [
+          { name: 'name', in: 'body', type: 'string', desc: 'Certificate name.' },
+          { name: 'cert', in: 'body', type: 'string', desc: 'PEM chain.' },
+          { name: 'key', in: 'body', type: 'string', desc: 'PEM private key.' },
+        ],
+      },
+    ],
+  },
+
+  {
     id: 'webhooks',
     title: 'Webhooks',
     description:

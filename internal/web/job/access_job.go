@@ -125,3 +125,14 @@ func NewUserEventsJob() *UserEventsJob {
 func (j *UserEventsJob) Run() {
 	service.WatchUsers(time.Now())
 }
+
+// CertRenewJob renews certificates of the store that are close to expiring.
+type CertRenewJob struct{}
+
+func NewCertRenewJob() *CertRenewJob {
+	return new(CertRenewJob)
+}
+
+func (j *CertRenewJob) Run() {
+	(&service.CertificateService{}).RenewDue(time.Now())
+}

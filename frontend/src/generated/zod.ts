@@ -656,6 +656,76 @@ export const CatalogThemeSchema = z.object({
 });
 export type CatalogTheme = z.infer<typeof CatalogThemeSchema>;
 
+export const CertificateSchema = z.object({
+  autoRenew: z.boolean(),
+  challenge: z.string(),
+  createdAt: z.number().int(),
+  dnsProvider: z.string(),
+  domains: z.array(z.string()),
+  email: z.string(),
+  id: z.number().int(),
+  issuer: z.string(),
+  issuing: z.boolean(),
+  lastError: z.string(),
+  lastRun: z.number().int(),
+  name: z.string(),
+  nodeIds: z.array(z.number().int()),
+  notAfter: z.number().int(),
+  notBefore: z.number().int(),
+  port: z.number().int(),
+  source: z.string(),
+  staging: z.boolean(),
+});
+export type Certificate = z.infer<typeof CertificateSchema>;
+
+export const CertificateInputSchema = z.object({
+  autoRenew: z.boolean(),
+  challenge: z.string(),
+  dnsProvider: z.string(),
+  dnsToken: z.string().nullable().optional(),
+  domains: z.array(z.string()),
+  email: z.string(),
+  id: z.number().int(),
+  name: z.string(),
+  nodeIds: z.array(z.number().int()),
+  port: z.number().int(),
+  staging: z.boolean(),
+});
+export type CertificateInput = z.infer<typeof CertificateInputSchema>;
+
+export const CertificateUploadSchema = z.object({
+  cert: z.string(),
+  key: z.string(),
+  name: z.string(),
+  nodeIds: z.array(z.number().int()),
+});
+export type CertificateUpload = z.infer<typeof CertificateUploadSchema>;
+
+export const CertificateViewSchema = z.object({
+  autoRenew: z.boolean(),
+  certFile: z.string(),
+  challenge: z.string(),
+  createdAt: z.number().int(),
+  dnsProvider: z.string(),
+  domains: z.array(z.string()),
+  email: z.string(),
+  hasDnsToken: z.boolean(),
+  id: z.number().int(),
+  issuer: z.string(),
+  issuing: z.boolean(),
+  keyFile: z.string(),
+  lastError: z.string(),
+  lastRun: z.number().int(),
+  name: z.string(),
+  nodeIds: z.array(z.number().int()),
+  notAfter: z.number().int(),
+  notBefore: z.number().int(),
+  port: z.number().int(),
+  source: z.string(),
+  staging: z.boolean(),
+});
+export type CertificateView = z.infer<typeof CertificateViewSchema>;
+
 export const ClientSchema = z.object({
   adTag: z.string().optional(),
   allowedIPs: z.array(z.string()).optional(),

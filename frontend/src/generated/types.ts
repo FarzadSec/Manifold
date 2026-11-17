@@ -619,6 +619,72 @@ export interface CatalogTheme {
   version: string;
 }
 
+export interface Certificate {
+  autoRenew: boolean;
+  challenge: string;
+  createdAt: number;
+  dnsProvider: string;
+  domains: string[];
+  email: string;
+  id: number;
+  issuer: string;
+  issuing: boolean;
+  lastError: string;
+  lastRun: number;
+  name: string;
+  nodeIds: number[];
+  notAfter: number;
+  notBefore: number;
+  port: number;
+  source: string;
+  staging: boolean;
+}
+
+export interface CertificateInput {
+  autoRenew: boolean;
+  challenge: string;
+  dnsProvider: string;
+  dnsToken?: string | null;
+  domains: string[];
+  email: string;
+  id: number;
+  name: string;
+  nodeIds: number[];
+  port: number;
+  staging: boolean;
+}
+
+export interface CertificateUpload {
+  cert: string;
+  key: string;
+  name: string;
+  nodeIds: number[];
+}
+
+export interface CertificateView {
+  autoRenew: boolean;
+  certFile: string;
+  challenge: string;
+  createdAt: number;
+  dnsProvider: string;
+  domains: string[];
+  email: string;
+  hasDnsToken: boolean;
+  id: number;
+  issuer: string;
+  issuing: boolean;
+  keyFile: string;
+  lastError: string;
+  lastRun: number;
+  name: string;
+  nodeIds: number[];
+  notAfter: number;
+  notBefore: number;
+  port: number;
+  source: string;
+  staging: boolean;
+}
+
 export interface Client {
   adTag?: string;
   allowedIPs?: string[];

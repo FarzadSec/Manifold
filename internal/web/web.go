@@ -401,6 +401,7 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	_, _ = s.cron.AddJob("@every 5m", job.NewNodeHealthJob())
 	_, _ = s.cron.AddJob("@every 10m", job.NewBackupJob())
 	_, _ = s.cron.AddJob("@every 15s", job.NewUserEventsJob())
+	_, _ = s.cron.AddJob("@every 6h", job.NewCertRenewJob())
 
 	s.startTunnelJob()
 	if err := (&service.IngressService{}).Apply(); err != nil {
@@ -680,10 +681,10 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 	}
 	listener = network.NewLimitListener(listener, network.MaxPanelConns, network.MaxPanelConnsPerSource)
 	if certFile != "" || keyFile != "" {
-		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+		reloader, err := newCertReloader(certFile, keyFile)
 		if err == nil {
 			c := &tls.Config{
-				Certificates: []tls.Certificate{cert},
+				GetCertificate: reloader.GetCertificate,
 			}
 			// Opt-in node mTLS: when a trust CA is configured, request and verify
 			// client certs (VerifyClientCertIfGiven keeps browsers working). With

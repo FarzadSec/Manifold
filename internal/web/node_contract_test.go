@@ -2,9 +2,17 @@ package web
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strconv"
@@ -15,6 +23,7 @@ import (
 
 	"github.com/robfig/cron/v3"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/certstore"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/dbtest"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
@@ -146,6 +155,18 @@ func masterInbound(remark string, enable bool, clients ...string) *model.Inbound
 		StreamSettings: `{"network":"tcp","security":"none","tcpSettings":{"header":{"type":"none"}}}`,
 		Sniffing:       `{}`,
 	}
+}
+
+func contractCert(t *testing.T, cn string) (certPEM, keyPEM []byte) {
+	t.Helper()
+	key, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	tmpl := &x509.Certificate{
+		SerialNumber: big.NewInt(1), Subject: pkix.Name{CommonName: cn}, DNSNames: []string{cn},
+		NotBefore: time.Now().Add(-time.Hour), NotAfter: time.Now().Add(time.Hour),
+	}
+	der, _ := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
+	kder, _ := x509.MarshalPKCS8PrivateKey(key)
+	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: kder})
 }
 
 func nodeEmails(t *testing.T) []string {
@@ -305,6 +326,19 @@ func TestMasterNodeContract(t *testing.T) {
 					_, err := master.FetchLogs(ctx, 20, "debug")
 					return err
 				}, nil},
+				{"PutCertificate stores a copy where the node's inbounds read it", []string{"PutCertificate"}, func() error {
+					certPEM, keyPEM := contractCert(t, "contract.example.com")
+					return master.PutCertificate(ctx, "contract.example.com", certPEM, keyPEM)
+				}, func(t *testing.T) {
+					var c model.Certificate
+					if err := database.GetDB().Where("name = ?", "contract.example.com").First(&c).Error; err != nil || c.Source != "master" {
+						t.Fatalf("node certificate row = %+v (%v), want a master copy", c, err)
+					}
+					certFile, _ := certstore.Paths(service.CertRoot(), "contract.example.com")
+					if raw, err := os.ReadFile(certFile); err != nil || string(raw) != c.CertPEM {
+						t.Fatalf("node certificate file: %v", err)
+					}
+				}},
 				{"RestartXray is accepted by the node", []string{"RestartXray"}, func() error {
 					// No core binary here: only the node's own restart failure may come back.
 					if err := master.RestartXray(ctx); err != nil && !strings.Contains(err.Error(), "rebooting the Xray") {
