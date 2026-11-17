@@ -1225,7 +1225,19 @@
       "bulkLimitsHint": "Speed and address limits are set to the same value on every selected user; leave one empty to keep it.",
       "csvAll": "Download CSV of all users",
       "csvSelected": "Download CSV",
-      "configPack": "Download config pack"
+      "configPack": "Download config pack",
+      "contacts": {
+        "title": "Customer details",
+        "telegram": "Telegram",
+        "email": "Email",
+        "phone": "Phone",
+        "bale": "Bale",
+        "soroush": "Soroush Plus",
+        "rubika": "Rubika",
+        "fieldName": "Field",
+        "fieldValue": "Value",
+        "add": "Add a field"
+      }
     },
     "groups": {
       "name": "Nama",

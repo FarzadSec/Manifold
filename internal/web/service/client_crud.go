@@ -56,6 +56,36 @@ func validateClientSubID(subID string) error {
 	return nil
 }
 
+const (
+	maxContactFields = 24
+	maxContactKey    = 32
+	maxContactValue  = 256
+)
+
+// normalizeClientContacts trims the customer's fields, drops empty ones and refuses
+// what could not be shown on a form: too many fields, or too long a name or value.
+func normalizeClientContacts(c *model.Client) error {
+	if c.Contacts == nil {
+		return nil
+	}
+	clean := make(map[string]string, len(c.Contacts))
+	for k, v := range c.Contacts {
+		k, v = strings.TrimSpace(k), strings.TrimSpace(v)
+		if k == "" || v == "" {
+			continue
+		}
+		if len([]rune(k)) > maxContactKey || len([]rune(v)) > maxContactValue {
+			return common.NewError("a customer field is limited to", maxContactKey, "characters and its value to", maxContactValue)
+		}
+		clean[k] = v
+	}
+	if len(clean) > maxContactFields {
+		return common.NewError("a customer holds at most", maxContactFields, "fields")
+	}
+	c.Contacts = clean
+	return nil
+}
+
 func validateClientSpeedLimit(mbps int) error {
 	if mbps < 0 || mbps > speedlimit.MaxMbps {
 		return common.NewError("client speedLimit must be between 0 and", speedlimit.MaxMbps, "Mbps, got:", mbps)
@@ -231,6 +261,9 @@ func (s *ClientService) Create(inboundSvc *InboundService, payload *ClientCreate
 		return false, err
 	}
 	if err := validateClientSpeedLimit(client.SpeedLimit); err != nil {
+		return false, err
+	}
+	if err := normalizeClientContacts(&client); err != nil {
 		return false, err
 	}
 	if err := validateClientTrafficCycle(&client); err != nil {
@@ -776,6 +809,9 @@ func (s *ClientService) update(inboundSvc *InboundService, id int, updated model
 	if err := validateClientSpeedLimit(updated.SpeedLimit); err != nil {
 		return false, err
 	}
+	if err := normalizeClientContacts(&updated); err != nil {
+		return false, err
+	}
 	if err := validateClientTrafficCycle(&updated); err != nil {
 		return false, err
 	}
@@ -981,6 +1017,8 @@ func (s *ClientService) update(inboundSvc *InboundService, id int, updated model
 				"expiry_time":            merged.ExpiryTime,
 				"tg_id":                  merged.TgID,
 				"comment":                merged.Comment,
+				"contacts":               model.EncodeContacts(merged.Contacts),
+				"contacts_text":          merged.ContactsText,
 				"reset":                  merged.Reset,
 				"reset_day":              merged.ResetDay,
 				"reset_weekday":          merged.ResetWeekday,

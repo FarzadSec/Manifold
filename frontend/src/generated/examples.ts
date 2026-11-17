@@ -541,6 +541,7 @@ export const EXAMPLES: Record<string, unknown> = {
       2
     ],
     "comment": "",
+    "contacts": {},
     "created_at": 0,
     "email": "",
     "enable": false,
@@ -640,6 +641,7 @@ export const EXAMPLES: Record<string, unknown> = {
       2
     ],
     "comment": "",
+    "contacts": {},
     "createdAt": 0,
     "email": "",
     "enable": false,

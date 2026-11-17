@@ -43,6 +43,7 @@ export const ClientRecordSchema = z
     tgId: z.union([z.number(), z.string()]).optional(),
     group: z.string().optional(),
     comment: z.string().optional(),
+    contacts: z.record(z.string(), z.string()).nullable().optional(),
     enable: z.boolean().optional(),
     reset: z.number().optional(),
     resetDay: z.number().optional(),

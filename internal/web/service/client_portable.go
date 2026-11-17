@@ -163,6 +163,10 @@ func (s *ClientService) ImportClients(inboundSvc *InboundService, items []Client
 			skip(email, verr.Error())
 			continue
 		}
+		if verr := normalizeClientContacts(&client); verr != nil {
+			skip(email, verr.Error())
+			continue
+		}
 		if verr := validateClientTrafficCycle(&client); verr != nil {
 			skip(email, verr.Error())
 			continue

@@ -57,6 +57,11 @@ import type {
 import { useFail2banStatusQuery, getLimitIpNotice } from '@/api/queries/useFail2banStatusQuery';
 import ClientRenewalFields from './ClientRenewalFields';
 import ClientCycleFields from './ClientCycleFields';
+import ClientContactsFields, {
+  joinContacts,
+  splitContacts,
+  type ContactRow,
+} from './ClientContactsFields';
 import { ClientFormSchema, ClientCreateFormSchema, type ClientFormValues } from '@/schemas/client';
 import './ClientFormModal.css';
 
@@ -153,6 +158,8 @@ type Values = ClientFormValues & {
   wgKeepAlive: number | string | undefined;
   secret: string;
   adTag: string;
+  contacts: Record<string, string>;
+  customContacts: ContactRow[];
 };
 
 const EMPTY: Values = {
@@ -182,6 +189,8 @@ const EMPTY: Values = {
   speedLimit: 0,
   limitHwid: 0,
   tgId: 0,
+  contacts: {},
+  customContacts: [],
   group: '',
   comment: '',
   enable: true,
@@ -455,6 +464,8 @@ export default function ClientFormModal({
         speedLimit: client.speedLimit || 0,
         limitHwid: client.limitHwid || 0,
         tgId: Number(client.tgId) || 0,
+        contacts: splitContacts(client.contacts).standard,
+        customContacts: splitContacts(client.contacts).custom,
         group: client.group || '',
         comment: client.comment || '',
         enable: !!client.enable,
@@ -868,6 +879,7 @@ export default function ClientFormModal({
       tgId: Number(values.tgId) || 0,
       group: values.group,
       comment: values.comment,
+      contacts: joinContacts(values.contacts, values.customContacts),
       enable: !!values.enable,
     };
     // Sent even when empty, so clearing the tag never rests on how the server
@@ -1267,6 +1279,8 @@ export default function ClientFormModal({
                           </FormField>
                         </Col>
                       </Row>
+
+                      <ClientContactsFields />
 
                       <Row gutter={16}>
                         <Col xs={24} md={12}>

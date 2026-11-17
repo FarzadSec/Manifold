@@ -384,6 +384,12 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - A restore stops at the first error of the import itself; the files it wrote before stay written.
 - The tunnel edition still carries Xray and the engines' code in its package; it only never starts them.
 
+### 8.7 Open items after limits and usage (0.7.0)
+
+- Live connections are not listed per connection: Xray reports online addresses per user, not each connection, and the engines report sessions. A sessions view (OpenVPN and L2TP with disconnect, WireGuard handshakes, Xray addresses) is the planned answer.
+- The speed limit does not reach MTProto (its own sidecar) or traffic a routing script decides.
+- Usage history rows are kept per email; a user deleted and recreated under the same name within a day of the daily prune inherits the old rows.
+
 ### 8.6 Open items after the access model
 
 - A reseller's subscription domain is stored but not yet used: links are built on the panel's subscription address until several subscription domains exist (section 4 of the NX comparison).

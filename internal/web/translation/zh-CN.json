@@ -1225,7 +1225,19 @@
       "bulkLimitsHint": "限速和地址限制会对所有选中用户设为相同值;留空则保持不变。",
       "csvAll": "下载全部用户 CSV",
       "csvSelected": "下载 CSV",
-      "configPack": "下载配置包"
+      "configPack": "下载配置包",
+      "contacts": {
+        "title": "客户信息",
+        "telegram": "Telegram",
+        "email": "电子邮件",
+        "phone": "电话",
+        "bale": "Bale",
+        "soroush": "Soroush Plus",
+        "rubika": "Rubika",
+        "fieldName": "字段",
+        "fieldValue": "值",
+        "add": "添加字段"
+      }
     },
     "groups": {
       "name": "名称",

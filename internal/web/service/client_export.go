@@ -138,6 +138,7 @@ func (s *ClientService) ExportCSV(emails []string, owner int, now time.Time) (st
 	_ = w.Write([]string{
 		"name", "enabled", "group", "owner", "used_bytes", "total_bytes", "expiry", "speed_limit_mbps",
 		"ip_limit", "device_limit", "last_online", "last_fetch", "subscription", "comment",
+		"telegram", "email", "phone", "bale", "soroush", "rubika",
 	})
 	for _, r := range rows {
 		subURL := ""
@@ -148,12 +149,16 @@ func (s *ClientService) ExportCSV(emails []string, owner int, now time.Time) (st
 		if r.ExpiryTime < 0 {
 			expiry = fmt.Sprintf("%d days from first use", -r.ExpiryTime/int64(24*time.Hour/time.Millisecond))
 		}
-		_ = w.Write([]string{
+		row := []string{
 			r.Email, strconv.FormatBool(r.Enable), r.Group, r.OwnerName,
 			strconv.FormatInt(r.Up+r.Down, 10), strconv.FormatInt(r.TotalGB, 10), expiry,
 			strconv.Itoa(r.SpeedLimit), strconv.Itoa(r.LimitIP), strconv.Itoa(r.LimitHwid),
 			exportTime(r.LastOnline, loc), exportTime(r.LastSubFetch, loc), subURL, r.Comment,
-		})
+		}
+		for _, f := range model.ContactFields {
+			row = append(row, r.Contacts[f])
+		}
+		_ = w.Write(row)
 	}
 	w.Flush()
 	return b.String(), w.Error()

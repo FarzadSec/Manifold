@@ -137,6 +137,7 @@ const (
 var clientSearchCols = []string{
 	"c.email", "COALESCE(c.sub_id, '')", "COALESCE(c.comment, '')",
 	"COALESCE(c.uuid, '')", "COALESCE(c.password, '')", "COALESCE(c.auth, '')",
+	"COALESCE(c.contacts_text, '')",
 }
 
 // caseVariants returns s lower-cased, as typed, upper-cased and title-cased.

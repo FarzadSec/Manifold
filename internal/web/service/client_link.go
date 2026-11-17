@@ -79,6 +79,10 @@ func applyClientRecordMerge(row *model.ClientRecord, incoming *model.ClientRecor
 		row.Group = incoming.Group
 	}
 	row.Comment = incoming.Comment
+	if incoming.Contacts != nil {
+		row.Contacts = incoming.Contacts
+		row.ContactsText = incoming.ContactsText
+	}
 	row.Reset = incoming.Reset
 	row.ResetDay = incoming.ResetDay
 	row.ResetWeekday = incoming.ResetWeekday

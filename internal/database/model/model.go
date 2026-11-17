@@ -1092,10 +1092,13 @@ type Client struct {
 	SubID               string           `json:"subId" form:"subId"`                // Subscription identifier
 	Group               string           `json:"group,omitempty" form:"group"`      // Logical grouping label
 	Comment             string           `json:"comment" form:"comment"`            // Client comment
-	Reset               int              `json:"reset" form:"reset"`                // Reset period in days
-	ResetDay            int              `json:"resetDay" form:"resetDay"`          // Calendar renewal day 1-31, 0 disables monthly renewal
-	ResetWeekday        int              `json:"resetWeekday" form:"resetWeekday"`  // Calendar weekday 1-7 (Mon-Sun), 0 disables weekly renewal
-	ResetMax            int              `json:"resetMax" form:"resetMax"`          // Max auto-renew count, 0 = unlimited
+	// Contacts is what the panel knows about the customer, by field: telegram, email, phone,
+	// bale, soroush and rubika are searched and exported; any other field is only kept.
+	Contacts     map[string]string `json:"contacts,omitempty"`
+	Reset        int               `json:"reset" form:"reset"`               // Reset period in days
+	ResetDay     int               `json:"resetDay" form:"resetDay"`         // Calendar renewal day 1-31, 0 disables monthly renewal
+	ResetWeekday int               `json:"resetWeekday" form:"resetWeekday"` // Calendar weekday 1-7 (Mon-Sun), 0 disables weekly renewal
+	ResetMax     int               `json:"resetMax" form:"resetMax"`         // Max auto-renew count, 0 = unlimited
 	// Per-client traffic reset cycle, independent of the inbound's own (#5497).
 	TrafficReset    string `json:"trafficReset,omitempty" form:"trafficReset" validate:"omitempty,oneof=never hourly daily weekly monthly yearly days"`
 	TrafficResetDay int    `json:"trafficResetDay,omitempty" form:"trafficResetDay" validate:"omitempty,gte=1,lte=31"`
@@ -1109,41 +1112,44 @@ type Client struct {
 }
 
 type ClientRecord struct {
-	Id                int            `json:"id" gorm:"primaryKey;autoIncrement"`
-	Email             string         `json:"email" gorm:"uniqueIndex;not null"`
-	SubID             string         `json:"subId" gorm:"index;column:sub_id"`
-	UUID              string         `json:"uuid" gorm:"column:uuid"`
-	Password          string         `json:"password"`
-	Auth              string         `json:"auth"`
-	Flow              string         `json:"flow"`
-	Security          string         `json:"security"`
-	Reverse           string         `json:"reverse" gorm:"column:reverse"`
-	ClientHostRuleIds []int          `json:"clientHostRuleIds,omitempty" gorm:"serializer:json;column:client_host_rule_ids" example:"[1,2]"`
-	PrivateKey        string         `json:"privateKey" gorm:"column:wg_private_key"`
-	PublicKey         string         `json:"publicKey" gorm:"column:wg_public_key"`
-	AllowedIPs        string         `json:"allowedIPs" gorm:"column:wg_allowed_ips"`
-	PreSharedKey      string         `json:"preSharedKey" gorm:"column:wg_pre_shared_key"`
-	KeepAlive         KeepAliveValue `json:"keepAlive" gorm:"-"` // Numeric values or AmneziaWG ranges.
-	KeepAliveLegacy   int            `json:"-" gorm:"column:wg_keep_alive;default:0"`
-	KeepAliveRange    KeepAliveValue `json:"-" gorm:"column:wg_keep_alive_range;type:text;default:''"`
-	ForwardedPorts    string         `json:"forwardedPorts" gorm:"column:wg_forwarded_ports"`
-	Secret            string         `json:"secret" gorm:"column:secret"`
-	AdTag             string         `json:"adTag" gorm:"column:ad_tag;default:''"`
-	LimitIP           int            `json:"limitIp" gorm:"column:limit_ip"`
-	LimitHwid         int            `json:"limitHwid" gorm:"column:limit_hwid;default:0"`
-	SpeedLimit        int            `json:"speedLimit" gorm:"column:speed_limit;default:0"`
-	TotalGB           int64          `json:"totalGB" gorm:"column:total_gb"`
-	ExpiryTime        int64          `json:"expiryTime" gorm:"column:expiry_time"`
-	Enable            bool           `json:"enable" gorm:"default:true"`
-	TgID              int64          `json:"tgId" gorm:"column:tg_id;index:idx_clients_tg_id"`
-	Group             string         `json:"group" gorm:"column:group_name;default:'';index:idx_client_record_group"`
-	Comment           string         `json:"comment"`
-	Reset             int            `json:"reset" gorm:"default:0"`
-	ResetDay          int            `json:"resetDay" gorm:"column:reset_day;default:0"`
-	ResetWeekday      int            `json:"resetWeekday" gorm:"column:reset_weekday;default:0"`
-	ResetMax          int            `json:"resetMax" gorm:"column:reset_max;default:0"`
-	TrafficReset      string         `json:"trafficReset" gorm:"column:traffic_reset;default:never;index:idx_clients_traffic_reset"`
-	TrafficResetDay   int            `json:"trafficResetDay" gorm:"column:traffic_reset_day;default:1"`
+	Id                int               `json:"id" gorm:"primaryKey;autoIncrement"`
+	Email             string            `json:"email" gorm:"uniqueIndex;not null"`
+	SubID             string            `json:"subId" gorm:"index;column:sub_id"`
+	UUID              string            `json:"uuid" gorm:"column:uuid"`
+	Password          string            `json:"password"`
+	Auth              string            `json:"auth"`
+	Flow              string            `json:"flow"`
+	Security          string            `json:"security"`
+	Reverse           string            `json:"reverse" gorm:"column:reverse"`
+	ClientHostRuleIds []int             `json:"clientHostRuleIds,omitempty" gorm:"serializer:json;column:client_host_rule_ids" example:"[1,2]"`
+	PrivateKey        string            `json:"privateKey" gorm:"column:wg_private_key"`
+	PublicKey         string            `json:"publicKey" gorm:"column:wg_public_key"`
+	AllowedIPs        string            `json:"allowedIPs" gorm:"column:wg_allowed_ips"`
+	PreSharedKey      string            `json:"preSharedKey" gorm:"column:wg_pre_shared_key"`
+	KeepAlive         KeepAliveValue    `json:"keepAlive" gorm:"-"` // Numeric values or AmneziaWG ranges.
+	KeepAliveLegacy   int               `json:"-" gorm:"column:wg_keep_alive;default:0"`
+	KeepAliveRange    KeepAliveValue    `json:"-" gorm:"column:wg_keep_alive_range;type:text;default:''"`
+	ForwardedPorts    string            `json:"forwardedPorts" gorm:"column:wg_forwarded_ports"`
+	Secret            string            `json:"secret" gorm:"column:secret"`
+	AdTag             string            `json:"adTag" gorm:"column:ad_tag;default:''"`
+	LimitIP           int               `json:"limitIp" gorm:"column:limit_ip"`
+	LimitHwid         int               `json:"limitHwid" gorm:"column:limit_hwid;default:0"`
+	SpeedLimit        int               `json:"speedLimit" gorm:"column:speed_limit;default:0"`
+	TotalGB           int64             `json:"totalGB" gorm:"column:total_gb"`
+	ExpiryTime        int64             `json:"expiryTime" gorm:"column:expiry_time"`
+	Enable            bool              `json:"enable" gorm:"default:true"`
+	TgID              int64             `json:"tgId" gorm:"column:tg_id;index:idx_clients_tg_id"`
+	Group             string            `json:"group" gorm:"column:group_name;default:'';index:idx_client_record_group"`
+	Comment           string            `json:"comment"`
+	Contacts          map[string]string `json:"contacts" gorm:"serializer:json;column:contacts;type:text"`
+	// ContactsText holds the standard contact values, for the search box.
+	ContactsText    string `json:"-" gorm:"column:contacts_text;default:''"`
+	Reset           int    `json:"reset" gorm:"default:0"`
+	ResetDay        int    `json:"resetDay" gorm:"column:reset_day;default:0"`
+	ResetWeekday    int    `json:"resetWeekday" gorm:"column:reset_weekday;default:0"`
+	ResetMax        int    `json:"resetMax" gorm:"column:reset_max;default:0"`
+	TrafficReset    string `json:"trafficReset" gorm:"column:traffic_reset;default:never;index:idx_clients_traffic_reset"`
+	TrafficResetDay int    `json:"trafficResetDay" gorm:"column:traffic_reset_day;default:1"`
 	// TrafficResetMonth, TrafficResetEvery and TrafficResetCalendar shape the cycle; see Client.
 	TrafficResetMonth    int    `json:"trafficResetMonth" gorm:"column:traffic_reset_month;default:0"`
 	TrafficResetEvery    int    `json:"trafficResetEvery" gorm:"column:traffic_reset_every;default:0"`
@@ -1453,6 +1459,8 @@ func (c *Client) ToRecord() *ClientRecord {
 		TgID:                 c.TgID,
 		Group:                strings.TrimSpace(c.Group),
 		Comment:              c.Comment,
+		Contacts:             CloneContacts(c.Contacts),
+		ContactsText:         ContactsSearchText(c.Contacts),
 		Reset:                c.Reset,
 		ResetDay:             c.ResetDay,
 		ResetWeekday:         c.ResetWeekday,
@@ -1517,6 +1525,7 @@ func (r *ClientRecord) ToClient() *Client {
 		TgID:                 r.TgID,
 		Group:                r.Group,
 		Comment:              r.Comment,
+		Contacts:             CloneContacts(r.Contacts),
 		Reset:                r.Reset,
 		ResetDay:             r.ResetDay,
 		ResetWeekday:         r.ResetWeekday,
@@ -1604,6 +1613,44 @@ func equalClientHostRuleIds(a, b []int) bool {
 
 // EncodeClientHostRuleIds marshals ids into the JSON text stored by raw
 // column writes (Update/Updates), which bypass GORM's serializer.
+// ContactFields are the customer fields the panel searches, filters and exports.
+var ContactFields = []string{"telegram", "email", "phone", "bale", "soroush", "rubika"}
+
+// CloneContacts copies a contact map; nil stays nil, which leaves stored contacts alone.
+func CloneContacts(in map[string]string) map[string]string {
+	if in == nil {
+		return nil
+	}
+	out := make(map[string]string, len(in))
+	for k, v := range in {
+		out[k] = v
+	}
+	return out
+}
+
+// ContactsSearchText joins the standard contact values, the part of a contact map searched.
+func ContactsSearchText(c map[string]string) string {
+	parts := make([]string, 0, len(ContactFields))
+	for _, f := range ContactFields {
+		if v := strings.TrimSpace(c[f]); v != "" {
+			parts = append(parts, v)
+		}
+	}
+	return strings.Join(parts, " ")
+}
+
+// EncodeContacts is the stored form of a contact map.
+func EncodeContacts(c map[string]string) string {
+	if len(c) == 0 {
+		return "{}"
+	}
+	b, err := json.Marshal(c)
+	if err != nil {
+		return "{}"
+	}
+	return string(b)
+}
+
 func EncodeClientHostRuleIds(ids []int) string {
 	b, err := json.Marshal(ids)
 	if err != nil {

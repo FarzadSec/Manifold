@@ -88,6 +88,9 @@ func fillAbsentClientFields(rec *model.ClientRecord, updated *model.Client, limi
 	if !keys.has("comment") {
 		updated.Comment = stored.Comment
 	}
+	if !keys.has("contacts") {
+		updated.Contacts = stored.Contacts
+	}
 	if !keys.has("reset") {
 		updated.Reset = stored.Reset
 	}

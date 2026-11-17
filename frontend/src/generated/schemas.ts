@@ -2177,6 +2177,13 @@ export const SCHEMAS: Record<string, unknown> = {
         "description": "Client comment",
         "type": "string"
       },
+      "contacts": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "Contacts is what the panel knows about the customer, by field: telegram, email, phone,\nbale, soroush and rubika are searched and exported; any other field is only kept.",
+        "type": "object"
+      },
       "created_at": {
         "description": "Creation timestamp",
         "format": "int64",
@@ -2441,6 +2448,12 @@ export const SCHEMAS: Record<string, unknown> = {
       "comment": {
         "type": "string"
       },
+      "contacts": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "type": "object"
+      },
       "createdAt": {
         "format": "int64",
         "type": "integer"
@@ -2562,6 +2575,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "allowedIPs",
       "auth",
       "comment",
+      "contacts",
       "createdAt",
       "email",
       "enable",

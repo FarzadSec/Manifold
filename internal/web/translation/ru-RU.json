@@ -1225,7 +1225,19 @@
       "bulkLimitsHint": "Ограничения скорости и адресов задаются одинаково для всех выбранных; оставьте пустым, чтобы не менять.",
       "csvAll": "CSV всех пользователей",
       "csvSelected": "Скачать CSV",
-      "configPack": "Скачать пакет конфигураций"
+      "configPack": "Скачать пакет конфигураций",
+      "contacts": {
+        "title": "Данные клиента",
+        "telegram": "Telegram",
+        "email": "Эл. почта",
+        "phone": "Телефон",
+        "bale": "Bale",
+        "soroush": "Soroush Plus",
+        "rubika": "Rubika",
+        "fieldName": "Поле",
+        "fieldValue": "Значение",
+        "add": "Добавить поле"
+      }
     },
     "groups": {
       "name": "Имя",

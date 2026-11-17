@@ -518,6 +518,7 @@ export interface Client {
   auth?: string;
   clientHostRuleIds?: number[];
   comment: string;
+  contacts?: Record<string, string>;
   created_at?: number;
   email: string;
   enable: boolean;
@@ -574,6 +575,7 @@ export interface ClientRecord {
   auth: string;
   clientHostRuleIds?: number[];
   comment: string;
+  contacts: Record<string, string>;
   createdAt: number;
   email: string;
   enable: boolean;
