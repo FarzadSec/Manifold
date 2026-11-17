@@ -65,9 +65,6 @@ func toView(t *model.ApiToken) *ApiTokenView {
 	}
 }
 
-// DefaultTokenRateLimit is the requests per minute a token gets when it names none.
-const DefaultTokenRateLimit = 120
-
 // TokenAccess binds an admin-scope token to an account and narrows it.
 type TokenAccess struct {
 	UserId      int
