@@ -793,16 +793,7 @@ func main() {
 			updateTgbotEnableSts(enabletgbot)
 		}
 	case "cert":
-		err := settingCmd.Parse(os.Args[2:])
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		if reset {
-			updateCert("", "")
-		} else {
-			updateCert(webCertFile, webKeyFile)
-		}
+		os.Exit(runCertCLI(os.Args[2:]))
 	default:
 		fmt.Println("Invalid subcommands")
 		fmt.Println()
@@ -819,8 +810,9 @@ Commands:
     migrate        migrate a database from an older schema
     migrate-db     SQLite <-> .dump (--dump/--restore) or copy into PostgreSQL (--dsn)
     encrypt-tokens encrypt node bearer tokens with the configured active key
-    backup         open a sealed backup, or restore a full backup with the panel stopped
+    backup         make or open a full backup, or restore one with the panel stopped
     setting        set settings
+    cert           get a Let's Encrypt certificate for the panel, or set or clear its own
     install-awg-kernel
                    build and install the AmneziaWG kernel module (required for
                    an AmneziaWG inbound's kernel mode)
