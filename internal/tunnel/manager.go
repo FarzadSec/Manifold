@@ -334,18 +334,7 @@ func (m *Manager) statusLocked(e *entry) TunnelStatus {
 		st.State = StateConnecting
 		return st
 	}
-	loss, rtt, recentLost, total := e.prober.window.summary()
-	st.Loss, st.LatencyMs = loss, float64(rtt.Microseconds())/1000
-	switch {
-	case total == 0:
-		st.State = StateConnecting
-	case recentLost >= 3 || loss >= 99.9:
-		st.State = StateDown
-	case loss >= 20 || rtt > 800*time.Millisecond:
-		st.State = StateDegraded
-	default:
-		st.State = StateUp
-	}
+	st.Loss, st.LatencyMs, st.State = judge(&e.prober.window)
 	return st
 }
 

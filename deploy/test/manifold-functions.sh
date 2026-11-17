@@ -182,5 +182,24 @@ printf '[manifold-ipl]\nbantime=45m\n' >"$work/jail.conf"
 check "the ban length of a written jail is kept" "$(jail_bantime "$work/jail.conf")" "45"
 check "a jail not written yet bans for 30 minutes" "$(jail_bantime "$work/none.conf")" "30"
 
+# A relay's menu has its own numbers: the tunnel entries, and no Xray, IP limit or geo files.
+ENV_FILE="$work/default"
+echo "MANIFOLD_EDITION=tunnel" >"$ENV_FILE"
+: >"$FAKE_LOG"
+printf '17\nmanifold-tunnel://abc\n\n0\n' | show_menu >/dev/null 2>&1
+check "relay menu 17 imports a pairing code" "$(calls)" "[tunnel import manifold-tunnel://abc]"
+# shellcheck disable=SC2329 # the menu action calls it
+systemctl() { echo "[systemctl $*]" >>"$FAKE_LOG"; }
+printf '12\n\n0\n' | show_menu >/dev/null 2>&1
+check "relay menu 12 is the status, not an Xray restart" "$(calls)" "[systemctl status manifold --no-pager]"
+unset -f systemctl
+check "the relay menu ends at its last entry" "$(menu_count)" "25"
+check "the relay menu offers no Xray, IP limit or geo files" \
+    "$(menu_entries | grep -ciE 'xray|ip limit|geo')" "0"
+: >"$ENV_FILE"
+check "the panel menu keeps its numbers and adds the tunnels at 26" \
+    "$(menu_entries | grep -v '^-$' | sed -n '12p;17p;25p;26p' | cut -d'|' -f2 | tr '\n' ' ')" \
+    "restart_xray doctor geo_menu tunnel_list "
+
 [ "$failures" -eq 0 ] || exit 1
 echo "all management command function tests passed"

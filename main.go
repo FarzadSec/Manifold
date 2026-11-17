@@ -794,6 +794,8 @@ func main() {
 		}
 	case "cert":
 		os.Exit(runCertCLI(os.Args[2:]))
+	case "tunnel":
+		os.Exit(runTunnelCLI(os.Args[2:], os.Stdout))
 	default:
 		fmt.Println("Invalid subcommands")
 		fmt.Println()
@@ -813,6 +815,7 @@ Commands:
     backup         make or open a full backup, or restore one with the panel stopped
     setting        set settings
     cert           get a Let's Encrypt certificate for the panel, or set or clear its own
+    tunnel         list this server's tunnel ends and their state, or import a pairing code
     install-awg-kernel
                    build and install the AmneziaWG kernel module (required for
                    an AmneziaWG inbound's kernel mode)

@@ -119,6 +119,29 @@ func (s *TunnelService) List() ([]TunnelView, error) {
 	return out, nil
 }
 
+// CheckAll returns every tunnel end with a status the command line measured itself,
+// for when the panel's own view of its tunnels cannot be reached.
+func (s *TunnelService) CheckAll(echoes int) ([]TunnelView, error) {
+	var rows []model.TunnelEnd
+	if err := database.GetDB().Order("id").Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	out := make([]TunnelView, 0, len(rows))
+	for i := range rows {
+		t, err := tunnelFromRow(&rows[i])
+		v := viewOf(&rows[i], t)
+		st := tunnel.TunnelStatus{ID: rows[i].Id, State: tunnel.StateError}
+		if err != nil {
+			st.Error = err.Error()
+		} else {
+			st = tunnel.GetManager().Check(t, echoes)
+		}
+		v.Status = &st
+		out = append(out, v)
+	}
+	return out, nil
+}
+
 // Statuses returns how every running tunnel end is doing.
 func (s *TunnelService) Statuses() []tunnel.TunnelStatus {
 	return tunnelManager().Statuses()

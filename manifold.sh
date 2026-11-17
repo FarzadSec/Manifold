@@ -39,6 +39,11 @@ Service
   log -f                     Follow the log
   doctor                     Look for what keeps the panel from being reached
 
+Tunnels
+  tunnel list                Every tunnel end here and how it is doing
+  tunnel import CODE         Add the end a pairing code describes
+  relay-token                A token your Manifold panel manages this relay's tunnels with
+
 Panel
   settings                   Show the panel port, URL path, address and login state
   login [NAME PASSWORD]      Set the panel login; random when omitted
@@ -219,7 +224,7 @@ show_status() {
         edition=tunnel
     fi
     if [ "$edition" = tunnel ]; then
-        echo "Edition: tunnel server (no Xray)"
+        echo "Edition: ${green}Manifold Relay${plain} (tunnels only)"
     elif xray_running; then
         echo "Xray state: ${green}Running${plain}"
     else
@@ -810,14 +815,14 @@ log_menu() {
     echo "  1. Follow the log (Ctrl+C to stop)"
     echo "  2. Last 100 lines"
     echo "  3. Errors only"
-    echo "  4. IP limit bans"
+    is_relay || echo "  4. IP limit bans"
     echo "  0. Back"
     read -rp "Choose: " choice || true
     case "$choice" in
         1) follow_log ;;
         2) journalctl -u manifold --no-pager -n 100 ;;
         3) journalctl -u manifold --no-pager -p err -n 50 ;;
-        4) show_banlog ;;
+        4) is_relay || show_banlog ;;
     esac
 }
 
@@ -841,7 +846,7 @@ doctor() {
     else
         echo "${red}✗${plain} Nothing of the panel listens on port ${port}"
         ss -H -ltnp "sport = :${port}" 2>/dev/null | sed 's/^/  held by: /' || true
-        echo "  Pick a free port: menu 7, or manifold port N"
+        echo "  Pick a free port: manifold port N"
         problems=$((problems + 1))
     fi
     listen=$("$BIN" setting -getListen 2>/dev/null | sed -n 's/^listenIP: //p')
@@ -849,18 +854,18 @@ doctor() {
         "" | 0.0.0.0 | "::") ;;
         *)
             echo "${yellow}!${plain} The panel listens on ${listen} only; elsewhere it cannot be reached"
-            echo "  Listen everywhere: menu 22 → 3"
+            echo "  Listen everywhere: manifold setting -listenIP 0.0.0.0 && manifold restart"
             ;;
     esac
     cert=$("$BIN" setting -getCert 2>/dev/null | sed -n 's/^cert: //p')
     if [ -n "$cert" ]; then
         if [ ! -r "$cert" ]; then
             echo "${red}✗${plain} The panel's certificate ${cert} is missing"
-            echo "  Get one again (menu 18) or serve plain HTTP (menu 22 → 2)"
+            echo "  Get one again (manifold cert issue -domain NAME) or serve plain HTTP (manifold cert -reset)"
             problems=$((problems + 1))
         elif command -v openssl >/dev/null 2>&1 && ! openssl x509 -in "$cert" -noout -checkend 0 >/dev/null 2>&1; then
             echo "${red}✗${plain} The panel's certificate has expired"
-            echo "  Get one again (menu 18) or serve plain HTTP (menu 22 → 2)"
+            echo "  Get one again (manifold cert issue -domain NAME) or serve plain HTTP (manifold cert -reset)"
             problems=$((problems + 1))
         else
             echo "${green}✓${plain} The panel's certificate is valid"
@@ -869,7 +874,7 @@ doctor() {
     if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q '^Status: active' &&
         [ -n "$port" ] && ! ufw status 2>/dev/null | grep -qE "^${port}(/tcp)?[[:space:]]"; then
         echo "${red}✗${plain} The firewall is on and port ${port} is not open in it"
-        echo "  Open it: menu 20 → 3"
+        echo "  Open it: ufw allow ${port}/tcp"
         problems=$((problems + 1))
     fi
     free=$(df -Pk "$DATA_DIR" 2>/dev/null | awk 'NR == 2 { print $4 }')
@@ -877,6 +882,16 @@ doctor() {
         echo "${red}✗${plain} Less than 50 MB free on the disk of ${DATA_DIR}: the database cannot grow"
         problems=$((problems + 1))
     fi
+    if "$BIN" tunnel list >"${TMPDIR:-/tmp}/manifold-tunnels.$$" 2>&1; then
+        if grep -qE '[[:space:]](down|error)[[:space:]]' "${TMPDIR:-/tmp}/manifold-tunnels.$$"; then
+            echo "${red}✗${plain} A tunnel is down:"
+            sed 's/^/  /' "${TMPDIR:-/tmp}/manifold-tunnels.$$"
+            problems=$((problems + 1))
+        elif grep -q '^ID' "${TMPDIR:-/tmp}/manifold-tunnels.$$"; then
+            echo "${green}✓${plain} Every tunnel is up or connecting"
+        fi
+    fi
+    rm -f "${TMPDIR:-/tmp}/manifold-tunnels.$$"
     if [ "$problems" -eq 0 ]; then
         echo "Panel address: $(access_url)"
     fi
@@ -987,82 +1002,197 @@ uninstall_menu() {
     return "$MENU_DONE"
 }
 
+# --- the relay ---
+
+is_relay() {
+    [ -f "$ENV_FILE" ] && grep -q '^MANIFOLD_EDITION=tunnel$' "$ENV_FILE"
+}
+
+product_name() {
+    if is_relay; then echo "Manifold Relay"; else echo "Manifold"; fi
+}
+
+tunnel_list() {
+    need_root
+    "$BIN" tunnel list
+}
+
+tunnel_import() {
+    local code=""
+    need_root
+    read -rp "Pairing code (from the tunnel's share button on the other panel): " code || true
+    [ -n "$code" ] || die "no code given"
+    "$BIN" tunnel import "$code"
+}
+
+# relay_token makes the tunnel-scoped token a Manifold panel manages this relay's tunnels with.
+relay_token() {
+    local out token
+    need_root
+    confirm "Make a new token for your Manifold panel? One made before stops working" y || return 0
+    out=$("$BIN" setting -getApiToken -tokenName main-panel -tokenScope tunnel 2>&1) || die "$out"
+    token=$(sed -n 's/^apiToken: //p' <<<"$out")
+    [ -n "$token" ] || die "$out"
+    echo "Relay token: ${green}${token}${plain}"
+    echo "On your Manifold panel: Tunnels → Relays → add this relay's address and this token:"
+    echo "  $(access_url)"
+}
+
 # --- the menu ---
 
-print_menu() {
-    cat <<MENU
-
-╔───────────────────────────────────────────────────╗
-│  ${green}Manifold Panel Management${plain}                        │
-│  ${green}0.${plain} Exit                                          │
-│───────────────────────────────────────────────────│
-│  ${green}1.${plain} Update                                        │
-│  ${green}2.${plain} Install a specific version                    │
-│  ${green}3.${plain} Uninstall                                     │
-│───────────────────────────────────────────────────│
-│  ${green}4.${plain} Reset Username & Password                     │
-│  ${green}5.${plain} Reset Web Base Path                           │
-│  ${green}6.${plain} Reset Settings                                │
-│  ${green}7.${plain} Change Port                                   │
-│  ${green}8.${plain} View Current Settings                         │
-│───────────────────────────────────────────────────│
-│  ${green}9.${plain} Start                                         │
-│  ${green}10.${plain} Stop                                         │
-│  ${green}11.${plain} Restart                                      │
-│  ${green}12.${plain} Restart Xray                                 │
-│  ${green}13.${plain} Check Status                                 │
-│  ${green}14.${plain} Logs                                         │
-│───────────────────────────────────────────────────│
-│  ${green}15.${plain} Enable Autostart                             │
-│  ${green}16.${plain} Disable Autostart                            │
-│───────────────────────────────────────────────────│
-│  ${green}17.${plain} Doctor: why can't I reach the panel?         │
-│  ${green}18.${plain} SSL Certificate Management                   │
-│  ${green}19.${plain} IP Limit Management                          │
-│  ${green}20.${plain} Firewall Management                          │
-│  ${green}21.${plain} SSH Port Forwarding                          │
-│  ${green}22.${plain} Recovery (2FA, certificate, listen, token)   │
-│  ${green}23.${plain} Backup & Restore                             │
-│───────────────────────────────────────────────────│
-│  ${green}24.${plain} BBR                                          │
-│  ${green}25.${plain} Update Geo Files                             │
-╚───────────────────────────────────────────────────╝
+# panel_menu and relay_menu list the entries, "label|action"; "-" draws a rule.
+panel_menu() {
+    cat <<'MENU'
+Update|menu_update
+Install a specific version|menu_update_version
+Uninstall|uninstall_menu
+-
+Reset Username & Password|reset_login
+Reset Web Base Path|reset_path
+Reset Settings|reset_settings
+Change Port|change_port
+View Current Settings|show_settings
+-
+Start|service_start
+Stop|service_stop
+Restart|service_restart
+Restart Xray|restart_xray
+Check Status|service_status
+Logs|log_menu
+-
+Enable Autostart|service_enable
+Disable Autostart|service_disable
+-
+Doctor: why can't I reach the panel?|doctor
+SSL Certificate Management|cert_menu
+IP Limit Management|iplimit_menu
+Firewall Management|firewall_menu
+SSH Port Forwarding|ssh_forwarding
+Recovery (2FA, certificate, listen, token)|recovery_menu
+Backup & Restore|backup_menu
+-
+BBR|bbr_menu
+Update Geo Files|geo_menu
+Tunnels: state of each end|tunnel_list
 MENU
 }
 
-menu_action() {
-    case "$1" in
-        1) run_installer; return "$MENU_DONE" ;;
-        2) update_version; return "$MENU_DONE" ;;
-        3) uninstall_menu ;;
-        4) reset_login ;;
-        5) reset_path ;;
-        6) reset_settings ;;
-        7) change_port ;;
-        8) show_settings ;;
-        9) need_root; systemctl start manifold; show_status ;;
-        10) need_root; systemctl stop manifold; show_status ;;
-        11) need_root; systemctl restart manifold; show_status ;;
-        12) restart_xray ;;
-        13) systemctl status manifold --no-pager || true ;;
-        14) log_menu ;;
-        15) need_root; systemctl enable manifold ;;
-        16) need_root; systemctl disable manifold ;;
-        17) doctor ;;
-        18) cert_menu ;;
-        19) iplimit_menu ;;
-        20) firewall_menu ;;
-        21) ssh_forwarding ;;
-        22) recovery_menu ;;
-        23) backup_menu ;;
-        24)
-            local choice=""
-            read -rp "  1. Enable BBR   2. Disable BBR   0. Back: " choice || true
-            case "$choice" in 1) bbr enable ;; 2) bbr disable ;; esac
-            ;;
-        25) geo_menu ;;
-        *) warn "Choose a number from 0 to 25." ;;
+relay_menu() {
+    cat <<'MENU'
+Update|menu_update
+Install a specific version|menu_update_version
+Uninstall|uninstall_menu
+-
+Reset Username & Password|reset_login
+Reset Web Base Path|reset_path
+Reset Settings|reset_settings
+Change Port|change_port
+View Current Settings|show_settings
+-
+Start|service_start
+Stop|service_stop
+Restart|service_restart
+Check Status|service_status
+Logs|log_menu
+-
+Enable Autostart|service_enable
+Disable Autostart|service_disable
+-
+Tunnels: state of each end|tunnel_list
+Tunnels: import a pairing code|tunnel_import
+Token for your Manifold panel|relay_token
+Doctor: why can't I reach the relay?|doctor
+-
+SSL Certificate Management|cert_menu
+Firewall Management|firewall_menu
+SSH Port Forwarding|ssh_forwarding
+Recovery (2FA, certificate, listen)|recovery_menu
+Backup & Restore|backup_menu
+BBR|bbr_menu
+MENU
+}
+
+menu_entries() {
+    if is_relay; then relay_menu; else panel_menu; fi
+}
+
+menu_update() {
+    run_installer
+    return "$MENU_DONE"
+}
+
+menu_update_version() {
+    update_version
+    return "$MENU_DONE"
+}
+
+service_start() { need_root; systemctl start manifold; show_status; }
+service_stop() { need_root; systemctl stop manifold; show_status; }
+service_restart() { need_root; systemctl restart manifold; show_status; }
+service_status() { systemctl status manifold --no-pager || true; }
+service_enable() { need_root; systemctl enable manifold; }
+service_disable() { need_root; systemctl disable manifold; }
+
+bbr_menu() {
+    local choice=""
+    read -rp "  1. Enable BBR   2. Disable BBR   0. Back: " choice || true
+    case "$choice" in
+        1) bbr enable ;;
+        2) bbr disable ;;
     esac
+}
+
+MENU_WIDTH=51
+
+# menu_line TEXT [NUMBER]: one row of the box, the number in green.
+menu_line() {
+    local text="$1" num="${2:-}" pad
+    if [ -n "$num" ]; then
+        pad=$((MENU_WIDTH - 4 - ${#num} - ${#text}))
+        printf '│  %s%s.%s %s%*s│\n' "$green" "$num" "$plain" "$text" "$pad" ""
+    else
+        pad=$((MENU_WIDTH - 2 - ${#text}))
+        printf '│  %s%s%s%*s│\n' "$green" "$text" "$plain" "$pad" ""
+    fi
+}
+
+menu_rule() {
+    local fill="$2" end="$3" i line="$1"
+    for ((i = 0; i < MENU_WIDTH; i++)); do line+="$fill"; done
+    echo "${line}${end}"
+}
+
+print_menu() {
+    local entry n=0
+    echo
+    menu_rule "╔" "─" "╗"
+    menu_line "$(product_name) Management"
+    menu_line "Exit" 0
+    menu_rule "│" "─" "│"
+    while IFS= read -r entry; do
+        if [ "$entry" = - ]; then
+            menu_rule "│" "─" "│"
+        else
+            n=$((n + 1))
+            menu_line "${entry%%|*}" "$n"
+        fi
+    done < <(menu_entries)
+    menu_rule "╚" "─" "╝"
+}
+
+# menu_count: the highest number the menu offers.
+menu_count() {
+    menu_entries | grep -cv '^-$'
+}
+
+menu_action() {
+    local action
+    action=$(menu_entries | grep -v '^-$' | sed -n "${1}p" | cut -d'|' -f2)
+    if [[ ! "$1" =~ ^[0-9]+$ ]] || [ -z "$action" ]; then
+        warn "Choose a number from 0 to $(menu_count)."
+        return 0
+    fi
+    "$action"
 }
 
 # run_action ARGS...: one menu action, in a subshell so a failure returns to the menu,
@@ -1084,7 +1214,7 @@ show_menu() {
         print_menu
         show_status
         echo
-        read -rp "Please enter your selection [0-25]: " num || exit 0
+        read -rp "Please enter your selection [0-$(menu_count)]: " num || exit 0
         [ "$num" = 0 ] && exit 0
         echo
         run_action menu_action "$num"
@@ -1130,7 +1260,8 @@ main() {
             "$BIN" cert "$@"
             restart_if_running
             ;;
-        setting | migrate-db | backup | migrate) "$BIN" "$cmd" "$@" ;;
+        setting | migrate-db | backup | migrate | tunnel) "$BIN" "$cmd" "$@" ;;
+        relay-token) relay_token ;;
         version) "$BIN" -v ;;
         iplimit) iplimit "$@" ;;
         bbr) bbr "$@" ;;
