@@ -3,8 +3,6 @@ package controller
 import (
 	"sync"
 	"time"
-
-	"github.com/mhsanaei/3x-ui/v3/internal/web/service/panel"
 )
 
 // tokenLimiter counts each token's requests in fixed one-minute windows.
@@ -22,9 +20,10 @@ type tokenWindow struct {
 var defaultTokenLimiter = &tokenLimiter{now: time.Now, windows: map[string]*tokenWindow{}}
 
 // allow is keyed by the token's hash, which no other token can ever share, unlike a row id.
+// A token that names no rate is never throttled.
 func (l *tokenLimiter) allow(tokenHash string, perMinute int) bool {
 	if perMinute <= 0 {
-		perMinute = panel.DefaultTokenRateLimit
+		return true
 	}
 	l.mu.Lock()
 	defer l.mu.Unlock()

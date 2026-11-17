@@ -56,7 +56,7 @@ The speed limit needs the `nftables` package, which Ubuntu installs by default. 
 
 **Roles** makes custom roles: a tier, the permissions kept from it, and caps on users per account, devices per user and plan length. **Plans** holds the presets users are created from; pick one in the user form and its limits are filled in and applied by the server.
 
-API tokens (**Settings → Security**) act as one account. Pick the account, optionally a lower tier and fewer permissions, the requests per minute and how many days the token is valid.
+API tokens (**Settings → Security**) act as one account. Pick the account, optionally a lower tier and fewer permissions, the requests per minute (0, the default, is no limit) and how many days the token is valid.
 
 **Audit log** records sign-ins always, and every change while **Log admin changes** is on. Every account sets its own password and two-factor authentication from **My account** in the sidebar.
 

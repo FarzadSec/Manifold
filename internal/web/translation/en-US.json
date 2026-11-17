@@ -2979,7 +2979,7 @@
       "renewEveryDays": "Renew every (days)",
       "renewEveryDaysHint": "Renews the expiry and resets usage every N days; 0 never.",
       "requestsPerMinute": "Requests per minute",
-      "requestsPerMinuteHint": "0 uses the default of 120.",
+      "requestsPerMinuteHint": "0 means no limit. Set one for a script or a third party; a master driving nodes needs none.",
       "resetCycle": "Reset cycle",
       "resetsOn": "Resets on",
       "role": "Role",

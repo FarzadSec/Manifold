@@ -375,3 +375,39 @@ func TestCheckAPIAuth_SessionLoginPasses(t *testing.T) {
 		t.Fatalf("session ping status = %d, want 200", pingResp.StatusCode)
 	}
 }
+
+// A token that names no rate is not throttled: masters drive nodes with such tokens, and a
+// node sync pushes far more than a person's script. A token that names one is held to it.
+func TestTokenRateLimitAppliesOnlyWhenSet(t *testing.T) {
+	engine, _ := newAPIAuthTestEngine(t)
+	seed := func(name, plaintext string, rate int) {
+		t.Helper()
+		if err := database.GetDB().Create(&model.ApiToken{
+			Name: name, Token: crypto.HashTokenSHA256(plaintext), Enabled: true, Scope: model.ApiScopeAdmin, RateLimit: rate,
+		}).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	seed("unlimited", "rate-unset-token", 0)
+	seed("limited", "rate-three-token", 3)
+	call := func(plaintext string) int {
+		req := httptest.NewRequest(http.MethodGet, "/panel/api/ping", nil)
+		req.Header.Set("Authorization", "Bearer "+plaintext)
+		w := httptest.NewRecorder()
+		engine.ServeHTTP(w, req)
+		return w.Code
+	}
+	for i := range 300 {
+		if code := call("rate-unset-token"); code != http.StatusOK {
+			t.Fatalf("request %d of a token without a rate = %d, want 200", i+1, code)
+		}
+	}
+	for i := range 3 {
+		if code := call("rate-three-token"); code != http.StatusOK {
+			t.Fatalf("request %d of a 3-per-minute token = %d", i+1, code)
+		}
+	}
+	if code := call("rate-three-token"); code != http.StatusTooManyRequests {
+		t.Fatalf("fourth request of a 3-per-minute token = %d, want 429", code)
+	}
+}

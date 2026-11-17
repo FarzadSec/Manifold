@@ -2979,7 +2979,7 @@
       "renewEveryDays": "每隔（天）续期",
       "renewEveryDaysHint": "每 N 天续期并重置用量；0 表示从不。",
       "requestsPerMinute": "每分钟请求数",
-      "requestsPerMinuteHint": "0 表示默认 120。",
+      "requestsPerMinuteHint": "0 表示不限制。可为脚本或第三方设置;管理节点的主面板不需要。",
       "resetCycle": "重置周期",
       "resetsOn": "重置于",
       "role": "角色",
