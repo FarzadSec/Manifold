@@ -77,6 +77,7 @@ func TestManagerRemoteForIdentityFields(t *testing.T) {
 		{"tls verify mode", func(n *model.Node) { n.TlsVerifyMode = "skip" }, true},
 		{"pin", func(n *model.Node) { n.PinnedCertSha256 = "other" }, true},
 		{"outbound tag", func(n *model.Node) { n.OutboundTag = "direct" }, true},
+		{"proxy url", func(n *model.Node) { n.ProxyURL = "socks5://127.0.0.1:1080" }, true},
 	}
 
 	for _, tc := range cases {

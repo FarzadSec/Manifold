@@ -25,6 +25,7 @@ type NodeView struct {
 	InboundSyncMode     string   `json:"inboundSyncMode" example:"all"`
 	InboundTags         []string `json:"inboundTags" example:"[\"in-443-tcp\"]"`
 	OutboundTag         string   `json:"outboundTag" example:"direct"`
+	ProxyURL            string   `json:"proxyUrl" example:"socks5://127.0.0.1:1080"`
 	TrafficMultiplier   float64  `json:"trafficMultiplier" example:"1"`
 	UsageLimit          int64    `json:"usageLimit" example:"1099511627776"`
 	UsagePeriod         string   `json:"usagePeriod" example:"monthly"`
@@ -82,6 +83,7 @@ func toNodeView(n *model.Node) *NodeView {
 		InboundSyncMode:     n.InboundSyncMode,
 		InboundTags:         n.InboundTags,
 		OutboundTag:         n.OutboundTag,
+		ProxyURL:            n.ProxyURL,
 		TrafficMultiplier:   n.TrafficMultiplier,
 		UsageLimit:          n.UsageLimit,
 		UsagePeriod:         n.UsagePeriod,
@@ -148,6 +150,7 @@ type NodeMutationRequest struct {
 	InboundSyncMode     string   `json:"inboundSyncMode" form:"inboundSyncMode" validate:"omitempty,oneof=all selected"`
 	InboundTags         []string `json:"inboundTags" form:"inboundTags"`
 	OutboundTag         string   `json:"outboundTag" form:"outboundTag"`
+	ProxyURL            string   `json:"proxyUrl" form:"proxyUrl"`
 	TrafficMultiplier   float64  `json:"trafficMultiplier" form:"trafficMultiplier"`
 	UsageLimit          int64    `json:"usageLimit" form:"usageLimit"`
 	UsagePeriod         string   `json:"usagePeriod" form:"usagePeriod" validate:"omitempty,oneof=weekly monthly yearly"`
@@ -202,6 +205,7 @@ func (r *NodeMutationRequest) toNode() *model.Node {
 		InboundSyncMode:     r.InboundSyncMode,
 		InboundTags:         r.InboundTags,
 		OutboundTag:         r.OutboundTag,
+		ProxyURL:            r.ProxyURL,
 		TrafficMultiplier:   r.TrafficMultiplier,
 		UsageLimit:          r.UsageLimit,
 		UsagePeriod:         r.UsagePeriod,

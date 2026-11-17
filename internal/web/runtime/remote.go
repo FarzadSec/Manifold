@@ -203,13 +203,21 @@ func (r *Remote) requireNativeEngine(ctx context.Context, ib *model.Inbound) err
 // verify mode, so Remote ops don't fall back to system CA on skip/pin (#5264).
 func (r *Remote) httpClient() (*http.Client, error) {
 	r.clientOnce.Do(func() {
-		proxyURL := ""
-		if r.node.OutboundTag != "" && r.egressResolver != nil {
-			proxyURL = r.egressResolver.NodeEgressProxyURL(r.node.Id)
-		}
-		r.client, r.clientErr = HTTPClientForNode(r.node, proxyURL)
+		r.client, r.clientErr = HTTPClientForNode(r.node, ProxyURLFor(r.node, r.egressResolver))
 	})
 	return r.client, r.clientErr
+}
+
+// ProxyURLFor is how the panel reaches a node: its own proxy, the bridge of the outbound it
+// goes through, or "" for a direct connection.
+func ProxyURLFor(n *model.Node, egress NodeEgressResolver) string {
+	switch {
+	case n.ProxyURL != "":
+		return n.ProxyURL
+	case n.OutboundTag != "" && egress != nil:
+		return egress.NodeEgressProxyURL(n.Id)
+	}
+	return ""
 }
 
 func (r *Remote) baseURL() (string, error) {

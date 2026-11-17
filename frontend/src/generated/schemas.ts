@@ -6295,6 +6295,11 @@ export const SCHEMAS: Record<string, unknown> = {
         "minimum": 1,
         "type": "integer"
       },
+      "proxyUrl": {
+        "description": "ProxyURL reaches the node through an http, https or socks5 proxy instead of directly.",
+        "example": "socks5://127.0.0.1:1080",
+        "type": "string"
+      },
       "remark": {
         "type": "string"
       },
@@ -6417,6 +6422,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "panelVersion",
       "pinnedCertSha256",
       "port",
+      "proxyUrl",
       "remark",
       "scheme",
       "status",
@@ -6606,6 +6612,9 @@ export const SCHEMAS: Record<string, unknown> = {
         "minimum": 1,
         "type": "integer"
       },
+      "proxyUrl": {
+        "type": "string"
+      },
       "remark": {
         "type": "string"
       },
@@ -6666,6 +6675,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "outboundTag",
       "pinnedCertSha256",
       "port",
+      "proxyUrl",
       "remark",
       "scheme",
       "tlsVerifyMode",
@@ -6893,6 +6903,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": 2053,
         "type": "integer"
       },
+      "proxyUrl": {
+        "example": "socks5://127.0.0.1:1080",
+        "type": "string"
+      },
       "remark": {
         "example": "Primary edge",
         "type": "string"
@@ -7006,6 +7020,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "panelVersion",
       "pinnedCertSha256",
       "port",
+      "proxyUrl",
       "remark",
       "scheme",
       "status",

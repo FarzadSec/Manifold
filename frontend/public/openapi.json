@@ -6321,6 +6321,11 @@
             "minimum": 1,
             "type": "integer"
           },
+          "proxyUrl": {
+            "description": "ProxyURL reaches the node through an http, https or socks5 proxy instead of directly.",
+            "example": "socks5://127.0.0.1:1080",
+            "type": "string"
+          },
           "remark": {
             "type": "string"
           },
@@ -6443,6 +6448,7 @@
           "panelVersion",
           "pinnedCertSha256",
           "port",
+          "proxyUrl",
           "remark",
           "scheme",
           "status",
@@ -6632,6 +6638,9 @@
             "minimum": 1,
             "type": "integer"
           },
+          "proxyUrl": {
+            "type": "string"
+          },
           "remark": {
             "type": "string"
           },
@@ -6692,6 +6701,7 @@
           "outboundTag",
           "pinnedCertSha256",
           "port",
+          "proxyUrl",
           "remark",
           "scheme",
           "tlsVerifyMode",
@@ -6919,6 +6929,10 @@
             "example": 2053,
             "type": "integer"
           },
+          "proxyUrl": {
+            "example": "socks5://127.0.0.1:1080",
+            "type": "string"
+          },
           "remark": {
             "example": "Primary edge",
             "type": "string"
@@ -7032,6 +7046,7 @@
           "panelVersion",
           "pinnedCertSha256",
           "port",
+          "proxyUrl",
           "remark",
           "scheme",
           "status",
@@ -16684,6 +16699,7 @@
                       "parentGuid": "",
                       "pinnedCertSha256": "",
                       "port": 2053,
+                      "proxyUrl": "socks5://127.0.0.1:1080",
                       "remark": "Primary edge",
                       "scheme": "https",
                       "status": "online",
@@ -16896,6 +16912,7 @@
                     "parentGuid": "",
                     "pinnedCertSha256": "",
                     "port": 2053,
+                    "proxyUrl": "socks5://127.0.0.1:1080",
                     "remark": "Primary edge",
                     "scheme": "https",
                     "status": "online",
@@ -17057,6 +17074,7 @@
                     "parentGuid": "",
                     "pinnedCertSha256": "",
                     "port": 2053,
+                    "proxyUrl": "socks5://127.0.0.1:1080",
                     "remark": "Primary edge",
                     "scheme": "https",
                     "status": "online",
@@ -27526,6 +27544,7 @@
                   "parentGuid": "",
                   "pinnedCertSha256": "",
                   "port": 2053,
+                  "proxyUrl": "socks5://127.0.0.1:1080",
                   "remark": "Primary edge",
                   "scheme": "https",
                   "status": "online",

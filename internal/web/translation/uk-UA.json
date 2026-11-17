@@ -1475,7 +1475,10 @@
         "acceptHostKey": "This is my server's key",
         "done": "Done. The node list shows it within a few seconds.",
         "failed": "The install failed"
-      }
+      },
+      "proxyUrl": "Reach through a proxy",
+      "proxyUrlHint": "An http, https or socks5 proxy the panel connects to this node through, such as socks5://127.0.0.1:1080. Leave it empty to connect directly. It replaces the outbound above.",
+      "proxyUrlInvalid": "Use a URL like socks5://host:port, with http, https or socks5"
     },
     "settings": {
       "defaultTag": "Типово",

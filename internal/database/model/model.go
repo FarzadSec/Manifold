@@ -1001,6 +1001,8 @@ type Node struct {
 	InboundSyncMode     string   `json:"inboundSyncMode" form:"inboundSyncMode" gorm:"column:inbound_sync_mode;default:all" validate:"omitempty,oneof=all selected"`
 	InboundTags         []string `json:"inboundTags" form:"inboundTags" gorm:"serializer:json;column:inbound_tags"`
 	OutboundTag         string   `json:"outboundTag" form:"outboundTag" gorm:"column:outbound_tag"`
+	// ProxyURL reaches the node through an http, https or socks5 proxy instead of directly.
+	ProxyURL string `json:"proxyUrl" form:"proxyUrl" gorm:"column:proxy_url" example:"socks5://127.0.0.1:1080"`
 	// TrafficMultiplier scales what this node's traffic costs users' quotas; 0 is read as 1.
 	TrafficMultiplier float64 `json:"trafficMultiplier" form:"trafficMultiplier" gorm:"column:traffic_multiplier;default:1" example:"1"`
 	// A cap on the node's raw traffic per period (bytes; 0 none): reaching it stops the

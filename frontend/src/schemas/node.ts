@@ -40,6 +40,7 @@ export const NodeRecordSchema = z
     // Backend serializes a nil []string as null for nodes saved before #5178.
     inboundTags: z.array(z.string()).nullish(),
     outboundTag: z.string().optional(),
+    proxyUrl: z.string().optional(),
     trafficMultiplier: z.number().optional(),
     usageLimit: z.number().optional(),
     usagePeriod: z.string().optional(),
@@ -96,6 +97,12 @@ export const NodeFormSchema = z
       .nullish()
       .transform((tags) => tags ?? []),
     outboundTag: z.string().optional(),
+    proxyUrl: z
+      .string()
+      .trim()
+      .regex(/^$|^(https?|socks5h?):\/\/[^\s/]+:\d+\/?$/i, 'pages.nodes.proxyUrlInvalid')
+      .optional()
+      .default(''),
     trafficMultiplier: z.number().min(0.01).max(100),
     usagePeriod: z.enum(['', 'weekly', 'monthly', 'yearly']),
     usageLimitGB: z.number().min(0),

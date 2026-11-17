@@ -165,7 +165,8 @@ func sameRemoteIdentity(a, b *model.Node) bool {
 		a.AllowPrivateAddress == b.AllowPrivateAddress &&
 		a.TlsVerifyMode == b.TlsVerifyMode &&
 		a.PinnedCertSha256 == b.PinnedCertSha256 &&
-		a.OutboundTag == b.OutboundTag
+		a.OutboundTag == b.OutboundTag &&
+		a.ProxyURL == b.ProxyURL
 }
 
 // InvalidateNode forgets everything cached for a node, its pooled HTTP client too:

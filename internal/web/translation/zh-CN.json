@@ -1475,7 +1475,10 @@
         "acceptHostKey": "这是我的服务器的密钥",
         "done": "完成。几秒内会出现在节点列表中。",
         "failed": "安装失败"
-      }
+      },
+      "proxyUrl": "通过代理连接",
+      "proxyUrlHint": "面板连接此节点所用的 http、https 或 socks5 代理，例如 socks5://127.0.0.1:1080。留空则直接连接。设置后将取代上面的出站。",
+      "proxyUrlInvalid": "请使用 socks5://host:port 形式的地址，协议为 http、https 或 socks5"
     },
     "settings": {
       "defaultTag": "默认",

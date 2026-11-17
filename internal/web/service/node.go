@@ -24,6 +24,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/json_util"
+	"github.com/mhsanaei/3x-ui/v3/internal/util/netproxy"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/netsafe"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/runtime"
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
@@ -92,6 +93,15 @@ func (s *NodeService) FetchCertFingerprint(ctx context.Context, n *model.Node) (
 		},
 		// The pin must be the certificate of the host asked, not of wherever it redirects.
 		CheckRedirect: runtime.NoCrossHostRedirect,
+	}
+	if n.ProxyURL != "" {
+		proxied, err := netproxy.NewHTTPClient(n.ProxyURL, 0)
+		if err != nil {
+			return "", err
+		}
+		proxied.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true} // lgtm[go/disabled-certificate-check]
+		proxied.CheckRedirect = runtime.NoCrossHostRedirect
+		client = proxied
 	}
 	defer client.CloseIdleConnections()
 	resp, err := client.Do(req)
@@ -427,6 +437,9 @@ func (s *NodeService) normalize(n *model.Node) error {
 		return common.NewError("mtls requires the node scheme to be https")
 	}
 	n.PinnedCertSha256 = strings.TrimSpace(n.PinnedCertSha256)
+	if err := normalizeNodeProxy(n); err != nil {
+		return err
+	}
 	if n.TrafficMultiplier == 0 {
 		n.TrafficMultiplier = 1
 	}
@@ -463,6 +476,27 @@ func (s *NodeService) normalize(n *model.Node) error {
 	}
 	n.BasePath = normalizeBasePath(n.BasePath)
 	return nil
+}
+
+// normalizeNodeProxy keeps one way of reaching a node: a proxy the panel dials itself, or
+// one of the panel's own outbounds, not both.
+func normalizeNodeProxy(n *model.Node) error {
+	n.ProxyURL = strings.TrimSpace(n.ProxyURL)
+	if n.ProxyURL == "" {
+		return nil
+	}
+	if n.OutboundTag != "" {
+		return common.NewError("reach a node through a proxy or through an outbound, not both")
+	}
+	u, err := url.Parse(n.ProxyURL)
+	if err != nil || u.Host == "" || u.Port() == "" {
+		return common.NewError("a node proxy is a URL like socks5://host:port")
+	}
+	switch strings.ToLower(u.Scheme) {
+	case "http", "https", "socks5", "socks5h":
+		return nil
+	}
+	return common.NewError("a node proxy is http, https or socks5")
 }
 
 func (s *NodeService) Create(n *model.Node) error {
@@ -561,6 +595,7 @@ func (s *NodeService) Update(id int, in *model.Node) error {
 		"inbound_sync_mode":     in.InboundSyncMode,
 		"inbound_tags":          string(inboundTagsJSON),
 		"outbound_tag":          in.OutboundTag,
+		"proxy_url":             in.ProxyURL,
 		"traffic_multiplier":    in.TrafficMultiplier,
 		"usage_limit":           in.UsageLimit,
 		"usage_period":          in.UsagePeriod,
@@ -630,6 +665,7 @@ func (s *NodeService) UpdateFromRequest(id int, req *NodeMutationRequest) error 
 		"inbound_sync_mode":     in.InboundSyncMode,
 		"inbound_tags":          string(inboundTagsJSON),
 		"outbound_tag":          in.OutboundTag,
+		"proxy_url":             in.ProxyURL,
 	}
 	if nodeSelectionGrew(existing, in) {
 		updates["inbounds_adopted_at"] = 0
@@ -1173,13 +1209,11 @@ func (s *NodeService) AggregateNodeMetric(id int, metric string, bucketSeconds i
 }
 
 func (s *NodeService) Probe(ctx context.Context, n *model.Node) (HeartbeatPatch, error) {
-	proxyURL := ""
-	if n.OutboundTag != "" {
-		if mgr := runtime.GetManager(); mgr != nil {
-			proxyURL = mgr.NodeEgressProxyURL(n.Id)
-		}
+	var egress runtime.NodeEgressResolver
+	if mgr := runtime.GetManager(); mgr != nil {
+		egress = mgr
 	}
-	return s.probe(ctx, n, proxyURL)
+	return s.probe(ctx, n, runtime.ProxyURLFor(n, egress))
 }
 
 func (s *NodeService) ProbeWithOutbound(ctx context.Context, n *model.Node, outboundTag string) (HeartbeatPatch, error) {

@@ -54,6 +54,7 @@ function defaultValues(): NodeFormValues {
     inboundSyncMode: 'all',
     inboundTags: [],
     outboundTag: '',
+    proxyUrl: '',
     trafficMultiplier: 1,
     usagePeriod: '',
     usageLimitGB: 0,
@@ -90,6 +91,7 @@ export default function NodeFormModal({
   const tlsVerifyMode = useWatch({ control: methods.control, name: 'tlsVerifyMode' }) ?? 'verify';
   const inboundSyncMode = useWatch({ control: methods.control, name: 'inboundSyncMode' }) ?? 'all';
   const usagePeriod = useWatch({ control: methods.control, name: 'usagePeriod' }) ?? '';
+  const proxyUrl = useWatch({ control: methods.control, name: 'proxyUrl' }) ?? '';
   const { data: outboundGroups } = useOutboundTagGroups({ excludeBlackhole: true });
 
   // Outbounds and balancers share one picker (like the panel-outbound selector);
@@ -169,7 +171,8 @@ export default function NodeFormModal({
       pinnedCertSha256: values.tlsVerifyMode === 'pin' ? values.pinnedCertSha256.trim() : '',
       inboundSyncMode: values.inboundSyncMode,
       inboundTags: values.inboundSyncMode === 'selected' ? values.inboundTags : [],
-      outboundTag: values.outboundTag || '',
+      outboundTag: values.proxyUrl ? '' : values.outboundTag || '',
+      proxyUrl: values.proxyUrl?.trim() || '',
       trafficMultiplier: values.trafficMultiplier || 1,
       usagePeriod: values.usagePeriod,
       usageLimit: values.usagePeriod ? Math.round(values.usageLimitGB * GB) : 0,
@@ -428,9 +431,19 @@ export default function NodeFormModal({
               <Select
                 allowClear
                 showSearch
+                disabled={!!proxyUrl}
                 placeholder={t('pages.nodes.outboundTagPlaceholder')}
                 options={outboundOptions}
               />
+            </FormField>
+
+            <FormField
+              label={t('pages.nodes.proxyUrl')}
+              name="proxyUrl"
+              tooltip={t('pages.nodes.proxyUrlHint')}
+              rules={{ validate: rhfZodValidate(NodeFormSchema.shape.proxyUrl) }}
+            >
+              <Input placeholder="socks5://127.0.0.1:1080" autoComplete="off" />
             </FormField>
 
             <Row gutter={12}>
