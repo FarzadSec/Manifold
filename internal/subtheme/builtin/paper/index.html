@@ -23,7 +23,7 @@
     {{ with .subSupportUrl }}<a class="btn ghost" href="{{ . }}" target="_blank" rel="noopener">{{ t $.lang "support" }}</a>{{ end }}
   </header>
 
-  {{ with .announce }}<section class="card notice">{{ . }}</section>{{ end }}
+  {{ with .announce }}<section class="card notice" dir="auto">{{ . }}</section>{{ end }}
 
   <section class="grid">
     <div class="card stat">
