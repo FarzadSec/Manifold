@@ -52,3 +52,42 @@ func TestBulkSetLimitsReachesTheRecordAndTheInboundCopy(t *testing.T) {
 		t.Fatal("a speed past the table's range was accepted")
 	}
 }
+
+// OpenVPN reads its session cap from the inbound's copy, so a bulk user limit has to
+// land there and in the record, without touching the IP limit.
+func TestBulkSetUserLimitReachesTheTunnelCopy(t *testing.T) {
+	setupBulkDB(t)
+	svc := &ClientService{}
+	ib := mkInbound(t, 47031, model.OpenVPN, openvpnSettings(t, `{"clients":[]}`))
+	for _, email := range []string{"u1", "u2"} {
+		if _, err := svc.CreateOne(&InboundService{}, ib.Id, model.Client{Email: email, Password: "pw-" + email, Enable: true, LimitIP: 4}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := database.GetDB().Create(&model.ClientRecord{Email: "detached", Enable: true}).Error; err != nil {
+		t.Fatal(err)
+	}
+	two := 2
+	if res, _, err := svc.BulkAdjustWithLimits(&InboundService{}, []string{"u1", "detached"}, 0, 0, "", nil, "", BulkLimits{UserLimit: &two}); err != nil || res.Adjusted != 2 {
+		t.Fatalf("BulkAdjustWithLimits = %+v, %v; want two clients adjusted", res, err)
+	}
+	if rec := lookupClientRecord(t, "u1"); rec.UserLimit != 2 || rec.LimitIP != 4 {
+		t.Fatalf("record = %+v; want user limit 2 and the IP limit kept", rec)
+	}
+	if rec := lookupClientRecord(t, "detached"); rec.UserLimit != 2 {
+		t.Fatalf("a client on no inbound kept user limit %d, want 2", rec.UserLimit)
+	}
+	instances, err := (&InboundService{}).DesiredOpenVPNInstances()
+	if err != nil || len(instances) != 1 {
+		t.Fatalf("instances = %+v, %v", instances, err)
+	}
+	for _, u := range instances[0].Users {
+		if want := map[string]int{"u1": 2, "u2": 0}[u.Name]; u.MaxSessions != want {
+			t.Fatalf("%s may hold %d sessions, want %d", u.Name, u.MaxSessions, want)
+		}
+	}
+	negative := -1
+	if _, _, err := svc.BulkAdjustWithLimits(&InboundService{}, []string{"u1"}, 0, 0, "", nil, "", BulkLimits{UserLimit: &negative}); err == nil {
+		t.Fatal("a negative user limit was accepted")
+	}
+}

@@ -1372,7 +1372,7 @@ export const sections: readonly Section[] = [
             name: 'client',
             in: 'body (json)',
             type: 'object',
-            desc: 'Client fields: email, subId, id (uuid), password, auth, flow, totalGB, expiryTime, limitIp, limitHwid, tgId (numeric Telegram user ID, 0 = none), comment, enable. Protocol-specific: secret and adTag (mtproto), privateKey, publicKey, preSharedKey, allowedIPs and keepAlive (WireGuard).',
+            desc: 'Client fields: email, subId, id (uuid), password, auth, flow, totalGB, expiryTime, limitIp (simultaneous IPs on Xray inbounds), userLimit (simultaneous OpenVPN and L2TP connections), limitHwid, tgId (numeric Telegram user ID, 0 = none), comment, enable. Protocol-specific: secret and adTag (mtproto), privateKey, publicKey, preSharedKey, allowedIPs and keepAlive (WireGuard).',
           },
           {
             name: 'inboundIds',
@@ -1381,7 +1381,7 @@ export const sections: readonly Section[] = [
             desc: 'Inbound IDs to attach the client to. At least one required.',
           },
         ],
-        body: '{\n  "client": {\n    "email": "alice@example.com",\n    "totalGB": 53687091200,\n    "expiryTime": 1735689600000,\n    "tgId": 0,\n    "limitIp": 0,\n    "limitHwid": 0,\n    "enable": true\n  },\n  "inboundIds": [3, 5]\n}',
+        body: '{\n  "client": {\n    "email": "alice@example.com",\n    "totalGB": 53687091200,\n    "expiryTime": 1735689600000,\n    "tgId": 0,\n    "limitIp": 0,\n    "userLimit": 0,\n    "limitHwid": 0,\n    "enable": true\n  },\n  "inboundIds": [3, 5]\n}',
         response: '{\n  "success": true,\n  "msg": "Client added"\n}',
       },
       {
@@ -1621,7 +1621,7 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/clients/bulkAdjust',
         summary:
-          'Shift expiry and/or traffic quota for many clients in one call. addDays/addBytes may be negative. Clients with unlimited expiry (expiryTime=0) or unlimited traffic (totalGB=0) are skipped for the corresponding field — bulk extend never converts unlimited to limited. A client that was auto-disabled solely because it was depleted (expired or over quota) is automatically re-enabled — locally and on its node — when the adjustment lifts it out of depletion; a manually-disabled or still-depleted client is left disabled. The optional flow directive sets the XTLS flow on every client: "none" clears it, "xtls-rprx-vision"/"xtls-rprx-vision-udp443" set it where the inbound supports it (omit or "" to leave it unchanged). The optional limitHwid sets maximum registered devices (0 = unlimited). The optional adTag sets MTProto Telegram sponsor channel ("none" clears). Returns the adjusted count and per-email skip reasons.',
+          'Shift expiry and/or traffic quota for many clients in one call. addDays/addBytes may be negative. Clients with unlimited expiry (expiryTime=0) or unlimited traffic (totalGB=0) are skipped for the corresponding field — bulk extend never converts unlimited to limited. A client that was auto-disabled solely because it was depleted (expired or over quota) is automatically re-enabled — locally and on its node — when the adjustment lifts it out of depletion; a manually-disabled or still-depleted client is left disabled. The optional flow directive sets the XTLS flow on every client: "none" clears it, "xtls-rprx-vision"/"xtls-rprx-vision-udp443" set it where the inbound supports it (omit or "" to leave it unchanged). The optional limitHwid sets maximum registered devices (0 = unlimited); the optional speedLimit, limitIp and userLimit set that limit to the same value on every client. The optional adTag sets MTProto Telegram sponsor channel ("none" clears). Returns the adjusted count and per-email skip reasons.',
         body: '{\n  "emails": ["alice", "bob"],\n  "addDays": 30,\n  "addBytes": 53687091200,\n  "flow": "xtls-rprx-vision",\n  "limitHwid": 2,\n  "adTag": "0123456789abcdef0123456789abcdef"\n}',
         response:
           '{\n  "success": true,\n  "obj": {\n    "adjusted": 2,\n    "skipped": [\n      { "email": "carol", "reason": "unlimited expiry" }\n    ]\n  }\n}',
@@ -2749,7 +2749,7 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/access/plans/add',
         summary: 'Create a plan new users can be created from.',
-        body: '{\n  "name": "30 days 50 GB",\n  "totalBytes": 53687091200,\n  "days": 30,\n  "startOnFirstUse": true,\n  "limitIp": 2,\n  "allInbounds": true\n}',
+        body: '{\n  "name": "30 days 50 GB",\n  "totalBytes": 53687091200,\n  "days": 30,\n  "startOnFirstUse": true,\n  "limitIp": 2,\n  "userLimit": 2,\n  "allInbounds": true\n}',
         responseSchema: 'Plan',
       },
       {

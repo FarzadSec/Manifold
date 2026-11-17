@@ -31,7 +31,7 @@ func TestDesiredL2TPInstancesServeOnlyAccountsWithinTheirLimits(t *testing.T) {
 	svc := &InboundService{}
 
 	seedInboundConflict(t, "l2tp-served", "", l2tp.Port, model.L2TP, "", l2tpSettings(t, `{"clients":[`+
-		`{"email":"alice","password":"pw-alice","enable":true,"limitIp":2},`+
+		`{"email":"alice","password":"pw-alice","enable":true,"userLimit":2,"limitIp":5},`+
 		`{"email":"bob","password":"pw-bob","enable":true},`+
 		`{"email":"carol","password":"pw-carol","enable":false}]}`))
 	served := loadInboundByTag(t, "l2tp-served")

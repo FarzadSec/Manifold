@@ -23,6 +23,7 @@ export interface ClientSetting {
   tgId?: string;
   enable?: boolean;
   limitIp?: number;
+  userLimit?: number;
   created_at?: number;
   updated_at?: number;
 }

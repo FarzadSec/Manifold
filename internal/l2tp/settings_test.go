@@ -97,9 +97,9 @@ func l2tpInbound(t *testing.T, settings string) *model.Inbound {
 
 func TestInstanceServesEnabledAccountsFromThePoolBehindTheServer(t *testing.T) {
 	inst, ok := InstanceFromInbound(l2tpInbound(t, `{"server":{"psk":"shared-key-123","subnet":"10.9.4.0/22","dns":["9.9.9.9"],"mtu":1400},"clients":[
-		{"email":"alice","password":"alice-pass","enable":true,"limitIp":2},
+		{"email":"alice","password":"alice-pass","enable":true,"userLimit":2,"limitIp":5},
 		{"email":"bob","password":"bob-pass","enable":false},
-		{"email":"carol","password":"carol-pass","enable":true}]}`))
+		{"email":"carol","password":"carol-pass","enable":true,"limitIp":3}]}`))
 	if !ok {
 		t.Fatal("InstanceFromInbound refused a valid inbound")
 	}

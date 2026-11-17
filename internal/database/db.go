@@ -1548,7 +1548,7 @@ func runSeeders(isUsersEmpty bool) error {
 	}
 
 	if empty && isUsersEmpty {
-		seeders := []string{"UserPasswordHash", "ClientsTable", "InboundClientsArrayFix", "InboundClientTgIdFix2", "InboundClientSubIdFix", "FreedomFinalRulesReverseFix", "FreedomFinalRulesPrivateEgressBlock", "UppercaseFreedomFinalRulesFix", "FreedomFinalRuleDelayFix", "InboundRealityFinalmaskTcpStrip", "ApiTokensHash", "LegacyProxySettingsCleanup", "SessionSecretRotation", "OutboundRemovedKeysFix", "FreedomDomainStrategyFix", "DNSOutboundLegacyKeysFix", "DNSOutboundQTypeZeroFix", "WireguardDomainStrategyFix", "XdnsFinalmaskNamesAddrsFix", "UDPHopClientMaskFix", "HostVerifyPeerCertByNameBoolFix", "HostMihomoX25519Reset", "WireguardPeersToClients", "MtprotoSecretsToClients", "NodeInboundsAdopted", "NodeDownNotified", "ResetIpLimitNoFail2ban", "ClientGroupNameTrim", "OwnerlessClientHwidPurge", "ClientForwardedPortsBackfill", "TwoFactorPerAccount", "ClientWeeklyResetOnSunday"}
+		seeders := []string{"UserPasswordHash", "ClientsTable", "InboundClientsArrayFix", "InboundClientTgIdFix2", "InboundClientSubIdFix", "FreedomFinalRulesReverseFix", "FreedomFinalRulesPrivateEgressBlock", "UppercaseFreedomFinalRulesFix", "FreedomFinalRuleDelayFix", "InboundRealityFinalmaskTcpStrip", "ApiTokensHash", "LegacyProxySettingsCleanup", "SessionSecretRotation", "OutboundRemovedKeysFix", "FreedomDomainStrategyFix", "DNSOutboundLegacyKeysFix", "DNSOutboundQTypeZeroFix", "WireguardDomainStrategyFix", "XdnsFinalmaskNamesAddrsFix", "UDPHopClientMaskFix", "HostVerifyPeerCertByNameBoolFix", "HostMihomoX25519Reset", "WireguardPeersToClients", "MtprotoSecretsToClients", "NodeInboundsAdopted", "NodeDownNotified", "ResetIpLimitNoFail2ban", "ClientGroupNameTrim", "OwnerlessClientHwidPurge", "ClientForwardedPortsBackfill", "TwoFactorPerAccount", "ClientWeeklyResetOnSunday", "ClientUserLimitSplit"}
 		for _, name := range seeders {
 			if err := db.Create(&model.HistoryOfSeeders{SeederName: name}).Error; err != nil {
 				return err
@@ -1751,6 +1751,12 @@ func runSeeders(isUsersEmpty bool) error {
 
 	if !slices.Contains(seedersHistory, "ClientForwardedPortsBackfill") {
 		if err := backfillClientForwardedPorts(); err != nil {
+			return err
+		}
+	}
+
+	if !slices.Contains(seedersHistory, "ClientUserLimitSplit") {
+		if err := splitClientUserLimit(); err != nil {
 			return err
 		}
 	}
@@ -2087,6 +2093,92 @@ func backfillClientForwardedPorts() error {
 		}
 		return tx.Create(&model.HistoryOfSeeders{SeederName: "ClientForwardedPortsBackfill"}).Error
 	})
+}
+
+// OpenVPN and L2TP once capped connections with limitIp, which now counts only Xray's IPs;
+// each account of theirs, and each plan reaching them, keeps its cap as userLimit.
+func splitClientUserLimit() error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		var inbounds []model.Inbound
+		if err := tx.Select("id", "protocol", "settings").Find(&inbounds).Error; err != nil {
+			return err
+		}
+		settingsOf := make([]map[string]any, len(inbounds))
+		tunnelIds, emails := []int{}, []string{}
+		for i, ib := range inbounds {
+			if json.Unmarshal([]byte(ib.Settings), &settingsOf[i]) != nil {
+				continue
+			}
+			if ib.Protocol != model.OpenVPN && ib.Protocol != model.L2TP {
+				continue
+			}
+			tunnelIds = append(tunnelIds, ib.Id)
+			for _, c := range settingsClients(settingsOf[i]) {
+				if email, _ := c["email"].(string); email != "" {
+					emails = append(emails, email)
+				}
+			}
+		}
+		caps := map[string]int{}
+		if len(emails) > 0 {
+			if err := tx.Model(&model.ClientRecord{}).Where("email IN ? AND user_limit = 0", emails).
+				UpdateColumn("user_limit", gorm.Expr("limit_ip")).Error; err != nil {
+				return err
+			}
+			var rows []model.ClientRecord
+			if err := tx.Select("email", "user_limit").Where("email IN ? AND user_limit > 0", emails).Find(&rows).Error; err != nil {
+				return err
+			}
+			for _, r := range rows {
+				caps[r.Email] = r.UserLimit
+			}
+		}
+		// Every inbound's copy of the account gets the cap: saving any of them rewrites the record.
+		for i, ib := range inbounds {
+			mutated := false
+			for _, c := range settingsClients(settingsOf[i]) {
+				email, _ := c["email"].(string)
+				if current, _ := c["userLimit"].(float64); caps[email] > 0 && current == 0 {
+					c["userLimit"] = caps[email]
+					mutated = true
+				}
+			}
+			if !mutated {
+				continue
+			}
+			raw, err := json.MarshalIndent(settingsOf[i], "", "  ")
+			if err != nil {
+				return err
+			}
+			if err := tx.Model(&model.Inbound{}).Where("id = ?", ib.Id).UpdateColumn("settings", string(raw)).Error; err != nil {
+				return err
+			}
+		}
+		var plans []model.Plan
+		if err := tx.Where("limit_ip > 0 AND user_limit = 0").Find(&plans).Error; err != nil {
+			return err
+		}
+		for _, p := range plans {
+			if !p.AllInbounds && !slices.ContainsFunc(p.InboundIds, func(id int) bool { return slices.Contains(tunnelIds, id) }) {
+				continue
+			}
+			if err := tx.Model(&model.Plan{}).Where("id = ?", p.Id).UpdateColumn("user_limit", p.LimitIp).Error; err != nil {
+				return err
+			}
+		}
+		return tx.Create(&model.HistoryOfSeeders{SeederName: "ClientUserLimitSplit"}).Error
+	})
+}
+
+func settingsClients(settings map[string]any) []map[string]any {
+	raw, _ := settings["clients"].([]any)
+	out := make([]map[string]any, 0, len(raw))
+	for _, c := range raw {
+		if obj, ok := c.(map[string]any); ok {
+			out = append(out, obj)
+		}
+	}
+	return out
 }
 
 // The HWID gate stored a row for any subId a request named, owned or not; those rows

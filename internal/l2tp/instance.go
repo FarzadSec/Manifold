@@ -57,7 +57,7 @@ func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 		if !c.Enable || ValidateUsername(c.Email) != nil || ValidatePassword(c.Password) != nil {
 			continue
 		}
-		users = append(users, User{Name: c.Email, Password: c.Password, MaxSessions: max(c.LimitIP, 0)})
+		users = append(users, User{Name: c.Email, Password: c.Password, MaxSessions: max(c.UserLimit, 0)})
 	}
 	return Instance{
 		Id:     ib.Id,

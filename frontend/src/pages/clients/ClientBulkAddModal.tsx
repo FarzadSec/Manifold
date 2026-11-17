@@ -21,6 +21,7 @@ import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { RandomUtil, SizeFormatter } from '@/utils';
 import { formatInboundLabel } from '@/lib/inbounds/label';
 import { TLS_FLOW_CONTROL } from '@/schemas/primitives';
+import { countsClientIps, countsClientSessions } from '@/lib/xray/protocol-capabilities';
 import ClientCycleFields from './ClientCycleFields';
 import { DateTimePicker, SelectAllClearButtons, selectTagRender } from '@/components/form';
 import { FormField } from '@/components/form/rhf';
@@ -57,6 +58,7 @@ const EMPTY: ClientBulkAddFormValues = {
   comment: '',
   flow: '',
   limitIp: 0,
+  userLimit: 0,
   speedLimit: 0,
   limitHwid: 0,
   totalGB: 0,
@@ -106,6 +108,12 @@ export default function ClientBulkAddModal({
   const fail2ban = useFail2banStatusQuery();
   const limitIpDisabled = !fail2ban.usable;
   const limitIpNotice = getLimitIpNotice(fail2ban, t);
+  const chosenProtocols = (inboundIds || []).flatMap((id) => {
+    const protocol = (inbounds || []).find((row) => row.id === id)?.protocol;
+    return protocol ? [protocol] : [];
+  });
+  const showLimitIp = chosenProtocols.length === 0 || chosenProtocols.some(countsClientIps);
+  const showUserLimit = chosenProtocols.length === 0 || chosenProtocols.some(countsClientSessions);
 
   const [wasOpen, setWasOpen] = useState(false);
   if (open !== wasOpen) {
@@ -220,6 +228,7 @@ export default function ClientBulkAddModal({
           trafficResetEvery: Number(current.trafficResetEvery) || 0,
           trafficResetCalendar: current.trafficResetCalendar || 'gregorian',
           limitIp: Number(current.limitIp) || 0,
+          userLimit: Number(current.userLimit) || 0,
           speedLimit: Number(current.speedLimit) || 0,
           limitHwid: Number(current.limitHwid) || 0,
           group: current.group,
@@ -403,20 +412,33 @@ export default function ClientBulkAddModal({
               </FormField>
             )}
 
-            <Form.Item label={t('pages.clients.limitIp')} htmlFor={`${uid}-limit-ip`}>
-              <Tooltip title={limitIpNotice || undefined}>
-                <span style={{ display: 'inline-flex' }}>
-                  <InputNumber
-                    id={`${uid}-limit-ip`}
-                    value={limitIp}
-                    min={0}
-                    disabled={limitIpDisabled}
-                    style={limitIpDisabled ? { pointerEvents: 'none' } : undefined}
-                    onChange={(v) => methods.setValue('limitIp', Number(v) || 0)}
-                  />
-                </span>
-              </Tooltip>
-            </Form.Item>
+            {showLimitIp && (
+              <Form.Item label={t('pages.clients.limitIp')} htmlFor={`${uid}-limit-ip`}>
+                <Tooltip title={limitIpNotice || undefined}>
+                  <span style={{ display: 'inline-flex' }}>
+                    <InputNumber
+                      id={`${uid}-limit-ip`}
+                      value={limitIp}
+                      min={0}
+                      disabled={limitIpDisabled}
+                      style={limitIpDisabled ? { pointerEvents: 'none' } : undefined}
+                      onChange={(v) => methods.setValue('limitIp', Number(v) || 0)}
+                    />
+                  </span>
+                </Tooltip>
+              </Form.Item>
+            )}
+
+            {showUserLimit && (
+              <FormField
+                name="userLimit"
+                label={t('pages.clients.userLimit')}
+                tooltip={t('pages.clients.userLimitDesc')}
+                transform={{ output: (v) => Number(v) || 0 }}
+              >
+                <InputNumber min={0} />
+              </FormField>
+            )}
 
             <FormField
               name="totalGB"

@@ -6,6 +6,7 @@ export const L2tpClientSchema = z.object({
   password: z.string().default(''),
   email: z.string().min(1),
   limitIp: z.number().int().min(0).default(0),
+  userLimit: z.number().int().min(0).default(0),
   totalGB: z.number().int().min(0).default(0),
   expiryTime: z.number().int().default(0),
   enable: z.boolean().default(true),

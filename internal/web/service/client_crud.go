@@ -1012,6 +1012,7 @@ func (s *ClientService) update(inboundSvc *InboundService, id int, updated model
 				"wg_keep_alive":          keepAliveLegacy,
 				"wg_keep_alive_range":    keepAliveRange,
 				"limit_ip":               merged.LimitIP,
+				"user_limit":             merged.UserLimit,
 				"speed_limit":            merged.SpeedLimit,
 				"total_gb":               merged.TotalGB,
 				"expiry_time":            merged.ExpiryTime,

@@ -120,6 +120,16 @@ export function canEnableSniffing(values: { protocol: string }): boolean {
   );
 }
 
+// The IP limit counts the addresses Xray and kernel AmneziaWG report; these engines report none.
+export function countsClientIps(protocol: string): boolean {
+  return !['mtproto', 'tuic', 'openvpn', 'wireguard', 'l2tp'].includes(protocol);
+}
+
+// OpenVPN and L2TP decide every login themselves, so they can hold an account to N connections.
+export function countsClientSessions(protocol: string): boolean {
+  return protocol === Protocols.OPENVPN || protocol === Protocols.L2TP;
+}
+
 // Vision seed applies only when XTLS Vision (TCP/TLS) flow is selected
 // AND at least one VLESS client uses the vision flow. Excludes UDP variant.
 export function canEnableVisionSeed(values: CapabilityVlessSlice): boolean {

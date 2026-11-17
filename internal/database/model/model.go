@@ -113,6 +113,7 @@ type Plan struct {
 	Days                 int    `json:"days" gorm:"default:0" example:"30"`
 	StartOnFirstUse      bool   `json:"startOnFirstUse" gorm:"default:false"`
 	LimitIp              int    `json:"limitIp" gorm:"default:0"`
+	UserLimit            int    `json:"userLimit" gorm:"default:0"`
 	LimitHwid            int    `json:"limitHwid" gorm:"default:0"`
 	SpeedLimit           int    `json:"speedLimit" gorm:"default:0" example:"20"`
 	Reset                int    `json:"reset" gorm:"default:0"`
@@ -1096,7 +1097,8 @@ type Client struct {
 	Secret              string           `json:"secret,omitempty" example:"ee1234567890abcdef1234567890abcd7777772e636c6f7564666c6172652e636f6d"`
 	AdTag               string           `json:"adTag,omitempty" example:"0123456789abcdef0123456789abcdef"`
 	Email               string           `json:"email"`                             // Client email identifier
-	LimitIP             int              `json:"limitIp"`                           // IP limit for this client
+	LimitIP             int              `json:"limitIp"`                           // Simultaneous IPs on Xray inbounds
+	UserLimit           int              `json:"userLimit,omitempty"`               // Simultaneous OpenVPN and L2TP connections
 	SpeedLimit          int              `json:"speedLimit,omitempty" example:"20"` // Mbps in each direction on each host; 0 is unlimited
 	TotalGB             int64            `json:"totalGB" form:"totalGB"`            // Total traffic limit in GB
 	ExpiryTime          int64            `json:"expiryTime" form:"expiryTime"`      // Expiration timestamp
@@ -1146,6 +1148,7 @@ type ClientRecord struct {
 	Secret            string            `json:"secret" gorm:"column:secret"`
 	AdTag             string            `json:"adTag" gorm:"column:ad_tag;default:''"`
 	LimitIP           int               `json:"limitIp" gorm:"column:limit_ip"`
+	UserLimit         int               `json:"userLimit" gorm:"column:user_limit;default:0"`
 	LimitHwid         int               `json:"limitHwid" gorm:"column:limit_hwid;default:0"`
 	SpeedLimit        int               `json:"speedLimit" gorm:"column:speed_limit;default:0"`
 	TotalGB           int64             `json:"totalGB" gorm:"column:total_gb"`
@@ -1495,6 +1498,7 @@ func (c *Client) ToRecord() *ClientRecord {
 		Security:             c.Security,
 		ClientHostRuleIds:    CloneClientHostRuleIds(c.ClientHostRuleIds),
 		LimitIP:              c.LimitIP,
+		UserLimit:            c.UserLimit,
 		SpeedLimit:           c.SpeedLimit,
 		TotalGB:              c.TotalGB,
 		ExpiryTime:           c.ExpiryTime,
@@ -1561,6 +1565,7 @@ func (r *ClientRecord) ToClient() *Client {
 		Security:             r.Security,
 		ClientHostRuleIds:    CloneClientHostRuleIds(r.ClientHostRuleIds),
 		LimitIP:              r.LimitIP,
+		UserLimit:            r.UserLimit,
 		SpeedLimit:           r.SpeedLimit,
 		TotalGB:              r.TotalGB,
 		ExpiryTime:           r.ExpiryTime,
@@ -1823,6 +1828,16 @@ func MergeClientRecord(existing *ClientRecord, incoming *ClientRecord) []ClientM
 		if picked != existing.LimitIP {
 			keep("limitIp", existing.LimitIP, incoming.LimitIP, picked)
 			existing.LimitIP = picked
+		}
+	}
+	if existing.UserLimit != incoming.UserLimit && incoming.UserLimit != 0 {
+		picked := existing.UserLimit
+		if existing.UserLimit == 0 || incoming.UserLimit > existing.UserLimit {
+			picked = incoming.UserLimit
+		}
+		if picked != existing.UserLimit {
+			keep("userLimit", existing.UserLimit, incoming.UserLimit, picked)
+			existing.UserLimit = picked
 		}
 	}
 	if existing.SpeedLimit != incoming.SpeedLimit && incoming.SpeedLimit != 0 {

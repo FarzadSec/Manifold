@@ -884,6 +884,7 @@ export const ClientSchema = z.object({
   trafficResetEvery: z.number().int().optional(),
   trafficResetMonth: z.number().int().optional(),
   updated_at: z.number().int().optional(),
+  userLimit: z.number().int().optional(),
 });
 export type Client = z.infer<typeof ClientSchema>;
 
@@ -946,6 +947,7 @@ export const ClientRecordSchema = z.object({
   trafficResetEvery: z.number().int(),
   trafficResetMonth: z.number().int(),
   updatedAt: z.number().int(),
+  userLimit: z.number().int(),
   uuid: z.string(),
 });
 export type ClientRecord = z.infer<typeof ClientRecordSchema>;
@@ -1002,6 +1004,7 @@ export const ClientSlimSchema = z.object({
   totalGB: z.number().int(),
   traffic: z.lazy(() => ClientTrafficSchema).nullable().optional(),
   updatedAt: z.number().int(),
+  userLimit: z.number().int(),
 });
 export type ClientSlim = z.infer<typeof ClientSlimSchema>;
 
@@ -1742,6 +1745,7 @@ export const PlanSchema = z.object({
   trafficResetDay: z.number().int(),
   trafficResetEvery: z.number().int(),
   trafficResetMonth: z.number().int(),
+  userLimit: z.number().int(),
 });
 export type Plan = z.infer<typeof PlanSchema>;
 

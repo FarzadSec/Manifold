@@ -3448,7 +3448,7 @@
             ]
           },
           "limitIp": {
-            "description": "IP limit for this client",
+            "description": "Simultaneous IPs on Xray inbounds",
             "type": "integer"
           },
           "password": {
@@ -3547,6 +3547,10 @@
           "updated_at": {
             "description": "Last update timestamp",
             "format": "int64",
+            "type": "integer"
+          },
+          "userLimit": {
+            "description": "Simultaneous OpenVPN and L2TP connections",
             "type": "integer"
           }
         },
@@ -3783,6 +3787,9 @@
             "format": "int64",
             "type": "integer"
           },
+          "userLimit": {
+            "type": "integer"
+          },
           "uuid": {
             "type": "string"
           }
@@ -3826,6 +3833,7 @@
           "trafficResetEvery",
           "trafficResetMonth",
           "updatedAt",
+          "userLimit",
           "uuid"
         ],
         "type": "object"
@@ -4041,6 +4049,10 @@
             "example": 1735100000000,
             "format": "int64",
             "type": "integer"
+          },
+          "userLimit": {
+            "example": 0,
+            "type": "integer"
           }
         },
         "required": [
@@ -4059,7 +4071,8 @@
           "speedLimit",
           "subId",
           "totalGB",
-          "updatedAt"
+          "updatedAt",
+          "userLimit"
         ],
         "type": "object"
       },
@@ -7234,6 +7247,9 @@
           },
           "trafficResetMonth": {
             "type": "integer"
+          },
+          "userLimit": {
+            "type": "integer"
           }
         },
         "required": [
@@ -7258,7 +7274,8 @@
           "trafficResetCalendar",
           "trafficResetDay",
           "trafficResetEvery",
-          "trafficResetMonth"
+          "trafficResetMonth",
+          "userLimit"
         ],
         "type": "object"
       },
@@ -13362,7 +13379,8 @@
                         "subUrl": "https://sub.example.com/sub/abcd1234",
                         "totalGB": 53687091200,
                         "traffic": null,
-                        "updatedAt": 1735100000000
+                        "updatedAt": 1735100000000,
+                        "userLimit": 0
                       }
                     ],
                     "page": 1,
@@ -13608,7 +13626,7 @@
                 "properties": {
                   "client": {
                     "type": "object",
-                    "description": "Client fields: email, subId, id (uuid), password, auth, flow, totalGB, expiryTime, limitIp, limitHwid, tgId (numeric Telegram user ID, 0 = none), comment, enable. Protocol-specific: secret and adTag (mtproto), privateKey, publicKey, preSharedKey, allowedIPs and keepAlive (WireGuard)."
+                    "description": "Client fields: email, subId, id (uuid), password, auth, flow, totalGB, expiryTime, limitIp (simultaneous IPs on Xray inbounds), userLimit (simultaneous OpenVPN and L2TP connections), limitHwid, tgId (numeric Telegram user ID, 0 = none), comment, enable. Protocol-specific: secret and adTag (mtproto), privateKey, publicKey, preSharedKey, allowedIPs and keepAlive (WireGuard)."
                   },
                   "inboundIds": {
                     "type": "array",
@@ -13630,6 +13648,7 @@
                   "expiryTime": 1735689600000,
                   "tgId": 0,
                   "limitIp": 0,
+                  "userLimit": 0,
                   "limitHwid": 0,
                   "enable": true
                 },
@@ -14598,7 +14617,7 @@
         "tags": [
           "Clients"
         ],
-        "summary": "Shift expiry and/or traffic quota for many clients in one call. addDays/addBytes may be negative. Clients with unlimited expiry (expiryTime=0) or unlimited traffic (totalGB=0) are skipped for the corresponding field — bulk extend never converts unlimited to limited. A client that was auto-disabled solely because it was depleted (expired or over quota) is automatically re-enabled — locally and on its node — when the adjustment lifts it out of depletion; a manually-disabled or still-depleted client is left disabled. The optional flow directive sets the XTLS flow on every client: \"none\" clears it, \"xtls-rprx-vision\"/\"xtls-rprx-vision-udp443\" set it where the inbound supports it (omit or \"\" to leave it unchanged). The optional limitHwid sets maximum registered devices (0 = unlimited). The optional adTag sets MTProto Telegram sponsor channel (\"none\" clears). Returns the adjusted count and per-email skip reasons.",
+        "summary": "Shift expiry and/or traffic quota for many clients in one call. addDays/addBytes may be negative. Clients with unlimited expiry (expiryTime=0) or unlimited traffic (totalGB=0) are skipped for the corresponding field — bulk extend never converts unlimited to limited. A client that was auto-disabled solely because it was depleted (expired or over quota) is automatically re-enabled — locally and on its node — when the adjustment lifts it out of depletion; a manually-disabled or still-depleted client is left disabled. The optional flow directive sets the XTLS flow on every client: \"none\" clears it, \"xtls-rprx-vision\"/\"xtls-rprx-vision-udp443\" set it where the inbound supports it (omit or \"\" to leave it unchanged). The optional limitHwid sets maximum registered devices (0 = unlimited); the optional speedLimit, limitIp and userLimit set that limit to the same value on every client. The optional adTag sets MTProto Telegram sponsor channel (\"none\" clears). Returns the adjusted count and per-email skip reasons.",
         "operationId": "post_panel_api_clients_bulkAdjust",
         "requestBody": {
           "required": true,
@@ -21368,7 +21387,8 @@
                       "trafficResetCalendar": "",
                       "trafficResetDay": 0,
                       "trafficResetEvery": 0,
-                      "trafficResetMonth": 0
+                      "trafficResetMonth": 0,
+                      "userLimit": 0
                     }
                   ]
                 }
@@ -21443,6 +21463,7 @@
                 "days": 30,
                 "startOnFirstUse": true,
                 "limitIp": 2,
+                "userLimit": 2,
                 "allInbounds": true
               }
             }
@@ -21493,7 +21514,8 @@
                     "trafficResetCalendar": "",
                     "trafficResetDay": 0,
                     "trafficResetEvery": 0,
-                    "trafficResetMonth": 0
+                    "trafficResetMonth": 0,
+                    "userLimit": 0
                   }
                 }
               }
@@ -21580,7 +21602,8 @@
                     "trafficResetCalendar": "",
                     "trafficResetDay": 0,
                     "trafficResetEvery": 0,
-                    "trafficResetMonth": 0
+                    "trafficResetMonth": 0,
+                    "userLimit": 0
                   }
                 }
               }

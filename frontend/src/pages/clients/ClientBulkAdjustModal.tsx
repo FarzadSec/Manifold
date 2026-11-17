@@ -25,6 +25,7 @@ const EMPTY: ClientBulkAdjustFormValues = {
   adTag: '',
   speedLimit: null,
   limitIp: null,
+  userLimit: null,
 };
 
 interface ClientBulkAdjustModalProps {
@@ -71,6 +72,7 @@ export default function ClientBulkAdjustModal({
       adTag: values.adTag?.trim() ?? '',
       speedLimit: optionalCount(values.speedLimit),
       limitIp: optionalCount(values.limitIp),
+      userLimit: optionalCount(values.userLimit),
     });
     if (!validated.success) {
       messageApi.warning(t(validated.error.issues[0]?.message ?? 'somethingWentWrong'));
@@ -84,6 +86,7 @@ export default function ClientBulkAdjustModal({
       adTag,
       speedLimit,
       limitIp,
+      userLimit,
     } = validated.data;
     setSubmitting(true);
     try {
@@ -91,6 +94,7 @@ export default function ClientBulkAdjustModal({
       const result = await onSubmit(days, bytes, flowValue, limitHwid, adTag, {
         speedLimit,
         limitIp,
+        userLimit,
       });
       if (!result) return;
       const ok = result.adjusted ?? 0;
@@ -168,6 +172,19 @@ export default function ClientBulkAdjustModal({
               name="limitIp"
               label={t('pages.clients.limitIp')}
               tooltip={t('pages.clients.limitIpDesc')}
+            >
+              <InputNumber
+                style={{ width: '100%' }}
+                min={0}
+                step={1}
+                precision={0}
+                placeholder={t('pages.clients.bulkFlowNoChange')}
+              />
+            </FormField>
+            <FormField
+              name="userLimit"
+              label={t('pages.clients.userLimit')}
+              tooltip={t('pages.clients.userLimitDesc')}
             >
               <InputNumber
                 style={{ width: '100%' }}

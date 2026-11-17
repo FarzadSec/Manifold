@@ -169,7 +169,7 @@ func guardClientAccess(c *gin.Context) {
 }
 
 // limitKeys are the fields a plans-only reseller may not change on its users.
-var limitKeys = []string{"totalGB", "expiryTime", "limitIp", "speedLimit", "limitHwid", "reset", "resetDay", "resetWeekday", "resetMax", "trafficReset", "trafficResetDay"}
+var limitKeys = []string{"totalGB", "expiryTime", "limitIp", "userLimit", "speedLimit", "limitHwid", "reset", "resetDay", "resetWeekday", "resetMax", "trafficReset", "trafficResetDay"}
 
 // checkResellerEdit applies a reseller's allowance to an edit before the body reaches the handler.
 func checkResellerEdit(c *gin.Context, ca service.ClientAccess, email string) error {
@@ -187,7 +187,7 @@ func checkResellerEdit(c *gin.Context, ca service.ClientAccess, email string) er
 		return err
 	}
 	stored := map[string]any{
-		"totalGB": rec.TotalGB, "expiryTime": rec.ExpiryTime, "limitIp": rec.LimitIP, "speedLimit": rec.SpeedLimit, "limitHwid": rec.LimitHwid,
+		"totalGB": rec.TotalGB, "expiryTime": rec.ExpiryTime, "limitIp": rec.LimitIP, "userLimit": rec.UserLimit, "speedLimit": rec.SpeedLimit, "limitHwid": rec.LimitHwid,
 		"reset": rec.Reset, "resetDay": rec.ResetDay, "resetWeekday": rec.ResetWeekday, "resetMax": rec.ResetMax,
 		"trafficReset": rec.TrafficReset, "trafficResetDay": rec.TrafficResetDay,
 	}

@@ -900,7 +900,8 @@ export const EXAMPLES: Record<string, unknown> = {
     "trafficResetDay": 1,
     "trafficResetEvery": 0,
     "trafficResetMonth": 0,
-    "updated_at": 0
+    "updated_at": 0,
+    "userLimit": 0
   },
   "ClientInbound": {
     "clientId": 0,
@@ -941,7 +942,8 @@ export const EXAMPLES: Record<string, unknown> = {
         "subUrl": "https://sub.example.com/sub/abcd1234",
         "totalGB": 53687091200,
         "traffic": null,
-        "updatedAt": 1735100000000
+        "updatedAt": 1735100000000,
+        "userLimit": 0
       }
     ],
     "page": 1,
@@ -1007,6 +1009,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "trafficResetEvery": 0,
     "trafficResetMonth": 0,
     "updatedAt": 0,
+    "userLimit": 0,
     "uuid": ""
   },
   "ClientRenewalPreview": {
@@ -1057,7 +1060,8 @@ export const EXAMPLES: Record<string, unknown> = {
     "subUrl": "https://sub.example.com/sub/abcd1234",
     "totalGB": 53687091200,
     "traffic": null,
-    "updatedAt": 1735100000000
+    "updatedAt": 1735100000000,
+    "userLimit": 0
   },
   "ClientTraffic": {
     "down": 2097152,
@@ -1898,7 +1902,8 @@ export const EXAMPLES: Record<string, unknown> = {
     "trafficResetCalendar": "",
     "trafficResetDay": 0,
     "trafficResetEvery": 0,
-    "trafficResetMonth": 0
+    "trafficResetMonth": 0,
+    "userLimit": 0
   },
   "PortForward": {
     "listen": "443",

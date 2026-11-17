@@ -416,9 +416,10 @@ type bulkAdjustRequest struct {
 	Flow      string   `json:"flow"`
 	LimitHwid *int     `json:"limitHwid"`
 	AdTag     string   `json:"adTag"`
-	// SpeedLimit and LimitIp set the same value on every client; absent leaves it.
+	// SpeedLimit, LimitIp and UserLimit set the same value on every client; absent leaves it.
 	SpeedLimit *int `json:"speedLimit"`
 	LimitIp    *int `json:"limitIp"`
+	UserLimit  *int `json:"userLimit"`
 }
 
 func (a *ClientController) bulkAdjust(c *gin.Context) {
@@ -428,7 +429,7 @@ func (a *ClientController) bulkAdjust(c *gin.Context) {
 		return
 	}
 	result, needRestart, err := a.clientService.BulkAdjustWithLimits(&a.inboundService, req.Emails, req.AddDays, req.AddBytes, req.Flow, req.LimitHwid, req.AdTag,
-		service.BulkLimits{SpeedLimit: req.SpeedLimit, LimitIP: req.LimitIp})
+		service.BulkLimits{SpeedLimit: req.SpeedLimit, LimitIP: req.LimitIp, UserLimit: req.UserLimit})
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return

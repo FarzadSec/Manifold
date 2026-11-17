@@ -311,12 +311,15 @@ type bulkAdjustEntry struct {
 	newSpeed    int
 	applyIP     bool
 	newIP       int
+	applyUsers  bool
+	newUsers    int
 }
 
 // BulkLimits sets limits to the same value on every selected client; nil leaves one as it is.
 type BulkLimits struct {
 	SpeedLimit *int
 	LimitIP    *int
+	UserLimit  *int
 }
 
 // bulkFlowClear is the directive that strips the XTLS flow from every selected
@@ -375,10 +378,13 @@ func (s *ClientService) BulkAdjustWithLimits(inboundSvc *InboundService, emails 
 	if limits.LimitIP != nil && *limits.LimitIP < 0 {
 		return result, false, common.NewError("the address limit cannot be negative")
 	}
+	if limits.UserLimit != nil && *limits.UserLimit < 0 {
+		return result, false, common.NewError("the user limit cannot be negative")
+	}
 	adjustFlow := flow != ""
 	adjustHwid := limitHwid != nil
 	adjustAdTag := adTag != ""
-	setLimits := limits.SpeedLimit != nil || limits.LimitIP != nil
+	setLimits := limits.SpeedLimit != nil || limits.LimitIP != nil || limits.UserLimit != nil
 	if addDays == 0 && addBytes == 0 && !adjustFlow && !adjustHwid && !adjustAdTag && !setLimits {
 		return result, false, common.NewError("no adjustment specified")
 	}
@@ -412,6 +418,9 @@ func (s *ClientService) BulkAdjustWithLimits(inboundSvc *InboundService, emails 
 		}
 		if limits.LimitIP != nil {
 			entry.applyIP, entry.newIP = true, *limits.LimitIP
+		}
+		if limits.UserLimit != nil {
+			entry.applyUsers, entry.newUsers = true, *limits.UserLimit
 		}
 		if addDays != 0 {
 			switch {
@@ -593,13 +602,16 @@ func (s *ClientService) BulkAdjustWithLimits(inboundSvc *InboundService, emails 
 				continue
 			}
 		}
-		if entry.applySpeed || entry.applyIP {
+		if entry.applySpeed || entry.applyIP || entry.applyUsers {
 			cols := map[string]any{}
 			if entry.applySpeed {
 				cols["speed_limit"] = entry.newSpeed
 			}
 			if entry.applyIP {
 				cols["limit_ip"] = entry.newIP
+			}
+			if entry.applyUsers {
+				cols["user_limit"] = entry.newUsers
 			}
 			if err := db.Model(&model.ClientRecord{}).Where("email = ?", email).UpdateColumns(cols).Error; err != nil {
 				if _, already := skippedReasons[email]; !already {
@@ -617,7 +629,7 @@ func (s *ClientService) BulkAdjustWithLimits(inboundSvc *InboundService, emails 
 			}
 		}
 		// Counted when expiry/total changed, flow was honored, adTag was honored, or limitHwid was adjusted.
-		if len(updates) > 0 || flowHonored[email] || adTagHonored[email] || adjustHwid || entry.applySpeed || entry.applyIP {
+		if len(updates) > 0 || flowHonored[email] || adTagHonored[email] || adjustHwid || entry.applySpeed || entry.applyIP || entry.applyUsers {
 			adjusted[email] = struct{}{}
 		}
 	}
@@ -793,6 +805,10 @@ func (s *ClientService) bulkAdjustInboundClients(
 		}
 		if entry.applyIP {
 			c["limitIp"] = entry.newIP
+			clientChanged = true
+		}
+		if entry.applyUsers {
+			c["userLimit"] = entry.newUsers
 			clientChanged = true
 		}
 		if flow != "" {

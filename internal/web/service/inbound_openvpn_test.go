@@ -45,7 +45,7 @@ func TestDesiredOpenVPNInstancesServeOnlyAccountsWithinTheirLimits(t *testing.T)
 	svc := &InboundService{}
 
 	seedInboundConflict(t, "ovpn-served", "", 47001, model.OpenVPN, "", openvpnSettings(t, `{"clients":[`+
-		`{"email":"alice","password":"pw-a","enable":true,"limitIp":2},`+
+		`{"email":"alice","password":"pw-a","enable":true,"userLimit":2,"limitIp":5},`+
 		`{"email":"bob","password":"pw-b","enable":true},`+
 		`{"email":"carol","password":"pw-c","enable":false}]}`))
 	served := loadInboundByTag(t, "ovpn-served")
@@ -181,5 +181,40 @@ func TestOpenVPNListensOnItsOwnTransportOnly(t *testing.T) {
 	}
 	if got := inboundTransports(model.OpenVPN, "", tcp); got != transportTCP {
 		t.Fatalf("TCP inbound transports = %v, want TCP only", got)
+	}
+}
+
+// The user limit is OpenVPN's own cap: set from the client form it reaches the server,
+// an edit that leaves it out keeps it, an explicit 0 lifts it, and the IP limit never counts.
+func TestAClientsUserLimitCapsItsOpenVPNSessions(t *testing.T) {
+	setupBulkDB(t)
+	svc := &ClientService{}
+	ib := mkInbound(t, 47011, model.OpenVPN, openvpnSettings(t, `{"clients":[]}`))
+	if _, err := svc.CreateOne(&InboundService{}, ib.Id, model.Client{
+		Email: "alice", Password: "pw-alice", Enable: true, UserLimit: 2, LimitIP: 5,
+	}); err != nil {
+		t.Fatalf("create client: %v", err)
+	}
+	sessions := func() int {
+		t.Helper()
+		instances, err := (&InboundService{}).DesiredOpenVPNInstances()
+		if err != nil || len(instances) != 1 || len(instances[0].Users) != 1 {
+			t.Fatalf("instances = %+v, %v", instances, err)
+		}
+		return instances[0].Users[0].MaxSessions
+	}
+	if got := sessions(); got != 2 {
+		t.Fatalf("sessions cap = %d, want the user limit 2", got)
+	}
+
+	updateByEmailJSON(t, svc, "alice", `{"comment": "laptop"}`)
+	if rec := lookupClientRecord(t, "alice"); rec.UserLimit != 2 || sessions() != 2 {
+		t.Fatalf("an edit without userLimit changed it: record %d, server %d", rec.UserLimit, sessions())
+	}
+
+	updateByEmailJSON(t, svc, "alice", `{"userLimit": 0}`)
+	rec := lookupClientRecord(t, "alice")
+	if rec.UserLimit != 0 || sessions() != 0 || rec.LimitIP != 5 {
+		t.Fatalf("after lifting it: user limit %d, server %d, IP limit %d; want 0, 0, 5", rec.UserLimit, sessions(), rec.LimitIP)
 	}
 }

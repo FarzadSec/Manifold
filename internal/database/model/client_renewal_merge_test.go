@@ -55,3 +55,25 @@ func TestMergeClientRecordHostBindings(t *testing.T) {
 		})
 	}
 }
+
+// Only a tunnel inbound's copy of an account carries its user limit; merging it with an
+// Xray copy that has none must keep the cap, and two caps settle on the larger.
+func TestMergeClientRecordKeepsTheUserLimit(t *testing.T) {
+	for _, tt := range []struct {
+		name                     string
+		existing, incoming, want int
+	}{
+		{"copy without a cap keeps it", 2, 0, 2},
+		{"cap fills an uncapped record", 0, 3, 3},
+		{"larger cap wins", 2, 4, 4},
+		{"smaller cap does not lower it", 4, 2, 4},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			existing := ClientRecord{UserLimit: tt.existing, LimitIP: 5}
+			MergeClientRecord(&existing, &ClientRecord{UserLimit: tt.incoming})
+			if existing.UserLimit != tt.want || existing.LimitIP != 5 {
+				t.Fatalf("user/IP limit = %d/%d, want %d/5", existing.UserLimit, existing.LimitIP, tt.want)
+			}
+		})
+	}
+}

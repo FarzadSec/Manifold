@@ -180,6 +180,7 @@ export interface UseClientsOptions {
 export interface BulkLimits {
   speedLimit?: number | null;
   limitIp?: number | null;
+  userLimit?: number | null;
 }
 
 export function useClients(options: UseClientsOptions = {}) {
@@ -435,6 +436,7 @@ export function useClients(options: UseClientsOptions = {}) {
       adTag?: string;
       speedLimit?: number | null;
       limitIp?: number | null;
+      userLimit?: number | null;
     }): Promise<Msg<BulkAdjustResult>> => {
       const raw = await HttpUtil.post('/panel/api/clients/bulkAdjust', payload, JSON_HEADERS);
       return parseMsg(raw, BulkAdjustResultSchema, 'clients/bulkAdjust');
@@ -622,6 +624,7 @@ export function useClients(options: UseClientsOptions = {}) {
         adTag,
         ...(limits?.speedLimit != null ? { speedLimit: limits.speedLimit } : {}),
         ...(limits?.limitIp != null ? { limitIp: limits.limitIp } : {}),
+        ...(limits?.userLimit != null ? { userLimit: limits.userLimit } : {}),
       });
     },
     [bulkAdjustMut],

@@ -37,12 +37,12 @@ A client whose quota is used up or whose expiry date has passed stops working on
 ## Limits on a client
 
 - **Speed limit** caps a client in Mbps, in each direction, on every engine: Xray (VLESS, VMess, Trojan, Shadowsocks, Hysteria and the embedded AmneziaWG and TUIC that ride it), OpenVPN, L2TP and WireGuard. It applies on each server separately: 20 Mbps lets the client use 20 Mbps on every server it is connected to. All of a client's connections on one server share the one budget, and a change reaches connections that are already open within a few seconds.
-- **IP limit** is the number of simultaneous addresses on Xray, and the number of connected devices on OpenVPN and L2TP: with 2, a third device is refused until one of the first two disconnects. On OpenVPN and L2TP it works without fail2ban.
+- **IP limit** is the number of simultaneous addresses on Xray inbounds, enforced by fail2ban. **User limit** is the number of connections an account may hold at once on OpenVPN and L2TP: with 2, a third device is refused until one of the first two disconnects; it needs no fail2ban. The form shows each limit only when the user is on an inbound that enforces it. An upgrade copies the IP limit of every OpenVPN and L2TP user, and of every plan reaching one, to its user limit.
 - Plans carry a speed limit too, copied onto every user created from them.
 - **Usage** (the chart icon on a client) draws its traffic over the last 24 hours, 7 or 30 days, or a whole month in the panel's calendar, and splits it per server. **CSV** downloads both. Hours are kept for a month and days for 400 days, in the panel's time zone.
 - **Traffic reset** has the shapes NX Panel offers: every hour or day, weekly on a weekday, monthly on a day, yearly on a month and day, or every N days counted from the last reset. Monthly and yearly cycles follow the Gregorian or the Persian calendar; a day the month lacks falls on its last day. A reset clears the used traffic only.
 - **Customer details** in the client form keeps Telegram, email, phone, Bale, Soroush Plus and Rubika, which the search box finds and exports carry, plus any field of your own, which is only kept.
-- With users ticked, **Adjust** also sets their speed and IP limits to one value (empty leaves them), **Download CSV** lists them with their subscription links, and **Download config pack** zips a folder per user with its subscription link, its share links, and the `.ovpn` and WireGuard `.conf` files apps open. **Download CSV of all users** and **Delete expired users…** (expired more than N days ago, 30 by default; not-started and auto-renewing users are kept) are in the ⋯ menu. A reseller exports only its own users, and every export is written to the audit log.
+- With users ticked, **Adjust** also sets their speed, IP and user limits to one value (empty leaves them), **Download CSV** lists them with their subscription links, and **Download config pack** zips a folder per user with its subscription link, its share links, and the `.ovpn` and WireGuard `.conf` files apps open. **Download CSV of all users** and **Delete expired users…** (expired more than N days ago, 30 by default; not-started and auto-renewing users are kept) are in the ⋯ menu. A reseller exports only its own users, and every export is written to the audit log.
 
 The speed limit needs the `nftables` package, which Ubuntu installs by default. It does not reach traffic a routing script decides, and Xray traffic that leaves through a WireGuard outbound such as WARP is limited on its way there, through a loopback hop the panel adds.
 
@@ -98,7 +98,7 @@ Under **Client profile**, **Extra profile lines** are added to every profile of 
 
 **Hand over the profile.** A client's information and QR windows show an "OpenVPN profile" block with copy and download; the downloaded `.ovpn` file imports into OpenVPN Connect and other OpenVPN apps. The client's subscription page offers the same file. The subscription URL that proxy apps import does not list OpenVPN, because those apps cannot read it.
 
-**Limits.** Quota, expiry and disabling work as for every protocol and take effect on a connected client within seconds: its session is cut and the app is told access is denied. "IP limit" on an OpenVPN client is the number of devices that may be connected at once; a further device is refused.
+**Limits.** Quota, expiry and disabling work as for every protocol and take effect on a connected client within seconds: its session is cut and the app is told access is denied. "User limit" on an OpenVPN client is the number of devices that may be connected at once; a further device is refused. The IP limit does not apply to OpenVPN.
 
 **Coming from 0.2 or 0.3.** On Ubuntu 22.04, Debian 11 and other systems with a systemd older than 252, OpenVPN inbounds did not start under the installed service ("Cannot open TUN/TAP dev" in the log). Updating to 0.4 fixes it; nothing else has to be done.
 
@@ -175,7 +175,7 @@ Open UDP ports 500, 4500 and 1701 in the firewall. A server behind NAT needs all
 
 If the server itself sits behind NAT, as with cloud providers that map a public address onto a private one, Windows refuses it until the DWORD value `AssumeUDPEncapsulationContextOnSendRule` under `HKLM\SYSTEM\CurrentControlSet\Services\PolicyAgent` is set to 2 on the device and the device is restarted. This is a default of Windows, not a setting of the panel.
 
-**Limits.** Quota, expiry and disabling work as for every protocol and take effect on a connected device within seconds: its session is cut and its next login is refused. "IP limit" on an L2TP client is the number of devices that may be connected at once; a further device is refused.
+**Limits.** Quota, expiry and disabling work as for every protocol and take effect on a connected device within seconds: its session is cut and its next login is refused. "User limit" on an L2TP client is the number of devices that may be connected at once; a further device is refused. The IP limit does not apply to L2TP.
 
 **Several devices behind one address.** Two devices that share one public address, such as two phones on the same home router, may not stay connected to the L2TP server at the same time: IPsec tells sessions apart by address, and theirs is the same. Offer such customers WireGuard or OpenVPN.
 

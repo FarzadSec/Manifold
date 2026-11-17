@@ -36,6 +36,7 @@ import {
 } from './amneziawgConfig';
 import { tunnelConfigEndpoints, tunnelEndpointLabel } from './tunnelEndpoints';
 import type { HostRecord } from '@/schemas/api/host';
+import { countsClientSessions } from '@/lib/xray/protocol-capabilities';
 import './ClientInfoModal.css';
 
 const INBOUND_PROTOCOL_COLORS: Record<string, string> = {
@@ -463,6 +464,14 @@ export default function ClientInfoModal({
                   <td>{t('pages.clients.ipLimit')}</td>
                   <td>{!client.limitIp ? <Tag>∞</Tag> : <Tag>{client.limitIp}</Tag>}</td>
                 </tr>
+                {(client.inboundIds || []).some((id) =>
+                  countsClientSessions(inboundsById[id]?.protocol || ''),
+                ) && (
+                  <tr>
+                    <td>{t('pages.clients.userLimit')}</td>
+                    <td>{!client.userLimit ? <Tag>∞</Tag> : <Tag>{client.userLimit}</Tag>}</td>
+                  </tr>
+                )}
                 <tr>
                   <td>{t('pages.inbounds.IPLimitlog')}</td>
                   <td>

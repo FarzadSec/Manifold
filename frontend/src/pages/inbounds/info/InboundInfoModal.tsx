@@ -30,6 +30,7 @@ import {
   statsColor,
 } from './helpers';
 import type { ClientSetting, ClientStats, InboundInfo, InboundInfoModalProps } from './types';
+import { countsClientIps, countsClientSessions } from '@/lib/xray/protocol-capabilities';
 import './InboundInfoModal.css';
 
 const EMPTY_HOSTS: NonNullable<InboundInfoModalProps['hosts']> = [];
@@ -432,7 +433,7 @@ export default function InboundInfoModal({
               </td>
             </tr>
           )}
-          {ipLimitEnable && (
+          {ipLimitEnable && countsClientIps(dbInbound.protocol) && (
             <tr>
               <td>{t('pages.inbounds.IPLimit')}</td>
               <td>
@@ -440,45 +441,55 @@ export default function InboundInfoModal({
               </td>
             </tr>
           )}
-          {ipLimitEnable && (clientSettings?.limitIp ?? 0) > 0 && (
+          {countsClientSessions(dbInbound.protocol) && (
             <tr>
-              <td>{t('pages.inbounds.IPLimitlog')}</td>
+              <td>{t('pages.clients.userLimit')}</td>
               <td>
-                <div className="ip-log">
-                  {clientIpsArray.length > 0 ? (
-                    <div>
-                      {clientIpsArray.map((item, idx) => (
-                        <Tag color="blue" className="ip-log-row" key={idx}>
-                          {item}
-                        </Tag>
-                      ))}
-                    </div>
-                  ) : (
-                    <Tag>{clientIpsText || t('tgbot.noIpRecord')}</Tag>
-                  )}
-                </div>
-                <div className="ip-log-actions">
-                  <SyncOutlined
-                    spin={refreshing}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={t('refresh')}
-                    onClick={() => loadClientIps()}
-                    onKeyDown={activateOnKey(() => loadClientIps())}
-                  />
-                  <Tooltip title={t('pages.inbounds.IPLimitlogclear')}>
-                    <DeleteOutlined
-                      role="button"
-                      tabIndex={0}
-                      aria-label={t('pages.inbounds.IPLimitlogclear')}
-                      onClick={() => clearClientIps()}
-                      onKeyDown={activateOnKey(() => clearClientIps())}
-                    />
-                  </Tooltip>
-                </div>
+                <Tag>{clientSettings?.userLimit || '∞'}</Tag>
               </td>
             </tr>
           )}
+          {ipLimitEnable &&
+            countsClientIps(dbInbound.protocol) &&
+            (clientSettings?.limitIp ?? 0) > 0 && (
+              <tr>
+                <td>{t('pages.inbounds.IPLimitlog')}</td>
+                <td>
+                  <div className="ip-log">
+                    {clientIpsArray.length > 0 ? (
+                      <div>
+                        {clientIpsArray.map((item, idx) => (
+                          <Tag color="blue" className="ip-log-row" key={idx}>
+                            {item}
+                          </Tag>
+                        ))}
+                      </div>
+                    ) : (
+                      <Tag>{clientIpsText || t('tgbot.noIpRecord')}</Tag>
+                    )}
+                  </div>
+                  <div className="ip-log-actions">
+                    <SyncOutlined
+                      spin={refreshing}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={t('refresh')}
+                      onClick={() => loadClientIps()}
+                      onKeyDown={activateOnKey(() => loadClientIps())}
+                    />
+                    <Tooltip title={t('pages.inbounds.IPLimitlogclear')}>
+                      <DeleteOutlined
+                        role="button"
+                        tabIndex={0}
+                        aria-label={t('pages.inbounds.IPLimitlogclear')}
+                        onClick={() => clearClientIps()}
+                        onKeyDown={activateOnKey(() => clearClientIps())}
+                      />
+                    </Tooltip>
+                  </div>
+                </td>
+              </tr>
+            )}
         </tbody>
       </table>
 

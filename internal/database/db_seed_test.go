@@ -492,3 +492,86 @@ func TestClientForwardedPortsBackfilledOnUpgrade(t *testing.T) {
 		}
 	}
 }
+
+// OpenVPN and L2TP counted their connections against limitIp; it is now Xray's limit
+// alone, so an upgrade must carry each tunnel account's cap over to userLimit.
+func TestSessionCapsMoveToTheUserLimitOnUpgrade(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "x-ui.db")
+	if err := InitDB(dbPath); err != nil {
+		t.Fatalf("InitDB: %v", err)
+	}
+	t.Cleanup(func() { _ = CloseDB() })
+	for email, limit := range map[string]int{"ovpn@x": 2, "both@x": 3, "xray@x": 4, "l2tp@x": 1} {
+		if err := db.Create(&model.ClientRecord{Email: email, Enable: true, LimitIP: limit}).Error; err != nil {
+			t.Fatalf("seed client: %v", err)
+		}
+	}
+	inbounds := []*model.Inbound{
+		{Tag: "ovpn", Port: 1194, Protocol: model.OpenVPN, Enable: true,
+			Settings: `{"clients":[{"email":"ovpn@x","limitIp":2},{"email":"both@x","limitIp":3}]}`},
+		{Tag: "l2tp", Port: 1701, Protocol: model.L2TP, Enable: true,
+			Settings: `{"clients":[{"email":"l2tp@x","limitIp":1}]}`},
+		{Tag: "vless", Port: 443, Protocol: model.VLESS, Enable: true,
+			Settings: `{"clients":[{"email":"both@x","limitIp":3},{"email":"xray@x","limitIp":4}]}`},
+	}
+	for _, ib := range inbounds {
+		if err := db.Create(ib).Error; err != nil {
+			t.Fatalf("seed inbound: %v", err)
+		}
+	}
+	plans := []model.Plan{
+		{Name: "tunnels", LimitIp: 2, InboundIds: []int{inbounds[0].Id}},
+		{Name: "xray", LimitIp: 5, InboundIds: []int{inbounds[2].Id}},
+		{Name: "everything", LimitIp: 3, AllInbounds: true},
+	}
+	if err := db.Create(&plans).Error; err != nil {
+		t.Fatalf("seed plans: %v", err)
+	}
+	if err := db.Where("seeder_name = ?", "ClientUserLimitSplit").Delete(&model.HistoryOfSeeders{}).Error; err != nil {
+		t.Fatalf("clear seeder history: %v", err)
+	}
+	if err := CloseDB(); err != nil {
+		t.Fatalf("CloseDB: %v", err)
+	}
+	if err := InitDB(dbPath); err != nil {
+		t.Fatalf("reopen InitDB: %v", err)
+	}
+
+	for email, want := range map[string][2]int{"ovpn@x": {2, 2}, "both@x": {3, 3}, "xray@x": {4, 0}, "l2tp@x": {1, 1}} {
+		var rec model.ClientRecord
+		if err := db.Where("email = ?", email).First(&rec).Error; err != nil {
+			t.Fatalf("read %s: %v", email, err)
+		}
+		if rec.LimitIP != want[0] || rec.UserLimit != want[1] {
+			t.Errorf("%s limitIp/userLimit = %d/%d, want %d/%d", email, rec.LimitIP, rec.UserLimit, want[0], want[1])
+		}
+	}
+	for tag, want := range map[string]map[string]int{
+		"ovpn": {"ovpn@x": 2, "both@x": 3}, "l2tp": {"l2tp@x": 1}, "vless": {"both@x": 3, "xray@x": 0},
+	} {
+		var ib model.Inbound
+		if err := db.Where("tag = ?", tag).First(&ib).Error; err != nil {
+			t.Fatalf("read %s: %v", tag, err)
+		}
+		var parsed struct {
+			Clients []model.Client `json:"clients"`
+		}
+		if err := json.Unmarshal([]byte(ib.Settings), &parsed); err != nil {
+			t.Fatalf("%s settings: %v", tag, err)
+		}
+		for _, c := range parsed.Clients {
+			if c.UserLimit != want[c.Email] {
+				t.Errorf("%s: %s userLimit = %d in the settings, want %d", tag, c.Email, c.UserLimit, want[c.Email])
+			}
+		}
+	}
+	for name, want := range map[string]int{"tunnels": 2, "xray": 0, "everything": 3} {
+		var p model.Plan
+		if err := db.Where("name = ?", name).First(&p).Error; err != nil {
+			t.Fatalf("read plan %s: %v", name, err)
+		}
+		if p.UserLimit != want {
+			t.Errorf("plan %s userLimit = %d, want %d", name, p.UserLimit, want)
+		}
+	}
+}

@@ -190,7 +190,7 @@ func TestResellerAllowanceLimitsHoldAtTheAPI(t *testing.T) {
 // A plans-only reseller creates from its plans and gets the plan's limits whatever it asks for.
 func TestPlansOnlyResellerGetsThePlansLimits(t *testing.T) {
 	f := newAccessFixture(t)
-	plan := model.Plan{Name: "30d", TotalBytes: 5 << 30, Days: 30, LimitIp: 2, AllInbounds: true, NamePrefix: "r_"}
+	plan := model.Plan{Name: "30d", TotalBytes: 5 << 30, Days: 30, LimitIp: 2, UserLimit: 3, AllInbounds: true, NamePrefix: "r_"}
 	if err := (&service.PlanService{}).Save(&plan); err != nil {
 		t.Fatal(err)
 	}
@@ -199,7 +199,7 @@ func TestPlansOnlyResellerGetsThePlansLimits(t *testing.T) {
 	if reply := f.addClient(t, sellerTok, "free"); reply.Success {
 		t.Fatal("a plans-only reseller created a user without a plan")
 	}
-	body := `{"planId":` + itoa(plan.Id) + `,"client":{"email":"ali","id":"` + uuidFor("ali") + `","enable":true,"totalGB":0,"limitIp":0},"inboundIds":[]}`
+	body := `{"planId":` + itoa(plan.Id) + `,"client":{"email":"ali","id":"` + uuidFor("ali") + `","enable":true,"totalGB":0,"limitIp":0,"userLimit":0},"inboundIds":[]}`
 	if _, reply := f.call(t, sellerTok, http.MethodPost, "/clients/add", body); !reply.Success {
 		t.Fatalf("create from plan: %s", reply.Msg)
 	}
@@ -207,12 +207,13 @@ func TestPlansOnlyResellerGetsThePlansLimits(t *testing.T) {
 	if err := database.GetDB().Where("email = ?", "r_ali").First(&rec).Error; err != nil {
 		t.Fatalf("the plan's name prefix was not applied: %v", err)
 	}
-	if rec.TotalGB != 5<<30 || rec.LimitIP != 2 || rec.ExpiryTime <= 0 || rec.OwnerId != seller.Id {
+	if rec.TotalGB != 5<<30 || rec.LimitIP != 2 || rec.UserLimit != 3 || rec.ExpiryTime <= 0 || rec.OwnerId != seller.Id {
 		t.Fatalf("created %+v, want the plan's limits and the reseller as owner", rec)
 	}
-	edit := `{"totalGB":0}`
-	if _, reply := f.call(t, sellerTok, http.MethodPost, "/clients/update/r_ali", edit); reply.Success {
-		t.Fatal("a plans-only reseller lifted its user's quota")
+	for _, edit := range []string{`{"totalGB":0}`, `{"userLimit":0}`} {
+		if _, reply := f.call(t, sellerTok, http.MethodPost, "/clients/update/r_ali", edit); reply.Success {
+			t.Fatalf("a plans-only reseller lifted its user's limit with %s", edit)
+		}
 	}
 }
 

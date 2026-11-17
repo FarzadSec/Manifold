@@ -3422,7 +3422,7 @@ export const SCHEMAS: Record<string, unknown> = {
         ]
       },
       "limitIp": {
-        "description": "IP limit for this client",
+        "description": "Simultaneous IPs on Xray inbounds",
         "type": "integer"
       },
       "password": {
@@ -3521,6 +3521,10 @@ export const SCHEMAS: Record<string, unknown> = {
       "updated_at": {
         "description": "Last update timestamp",
         "format": "int64",
+        "type": "integer"
+      },
+      "userLimit": {
+        "description": "Simultaneous OpenVPN and L2TP connections",
         "type": "integer"
       }
     },
@@ -3757,6 +3761,9 @@ export const SCHEMAS: Record<string, unknown> = {
         "format": "int64",
         "type": "integer"
       },
+      "userLimit": {
+        "type": "integer"
+      },
       "uuid": {
         "type": "string"
       }
@@ -3800,6 +3807,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "trafficResetEvery",
       "trafficResetMonth",
       "updatedAt",
+      "userLimit",
       "uuid"
     ],
     "type": "object"
@@ -4015,6 +4023,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": 1735100000000,
         "format": "int64",
         "type": "integer"
+      },
+      "userLimit": {
+        "example": 0,
+        "type": "integer"
       }
     },
     "required": [
@@ -4033,7 +4045,8 @@ export const SCHEMAS: Record<string, unknown> = {
       "speedLimit",
       "subId",
       "totalGB",
-      "updatedAt"
+      "updatedAt",
+      "userLimit"
     ],
     "type": "object"
   },
@@ -7208,6 +7221,9 @@ export const SCHEMAS: Record<string, unknown> = {
       },
       "trafficResetMonth": {
         "type": "integer"
+      },
+      "userLimit": {
+        "type": "integer"
       }
     },
     "required": [
@@ -7232,7 +7248,8 @@ export const SCHEMAS: Record<string, unknown> = {
       "trafficResetCalendar",
       "trafficResetDay",
       "trafficResetEvery",
-      "trafficResetMonth"
+      "trafficResetMonth",
+      "userLimit"
     ],
     "type": "object"
   },

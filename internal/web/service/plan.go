@@ -39,7 +39,7 @@ func (s *PlanService) validate(p *model.Plan) error {
 	if err := validateClientSpeedLimit(p.SpeedLimit); err != nil {
 		return err
 	}
-	if p.TotalBytes < 0 || p.Days < 0 || p.LimitIp < 0 || p.LimitHwid < 0 || p.Reset < 0 {
+	if p.TotalBytes < 0 || p.Days < 0 || p.LimitIp < 0 || p.UserLimit < 0 || p.LimitHwid < 0 || p.Reset < 0 {
 		return common.NewError("plan limits cannot be negative")
 	}
 	if p.TrafficReset == "" {
@@ -106,6 +106,7 @@ func ApplyPlan(p *model.Plan, payload *ClientCreatePayload, allInboundIDs []int,
 		c.ExpiryTime = now.UnixMilli() + int64(p.Days)*dayMs
 	}
 	c.LimitIP = p.LimitIp
+	c.UserLimit = p.UserLimit
 	c.SpeedLimit = p.SpeedLimit
 	payload.LimitHwid = p.LimitHwid
 	c.Reset = p.Reset

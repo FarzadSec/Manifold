@@ -42,6 +42,7 @@ function emptyPlan(): Plan {
     days: 30,
     startOnFirstUse: false,
     limitIp: 0,
+    userLimit: 0,
     speedLimit: 0,
     limitHwid: 0,
     reset: 0,
@@ -171,6 +172,15 @@ function PlanFormModal({
             </Col>
             <Col xs={24} md={8}>
               <FormField
+                name="userLimit"
+                label={t('pages.clients.userLimit')}
+                tooltip={t('pages.clients.userLimitDesc')}
+              >
+                <InputNumber min={0} style={{ width: '100%' }} />
+              </FormField>
+            </Col>
+            <Col xs={24} md={8}>
+              <FormField
                 name="limitHwid"
                 label={t('pages.access.deviceLimit')}
                 tooltip={t('pages.access.zeroUnlimited')}
@@ -281,6 +291,7 @@ export default function PlansPage() {
         <Space size={4} wrap>
           {p.speedLimit > 0 && <Tag>{p.speedLimit} Mbps</Tag>}
           {p.limitIp > 0 && <Tag>{t('pages.access.addressesCap', { n: p.limitIp })}</Tag>}
+          {p.userLimit > 0 && <Tag>{t('pages.access.userLimitCap', { n: p.userLimit })}</Tag>}
           {p.limitHwid > 0 && <Tag>{t('pages.access.devicesCap', { n: p.limitHwid })}</Tag>}
           {p.trafficReset !== 'never' && <Tag>{t(`pages.clients.cycle.${p.trafficReset}`)}</Tag>}
         </Space>

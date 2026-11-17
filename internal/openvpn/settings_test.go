@@ -179,11 +179,11 @@ func inboundWith(t *testing.T, mutate func(*InboundSettings), clients ...model.C
 
 func TestInstanceHoldsOnlyAccountsThatCanLogIn(t *testing.T) {
 	ib := inboundWith(t, nil,
-		model.Client{Email: "alice", Password: "pw", Enable: true, LimitIP: 2},
+		model.Client{Email: "alice", Password: "pw", Enable: true, UserLimit: 2, LimitIP: 5},
 		model.Client{Email: "disabled", Password: "pw", Enable: false},
 		model.Client{Email: "no password", Password: "pw", Enable: true},
 		model.Client{Email: "nopass", Enable: true},
-		model.Client{Email: "bob", Password: "pw2", Enable: true, LimitIP: -3},
+		model.Client{Email: "bob", Password: "pw2", Enable: true, UserLimit: -3, LimitIP: 4},
 	)
 	inst, ok := InstanceFromInbound(ib)
 	if !ok {

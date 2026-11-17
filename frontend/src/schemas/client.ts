@@ -42,6 +42,7 @@ export const ClientRecordSchema = z
     totalGB: z.number().optional(),
     expiryTime: z.number().optional(),
     limitIp: z.number().optional(),
+    userLimit: z.number().optional(),
     speedLimit: z.number().optional(),
     limitHwid: z.number().optional(),
     tgId: z.union([z.number(), z.string()]).optional(),
@@ -354,6 +355,7 @@ export const ClientFormSchema = z.object({
   trafficResetEvery: z.number().int().min(0).max(3650),
   trafficResetCalendar: z.enum(['gregorian', 'persian']),
   limitIp: z.number().int().min(0),
+  userLimit: z.number().int().min(0),
   speedLimit: z.number().int().min(0).max(100000),
   limitHwid: z.number().int().min(0),
   tgId: z.number().int().min(0),
@@ -376,6 +378,7 @@ export const ClientBulkAdjustFormSchema = z
     adTag: z.string().optional().default(''),
     speedLimit: z.number().int().min(0).max(100000).nullable().optional(),
     limitIp: z.number().int().min(0).nullable().optional(),
+    userLimit: z.number().int().min(0).nullable().optional(),
   })
   .refine(
     (v) =>
@@ -385,6 +388,7 @@ export const ClientBulkAdjustFormSchema = z
       (v.limitHwid !== undefined && v.limitHwid !== null) ||
       (v.speedLimit !== undefined && v.speedLimit !== null) ||
       (v.limitIp !== undefined && v.limitIp !== null) ||
+      (v.userLimit !== undefined && v.userLimit !== null) ||
       (v.adTag !== undefined && v.adTag.trim() !== ''),
     {
       error: 'pages.clients.bulkAdjustNothing',
@@ -414,6 +418,7 @@ export const ClientBulkAddFormSchema = z.object({
   comment: z.string(),
   flow: z.string(),
   limitIp: z.number().int().min(0),
+  userLimit: z.number().int().min(0),
   speedLimit: z.number().int().min(0).max(100000),
   limitHwid: z.number().int().min(0),
   totalGB: z.number().min(0),

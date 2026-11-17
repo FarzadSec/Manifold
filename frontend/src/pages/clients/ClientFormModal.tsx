@@ -34,6 +34,7 @@ import { Controller, FormProvider, useForm, useWatch, useFieldArray } from 'reac
 import { HttpUtil, IntlUtil, RandomUtil, Wireguard } from '@/utils';
 import { formatInboundLabel } from '@/lib/inbounds/label';
 import { generateMtprotoSecret } from '@/lib/xray/inbound-defaults';
+import { countsClientIps, countsClientSessions } from '@/lib/xray/protocol-capabilities';
 import { normalizeClientIps, type ClientIpInfo } from '@/lib/clients/ip-log';
 import { resolveExternalLinkExpiry } from '@/lib/clients/external-link';
 import { useDatepicker } from '@/hooks/useDatepicker';
@@ -186,6 +187,7 @@ const EMPTY: Values = {
   trafficResetEvery: 0,
   trafficResetCalendar: 'gregorian' as const,
   limitIp: 0,
+  userLimit: 0,
   speedLimit: 0,
   limitHwid: 0,
   tgId: 0,
@@ -331,6 +333,7 @@ export default function ClientFormModal({
       plan.days > 0 && !plan.startOnFirstUse ? Date.now() + plan.days * 86400000 : 0,
     );
     methods.setValue('limitIp', plan.limitIp);
+    methods.setValue('userLimit', plan.userLimit || 0);
     methods.setValue('speedLimit', plan.speedLimit || 0);
     methods.setValue('limitHwid', plan.limitHwid);
     methods.setValue('reset', plan.reset);
@@ -367,20 +370,20 @@ export default function ClientFormModal({
   const hwidDateLabel = (ts: number) =>
     !ts || ts <= 0 ? '-' : IntlUtil.formatDate(ts, datepicker);
   const fail2ban = useFail2banStatusQuery();
-  // OpenVPN and L2TP count their own sessions, so their device cap needs no fail2ban.
-  const servesSessionTunnels = useMemo(
+  // Each limit is offered where it is enforced; before any inbound is picked, both are.
+  const attachedProtocols = useMemo(
     () =>
-      (inboundIds || []).some((id) => {
+      (inboundIds || []).flatMap((id) => {
         const protocol = (inbounds || []).find((row) => row.id === id)?.protocol;
-        return protocol === 'openvpn' || protocol === 'l2tp';
+        return protocol ? [protocol] : [];
       }),
     [inboundIds, inbounds],
   );
-  const limitIpDisabled = !fail2ban.usable && !servesSessionTunnels;
-  const limitIpNotice =
-    !fail2ban.usable && servesSessionTunnels
-      ? t('pages.clients.limitIpTunnelsOnly')
-      : getLimitIpNotice(fail2ban, t);
+  const showLimitIp = attachedProtocols.length === 0 || attachedProtocols.some(countsClientIps);
+  const showUserLimit =
+    attachedProtocols.length === 0 || attachedProtocols.some(countsClientSessions);
+  const limitIpDisabled = !fail2ban.usable;
+  const limitIpNotice = getLimitIpNotice(fail2ban, t);
 
   // Declared ahead of the seeding effect below (which needs them to resolve
   // which specific wg/awg inbound this client is attached to, for seeding
@@ -461,6 +464,7 @@ export default function ClientFormModal({
         trafficResetEvery: Number(client.trafficResetEvery) || 0,
         trafficResetCalendar: client.trafficResetCalendar === 'persian' ? 'persian' : 'gregorian',
         limitIp: client.limitIp || 0,
+        userLimit: client.userLimit || 0,
         speedLimit: client.speedLimit || 0,
         limitHwid: client.limitHwid || 0,
         tgId: Number(client.tgId) || 0,
@@ -832,6 +836,7 @@ export default function ClientFormModal({
       trafficResetEvery: values.trafficResetEvery,
       trafficResetCalendar: values.trafficResetCalendar,
       limitIp: values.limitIp,
+      userLimit: values.userLimit,
       speedLimit: values.speedLimit,
       limitHwid: values.limitHwid,
       tgId: values.tgId,
@@ -874,6 +879,7 @@ export default function ClientFormModal({
       trafficResetEvery: Number(values.trafficResetEvery) || 0,
       trafficResetCalendar: values.trafficResetCalendar,
       limitIp: Number(values.limitIp) || 0,
+      userLimit: Number(values.userLimit) || 0,
       speedLimit: Number(values.speedLimit) || 0,
       limitHwid: Number(values.limitHwid) || 0,
       tgId: Number(values.tgId) || 0,
@@ -1129,47 +1135,61 @@ export default function ClientFormModal({
                             />
                           </FormField>
                         </Col>
-                        <Col xs={24} md={12}>
-                          <Form.Item
-                            htmlFor={`${uid}-limit-ip`}
-                            label={t('pages.clients.limitIp')}
-                            tooltip={t('pages.clients.limitIpDesc')}
-                          >
-                            <Tooltip title={limitIpNotice || undefined}>
-                              <span style={{ display: 'flex', width: '100%' }}>
-                                <Space.Compact style={{ display: 'flex', flex: 1 }}>
-                                  <InputNumber
-                                    id={`${uid}-limit-ip`}
-                                    aria-describedby={`${uid}-limit-ip-hint`}
-                                    value={limitIp}
-                                    min={0}
-                                    disabled={limitIpDisabled}
-                                    style={{
-                                      flex: 1,
-                                      ...(limitIpDisabled ? { pointerEvents: 'none' } : null),
-                                    }}
-                                    onChange={(v) => methods.setValue('limitIp', Number(v) || 0)}
-                                  />
-                                  {isEdit && (
-                                    <Tooltip title={t('pages.clients.ipLog')}>
-                                      <Button
-                                        aria-label={t('pages.clients.ipLog')}
-                                        icon={<EyeOutlined aria-hidden />}
-                                        loading={ipsLoading}
-                                        onClick={openIpsModal}
-                                      >
-                                        {clientIps.length > 0 ? clientIps.length : ''}
-                                      </Button>
-                                    </Tooltip>
-                                  )}
-                                </Space.Compact>
+                        {showLimitIp && (
+                          <Col xs={24} md={12}>
+                            <Form.Item
+                              htmlFor={`${uid}-limit-ip`}
+                              label={t('pages.clients.limitIp')}
+                              tooltip={t('pages.clients.limitIpDesc')}
+                            >
+                              <Tooltip title={limitIpNotice || undefined}>
+                                <span style={{ display: 'flex', width: '100%' }}>
+                                  <Space.Compact style={{ display: 'flex', flex: 1 }}>
+                                    <InputNumber
+                                      id={`${uid}-limit-ip`}
+                                      aria-describedby={`${uid}-limit-ip-hint`}
+                                      value={limitIp}
+                                      min={0}
+                                      disabled={limitIpDisabled}
+                                      style={{
+                                        flex: 1,
+                                        ...(limitIpDisabled ? { pointerEvents: 'none' } : null),
+                                      }}
+                                      onChange={(v) => methods.setValue('limitIp', Number(v) || 0)}
+                                    />
+                                    {isEdit && (
+                                      <Tooltip title={t('pages.clients.ipLog')}>
+                                        <Button
+                                          aria-label={t('pages.clients.ipLog')}
+                                          icon={<EyeOutlined aria-hidden />}
+                                          loading={ipsLoading}
+                                          onClick={openIpsModal}
+                                        >
+                                          {clientIps.length > 0 ? clientIps.length : ''}
+                                        </Button>
+                                      </Tooltip>
+                                    )}
+                                  </Space.Compact>
+                                </span>
+                              </Tooltip>
+                              <span id={`${uid}-limit-ip-hint`} hidden>
+                                {t('pages.clients.limitIpDesc')}
                               </span>
-                            </Tooltip>
-                            <span id={`${uid}-limit-ip-hint`} hidden>
-                              {t('pages.clients.limitIpDesc')}
-                            </span>
-                          </Form.Item>
-                        </Col>
+                            </Form.Item>
+                          </Col>
+                        )}
+                        {showUserLimit && (
+                          <Col xs={24} md={12}>
+                            <FormField
+                              name="userLimit"
+                              label={t('pages.clients.userLimit')}
+                              tooltip={t('pages.clients.userLimitDesc')}
+                              transform={{ output: (v) => Number(v) || 0 }}
+                            >
+                              <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                            </FormField>
+                          </Col>
+                        )}
                         <Col xs={24} md={12}>
                           <Form.Item
                             htmlFor={`${uid}-limit-hwid`}

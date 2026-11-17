@@ -818,6 +818,7 @@ export interface Client {
   trafficResetEvery?: number;
   trafficResetMonth?: number;
   updated_at?: number;
+  userLimit?: number;
 }
 
 export interface ClientInbound {
@@ -877,6 +878,7 @@ export interface ClientRecord {
   trafficResetEvery: number;
   trafficResetMonth: number;
   updatedAt: number;
+  userLimit: number;
   uuid: string;
 }
 
@@ -929,6 +931,7 @@ export interface ClientSlim {
   totalGB: number;
   traffic?: ClientTraffic | null;
   updatedAt: number;
+  userLimit: number;
 }
 
 export interface ClientTraffic {
@@ -1614,6 +1617,7 @@ export interface Plan {
   trafficResetDay: number;
   trafficResetEvery: number;
   trafficResetMonth: number;
+  userLimit: number;
 }
 
 export interface PortForward {

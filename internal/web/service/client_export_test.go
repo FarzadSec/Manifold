@@ -3,7 +3,9 @@ package service
 import (
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/openvpn"
 )
 
@@ -32,5 +34,29 @@ func TestClientAppFilesOpenInTheirApps(t *testing.T) {
 	}
 	if len(files) != 2 {
 		t.Fatalf("files = %v, want only the two app files", files)
+	}
+}
+
+// The list and the CSV carry the user limit beside the IP limit, so neither reads as the other.
+func TestTheUserLimitIsListedAndExportedApartFromTheIPLimit(t *testing.T) {
+	setupBulkDB(t)
+	svc := &ClientService{}
+	ib := mkInbound(t, 47021, model.OpenVPN, openvpnSettings(t, `{"clients":[]}`))
+	if _, err := svc.CreateOne(&InboundService{}, ib.Id, model.Client{
+		Email: "ali", Password: "pw-ali", Enable: true, LimitIP: 2, UserLimit: 3,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	page, err := svc.ListPaged(&InboundService{}, &SettingService{}, ClientPageParams{Page: 1, PageSize: 25})
+	if err != nil || len(page.Items) != 1 || page.Items[0].LimitIP != 2 || page.Items[0].UserLimit != 3 {
+		t.Fatalf("list = %+v, %v; want ali with IP limit 2 and user limit 3", page, err)
+	}
+	csv, err := svc.ExportCSV([]string{"ali"}, -1, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Split(csv, "\n")
+	if !strings.Contains(lines[0], ",ip_limit,user_limit,device_limit,") || !strings.Contains(lines[1], ",2,3,0,") {
+		t.Fatalf("export = %q, want the IP limit then the user limit", csv)
 	}
 }
