@@ -173,7 +173,7 @@ type ClientUsageView struct {
 type UsageService struct{}
 
 func (s *UsageService) slots(w UsageWindow) *gorm.DB {
-	from := w.From.Unix()
+	var from int64
 	if w.Daily {
 		// A day that started before the window still holds traffic inside it.
 		from = dayStart(w.From, w.From.Location()).Unix()
