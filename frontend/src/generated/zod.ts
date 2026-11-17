@@ -1824,6 +1824,8 @@ export const RoleSchema = z.object({
   name: z.string(),
   permissions: z.array(z.string()),
   tier: z.string(),
+  usersReadScope: z.string(),
+  usersWriteScope: z.string(),
 });
 export type Role = z.infer<typeof RoleSchema>;
 

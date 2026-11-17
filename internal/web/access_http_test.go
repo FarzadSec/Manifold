@@ -281,3 +281,69 @@ func TestResellerExportsOnlyItsOwnUsers(t *testing.T) {
 		t.Fatalf("admin export =\n%s\nwant both users with the reseller as owner", text)
 	}
 }
+
+// An operator role may reach every user, read all but change only its own, or keep to its own
+// book like a reseller; routes that act on every user at once stay shut to what it cannot reach.
+func TestOperatorRoleScopesWhichUsersItReaches(t *testing.T) {
+	f := newAccessFixture(t)
+	adminTok := f.token(t, "admin", panel.TokenAccess{UserId: f.owner.Id})
+	if reply := f.addClient(t, adminTok, "panel-user"); !reply.Success {
+		t.Fatalf("admin add: %s", reply.Msg)
+	}
+	operator := func(name, read, write string) string {
+		role := model.Role{Name: name, Tier: access.TierOperator, Permissions: []string{access.UsersWrite}, UsersReadScope: read, UsersWriteScope: write}
+		if err := database.GetDB().Create(&role).Error; err != nil {
+			t.Fatal(err)
+		}
+		acc := f.account(t, model.User{Username: name, Tier: access.TierOperator, RoleId: role.Id})
+		tok := f.token(t, name, panel.TokenAccess{UserId: acc.Id})
+		if reply := f.addClient(t, tok, name+"-user"); !reply.Success {
+			t.Fatalf("%s add: %s", name, reply.Msg)
+		}
+		return tok
+	}
+	listed := func(tok string) []string {
+		_, reply := f.call(t, tok, http.MethodGet, "/clients/list", "")
+		var rows []struct {
+			Email string `json:"email"`
+		}
+		_ = json.Unmarshal(reply.Obj, &rows)
+		out := []string{}
+		for _, r := range rows {
+			out = append(out, r.Email)
+		}
+		return out
+	}
+	editOK := func(tok, email string) bool {
+		_, reply := f.call(t, tok, http.MethodPost, "/clients/update/"+email, `{"comment":"seen"}`)
+		return reply.Success
+	}
+	reachable := func(tok, method, path string) bool {
+		code, reply := f.call(t, tok, method, path, `{}`)
+		return code != http.StatusForbidden && !strings.Contains(reply.Msg, "not permitted")
+	}
+
+	full := operator("full", "", "")
+	if got := listed(full); len(got) != 2 || !editOK(full, "panel-user") || !reachable(full, http.MethodPost, "/clients/delDepleted") {
+		t.Fatalf("an all-users operator: sees %v, or was refused an edit or a bulk route", got)
+	}
+
+	support := operator("support", access.ScopeAll, access.ScopeOwn)
+	if got := listed(support); len(got) != 3 {
+		t.Fatalf("a read-all operator sees %v, want every user", got)
+	}
+	if editOK(support, "panel-user") || !editOK(support, "support-user") {
+		t.Fatal("a change-own operator changed another's user, or not its own")
+	}
+	if reachable(support, http.MethodPost, "/clients/delDepleted") || !reachable(support, http.MethodGet, "/clients/groups") {
+		t.Fatal("a change-own operator reached a bulk change, or was kept from reading groups")
+	}
+
+	book := operator("book", access.ScopeOwn, access.ScopeOwn)
+	if got := listed(book); len(got) != 1 || got[0] != "book-user" {
+		t.Fatalf("an own-users operator sees %v, want only its own", got)
+	}
+	if reachable(book, http.MethodGet, "/clients/groups") {
+		t.Fatal("an own-users operator read every group")
+	}
+}

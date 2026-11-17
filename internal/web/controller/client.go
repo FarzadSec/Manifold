@@ -136,7 +136,7 @@ func (a *ClientController) listPaged(c *gin.Context) {
 		return
 	}
 	actor := access.ActorFrom(c)
-	if actor.OwnsOnly() {
+	if actor.ReadsOwnOnly() {
 		params.ScopeOwner = &actor.UserId
 	} else if params.Owner == "mine" {
 		params.Owner = strconv.Itoa(actor.UserId)
@@ -636,7 +636,7 @@ func exportScope(c *gin.Context) ([]string, int, bool) {
 		return nil, 0, false
 	}
 	owner := -1
-	if actor := access.ActorFrom(c); actor.OwnsOnly() {
+	if actor := access.ActorFrom(c); actor.ReadsOwnOnly() {
 		owner = actor.UserId
 	}
 	if req.All {

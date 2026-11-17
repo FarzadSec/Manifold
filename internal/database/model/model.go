@@ -98,7 +98,10 @@ type Role struct {
 	Description        string   `json:"description"`
 	Tier               string   `json:"tier" gorm:"not null" example:"operator"`
 	Permissions        []string `json:"permissions" gorm:"serializer:json" example:"[\"users:read\"]"`
-	MaxUsersPerAccount int      `json:"maxUsersPerAccount" gorm:"default:0"`
+	// Which users the role reads and changes: all (empty) or its own; a reseller is always own.
+	UsersReadScope     string `json:"usersReadScope" gorm:"column:users_read_scope;default:''" example:"all"`
+	UsersWriteScope    string `json:"usersWriteScope" gorm:"column:users_write_scope;default:''" example:"own"`
+	MaxUsersPerAccount int    `json:"maxUsersPerAccount" gorm:"default:0"`
 	MaxDevicesPerUser  int      `json:"maxDevicesPerUser" gorm:"default:0"`
 	MaxPlanDays        int      `json:"maxPlanDays" gorm:"default:0"`
 	CreatedAt          int64    `json:"createdAt" gorm:"autoCreateTime:milli"`

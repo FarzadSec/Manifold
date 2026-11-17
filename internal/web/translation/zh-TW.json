@@ -3153,7 +3153,14 @@
       "zeroUnlimited": "0 means no limit.",
       "about": "Description",
       "subDomain": "Subscription domain",
-      "subDomainHint": "Links of this reseller's users are built on it; *.domain gives each user a host of its own. It needs a DNS record pointing here."
+      "subDomainHint": "Links of this reseller's users are built on it; *.domain gives each user a host of its own. It needs a DNS record pointing here.",
+      "usersScope": "可存取的使用者",
+      "usersScopeHint": "此角色的帳戶是讀取並修改所有使用者，還是只讀取修改自己建立的使用者。經銷商一律只能存取自己的使用者。",
+      "scope": {
+        "all": "所有使用者",
+        "readAll": "可檢視所有使用者，只能修改自己的",
+        "own": "只有自己的使用者"
+      }
     },
     "usage": {
       "menu": "Usage",

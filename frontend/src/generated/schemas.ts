@@ -7571,6 +7571,15 @@ export const SCHEMAS: Record<string, unknown> = {
       "tier": {
         "example": "operator",
         "type": "string"
+      },
+      "usersReadScope": {
+        "description": "Which users the role reads and changes: all (empty) or its own; a reseller is always own.",
+        "example": "all",
+        "type": "string"
+      },
+      "usersWriteScope": {
+        "example": "own",
+        "type": "string"
       }
     },
     "required": [
@@ -7582,7 +7591,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "maxUsersPerAccount",
       "name",
       "permissions",
-      "tier"
+      "tier",
+      "usersReadScope",
+      "usersWriteScope"
     ],
     "type": "object"
   },

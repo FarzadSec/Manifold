@@ -3153,7 +3153,14 @@
       "zeroUnlimited": "0 means no limit.",
       "about": "Description",
       "subDomain": "Subscription domain",
-      "subDomainHint": "Links of this reseller's users are built on it; *.domain gives each user a host of its own. It needs a DNS record pointing here."
+      "subDomainHint": "Links of this reseller's users are built on it; *.domain gives each user a host of its own. It needs a DNS record pointing here.",
+      "usersScope": "Usuarios a los que llega",
+      "usersScopeHint": "Si las cuentas con este rol leen y cambian todos los usuarios o solo los que crearon. Un revendedor siempre se queda con los suyos.",
+      "scope": {
+        "all": "Todos los usuarios",
+        "readAll": "Ve a todos, cambia solo los suyos",
+        "own": "Solo sus propios usuarios"
+      }
     },
     "usage": {
       "menu": "Usage",

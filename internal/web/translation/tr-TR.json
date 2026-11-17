@@ -3153,7 +3153,14 @@
       "zeroUnlimited": "0 means no limit.",
       "about": "Description",
       "subDomain": "Subscription domain",
-      "subDomainHint": "Links of this reseller's users are built on it; *.domain gives each user a host of its own. It needs a DNS record pointing here."
+      "subDomainHint": "Links of this reseller's users are built on it; *.domain gives each user a host of its own. It needs a DNS record pointing here.",
+      "usersScope": "Eriştiği kullanıcılar",
+      "usersScopeHint": "Bu roldeki hesaplar tüm kullanıcıları mı yoksa yalnızca kendi oluşturduklarını mı okuyup değiştirir. Bayi her zaman kendi kullanıcılarıyla kalır.",
+      "scope": {
+        "all": "Tüm kullanıcılar",
+        "readAll": "Herkesi görür, yalnızca kendisininkini değiştirir",
+        "own": "Yalnızca kendi kullanıcıları"
+      }
     },
     "usage": {
       "menu": "Usage",

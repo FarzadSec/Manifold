@@ -226,7 +226,7 @@ func (a *AccessController) deleteRole(c *gin.Context) {
 func (a *AccessController) listPlans(c *gin.Context) {
 	plans, err := a.planService.List()
 	actor := access.ActorFrom(c)
-	if err == nil && actor.OwnsOnly() {
+	if err == nil && actor.IsReseller() {
 		var acc model.User
 		if err = database.GetDB().First(&acc, actor.UserId).Error; err == nil && acc.PlansOnly {
 			kept := plans[:0]

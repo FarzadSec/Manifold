@@ -317,6 +317,12 @@ func (s *RoleService) Save(r *model.Role) error {
 	if r.MaxUsersPerAccount < 0 || r.MaxDevicesPerUser < 0 || r.MaxPlanDays < 0 {
 		return common.NewError("role limits cannot be negative")
 	}
+	if r.Tier == access.TierReseller {
+		r.UsersReadScope, r.UsersWriteScope = access.ScopeOwn, access.ScopeOwn
+	}
+	if !access.ValidScopes(r.UsersReadScope, r.UsersWriteScope) {
+		return common.NewError("a role reaches all users or its own, and changes no user it cannot see")
+	}
 	db := database.GetDB()
 	var clash int64
 	if err := db.Model(&model.Role{}).Where("name = ? AND id <> ?", r.Name, r.Id).Count(&clash).Error; err != nil {

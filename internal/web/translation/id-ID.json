@@ -3153,7 +3153,14 @@
       "zeroUnlimited": "0 means no limit.",
       "about": "Description",
       "subDomain": "Subscription domain",
-      "subDomainHint": "Links of this reseller's users are built on it; *.domain gives each user a host of its own. It needs a DNS record pointing here."
+      "subDomainHint": "Links of this reseller's users are built on it; *.domain gives each user a host of its own. It needs a DNS record pointing here.",
+      "usersScope": "Pengguna yang dijangkau",
+      "usersScopeHint": "Apakah akun dengan peran ini membaca dan mengubah semua pengguna atau hanya pengguna yang mereka buat. Reseller selalu hanya pada miliknya.",
+      "scope": {
+        "all": "Semua pengguna",
+        "readAll": "Melihat semua, mengubah miliknya saja",
+        "own": "Hanya pengguna miliknya"
+      }
     },
     "usage": {
       "menu": "Usage",

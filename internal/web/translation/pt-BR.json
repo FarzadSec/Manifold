@@ -3153,7 +3153,14 @@
       "zeroUnlimited": "0 means no limit.",
       "about": "Description",
       "subDomain": "Subscription domain",
-      "subDomainHint": "Links of this reseller's users are built on it; *.domain gives each user a host of its own. It needs a DNS record pointing here."
+      "subDomainHint": "Links of this reseller's users are built on it; *.domain gives each user a host of its own. It needs a DNS record pointing here.",
+      "usersScope": "Usuários que alcança",
+      "usersScopeHint": "Se as contas com este papel leem e alteram todos os usuários ou só os que criaram. Um revendedor sempre fica nos seus.",
+      "scope": {
+        "all": "Todos os usuários",
+        "readAll": "Vê todos, altera só os seus",
+        "own": "Só os próprios usuários"
+      }
     },
     "usage": {
       "menu": "Usage",

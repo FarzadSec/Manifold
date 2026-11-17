@@ -3153,7 +3153,14 @@
       "zeroUnlimited": "0 means no limit.",
       "about": "Description",
       "subDomain": "Subscription domain",
-      "subDomainHint": "Links of this reseller's users are built on it; *.domain gives each user a host of its own. It needs a DNS record pointing here."
+      "subDomainHint": "Links of this reseller's users are built on it; *.domain gives each user a host of its own. It needs a DNS record pointing here.",
+      "usersScope": "扱えるユーザー",
+      "usersScopeHint": "このロールのアカウントがすべてのユーザーを閲覧・変更できるか、自分が作成したユーザーだけか。リセラーは常に自分のユーザーのみです。",
+      "scope": {
+        "all": "すべてのユーザー",
+        "readAll": "すべて閲覧、変更は自分のユーザーのみ",
+        "own": "自分のユーザーのみ"
+      }
     },
     "usage": {
       "menu": "Usage",

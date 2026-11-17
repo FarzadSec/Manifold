@@ -1690,6 +1690,8 @@ export interface Role {
   name: string;
   permissions: string[];
   tier: string;
+  usersReadScope: string;
+  usersWriteScope: string;
 }
 
 export interface ServerSettings {

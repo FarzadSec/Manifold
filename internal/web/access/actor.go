@@ -24,21 +24,52 @@ type Actor struct {
 	Account  model.User
 	Role     *model.Role
 	ViaToken bool
+	// ReadScope and WriteScope say which users it reads and changes: ScopeAll or ScopeOwn.
+	ReadScope  string
+	WriteScope string
 }
 
-// Allows reports whether the actor may call a route with this rule.
+// Which users a role reaches.
+const (
+	ScopeAll = "all"
+	ScopeOwn = "own"
+)
+
+// ValidScopes reports whether a role may hold this pair; a role cannot change users it cannot see.
+func ValidScopes(read, write string) bool {
+	valid := func(s string) bool { return s == "" || s == ScopeAll || s == ScopeOwn }
+	return valid(read) && valid(write) && !(read == ScopeOwn && write != ScopeOwn)
+}
+
+// Allows reports whether the actor may call a route with this rule. A staff route acts on
+// every user at once, so it stays shut to an actor kept to its own users for that access.
 func (a *Actor) Allows(r Rule) bool {
 	if a == nil {
 		return false
 	}
-	if r.Staff && a.Tier == TierReseller {
-		return false
+	if r.Staff {
+		switch {
+		case a.Tier == TierReseller:
+			return false
+		case r.Perm == UsersRead && a.ReadsOwnOnly(), r.Perm == UsersWrite && a.WritesOwnOnly():
+			return false
+		}
 	}
 	return a.Perms.Has(r.Perm)
 }
 
-// OwnsOnly is true when the actor sees only the users it owns.
-func (a *Actor) OwnsOnly() bool {
+// ReadsOwnOnly is true when the actor sees only the users it owns.
+func (a *Actor) ReadsOwnOnly() bool {
+	return a != nil && a.ReadScope == ScopeOwn
+}
+
+// WritesOwnOnly is true when the actor changes only the users it owns.
+func (a *Actor) WritesOwnOnly() bool {
+	return a != nil && a.WriteScope == ScopeOwn
+}
+
+// IsReseller reports whether the actor sells from an allowance of its own.
+func (a *Actor) IsReseller() bool {
 	return a != nil && a.Tier == TierReseller
 }
 
@@ -74,7 +105,10 @@ func Resolve(user *model.User) (*Actor, error) {
 	if !ValidTier(tier) {
 		tier = TierAdmin
 	}
-	actor := &Actor{UserId: user.Id, Username: user.Username, Tier: tier, Owner: user.IsOwner, Account: *user}
+	actor := &Actor{UserId: user.Id, Username: user.Username, Tier: tier, Owner: user.IsOwner, Account: *user, ReadScope: ScopeAll, WriteScope: ScopeAll}
+	if tier == TierReseller {
+		actor.ReadScope, actor.WriteScope = ScopeOwn, ScopeOwn
+	}
 	if user.RoleId > 0 {
 		var role model.Role
 		if err := database.GetDB().First(&role, user.RoleId).Error; err != nil {
@@ -85,6 +119,14 @@ func Resolve(user *model.User) (*Actor, error) {
 		}
 		actor.Role = &role
 		actor.Perms = NewSet(tier, role.Permissions)
+		if tier != TierReseller && !user.IsOwner {
+			if role.UsersReadScope == ScopeOwn {
+				actor.ReadScope = ScopeOwn
+			}
+			if role.UsersWriteScope == ScopeOwn {
+				actor.WriteScope = ScopeOwn
+			}
+		}
 		return actor, nil
 	}
 	actor.Perms = NewSet(tier, Ceiling(tier))

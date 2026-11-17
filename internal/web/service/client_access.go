@@ -16,7 +16,7 @@ type ClientAccess struct {
 	Actor *access.Actor
 }
 
-func (ca ClientAccess) reseller() bool { return ca.Actor.OwnsOnly() }
+func (ca ClientAccess) reseller() bool { return ca.Actor.IsReseller() }
 
 // account is the reseller's row as stored now, not as it was when the request was authenticated.
 func (ca ClientAccess) account() (model.User, error) {
@@ -27,9 +27,6 @@ func (ca ClientAccess) account() (model.User, error) {
 
 // CheckOwned refuses when any of the emails belongs to someone else.
 func (ca ClientAccess) CheckOwned(emails []string) error {
-	if !ca.reseller() {
-		return nil
-	}
 	missing, err := NotOwned(ca.Actor.UserId, emails)
 	if err != nil {
 		return err

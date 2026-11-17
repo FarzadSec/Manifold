@@ -80,17 +80,21 @@ func refuse(c *gin.Context, err error) {
 	c.AbortWithStatusJSON(http.StatusOK, gin.H{"success": false, "msg": err.Error()})
 }
 
-// guardClientAccess lets a reseller reach only its own users, and only in the ways its
-// account allows; every other actor passes untouched.
+// guardClientAccess keeps an actor scoped to its own users to those users, and a reseller to
+// the ways its account allows; an actor that reaches every user passes untouched.
 func guardClientAccess(c *gin.Context) {
 	actor := access.ActorFrom(c)
-	if !actor.OwnsOnly() {
+	if !actor.ReadsOwnOnly() && !actor.WritesOwnOnly() {
 		c.Next()
 		return
 	}
 	route := c.Request.Method + " " + relAPIPath(c.FullPath())
 	kind, ok := resellerClientRoutes[route]
 	if !ok {
+		if !actor.IsReseller() {
+			c.Next()
+			return
+		}
 		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"success": false, "msg": "your account is not permitted to do this"})
 		return
 	}
@@ -136,7 +140,8 @@ func guardClientAccess(c *gin.Context) {
 		refuse(c, errUserNotFound)
 		return
 	}
-	if kind != targetNone {
+	write := kind == targetEmailWrite || kind == targetBodyWrite
+	if kind != targetNone && (write && actor.WritesOwnOnly() || !write && actor.ReadsOwnOnly()) {
 		if err := ca.CheckOwned(emails); err != nil {
 			refuse(c, err)
 			return
@@ -228,7 +233,7 @@ func checkResellerEdit(c *gin.Context, ca service.ClientAccess, email string) er
 // ownedOnly keeps the items whose email the reseller owns; others pass everything through.
 func ownedOnly[T any](c *gin.Context, items []T, email func(T) string) ([]T, error) {
 	actor := access.ActorFrom(c)
-	if !actor.OwnsOnly() {
+	if !actor.ReadsOwnOnly() {
 		return items, nil
 	}
 	owned, err := service.OwnedEmailSet(actor.UserId)
@@ -241,7 +246,7 @@ func ownedOnly[T any](c *gin.Context, items []T, email func(T) string) ([]T, err
 // ownedMap keeps the map entries whose email the reseller owns.
 func ownedMap[V any](c *gin.Context, m map[string]V) (map[string]V, error) {
 	actor := access.ActorFrom(c)
-	if !actor.OwnsOnly() {
+	if !actor.ReadsOwnOnly() {
 		return m, nil
 	}
 	owned, err := service.OwnedEmailSet(actor.UserId)

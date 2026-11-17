@@ -7597,6 +7597,15 @@
           "tier": {
             "example": "operator",
             "type": "string"
+          },
+          "usersReadScope": {
+            "description": "Which users the role reads and changes: all (empty) or its own; a reseller is always own.",
+            "example": "all",
+            "type": "string"
+          },
+          "usersWriteScope": {
+            "example": "own",
+            "type": "string"
           }
         },
         "required": [
@@ -7608,7 +7617,9 @@
           "maxUsersPerAccount",
           "name",
           "permissions",
-          "tier"
+          "tier",
+          "usersReadScope",
+          "usersWriteScope"
         ],
         "type": "object"
       },
@@ -21187,7 +21198,9 @@
                       "permissions": [
                         "users:read"
                       ],
-                      "tier": "operator"
+                      "tier": "operator",
+                      "usersReadScope": "all",
+                      "usersWriteScope": "own"
                     }
                   ]
                 }
@@ -21253,7 +21266,9 @@
                     "permissions": [
                       "users:read"
                     ],
-                    "tier": "operator"
+                    "tier": "operator",
+                    "usersReadScope": "all",
+                    "usersWriteScope": "own"
                   }
                 }
               }
@@ -21330,7 +21345,9 @@
                     "permissions": [
                       "users:read"
                     ],
-                    "tier": "operator"
+                    "tier": "operator",
+                    "usersReadScope": "all",
+                    "usersWriteScope": "own"
                   }
                 }
               }

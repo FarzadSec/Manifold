@@ -1983,7 +1983,9 @@ export const EXAMPLES: Record<string, unknown> = {
     "permissions": [
       "users:read"
     ],
-    "tier": "operator"
+    "tier": "operator",
+    "usersReadScope": "all",
+    "usersWriteScope": "own"
   },
   "ServerSettings": {
     "contentPaddingAddition": "",

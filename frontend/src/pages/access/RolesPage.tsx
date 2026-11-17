@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -37,6 +37,8 @@ function emptyRole(): Role {
     description: '',
     tier: 'operator',
     permissions: [],
+    usersReadScope: '',
+    usersWriteScope: '',
     maxUsersPerAccount: 0,
     maxDevicesPerUser: 0,
     maxPlanDays: 0,
@@ -59,6 +61,9 @@ function RoleFormModal({
   const methods = useForm<Role>({ defaultValues: emptyRole() });
   const { control, reset, handleSubmit, setValue, getValues } = methods;
   const tier = useWatch({ control, name: 'tier' });
+  const readScope = useWatch({ control, name: 'usersReadScope' }) || 'all';
+  const writeScope = useWatch({ control, name: 'usersWriteScope' }) || 'all';
+  const uid = useId();
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -116,6 +121,30 @@ function RoleFormModal({
                 />
               </FormField>
             </Col>
+            {tier !== 'reseller' && (
+              <Col xs={24}>
+                <Form.Item
+                  label={t('pages.access.usersScope')}
+                  htmlFor={`${uid}-scope`}
+                  tooltip={t('pages.access.usersScopeHint')}
+                >
+                  <Select
+                    id={`${uid}-scope`}
+                    value={`${readScope}|${writeScope}`}
+                    onChange={(v: string) => {
+                      const [read, write] = v.split('|');
+                      setValue('usersReadScope', read);
+                      setValue('usersWriteScope', write);
+                    }}
+                    options={[
+                      { value: 'all|all', label: t('pages.access.scope.all') },
+                      { value: 'all|own', label: t('pages.access.scope.readAll') },
+                      { value: 'own|own', label: t('pages.access.scope.own') },
+                    ]}
+                  />
+                </Form.Item>
+              </Col>
+            )}
             <Col xs={24}>
               <FormField name="description" label={t('pages.access.about')}>
                 <Input maxLength={200} />
@@ -199,6 +228,15 @@ export default function RolesPage() {
       key: 'limits',
       render: (_, r) => (
         <Space size={4} wrap>
+          {r.tier !== 'reseller' && r.usersWriteScope === 'own' && (
+            <Tag color="purple">
+              {t(
+                r.usersReadScope === 'own'
+                  ? 'pages.access.scope.own'
+                  : 'pages.access.scope.readAll',
+              )}
+            </Tag>
+          )}
           {r.maxUsersPerAccount > 0 && (
             <Tag>{t('pages.access.usersCap', { n: r.maxUsersPerAccount })}</Tag>
           )}

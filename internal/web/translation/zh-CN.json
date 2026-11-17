@@ -3153,7 +3153,14 @@
       "zeroUnlimited": "0 表示不限制。",
       "about": "描述",
       "subDomain": "订阅域名",
-      "subDomainHint": "此代理商用户的链接使用该域名;*.domain 为每个用户生成专属主机名。需要指向本服务器的 DNS 记录。"
+      "subDomainHint": "此代理商用户的链接使用该域名;*.domain 为每个用户生成专属主机名。需要指向本服务器的 DNS 记录。",
+      "usersScope": "可访问的用户",
+      "usersScopeHint": "此角色的账户是读取并修改所有用户，还是只读取修改自己创建的用户。分销商始终只能访问自己的用户。",
+      "scope": {
+        "all": "所有用户",
+        "readAll": "可查看所有用户，只能修改自己的",
+        "own": "只有自己的用户"
+      }
     },
     "usage": {
       "menu": "用量",
