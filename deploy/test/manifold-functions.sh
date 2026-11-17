@@ -201,5 +201,23 @@ check "the panel menu keeps its numbers and adds the tunnels at 26" \
     "$(menu_entries | grep -v '^-$' | sed -n '12p;17p;25p;26p' | cut -d'|' -f2 | tr '\n' ' ')" \
     "restart_xray doctor geo_menu tunnel_list "
 
+# The panel starts Xray as bin/xray-linux-* from its own folder, so the command
+# line never holds the absolute path; the status read "Not running" while it ran.
+mkdir -p "$work/install/bin"
+cp "$BASH" "$work/install/bin/xray-linux-amd64"
+mkfifo "$work/xray.fifo"
+# shellcheck disable=SC2016
+(cd "$work/install" && exec bin/xray-linux-amd64 -c 'read -r _ <"$1"' _ "$work/xray.fifo") &
+fake_xray=$!
+sleep 0.2
+check "Xray started from the panel's folder counts as running" \
+    "$(INSTALL_DIR="$work/install" xray_running && echo yes || echo no)" "yes"
+check "an Xray of another folder does not" \
+    "$(INSTALL_DIR="$work/other" xray_running && echo yes || echo no)" "no"
+kill "$fake_xray"
+wait "$fake_xray" 2>/dev/null || true
+check "a stopped Xray is not running" \
+    "$(INSTALL_DIR="$work/install" xray_running && echo yes || echo no)" "no"
+
 [ "$failures" -eq 0 ] || exit 1
 echo "all management command function tests passed"

@@ -199,8 +199,16 @@ show_settings() {
     echo "Access URL: $(access_url)"
 }
 
+# The panel starts Xray by a path relative to its folder, so the executable is
+# what names it, not the command line.
 xray_running() {
-    pgrep -f "${INSTALL_DIR}/bin/xray-linux" >/dev/null 2>&1
+    local exe
+    for exe in /proc/[0-9]*/exe; do
+        case "$(readlink "$exe" 2>/dev/null)" in
+            "${INSTALL_DIR}/bin/xray-linux-"*) return 0 ;;
+        esac
+    done
+    return 1
 }
 
 show_status() {
