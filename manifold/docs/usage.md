@@ -54,9 +54,19 @@ The speed limit needs the `nftables` package, which Ubuntu installs by default. 
 - **Operator** runs the panel (users, inbounds, nodes, tunnels, settings) but not its administration.
 - **Reseller** sees only the users it created, inside an allowance: traffic per cycle, a reset cycle (weekly, monthly or yearly from a day), an account expiry and a user limit. When it runs out its users are switched off until the next cycle or until you raise the allowance; users switched off by hand stay off. **May edit and delete users**, **Sell from plans only** and **Only chosen inbounds** narrow it further, and its profile title, support link and announcement replace the panel's in its customers' apps.
 
-**Roles** makes custom roles: a tier, the permissions kept from it, and caps on users per account, devices per user and plan length. **Plans** holds the presets users are created from; pick one in the user form and its limits are filled in and applied by the server.
+**Roles** makes custom roles. A role is based on a tier and keeps some of its permissions. It also sets:
 
-API tokens (**Settings → Security**) act as one account. Pick the account, optionally a lower tier and fewer permissions, the requests per minute (0, the default, is no limit) and how many days the token is valid.
+- **Users it reaches** (operator and admin roles): every user, every user but changes only its own, or only its own. A reseller always reaches only its own.
+- Bounds on what its accounts hand out to each user: the smallest and largest quota, the shortest and longest plan, the fewest and most devices. 0 leaves a side open; a largest value also refuses an unlimited user. They hold on create, on an edit that changes one of them, and on a bulk change. Users made before a bound existed stay editable.
+- Users per account, for resellers.
+- **Sell from plans only** and **Only chosen inbounds**, as on a reseller account. A reseller with lists of its own gets the stricter of the two.
+- What happens when an account is switched off or out of allowance: switch its users off while the account is off; keep a reseller's users on when its allowance runs out (by default they go off); lock a reseller's sign-in until it is renewed.
+
+An account can also be given permissions its role leaves out, or lose some it gives (**Permissions for this account** in the account form), always inside its tier. **Switched off** in the account form stops the account from signing in and stops its tokens; the panel owner cannot be switched off.
+
+**Plans** holds the presets users are created from; pick one in the user form and its limits are filled in and applied by the server.
+
+API tokens (**Settings → Security**) act as one account. Pick the account, optionally a lower tier and fewer permissions, the requests per minute (0, the default, is no limit) and how many days the token is valid. **Requests in total** caps the requests a token makes over its life; past it the token is refused, or deleted when **Delete it when used up** is on. The token list shows its use and when it was last used.
 
 **Audit log** records sign-ins always, and every change while **Log admin changes** is on. Every account sets its own password and two-factor authentication from **My account** in the sidebar.
 
@@ -276,6 +286,10 @@ Install Manifold on each additional server, create an API token there, and add t
 **Install over SSH** (Nodes page) does both steps for you. Give the server's address, the port its panel should listen on, and an SSH user (root, or one with passwordless sudo) with a password or private key. **Read host key** shows the server's SSH fingerprint before anything is sent; compare it with `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` on the server and accept it. The panel then logs in, runs the installer, gives the node a self-signed certificate and pins it from the installer's own output, mints a node-admin token, and adds the node. The log streams in the window. The password or key is used for that install only and never stored; the server needs to reach GitHub to download the installer.
 
 Update each node with `manifold update` on that node, or with **Update over SSH** in the node's menu, which runs the same updater over SSH. The update action on the Nodes page is refused by every node: a panel never downloads or runs an updater itself.
+
+**Reach through a proxy** (node form) connects the panel to the node through an http, https or socks5 proxy, such as `socks5://127.0.0.1:1080`, instead of directly. It replaces **Connection outbound**, which goes through one of the panel's own Xray outbounds.
+
+**Clone** in an inbound's menu with **Keep the copies in step** on puts a copy of the inbound on each node you pick, with the same port, settings and users. From then on an edit to any copy reaches all of them, and a user put on or taken off one copy is put on or taken off all, as long as the account may use that copy. Each copy keeps its own traffic, its own switch and its node's address. The Node column marks linked copies; **Unlink from its copies** lets one copy go its own way.
 
 **Traffic multiplier** (node form) counts users' traffic on that node against their quota times the factor: 2 for an expensive route, 0.5 for a cheap one. Usage history keeps the real bytes. **Periodic usage limit** caps the node's own traffic per week, month or year, in either calendar: at the limit the panel switches the node's inbounds off and the list says **Stopped by usage limit**; when the next period starts, or the limit is raised, exactly those inbounds are switched on again. An inbound you had switched off yourself stays off.
 

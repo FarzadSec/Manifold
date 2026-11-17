@@ -223,7 +223,13 @@ Requirement: root, the `wireguard-tools` package and the kernel WireGuard module
 
 - Accounts (`users`) carry a tier, an optional custom role (`roles`), the owner flag, their own two-factor secret and, for a reseller, its allowance: volume per cycle (weekly, monthly or yearly from a day), expiry, user limit, may-edit, plans-only with allowed plans, allowed inbounds, and branding (profile title, support link, announcement) its customers' subscriptions use.
 - Permissions (`internal/web/access`): `users`, `plans`, `nodes`, `tunnels`, `pool` (inbounds, hosts, outbounds, routing), `settings`, `stats`, `tools`, `services`, `admins`, `tokens`, `backup`, `audit`. A role keeps a subset of its tier's; a role's caps (users per account, devices per user, plan length) hold over the account's own values.
+- A role's users scope (`users_read_scope`, `users_write_scope`: all or own; a reseller is own/own) decides which users `guardClientAccess` lets an account reach; staff routes stay shut to an own-scoped account for that access. (0.17.0)
+- Role bounds (`min/max_user_bytes`, `min/max_plan_days`, `min/max_devices_per_user`) are held by `ClientAccess.CheckChange` on create, on the limits an edit changes and on a bulk adjust as it would leave each user; a ceiling refuses an unlimited value. (0.17.0)
+- `ReachOf` gives the plans and inbounds an account sells from: the stricter of a reseller account's lists and its role's (`plans_only`, `allowed_plan_ids`, `inbounds_limited`, `allowed_inbound_ids`). (0.17.0)
+- `users.granted_permissions` and `denied_permissions` change one account's set after its role, inside its tier; denying a read also takes its write; the owner is never narrowed. (0.17.0)
+- `users.disabled` refuses an account at login and per request (`ErrAccountDisabled`); a role's `lock_when_limited` refuses a reseller out of allowance (`ErrAccountLimited`). `ResellerService.Enforce` switches an account's users off when its allowance runs out (unless its role has `keep_users_when_limited`) or it is switched off (when its role has `users_off_when_disabled`), recording it in `users.users_off`, and restores exactly the users it marked. (0.17.0)
 - API tokens of the admin scope act as one account, below its tier, with fewer permissions and, when set, their own requests per minute; a token without one is not throttled, since masters drive their nodes with admin tokens too. The machine scopes (`monitor`, `node-sync`, `node-admin`, `tunnel`) keep their allow-lists and act as the owner.
+- `api_tokens.max_requests` caps a token's lifetime requests; `Spend` counts a capped token in one conditional update per request and deletes it at the cap when `delete_on_limit` is set; `last_used_at` is written at most once a minute for an uncapped token. (0.17.0)
 - Plans (`plans`) fill a new user's limits, length (fixed or from first use), reset, inbounds, group and name prefix or suffix.
 - The audit log (`audit_entries`) always holds sign-ins, failed and new-address sign-ins and two-factor changes; while change logging is on, every change a person makes, with secrets redacted, kept for the retention (90 days by default).
 - Pages: Admins, Roles, Plans, Audit log; the users page gains an owner column, an owner filter, change owner, a plan picker and, for main admins, an owner picker; a reseller's overview shows its allowance and users; every account has its own password and two-factor dialog.
@@ -281,6 +287,8 @@ This is the contract Mirza Bot will sync against.
 - `nodes.usage_*` hold a weekly, monthly or yearly cap; `NodeUsageLimitJob` (every minute) sums the node's daily usage rows since the period's first day and stops or resumes its inbounds, remembered in `usage_stopped_inbounds`.
 - `node_healths` holds a five-minute sample per enabled node (`NodeHealthJob`), kept 90 days; `/nodes/stats/:id` cuts a window into availability stretches and load points and adds per-user usage.
 - `/nodes/logs/:id` reads the node panel's log through `Remote.FetchLogs`; the node-sync scope may call `/server/logs/:count`.
+- `nodes.proxy_url` (http, https, socks5) or `nodes.outbound_tag` decides how the panel reaches a node, through `runtime.ProxyURLFor`, for the probe, every `Remote` call and the certificate fetch. (0.17.0)
+- `inbounds.link_group` ties copies of one inbound on several hosts. `DeployToNodes` adds a copy per host with the source's settings and users; the update handler carries an edit to the others with `UpdateLinkedCopies`, each keeping its host, tag, traffic, users, switch and share address; `LinkedIDs` widens a create, attach or detach to every copy before an account's inbound list narrows it. (0.17.0)
 - `internal/nodessh` reads host keys and runs scripts over SSH; `NodeService.StartInstall` runs `install.sh` with flags, a self-signed certificate, `manifold cert`, `manifold setting -port -webBasePath` and a node-admin token, as a polled job.
 
 ### 4.14 Shared ports (built, 0.9.0)
@@ -488,6 +496,11 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - SSH install downloads the installer from GitHub on the server; a server that cannot reach GitHub needs the package copied by hand (`install.sh --package`).
 - Node templates (one configuration applied to many nodes) are not built; a node's inbounds are created on it from the master as before.
 - Live connections per node are still not listed (see 8.7).
+
+### 8.19 Changes in 0.17.0
+
+- The PasarGuard comparison was carried out in Manifold's own model: role scopes, bounds, plans and inbounds, per-account overrides, account switch-off and role policies, token request caps, a node proxy and linked inbounds across nodes. Manifold keeps its full-panel nodes; PasarGuard's per-resource permission catalogue was not copied, since tiers and roles already cover it.
+- Open: an edit carried to a linked copy that the copy's node refuses (a port taken there, say) is reported and leaves that copy as it was; unlink it to edit it alone. Linked copies share one remark, so a subscription shows the same name for each; locations tell them apart in the app.
 
 ### 8.18 Changes in 0.16.0
 
