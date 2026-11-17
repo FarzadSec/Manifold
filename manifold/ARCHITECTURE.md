@@ -293,7 +293,7 @@ This is the contract Mirza Bot will sync against.
 
 - `POST <subscription path><subid>/app/v1/login` takes `username` (a client email of that subId, any case) and the device (`deviceId` of 6 to 128 characters, name, system, app version), passes the device through `EnforceHwidForSubID` and stores an `app_sessions` row: sub id, email, the device's HWID hash and the SHA-256 of a 32-byte token. A device has one session; logging in again replaces it. Failures are limited per address and link by `internal/util/loginlimit` (5 in 5 minutes, then 15 minutes), the panel login's limiter, with the address from `internal/web/clientip`.
 - `GET .../app/v1/profile` with `Authorization: Bearer` and `X-HWID` checks the token, the device, that the email still has that subId and that app access is on, and runs the HWID gate again, so a device trimmed off a lowered limit is refused. It answers the account (usage, expiry, device limit and count), the subscription's title, support link and announcement, the locations it uses, and one config per entry of `subLinks` rendered as for the subscription page (OpenVPN and L2TP included), each with its location and, when `link.ParseLink` can read it, the Xray outbound.
-- `app_locations` names node 0 (this panel) and each node for the app: name, ISO country code, city, IANA timezone. Deleting a node deletes its row. Removing a device (`DeleteClientHwid`, `ClearClientHwids`, the sub id going away) deletes its sessions.
+- `locations` are the places the app offers (name, ISO country code, city, IANA timezone, sort order); `location_inbounds` links each inbound to at most one of them, on any protocol and server, and `deleteInboundRow` drops a deleted inbound's link. A config's `locationId` is its inbound's location, absent when the inbound serves none. The profile names the locations without the panel's inbound ids. 0.16.0 turned each node-keyed row of the old `app_locations` into a location holding that server's inbounds. Removing a device (`DeleteClientHwid`, `ClearClientHwids`, the sub id going away) deletes its sessions.
 - The routes hang under every subscription path group; `appEnable` (off by default) is read on every request, so switching it needs no restart.
 
 ### 4.19 Addons (groundwork, 0.12.0)
@@ -488,6 +488,13 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - SSH install downloads the installer from GitHub on the server; a server that cannot reach GitHub needs the package copied by hand (`install.sh --package`).
 - Node templates (one configuration applied to many nodes) are not built; a node's inbounds are created on it from the master as before.
 - Live connections per node are still not listed (see 8.7).
+
+### 8.18 Changes in 0.16.0
+
+- OpenVPN and L2TP read a client's `userLimit`; `limitIp` is left to Xray and kernel AmneziaWG. The `ClientUserLimitSplit` upgrade copied the old cap of every tunnel account, in its record and every inbound's copy, and of each plan reaching a tunnel inbound.
+- The subscription page shows, under each service, the account and how many may use it at once, with the password for OpenVPN and L2TP; `?format=info` leaves these out.
+- Links without a subscription or panel domain use the public IPv4 the panel looks up at start and every 10 minutes, then the hostname.
+- The admin and node models of PasarGuard were compared with Manifold's; the proposal is in the project notes and waits on a decision.
 
 ### 8.17 Open items after the app API (0.15.0)
 
