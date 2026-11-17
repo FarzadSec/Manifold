@@ -387,23 +387,13 @@ func (s *TunnelService) Delete(id int) error {
 	return nil
 }
 
-var publicIPCache struct {
-	sync.Mutex
-	ip string
-	at time.Time
-}
-
 // PublicAddress is how another server reaches this one when a tunnel names no address.
 func (s *TunnelService) PublicAddress() string {
-	publicIPCache.Lock()
-	defer publicIPCache.Unlock()
-	if publicIPCache.ip != "" && time.Since(publicIPCache.at) < 10*time.Minute {
-		return publicIPCache.ip
+	if ip := KnownPublicIPv4(); ip != "" {
+		return ip
 	}
-	if ip := firstPublicIP(publicIPv4Services); ip != "" && ip != "N/A" {
-		publicIPCache.ip, publicIPCache.at = ip, time.Now()
-	}
-	return publicIPCache.ip
+	RefreshPublicIPv4()
+	return KnownPublicIPv4()
 }
 
 func (s *TunnelService) addressFor(t tunnel.Tunnel, requested string) (string, error) {

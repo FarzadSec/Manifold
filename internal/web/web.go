@@ -400,6 +400,8 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	_, _ = s.cron.AddJob("@every 1m", job.NewNodeUsageLimitJob())
 	_, _ = s.cron.AddJob("@every 5m", job.NewNodeHealthJob())
 	_, _ = s.cron.AddJob("@every 10m", job.NewBackupJob())
+	go service.RefreshPublicIPv4()
+	_, _ = s.cron.AddFunc("@every 10m", service.RefreshPublicIPv4)
 	_, _ = s.cron.AddJob("@every 15s", job.NewUserEventsJob())
 	_, _ = s.cron.AddJob("@every 6h", job.NewCertRenewJob())
 

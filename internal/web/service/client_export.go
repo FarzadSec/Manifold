@@ -49,6 +49,8 @@ func (s *SettingService) NewSubURLBuilder() SubURLBuilder {
 	if subDomain == "" {
 		if d, err := s.GetWebDomain(); err == nil && d != "" {
 			subDomain = d
+		} else if ip := KnownPublicIPv4(); ip != "" {
+			subDomain = ip
 		} else if h, err := os.Hostname(); err == nil && h != "" {
 			subDomain = h
 		} else {

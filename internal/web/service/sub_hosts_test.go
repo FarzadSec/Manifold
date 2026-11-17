@@ -89,3 +89,35 @@ func TestSingboxLinkSharesTheUsersHost(t *testing.T) {
 		t.Fatalf("sing-box link with the format off = %q, want none", off)
 	}
 }
+
+// With no domain configured the link named the machine's hostname ("ubuntu"),
+// which nobody outside resolves; this server's public address is what users reach.
+func TestASubscriptionLinkWithoutADomainUsesThePublicAddress(t *testing.T) {
+	setupConflictDB(t)
+	setSubSettings(t, map[string]string{"subDomain": "", "subDomains": "", "webDomain": "", "subURI": "", "subPort": "2096", "subPath": "/sub/"})
+	restore := stubPublicIPv4(t, "203.0.113.7")
+	defer restore()
+	RefreshPublicIPv4()
+
+	link, _, _ := (&SettingService{}).NewSubURLBuilder().For(5, 0, "abc")
+	if link != "http://203.0.113.7:2096/sub/abc" {
+		t.Fatalf("link = %q, want this server's public address", link)
+	}
+}
+
+func stubPublicIPv4(t *testing.T, ip string) func() {
+	t.Helper()
+	previous := lookupPublicIPv4
+	lookupPublicIPv4 = func() string { return ip }
+	resetPublicIPv4Cache()
+	return func() {
+		lookupPublicIPv4 = previous
+		resetPublicIPv4Cache()
+	}
+}
+
+func resetPublicIPv4Cache() {
+	publicIPv4.Lock()
+	defer publicIPv4.Unlock()
+	publicIPv4.ip = ""
+}
