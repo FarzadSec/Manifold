@@ -464,6 +464,9 @@ export const SCHEMAS: Record<string, unknown> = {
   },
   "AllSetting": {
     "properties": {
+      "appEnable": {
+        "type": "boolean"
+      },
       "datepicker": {
         "type": "string"
       },
@@ -1074,6 +1077,7 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
+      "appEnable",
       "datepicker",
       "discordAdminIds",
       "discordBotBackup",
@@ -1268,6 +1272,9 @@ export const SCHEMAS: Record<string, unknown> = {
   },
   "AllSettingView": {
     "properties": {
+      "appEnable": {
+        "type": "boolean"
+      },
       "datepicker": {
         "type": "string"
       },
@@ -1902,6 +1909,7 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
+      "appEnable",
       "datepicker",
       "discordAdminIds",
       "discordBotBackup",
@@ -2261,6 +2269,161 @@ export const SCHEMAS: Record<string, unknown> = {
       "tier",
       "userId",
       "username"
+    ],
+    "type": "object"
+  },
+  "AppAccount": {
+    "description": "AppAccount is the account a session belongs to, summed over its subscription.\nExpiryTime is in ms (0 never, negative counts from first use); Total 0 is unlimited.",
+    "properties": {
+      "deviceLimit": {
+        "example": 2,
+        "type": "integer"
+      },
+      "devices": {
+        "example": 1,
+        "type": "integer"
+      },
+      "download": {
+        "example": 52428800,
+        "format": "int64",
+        "type": "integer"
+      },
+      "enabled": {
+        "example": true,
+        "type": "boolean"
+      },
+      "expiryTime": {
+        "example": 1767225600000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "total": {
+        "example": 53687091200,
+        "format": "int64",
+        "type": "integer"
+      },
+      "upload": {
+        "example": 1048576,
+        "format": "int64",
+        "type": "integer"
+      },
+      "username": {
+        "example": "dana@example.com",
+        "type": "string"
+      }
+    },
+    "required": [
+      "deviceLimit",
+      "devices",
+      "download",
+      "enabled",
+      "expiryTime",
+      "total",
+      "upload",
+      "username"
+    ],
+    "type": "object"
+  },
+  "AppConfig": {
+    "description": "AppConfig is one entry of the subscription. Outbound is set when Xray can run\nit; LocationID names its server and is absent on a client's external link.",
+    "properties": {
+      "link": {
+        "example": "vless://11111111-2222-4333-8444-555555555555@de.example.com:8443?type=tcp#vless-de",
+        "type": "string"
+      },
+      "locationId": {
+        "example": 0,
+        "nullable": true,
+        "type": "integer"
+      },
+      "name": {
+        "example": "vless-de",
+        "type": "string"
+      },
+      "outbound": {
+        "additionalProperties": {},
+        "type": "object"
+      },
+      "protocol": {
+        "example": "vless",
+        "type": "string"
+      }
+    },
+    "required": [
+      "link",
+      "name",
+      "protocol"
+    ],
+    "type": "object"
+  },
+  "AppLocation": {
+    "description": "AppLocation is how the app names a server: this panel is node 0, a node its id.",
+    "properties": {
+      "city": {
+        "example": "Frankfurt",
+        "type": "string"
+      },
+      "countryCode": {
+        "example": "DE",
+        "type": "string"
+      },
+      "name": {
+        "example": "Germany",
+        "type": "string"
+      },
+      "nodeId": {
+        "example": 0,
+        "type": "integer"
+      },
+      "timezone": {
+        "example": "Europe/Berlin",
+        "type": "string"
+      }
+    },
+    "required": [
+      "city",
+      "countryCode",
+      "name",
+      "nodeId",
+      "timezone"
+    ],
+    "type": "object"
+  },
+  "AppProfile": {
+    "description": "AppProfile is what GET .../app/v1/profile answers a signed-in device.",
+    "properties": {
+      "account": {
+        "$ref": "#/components/schemas/AppAccount"
+      },
+      "announce": {
+        "example": "Maintenance on Friday",
+        "type": "string"
+      },
+      "configs": {
+        "items": {
+          "$ref": "#/components/schemas/AppConfig"
+        },
+        "type": "array"
+      },
+      "locations": {
+        "items": {
+          "$ref": "#/components/schemas/AppLocation"
+        },
+        "type": "array"
+      },
+      "supportUrl": {
+        "example": "https://t.me/support",
+        "type": "string"
+      },
+      "title": {
+        "example": "DataCraft",
+        "type": "string"
+      }
+    },
+    "required": [
+      "account",
+      "configs",
+      "locations"
     ],
     "type": "object"
   },

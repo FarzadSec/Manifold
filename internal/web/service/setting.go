@@ -104,6 +104,7 @@ var defaultValueMap = map[string]string{
 	"happLinkEnable":              "false",
 	"subEnable":                   "true",
 	"subJsonEnable":               "false",
+	"appEnable":                   "false",
 	"subJsonAutoDetect":           "false",
 	"subJsonAlwaysArray":          "false",
 	"subJsonUserAgentRegex":       "",
@@ -900,6 +901,11 @@ func (s *SettingService) GetSubEnable() (bool, error) {
 
 func (s *SettingService) GetHappLinkEnable() (bool, error) {
 	return s.getBool("happLinkEnable")
+}
+
+// GetAppEnable says whether the subscription server takes app logins.
+func (s *SettingService) GetAppEnable() (bool, error) {
+	return s.getBool("appEnable")
 }
 
 func (s *SettingService) GetSubJsonEnable() (bool, error) {

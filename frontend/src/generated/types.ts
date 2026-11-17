@@ -4,11 +4,19 @@ export type GeoKind = string;
 export type OnlineAPISupport = number;
 export type ProcessState = string;
 export type Protocol = string;
+export type SUBControllerOption = unknown;
 export type addrFamily = number;
+export type hostBinding = number;
+export type infoNodeMode = number;
+export type remoteClashKeyClass = number;
+export type remoteRoutingKind = string;
+export type renderBudget = number;
 export type resellerTarget = number;
 export type staticEgressResolver = string;
 export type trafficLocalApplyAction = number;
 export type transportBits = number;
+export type yamlEscapedString = string;
+export type yamlQuotedString = string;
 
 export interface Addon {
   addonId: string;
@@ -112,6 +120,7 @@ export interface AdminView {
 }
 
 export interface AllSetting {
+  appEnable: boolean;
   datepicker: string;
   discordAdminIds: string;
   discordBotBackup: boolean;
@@ -304,6 +313,7 @@ export interface AllSetting {
 }
 
 export interface AllSettingView {
+  appEnable: boolean;
   datepicker: string;
   discordAdminIds: string;
   discordBotBackup: boolean;
@@ -536,6 +546,42 @@ export interface ApiTokenView {
   token?: string;
   userId: number;
   username: string;
+}
+
+export interface AppAccount {
+  deviceLimit: number;
+  devices: number;
+  download: number;
+  enabled: boolean;
+  expiryTime: number;
+  total: number;
+  upload: number;
+  username: string;
+}
+
+export interface AppConfig {
+  link: string;
+  locationId?: number | null;
+  name: string;
+  outbound?: Record<string, unknown>;
+  protocol: string;
+}
+
+export interface AppLocation {
+  city: string;
+  countryCode: string;
+  name: string;
+  nodeId: number;
+  timezone: string;
+}
+
+export interface AppProfile {
+  account: AppAccount;
+  announce?: string;
+  configs: AppConfig[];
+  locations: AppLocation[];
+  supportUrl?: string;
+  title?: string;
 }
 
 export interface AuditEntry {

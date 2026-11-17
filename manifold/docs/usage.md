@@ -258,6 +258,17 @@ Every account keeps its keys, UUIDs, passwords and certificates, so **what decid
 
 The subscription server is on by default and listens on its own port (2096). Its address, path and the extra formats (JSON and Clash, both off by default) are set under Panel Settings. Open that port in the firewall before handing out subscription links.
 
+## App
+
+**Settings → App** lets customers sign in to a VPN app with their subscription link and their username. **App access** is off until it is switched on and saved. The app asks the subscription server, so the subscription server must be on and reachable; it answers on every subscription path, so whichever link the customer has works.
+
+- The username is the client's name (email) in the panel, in any letter case. It is what a leaked link alone does not give: five wrong usernames from one address on one link block that address for 15 minutes. The link itself still works in other apps, as before.
+- A device signed in to the app takes a slot of the client's **device limit** (HWID), the same limit the link's other apps share, so a customer on iOS who uses Streisand or Happ and a customer on Windows who uses the app are counted alike. App devices appear in the client's device list with their name and system; removing one there signs it out of the app. Changing the subscription link or the client's name signs out every device.
+- The app shows the account's usage, expiry and devices, and every configuration of the subscription by server: Xray protocols (VLESS, VMess, Trojan, Shadowsocks, Hysteria 2, WireGuard) come with the Xray outbound to run, OpenVPN with its profile and L2TP with its account.
+- **Locations** name this server and each node in the app: a name, a two-letter country code for the flag, a city and the server's timezone, which the app can give the device while it is connected. A node without a name goes by its node name.
+
+The API the app uses is under Subscription Server in the API documentation (`app/v1/login`, `profile`, `logout`).
+
 ## Several servers
 
 Install Manifold on each additional server, create an API token there, and add the server on the Nodes page of the main panel. The main panel then sends inbounds and clients to the node and collects its traffic figures, so one account and one quota cover every server.

@@ -256,6 +256,8 @@ var routeRules = map[string]Rule{
 	key("POST", "/setting/defaultSettings"):          any_(),
 	key("POST", "/setting/updateUser"):               any_(),
 	key("POST", "/setting/all"):                      need(SettingsRead),
+	key("GET", "/app/locations"):                     need(SettingsRead),
+	key("POST", "/app/locations"):                    need(SettingsWrite),
 	key("POST", "/setting/factoryDefaults"):          need(SettingsRead),
 	key("POST", "/setting/validateRegex"):            need(SettingsRead),
 	key("POST", "/setting/update"):                   need(SettingsWrite),

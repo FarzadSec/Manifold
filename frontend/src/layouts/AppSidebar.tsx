@@ -15,6 +15,7 @@ import {
   LogoutOutlined,
   MailOutlined,
   MenuOutlined,
+  MobileOutlined,
   MoonFilled,
   MoonOutlined,
   PushpinFilled,
@@ -226,6 +227,11 @@ export default function AppSidebar() {
         label: t('pages.settings.subBalancers.menu'),
       });
     }
+    children.push({
+      key: '/settings#subscription-app',
+      icon: <MobileOutlined aria-hidden />,
+      label: t('pages.settings.app.menu'),
+    });
     return children;
   }, [t, showSubFormats, showSubBalancers]);
 

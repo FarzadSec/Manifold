@@ -2019,6 +2019,24 @@
           "note": "Vyvažovanie leastPing/leastLoad vždy obsahuje burst observatory. Tento prepínač umožní vlastné parametre merania. Vypnutý použije vstavané hodnoty. Zmeny sa použijú po reštarte panelu."
         }
       },
+      "app": {
+        "menu": "Aplikácia",
+        "enable": "Prístup cez aplikáciu",
+        "enableDesc": "Zákazníci sa do aplikácie prihlasujú odkazom na predplatné a používateľským menom. Každé prihlásené zariadenie zaberá miesto v rovnakom limite zariadení ako ostatné aplikácie odkazu.",
+        "locationsDesc": "Ako aplikácia zobrazuje tento server a každý uzol. Časové pásmo je to, ktoré môže aplikácia nastaviť zariadeniu počas pripojenia.",
+        "server": "Server",
+        "thisServer": "Tento server",
+        "nodeLabel": "Uzol #{id}",
+        "name": "Názov",
+        "countryCode": "Krajina",
+        "city": "Mesto",
+        "timezone": "Časové pásmo",
+        "toasts": {
+          "locations": "Načítavajú sa umiestnenia aplikácie",
+          "save": "Ukladá sa umiestnenie aplikácie",
+          "saved": "Umiestnenie aplikácie uložené"
+        }
+      },
       "subCalendarExpireInclusive": "Zobrazenie konca mesačnej platnosti v odbere",
       "subCalendarExpireInclusiveDesc": "Predvolene vypnuté. Pri obnove v 1. deň mesiaca o polnoci v pásme panelu hlási hlavička odberu ako koniec platnosti poslednú sekundu predchádzajúceho mesiaca. Skutočné ukončenie a obnovovanie sa nemení. Klienti používajú vlastné časové pásmo a môžu odber považovať za neplatný o sekundu skôr.",
       "subInfoNodeEnable": "Samostatný informačný profil",

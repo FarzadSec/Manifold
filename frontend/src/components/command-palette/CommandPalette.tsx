@@ -20,6 +20,7 @@ import {
   ImportOutlined,
   LoadingOutlined,
   MailOutlined,
+  MobileOutlined,
   MoonOutlined,
   PlusOutlined,
   ReloadOutlined,
@@ -468,6 +469,13 @@ export default function CommandPalette() {
         subtitle: t('pages.settings.subBalancers.menu'),
         keywords: ['balancers', 'sub balancers', 'balancer nodes'],
         icon: <ApartmentOutlined aria-hidden />,
+      },
+      {
+        path: '/settings#subscription-app',
+        title: `${t('menu.settings')} · ${t('pages.settings.app.menu')}`,
+        subtitle: t('pages.settings.app.menu'),
+        keywords: ['app', 'dt client', 'locations', 'devices', 'windows'],
+        icon: <MobileOutlined aria-hidden />,
       },
       {
         path: '/xray#basic',

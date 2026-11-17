@@ -41,6 +41,7 @@ export class AllSetting {
   happLinkEnable = false;
   subEnable = true;
   subJsonEnable = false;
+  appEnable = false;
   subJsonAutoDetect = false;
   subJsonAlwaysArray = false;
   subJsonUserAgentRegex = '';

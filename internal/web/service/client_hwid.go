@@ -306,7 +306,12 @@ func (s *ClientService) ClearClientHwids(email string) error {
 	if subID == "" {
 		return nil
 	}
-	return database.GetDB().Where("sub_id = ?", subID).Delete(&model.ClientHwid{}).Error
+	return database.GetDB().Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("sub_id = ?", subID).Delete(&model.ClientHwid{}).Error; err != nil {
+			return err
+		}
+		return endAppSessionsTx(tx, "", subID)
+	})
 }
 
 // DeleteClientHwid removes one device, scoped to the client's sub_id: ids
@@ -320,14 +325,20 @@ func (s *ClientService) DeleteClientHwid(email string, id int) error {
 	if subID == "" {
 		return errors.New("client has no subscription id")
 	}
-	res := database.GetDB().Where("sub_id = ? AND id = ?", subID, id).Delete(&model.ClientHwid{})
-	if res.Error != nil {
-		return res.Error
-	}
-	if res.RowsAffected == 0 {
-		return errors.New("device not found")
-	}
-	return nil
+	return database.GetDB().Transaction(func(tx *gorm.DB) error {
+		var row model.ClientHwid
+		err := tx.Where("sub_id = ? AND id = ?", subID, id).First(&row).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("device not found")
+		}
+		if err != nil {
+			return err
+		}
+		if err := tx.Delete(&row).Error; err != nil {
+			return err
+		}
+		return endAppSessionsTx(tx, row.HwidHash, subID)
+	})
 }
 
 // Serialize the limit write and trim with SyncInbound and client deletion.
@@ -401,6 +412,9 @@ func clearClientHwidsBySubIDTx(tx *gorm.DB, subIDs ...string) error {
 	}
 	for _, batch := range chunkStrings(clean, sqlInChunk) {
 		if err := tx.Where("sub_id IN ?", batch).Delete(&model.ClientHwid{}).Error; err != nil {
+			return err
+		}
+		if err := endAppSessionsTx(tx, "", batch...); err != nil {
 			return err
 		}
 	}

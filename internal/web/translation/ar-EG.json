@@ -1898,6 +1898,24 @@
           "note": "تحمل موزّعات leastPing/leastLoad دائمًا burstObservatory. يخصّص هذا المفتاح معاملات probe — أوقفه لاستخدام الإعدادات الافتراضية المدمجة. تُطبَّق التغييرات بعد إعادة تشغيل اللوحة."
         }
       },
+      "app": {
+        "menu": "التطبيق",
+        "enable": "الوصول عبر التطبيق",
+        "enableDesc": "يسجّل العملاء الدخول إلى التطبيق برابط الاشتراك واسم المستخدم. كل جهاز يسجّل الدخول يشغل مكانًا من حد الأجهزة نفسه الذي تشترك فيه تطبيقات الرابط الأخرى.",
+        "locationsDesc": "كيف يعرض التطبيق هذا الخادم وكل عقدة. المنطقة الزمنية هي التي يمكن للتطبيق ضبطها على الجهاز أثناء الاتصال.",
+        "server": "الخادم",
+        "thisServer": "هذا الخادم",
+        "nodeLabel": "العقدة #{id}",
+        "name": "الاسم",
+        "countryCode": "الدولة",
+        "city": "المدينة",
+        "timezone": "المنطقة الزمنية",
+        "toasts": {
+          "locations": "تحميل مواقع التطبيق",
+          "save": "حفظ موقع التطبيق",
+          "saved": "تم حفظ موقع التطبيق"
+        }
+      },
       "subCalendarExpireInclusive": "Month-end subscription expiry display",
       "subCalendarExpireInclusiveDesc": "Default off. For clients renewing on day 1 with a midnight cutoff in the panel timezone, report the previous month's last second in subscription expiry headers. Actual cutoff and renewals are unchanged. Clients use their own timezone and may consider the subscription expired one second early.",
       "subInfoNodeEnable": "تكوين معلومات منفصل / عقدة وهمية",

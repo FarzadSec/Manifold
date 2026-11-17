@@ -75,6 +75,8 @@ func allModels() []any {
 		&model.ClientRecord{},
 		&model.ClientInbound{},
 		&model.ClientHwid{},
+		&model.AppSession{},
+		&model.AppLocation{},
 		&model.ClientExternalLink{},
 		&model.ClientGroup{},
 		&model.InboundFallback{},

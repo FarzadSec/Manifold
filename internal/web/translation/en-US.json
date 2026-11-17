@@ -2019,6 +2019,24 @@
           "note": "leastPing/leastLoad balancers always carry a burst observatory. This switch customises its probe parameters — turn it off to use the built-in defaults. Changes apply after a panel restart."
         }
       },
+      "app": {
+        "menu": "App",
+        "enable": "App access",
+        "enableDesc": "Let customers sign in to the app with their subscription link and username. A device signed in to the app takes a slot of the same device limit as the link's other apps.",
+        "locationsDesc": "How the app shows this server and each node. The timezone is the one the app can give the device while it is connected.",
+        "server": "Server",
+        "thisServer": "This server",
+        "nodeLabel": "Node #{id}",
+        "name": "Name",
+        "countryCode": "Country",
+        "city": "City",
+        "timezone": "Timezone",
+        "toasts": {
+          "locations": "Loading app locations",
+          "save": "Saving the app location",
+          "saved": "App location saved"
+        }
+      },
       "subCalendarExpireInclusive": "Month-end subscription expiry display",
       "subCalendarExpireInclusiveDesc": "Default off. For clients renewing on day 1 with a midnight cutoff in the panel timezone, report the previous month's last second in subscription expiry headers. Actual cutoff and renewals are unchanged. Clients use their own timezone and may consider the subscription expired one second early.",
       "subInfoNodeEnable": "Separate Info Config / Dummy Node",

@@ -1290,6 +1290,36 @@ type ClientHwid struct {
 
 func (ClientHwid) TableName() string { return "client_hwids" }
 
+// AppSession is a device signed in to the app API with a subscription link and
+// one of its usernames; the device also holds a slot of the link's HWID limit.
+type AppSession struct {
+	Id         int    `json:"id" gorm:"primaryKey;autoIncrement"`
+	SubID      string `json:"subId" gorm:"column:sub_id;not null;index"`
+	Email      string `json:"email" gorm:"not null"`
+	HwidHash   string `json:"-" gorm:"column:hwid_hash;size:64;not null;index"`
+	TokenHash  string `json:"-" gorm:"column:token_hash;size:64;not null;uniqueIndex"`
+	DeviceName string `json:"deviceName" gorm:"column:device_name"`
+	DeviceOS   string `json:"deviceOs" gorm:"column:device_os"`
+	OsVersion  string `json:"osVersion" gorm:"column:os_version"`
+	AppVersion string `json:"appVersion" gorm:"column:app_version"`
+	UserAgent  string `json:"userAgent" gorm:"column:user_agent"`
+	CreatedAt  int64  `json:"createdAt" gorm:"column:created_at;not null"`
+	LastSeen   int64  `json:"lastSeen" gorm:"column:last_seen;not null"`
+}
+
+func (AppSession) TableName() string { return "app_sessions" }
+
+// AppLocation is how the app names a server: this panel is node 0, a node its id.
+type AppLocation struct {
+	NodeID      int    `json:"nodeId" form:"nodeId" gorm:"column:node_id;primaryKey;autoIncrement:false" example:"0"`
+	Name        string `json:"name" form:"name" example:"Germany"`
+	CountryCode string `json:"countryCode" form:"countryCode" gorm:"column:country_code" example:"DE"`
+	City        string `json:"city" form:"city" example:"Frankfurt"`
+	Timezone    string `json:"timezone" form:"timezone" example:"Europe/Berlin"`
+}
+
+func (AppLocation) TableName() string { return "app_locations" }
+
 // ClientExternalLink is a per-client entry surfaced in the client's
 // subscription. Two kinds:
 //   - "link": a single third-party share link (vless://, vmess://, trojan://,

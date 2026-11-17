@@ -3761,6 +3761,64 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'app',
+    title: 'App',
+    description:
+      'How the app shows this panel and its nodes as locations. The app itself signs in on the subscription server (see Subscription Server → app/v1); app access is switched on with the appEnable setting.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/app/locations',
+        summary:
+          'List the location of this panel (nodeId 0) and of every node. A node with no saved name goes by its node name.',
+        responseSchema: 'AppLocation',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/app/locations',
+        summary: 'Save the location of this panel or of a node.',
+        params: [
+          {
+            name: 'nodeId',
+            in: 'body (form)',
+            type: 'integer',
+            desc: '0 for this panel, otherwise a node id.',
+          },
+          {
+            name: 'name',
+            in: 'body (form)',
+            type: 'string',
+            desc: 'Name shown in the app.',
+            optional: true,
+          },
+          {
+            name: 'countryCode',
+            in: 'body (form)',
+            type: 'string',
+            desc: 'Two-letter ISO 3166 country code, for the flag.',
+            optional: true,
+          },
+          {
+            name: 'city',
+            in: 'body (form)',
+            type: 'string',
+            desc: 'City shown under the name.',
+            optional: true,
+          },
+          {
+            name: 'timezone',
+            in: 'body (form)',
+            type: 'string',
+            desc: 'IANA timezone of the server (e.g. Europe/Berlin), which the app can give the device while connected.',
+            optional: true,
+          },
+        ],
+      },
+    ],
+  },
+
+  {
     id: 'subscription',
     title: 'Subscription Server',
     description:
@@ -3840,6 +3898,38 @@ export const sections: readonly Section[] = [
           '200': { description: 'Headers match GET; no response body.' },
           ...hwidStatusErrorResponses,
         },
+      },
+      {
+        method: 'POST',
+        path: '/{subPath}:subid/app/v1/login',
+        summary:
+          'Sign a device in to the app with its subscription link and the username of one of the link\'s accounts. The device takes a slot of the same HWID limit the link\'s other apps share. Answers <code>{"token":"..."}</code>; the same app/v1 routes answer under every subscription path.',
+        description:
+          'JSON body: <code>username</code>, <code>deviceId</code> (6-128 characters, stable per device), <code>deviceName</code>, <code>os</code>, <code>osVersion</code>, <code>appVersion</code>. Errors are <code>{"error":code}</code>: 403 <code>app_disabled</code>, 401 <code>bad_login</code>, 400 <code>bad_device</code>, 403 <code>device_limit</code>, 429 <code>too_many_attempts</code> (5 failures per address and link in 5 minutes block for 15).',
+        params: [{ name: 'subid', in: 'path', type: 'string', desc: 'Client subscription ID.' }],
+      },
+      {
+        method: 'GET',
+        path: '/{subPath}:subid/app/v1/profile',
+        summary:
+          'Return the signed-in account, its locations and every entry of its subscription, with the Xray outbound of each entry Xray can run. Needs <code>Authorization: Bearer token</code> and <code>X-HWID: deviceId</code>.',
+        description:
+          "A session ends when the device is removed from the client's devices, the link is rotated, the account is renamed or app access is switched off; the call then answers 401 <code>bad_session</code> or 403 <code>app_disabled</code>, and 403 <code>device_limit</code> when the device lost its slot.",
+        params: [{ name: 'subid', in: 'path', type: 'string', desc: 'Client subscription ID.' }],
+        responses: {
+          '200': {
+            description: 'The account and its configs.',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/AppProfile' } },
+            },
+          },
+        },
+      },
+      {
+        method: 'POST',
+        path: '/{subPath}:subid/app/v1/logout',
+        summary: 'End the session of the bearer token.',
+        params: [{ name: 'subid', in: 'path', type: 'string', desc: 'Client subscription ID.' }],
       },
       {
         method: 'GET',

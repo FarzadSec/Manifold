@@ -1898,6 +1898,24 @@
           "note": "موزان‌کننده‌های leastPing/leastLoad همیشه burstObservatory دارند. این کلید پارامترهای probe آن را سفارشی می‌کند — آن را خاموش کنید تا از پیش‌فرض‌های داخلی استفاده شود. تغییرات پس از راه‌اندازی مجدد پنل اعمال می‌شوند."
         }
       },
+      "app": {
+        "menu": "اپ",
+        "enable": "دسترسی اپ",
+        "enableDesc": "مشتری‌ها با لینک اشتراک و نام کاربری خود وارد اپ می‌شوند. هر دستگاهی که وارد اپ شود، یکی از جاهای همان سقف دستگاهی را می‌گیرد که اپ‌های دیگرِ این لینک هم از آن استفاده می‌کنند.",
+        "locationsDesc": "اپ این سرور و هر نود را چطور نشان دهد. منطقه زمانی همان است که اپ هنگام اتصال می‌تواند روی دستگاه بگذارد.",
+        "server": "سرور",
+        "thisServer": "همین سرور",
+        "nodeLabel": "نود #{id}",
+        "name": "نام",
+        "countryCode": "کشور",
+        "city": "شهر",
+        "timezone": "منطقه زمانی",
+        "toasts": {
+          "locations": "بارگذاری لوکیشن‌های اپ",
+          "save": "ذخیره لوکیشن اپ",
+          "saved": "لوکیشن اپ ذخیره شد"
+        }
+      },
       "subCalendarExpireInclusive": "Month-end subscription expiry display",
       "subCalendarExpireInclusiveDesc": "Default off. For clients renewing on day 1 with a midnight cutoff in the panel timezone, report the previous month's last second in subscription expiry headers. Actual cutoff and renewals are unchanged. Clients use their own timezone and may consider the subscription expired one second early.",
       "subInfoNodeEnable": "کانفیگ جداگانه اطلاعات / نود نمایشی",

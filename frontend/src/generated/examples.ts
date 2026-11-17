@@ -151,6 +151,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "volumeBytes": 0
   },
   "AllSetting": {
+    "appEnable": false,
     "datepicker": "",
     "discordAdminIds": "",
     "discordBotBackup": false,
@@ -342,6 +343,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "webPort": 1
   },
   "AllSettingView": {
+    "appEnable": false,
     "datepicker": "",
     "discordAdminIds": "",
     "discordBotBackup": false,
@@ -590,6 +592,63 @@ export const EXAMPLES: Record<string, unknown> = {
     "token": "new-token-string",
     "userId": 1,
     "username": "admin"
+  },
+  "AppAccount": {
+    "deviceLimit": 2,
+    "devices": 1,
+    "download": 52428800,
+    "enabled": true,
+    "expiryTime": 1767225600000,
+    "total": 53687091200,
+    "upload": 1048576,
+    "username": "dana@example.com"
+  },
+  "AppConfig": {
+    "link": "vless://11111111-2222-4333-8444-555555555555@de.example.com:8443?type=tcp#vless-de",
+    "locationId": 0,
+    "name": "vless-de",
+    "outbound": {},
+    "protocol": "vless"
+  },
+  "AppLocation": {
+    "city": "Frankfurt",
+    "countryCode": "DE",
+    "name": "Germany",
+    "nodeId": 0,
+    "timezone": "Europe/Berlin"
+  },
+  "AppProfile": {
+    "account": {
+      "deviceLimit": 2,
+      "devices": 1,
+      "download": 52428800,
+      "enabled": true,
+      "expiryTime": 1767225600000,
+      "total": 53687091200,
+      "upload": 1048576,
+      "username": "dana@example.com"
+    },
+    "announce": "Maintenance on Friday",
+    "configs": [
+      {
+        "link": "vless://11111111-2222-4333-8444-555555555555@de.example.com:8443?type=tcp#vless-de",
+        "locationId": 0,
+        "name": "vless-de",
+        "outbound": {},
+        "protocol": "vless"
+      }
+    ],
+    "locations": [
+      {
+        "city": "Frankfurt",
+        "countryCode": "DE",
+        "name": "Germany",
+        "nodeId": 0,
+        "timezone": "Europe/Berlin"
+      }
+    ],
+    "supportUrl": "https://t.me/support",
+    "title": "DataCraft"
   },
   "AuditEntry": {
     "action": "update",

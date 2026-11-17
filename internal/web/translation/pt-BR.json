@@ -1898,6 +1898,24 @@
           "note": "Balanceadores leastPing/leastLoad sempre carregam um burstObservatory. Esta opção personaliza seus parâmetros de probe — desligue-a para usar os padrões integrados. As alterações se aplicam após reiniciar o painel."
         }
       },
+      "app": {
+        "menu": "App",
+        "enable": "Acesso pelo app",
+        "enableDesc": "Os clientes entram no app com o link de assinatura e o nome de usuário. Cada dispositivo conectado ocupa uma vaga do mesmo limite de dispositivos que os outros apps do link.",
+        "locationsDesc": "Como o app mostra este servidor e cada nó. O fuso horário é o que o app pode aplicar ao dispositivo enquanto conectado.",
+        "server": "Servidor",
+        "thisServer": "Este servidor",
+        "nodeLabel": "Nó #{id}",
+        "name": "Nome",
+        "countryCode": "País",
+        "city": "Cidade",
+        "timezone": "Fuso horário",
+        "toasts": {
+          "locations": "Carregando os locais do app",
+          "save": "Salvando o local do app",
+          "saved": "Local do app salvo"
+        }
+      },
       "subCalendarExpireInclusive": "Month-end subscription expiry display",
       "subCalendarExpireInclusiveDesc": "Default off. For clients renewing on day 1 with a midnight cutoff in the panel timezone, report the previous month's last second in subscription expiry headers. Actual cutoff and renewals are unchanged. Clients use their own timezone and may consider the subscription expired one second early.",
       "subInfoNodeEnable": "Configuração de informações separada / Nó fictício",

@@ -1898,6 +1898,24 @@
           "note": "Các bộ cân bằng leastPing/leastLoad luôn mang một burstObservatory. Công tắc này tùy chỉnh các tham số probe — tắt nó để dùng mặc định tích hợp. Các thay đổi áp dụng sau khi khởi động lại bảng điều khiển."
         }
       },
+      "app": {
+        "menu": "Ứng dụng",
+        "enable": "Truy cập qua ứng dụng",
+        "enableDesc": "Khách hàng đăng nhập ứng dụng bằng liên kết đăng ký và tên người dùng. Mỗi thiết bị đăng nhập chiếm một chỗ trong cùng giới hạn thiết bị với các ứng dụng khác của liên kết.",
+        "locationsDesc": "Cách ứng dụng hiển thị máy chủ này và từng node. Múi giờ là múi giờ ứng dụng có thể đặt cho thiết bị khi đang kết nối.",
+        "server": "Máy chủ",
+        "thisServer": "Máy chủ này",
+        "nodeLabel": "Node #{id}",
+        "name": "Tên",
+        "countryCode": "Quốc gia",
+        "city": "Thành phố",
+        "timezone": "Múi giờ",
+        "toasts": {
+          "locations": "Đang tải vị trí ứng dụng",
+          "save": "Đang lưu vị trí ứng dụng",
+          "saved": "Đã lưu vị trí ứng dụng"
+        }
+      },
       "subCalendarExpireInclusive": "Month-end subscription expiry display",
       "subCalendarExpireInclusiveDesc": "Default off. For clients renewing on day 1 with a midnight cutoff in the panel timezone, report the previous month's last second in subscription expiry headers. Actual cutoff and renewals are unchanged. Clients use their own timezone and may consider the subscription expired one second early.",
       "subInfoNodeEnable": "Cấu hình thông tin riêng / Nút ảo",

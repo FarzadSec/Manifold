@@ -49,6 +49,7 @@ func run(root, outDir string) error {
 				"InboundFallback",
 				"Host",
 				"SubBalancer",
+				"AppLocation",
 				"Role",
 				"Plan",
 				"AuditEntry",
@@ -196,6 +197,10 @@ func run(root, outDir string) error {
 		{
 			Path:        resolveRel(root, "internal/backupstore"),
 			StructAllow: setOf("File"),
+		},
+		{
+			Path:        resolveRel(root, "internal/sub"),
+			StructAllow: setOf("AppProfile", "AppAccount", "AppConfig"),
 		},
 		{
 			Path:        resolveRel(root, "internal/subtheme"),

@@ -490,6 +490,9 @@
       },
       "AllSetting": {
         "properties": {
+          "appEnable": {
+            "type": "boolean"
+          },
           "datepicker": {
             "type": "string"
           },
@@ -1100,6 +1103,7 @@
           }
         },
         "required": [
+          "appEnable",
           "datepicker",
           "discordAdminIds",
           "discordBotBackup",
@@ -1294,6 +1298,9 @@
       },
       "AllSettingView": {
         "properties": {
+          "appEnable": {
+            "type": "boolean"
+          },
           "datepicker": {
             "type": "string"
           },
@@ -1928,6 +1935,7 @@
           }
         },
         "required": [
+          "appEnable",
           "datepicker",
           "discordAdminIds",
           "discordBotBackup",
@@ -2287,6 +2295,161 @@
           "tier",
           "userId",
           "username"
+        ],
+        "type": "object"
+      },
+      "AppAccount": {
+        "description": "AppAccount is the account a session belongs to, summed over its subscription.\nExpiryTime is in ms (0 never, negative counts from first use); Total 0 is unlimited.",
+        "properties": {
+          "deviceLimit": {
+            "example": 2,
+            "type": "integer"
+          },
+          "devices": {
+            "example": 1,
+            "type": "integer"
+          },
+          "download": {
+            "example": 52428800,
+            "format": "int64",
+            "type": "integer"
+          },
+          "enabled": {
+            "example": true,
+            "type": "boolean"
+          },
+          "expiryTime": {
+            "example": 1767225600000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "total": {
+            "example": 53687091200,
+            "format": "int64",
+            "type": "integer"
+          },
+          "upload": {
+            "example": 1048576,
+            "format": "int64",
+            "type": "integer"
+          },
+          "username": {
+            "example": "dana@example.com",
+            "type": "string"
+          }
+        },
+        "required": [
+          "deviceLimit",
+          "devices",
+          "download",
+          "enabled",
+          "expiryTime",
+          "total",
+          "upload",
+          "username"
+        ],
+        "type": "object"
+      },
+      "AppConfig": {
+        "description": "AppConfig is one entry of the subscription. Outbound is set when Xray can run\nit; LocationID names its server and is absent on a client's external link.",
+        "properties": {
+          "link": {
+            "example": "vless://11111111-2222-4333-8444-555555555555@de.example.com:8443?type=tcp#vless-de",
+            "type": "string"
+          },
+          "locationId": {
+            "example": 0,
+            "nullable": true,
+            "type": "integer"
+          },
+          "name": {
+            "example": "vless-de",
+            "type": "string"
+          },
+          "outbound": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "protocol": {
+            "example": "vless",
+            "type": "string"
+          }
+        },
+        "required": [
+          "link",
+          "name",
+          "protocol"
+        ],
+        "type": "object"
+      },
+      "AppLocation": {
+        "description": "AppLocation is how the app names a server: this panel is node 0, a node its id.",
+        "properties": {
+          "city": {
+            "example": "Frankfurt",
+            "type": "string"
+          },
+          "countryCode": {
+            "example": "DE",
+            "type": "string"
+          },
+          "name": {
+            "example": "Germany",
+            "type": "string"
+          },
+          "nodeId": {
+            "example": 0,
+            "type": "integer"
+          },
+          "timezone": {
+            "example": "Europe/Berlin",
+            "type": "string"
+          }
+        },
+        "required": [
+          "city",
+          "countryCode",
+          "name",
+          "nodeId",
+          "timezone"
+        ],
+        "type": "object"
+      },
+      "AppProfile": {
+        "description": "AppProfile is what GET .../app/v1/profile answers a signed-in device.",
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/AppAccount"
+          },
+          "announce": {
+            "example": "Maintenance on Friday",
+            "type": "string"
+          },
+          "configs": {
+            "items": {
+              "$ref": "#/components/schemas/AppConfig"
+            },
+            "type": "array"
+          },
+          "locations": {
+            "items": {
+              "$ref": "#/components/schemas/AppLocation"
+            },
+            "type": "array"
+          },
+          "supportUrl": {
+            "example": "https://t.me/support",
+            "type": "string"
+          },
+          "title": {
+            "example": "DataCraft",
+            "type": "string"
+          }
+        },
+        "required": [
+          "account",
+          "configs",
+          "locations"
         ],
         "type": "object"
       },
@@ -9030,6 +9193,10 @@
     {
       "name": "Subscription Balancers",
       "description": "Client-side balancers for the JSON subscription: each enabled balancer is emitted as one extra config document whose members are the proxy outbounds of the selected inbounds (routing.balancers + burstObservatory). Managed in Settings → Sub Balancers."
+    },
+    {
+      "name": "App",
+      "description": "How the app shows this panel and its nodes as locations. The app itself signs in on the subscription server (see Subscription Server → app/v1); app access is switched on with the appEnable setting."
     },
     {
       "name": "Subscription Server",
@@ -25568,6 +25735,116 @@
         }
       }
     },
+    "/panel/api/app/locations": {
+      "get": {
+        "tags": [
+          "App"
+        ],
+        "summary": "List the location of this panel (nodeId 0) and of every node. A node with no saved name goes by its node name.",
+        "operationId": "get_panel_api_app_locations",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AppLocation"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "city": "Frankfurt",
+                      "countryCode": "DE",
+                      "name": "Germany",
+                      "nodeId": 0,
+                      "timezone": "Europe/Berlin"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "App"
+        ],
+        "summary": "Save the location of this panel or of a node.",
+        "operationId": "post_panel_api_app_locations",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nodeId": {
+                    "type": "integer",
+                    "description": "0 for this panel, otherwise a node id."
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Name shown in the app."
+                  },
+                  "countryCode": {
+                    "type": "string",
+                    "description": "Two-letter ISO 3166 country code, for the flag."
+                  },
+                  "city": {
+                    "type": "string",
+                    "description": "City shown under the name."
+                  },
+                  "timezone": {
+                    "type": "string",
+                    "description": "IANA timezone of the server (e.g. Europe/Berlin), which the app can give the device while connected."
+                  }
+                },
+                "required": [
+                  "nodeId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/{subPath}{subid}": {
       "get": {
         "tags": [
@@ -25754,6 +26031,182 @@
           },
           "500": {
             "description": "Database lookup failed. Empty body."
+          }
+        }
+      }
+    },
+    "/{subPath}{subid}/app/v1/login": {
+      "post": {
+        "tags": [
+          "Subscription Server"
+        ],
+        "summary": "Sign a device in to the app with its subscription link and the username of one of the link's accounts. The device takes a slot of the same HWID limit the link's other apps share. Answers <code>{\"token\":\"...\"}</code>; the same app/v1 routes answer under every subscription path.",
+        "operationId": "post_subPath_subid_app_v1_login",
+        "description": "JSON body: <code>username</code>, <code>deviceId</code> (6-128 characters, stable per device), <code>deviceName</code>, <code>os</code>, <code>osVersion</code>, <code>appVersion</code>. Errors are <code>{\"error\":code}</code>: 403 <code>app_disabled</code>, 401 <code>bad_login</code>, 400 <code>bad_device</code>, 403 <code>device_limit</code>, 429 <code>too_many_attempts</code> (5 failures per address and link in 5 minutes block for 15).",
+        "parameters": [
+          {
+            "name": "subid",
+            "in": "path",
+            "required": true,
+            "description": "Client subscription ID.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subPath",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{subPath}{subid}/app/v1/profile": {
+      "get": {
+        "tags": [
+          "Subscription Server"
+        ],
+        "summary": "Return the signed-in account, its locations and every entry of its subscription, with the Xray outbound of each entry Xray can run. Needs <code>Authorization: Bearer token</code> and <code>X-HWID: deviceId</code>.",
+        "operationId": "get_subPath_subid_app_v1_profile",
+        "description": "A session ends when the device is removed from the client's devices, the link is rotated, the account is renamed or app access is switched off; the call then answers 401 <code>bad_session</code> or 403 <code>app_disabled</code>, and 403 <code>device_limit</code> when the device lost its slot.",
+        "parameters": [
+          {
+            "name": "subid",
+            "in": "path",
+            "required": true,
+            "description": "Client subscription ID.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subPath",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The account and its configs.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "account": {
+                    "deviceLimit": 2,
+                    "devices": 1,
+                    "download": 52428800,
+                    "enabled": true,
+                    "expiryTime": 1767225600000,
+                    "total": 53687091200,
+                    "upload": 1048576,
+                    "username": "dana@example.com"
+                  },
+                  "announce": "Maintenance on Friday",
+                  "configs": [
+                    {
+                      "link": "vless://11111111-2222-4333-8444-555555555555@de.example.com:8443?type=tcp#vless-de",
+                      "locationId": 0,
+                      "name": "vless-de",
+                      "outbound": {},
+                      "protocol": "vless"
+                    }
+                  ],
+                  "locations": [
+                    {
+                      "city": "Frankfurt",
+                      "countryCode": "DE",
+                      "name": "Germany",
+                      "nodeId": 0,
+                      "timezone": "Europe/Berlin"
+                    }
+                  ],
+                  "supportUrl": "https://t.me/support",
+                  "title": "DataCraft"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/AppProfile"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{subPath}{subid}/app/v1/logout": {
+      "post": {
+        "tags": [
+          "Subscription Server"
+        ],
+        "summary": "End the session of the bearer token.",
+        "operationId": "post_subPath_subid_app_v1_logout",
+        "parameters": [
+          {
+            "name": "subid",
+            "in": "path",
+            "required": true,
+            "description": "Client subscription ID.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subPath",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
           }
         }
       }

@@ -15,8 +15,26 @@ export type ProcessState = z.infer<typeof ProcessStateSchema>;
 export const ProtocolSchema = z.string();
 export type Protocol = z.infer<typeof ProtocolSchema>;
 
+export const SUBControllerOptionSchema = z.unknown();
+export type SUBControllerOption = z.infer<typeof SUBControllerOptionSchema>;
+
 export const addrFamilySchema = z.number().int();
 export type addrFamily = z.infer<typeof addrFamilySchema>;
+
+export const hostBindingSchema = z.number().int();
+export type hostBinding = z.infer<typeof hostBindingSchema>;
+
+export const infoNodeModeSchema = z.number().int();
+export type infoNodeMode = z.infer<typeof infoNodeModeSchema>;
+
+export const remoteClashKeyClassSchema = z.number().int();
+export type remoteClashKeyClass = z.infer<typeof remoteClashKeyClassSchema>;
+
+export const remoteRoutingKindSchema = z.string();
+export type remoteRoutingKind = z.infer<typeof remoteRoutingKindSchema>;
+
+export const renderBudgetSchema = z.number().int();
+export type renderBudget = z.infer<typeof renderBudgetSchema>;
 
 export const resellerTargetSchema = z.number().int();
 export type resellerTarget = z.infer<typeof resellerTargetSchema>;
@@ -29,6 +47,12 @@ export type trafficLocalApplyAction = z.infer<typeof trafficLocalApplyActionSche
 
 export const transportBitsSchema = z.number().int();
 export type transportBits = z.infer<typeof transportBitsSchema>;
+
+export const yamlEscapedStringSchema = z.string();
+export type yamlEscapedString = z.infer<typeof yamlEscapedStringSchema>;
+
+export const yamlQuotedStringSchema = z.string();
+export type yamlQuotedString = z.infer<typeof yamlQuotedStringSchema>;
 
 export const AddonSchema = z.object({
   addonId: z.string(),
@@ -138,6 +162,7 @@ export const AdminViewSchema = z.object({
 export type AdminView = z.infer<typeof AdminViewSchema>;
 
 export const AllSettingSchema = z.object({
+  appEnable: z.boolean(),
   datepicker: z.string(),
   discordAdminIds: z.string(),
   discordBotBackup: z.boolean(),
@@ -331,6 +356,7 @@ export const AllSettingSchema = z.object({
 export type AllSetting = z.infer<typeof AllSettingSchema>;
 
 export const AllSettingViewSchema = z.object({
+  appEnable: z.boolean(),
   datepicker: z.string(),
   discordAdminIds: z.string(),
   discordBotBackup: z.boolean(),
@@ -568,6 +594,46 @@ export const ApiTokenViewSchema = z.object({
   username: z.string(),
 });
 export type ApiTokenView = z.infer<typeof ApiTokenViewSchema>;
+
+export const AppAccountSchema = z.object({
+  deviceLimit: z.number().int(),
+  devices: z.number().int(),
+  download: z.number().int(),
+  enabled: z.boolean(),
+  expiryTime: z.number().int(),
+  total: z.number().int(),
+  upload: z.number().int(),
+  username: z.string(),
+});
+export type AppAccount = z.infer<typeof AppAccountSchema>;
+
+export const AppConfigSchema = z.object({
+  link: z.string(),
+  locationId: z.number().int().nullable().optional(),
+  name: z.string(),
+  outbound: z.record(z.string(), z.unknown()).optional(),
+  protocol: z.string(),
+});
+export type AppConfig = z.infer<typeof AppConfigSchema>;
+
+export const AppLocationSchema = z.object({
+  city: z.string(),
+  countryCode: z.string(),
+  name: z.string(),
+  nodeId: z.number().int(),
+  timezone: z.string(),
+});
+export type AppLocation = z.infer<typeof AppLocationSchema>;
+
+export const AppProfileSchema = z.object({
+  account: z.lazy(() => AppAccountSchema),
+  announce: z.string().optional(),
+  configs: z.array(z.lazy(() => AppConfigSchema)),
+  locations: z.array(z.lazy(() => AppLocationSchema)),
+  supportUrl: z.string().optional(),
+  title: z.string().optional(),
+});
+export type AppProfile = z.infer<typeof AppProfileSchema>;
 
 export const AuditEntrySchema = z.object({
   action: z.string(),

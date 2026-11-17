@@ -1,8 +1,10 @@
 # Manifold — Architecture and Roadmap
 
-Version 0.16 · 2026-11-17 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnels, full backups, the access model, limits and usage, subscriptions, nodes, shared ports, scheduled backups, webhooks, monitoring, the certificate store, importers, tunnel groups, the addon groundwork, the 3x-ui style installer and management menu, and Manifold Relay delivered; see 8.1 to 8.16 for what they leave open
+Version 0.17 · 2026-11-17 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnels, full backups, the access model, limits and usage, subscriptions, nodes, shared ports, scheduled backups, webhooks, monitoring, the certificate store, importers, tunnel groups, the addon groundwork, the 3x-ui style installer and management menu, Manifold Relay and the app API delivered; see 8.1 to 8.17 for what they leave open
 
 Decision log:
+
+- 2026-11-17 — The VPN app signs in on the subscription server with the subscription link and a username, not with an account of its own: every customer who has a link can use it, whatever the plan, and nothing new is sold or stored about them. A device signed in to the app takes a slot of the link's HWID limit, the same table every other subscription app fills, so app devices and iOS devices count against one limit and cannot be used to get round it. The username only guards the app's sign-in; the link alone still serves its configurations to other apps, as it always did
 
 - 2026-11-17 — The relay is a product of its own, Manifold Relay, chosen at the installer's first question, but built from the same code and released with it: both ends of a tunnel speak one pairing format and one relay API, and one code base keeps them in step. It has its own package without Xray, mtg or the geo files, its own pages and menu, a tunnel-scoped token in its install summary, and the managing panel shows each relay's version (sent as `X-Manifold-Version` on tunnel answers) so drift is seen
 
@@ -287,6 +289,13 @@ This is the contract Mirza Bot will sync against.
 - Port checks run both ways: a shared port refuses a local TCP inbound's, the panel's or the subscription server's port, and `checkPortConflictTx` refuses an inbound on a shared port.
 - PROXY protocol v1 and v2 per route, for targets that should see the client address.
 
+### 4.20 App API (built, 0.15.0)
+
+- `POST <subscription path><subid>/app/v1/login` takes `username` (a client email of that subId, any case) and the device (`deviceId` of 6 to 128 characters, name, system, app version), passes the device through `EnforceHwidForSubID` and stores an `app_sessions` row: sub id, email, the device's HWID hash and the SHA-256 of a 32-byte token. A device has one session; logging in again replaces it. Failures are limited per address and link by `internal/util/loginlimit` (5 in 5 minutes, then 15 minutes), the panel login's limiter, with the address from `internal/web/clientip`.
+- `GET .../app/v1/profile` with `Authorization: Bearer` and `X-HWID` checks the token, the device, that the email still has that subId and that app access is on, and runs the HWID gate again, so a device trimmed off a lowered limit is refused. It answers the account (usage, expiry, device limit and count), the subscription's title, support link and announcement, the locations it uses, and one config per entry of `subLinks` rendered as for the subscription page (OpenVPN and L2TP included), each with its location and, when `link.ParseLink` can read it, the Xray outbound.
+- `app_locations` names node 0 (this panel) and each node for the app: name, ISO country code, city, IANA timezone. Deleting a node deletes its row. Removing a device (`DeleteClientHwid`, `ClearClientHwids`, the sub id going away) deletes its sessions.
+- The routes hang under every subscription path group; `appEnable` (off by default) is read on every request, so switching it needs no restart.
+
 ### 4.19 Addons (groundwork, 0.12.0)
 
 - An addon is a manifest (`addons` row): id, name, version, the permissions it needs, the events it hears, a webhook URL and a link to its own UI. Installing creates an admin-scope API token bound to the installing account and narrowed to those permissions (refused when the account lacks one), and a webhook for those events; the plaintext token and signing secret are returned once.
@@ -479,6 +488,12 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - SSH install downloads the installer from GitHub on the server; a server that cannot reach GitHub needs the package copied by hand (`install.sh --package`).
 - Node templates (one configuration applied to many nodes) are not built; a node's inbounds are created on it from the master as before.
 - Live connections per node are still not listed (see 8.7).
+
+### 8.17 Open items after the app API (0.15.0)
+
+- Sessions do not expire on their own; they end on logout, device removal, a new link or name, or app access being switched off.
+- AmneziaWG, TUIC, MTProto and MASQUE entries reach the app as links without an outbound; the app runs what Xray, OpenVPN and the system's L2TP client can.
+- Minimum and latest app versions are not announced by the panel; the app reads its own releases.
 
 ### 8.16 Open items after Manifold Relay (0.14.0)
 

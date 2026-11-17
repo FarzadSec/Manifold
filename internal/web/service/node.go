@@ -891,6 +891,9 @@ func (s *NodeService) Delete(id int) error {
 		if err := tx.Where("node_id = ?", id).Delete(&model.NodePendingReset{}).Error; err != nil {
 			return err
 		}
+		if err := tx.Where("node_id = ?", id).Delete(&model.AppLocation{}).Error; err != nil {
+			return err
+		}
 		guids := []string{synthNodeGuid(id)}
 		if guid != "" {
 			guids = append(guids, guid)

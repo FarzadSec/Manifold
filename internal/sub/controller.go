@@ -21,6 +21,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/subtheme"
+	"github.com/mhsanaei/3x-ui/v3/internal/util/loginlimit"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
 
@@ -82,6 +83,8 @@ type SUBController struct {
 	subClashService *SubClashService
 	clientService   service.ClientService
 	settingService  service.SettingService
+	appService      service.AppService
+	appLimiter      *loginlimit.Limiter
 
 	themes subtheme.Loader
 
@@ -350,6 +353,7 @@ func NewSUBController(g *gin.RouterGroup, options ...SUBControllerOption) *SUBCo
 		singboxAutoDetect: config.subSingboxAutoDetect,
 		singboxUserAgent:  compileUserAgentRegex("sing-box", config.subSingboxUserAgentRegex, service.DefaultSubSingboxUserAgentRegex),
 
+		appLimiter:           newAppLoginLimiter(),
 		releaseSettingsCache: releaseSettingsCache,
 	}
 	a.subSingboxService = NewSubSingboxService(a.subClashService, config.subSingboxTemplate)
@@ -367,11 +371,13 @@ func (a *SUBController) initRouter(g *gin.RouterGroup) {
 	gLink.HEAD(":subid/hwid-status", a.hwidStatus)
 	gLink.GET(":subid/theme/*file", a.themeAsset)
 	gLink.GET(":subid/:key", a.legacyTwoPart)
+	a.registerAppRoutes(gLink)
 	if a.jsonEnabled {
 		gJson := g.Group(a.subJsonPath, setNoCacheHeaders, resolveLegacySubID)
 		gJson.GET(":subid", a.subJsons)
 		gJson.HEAD(":subid", a.subJsons)
 		gJson.GET(":subid/theme/*file", a.themeAsset)
+		a.registerAppRoutes(gJson)
 	}
 	if a.singboxEnabled {
 		if owner := a.configuredSubscriptionPathOwner(a.subSingboxPath); owner != "" {
@@ -382,6 +388,7 @@ func (a *SUBController) initRouter(g *gin.RouterGroup) {
 			gSingbox.GET(":subid", a.subSingbox)
 			gSingbox.HEAD(":subid", a.subSingbox)
 			gSingbox.GET(":subid/theme/*file", a.themeAsset)
+			a.registerAppRoutes(gSingbox)
 		}
 	}
 	if a.clashEnabled {
@@ -389,6 +396,7 @@ func (a *SUBController) initRouter(g *gin.RouterGroup) {
 		gClash.GET(":subid", a.subClashs)
 		gClash.HEAD(":subid", a.subClashs)
 		gClash.GET(":subid/theme/*file", a.themeAsset)
+		a.registerAppRoutes(gClash)
 		if sameSubscriptionPath(a.subClashPath, subMihomoPath) {
 			// The configured Clash path already provides the full Mihomo profile.
 		} else if owner := a.configuredSubscriptionPathOwner(subMihomoPath); owner != "" {
@@ -398,6 +406,7 @@ func (a *SUBController) initRouter(g *gin.RouterGroup) {
 			gMihomo.GET(":subid", a.subClashs)
 			gMihomo.HEAD(":subid", a.subClashs)
 			gMihomo.GET(":subid/theme/*file", a.themeAsset)
+			a.registerAppRoutes(gMihomo)
 		}
 		if owner := a.configuredSubscriptionPathOwner(subClashLegacyPath); owner != "" {
 			logger.Warningf("Legacy Clash subscription alias %q is unavailable because it conflicts with the configured %s path", subClashLegacyPath, owner)
@@ -406,6 +415,7 @@ func (a *SUBController) initRouter(g *gin.RouterGroup) {
 			gLegacy.GET(":subid", a.subClashLegacy)
 			gLegacy.HEAD(":subid", a.subClashLegacy)
 			gLegacy.GET(":subid/theme/*file", a.themeAsset)
+			a.registerAppRoutes(gLegacy)
 		}
 	}
 }

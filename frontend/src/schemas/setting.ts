@@ -51,6 +51,7 @@ export const AllSettingSchema = z
     happLinkEnable: z.boolean().optional(),
     subEnable: z.boolean().optional(),
     subJsonEnable: z.boolean().optional(),
+    appEnable: z.boolean().optional(),
     subJsonAutoDetect: z.boolean().optional(),
     subJsonAlwaysArray: z.boolean().optional(),
     subJsonUserAgentRegex: z.string().max(2048).optional(),

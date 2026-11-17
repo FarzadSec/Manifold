@@ -1898,6 +1898,24 @@
           "note": "leastPing/leastLoad バランサーは常に burstObservatory を持ちます。このスイッチはプローブパラメータをカスタマイズします — オフにすると組み込みのデフォルトを使います。変更はパネルの再起動後に反映されます。"
         }
       },
+      "app": {
+        "menu": "アプリ",
+        "enable": "アプリでのアクセス",
+        "enableDesc": "顧客はサブスクリプションリンクとユーザー名でアプリにサインインします。サインインした端末は、そのリンクの他のアプリと同じ端末数上限の枠を1つ使います。",
+        "locationsDesc": "アプリでこのサーバーと各ノードをどう表示するか。タイムゾーンは接続中にアプリが端末へ設定できるものです。",
+        "server": "サーバー",
+        "thisServer": "このサーバー",
+        "nodeLabel": "ノード #{id}",
+        "name": "名前",
+        "countryCode": "国",
+        "city": "都市",
+        "timezone": "タイムゾーン",
+        "toasts": {
+          "locations": "アプリのロケーションを読み込み中",
+          "save": "アプリのロケーションを保存中",
+          "saved": "アプリのロケーションを保存しました"
+        }
+      },
       "subCalendarExpireInclusive": "Month-end subscription expiry display",
       "subCalendarExpireInclusiveDesc": "Default off. For clients renewing on day 1 with a midnight cutoff in the panel timezone, report the previous month's last second in subscription expiry headers. Actual cutoff and renewals are unchanged. Clients use their own timezone and may consider the subscription expired one second early.",
       "subInfoNodeEnable": "個別情報設定 / ダミーノード",
