@@ -324,20 +324,23 @@ This is the contract Mirza Bot will sync against.
 | Roles, admins, resellers, ownership, ledger | Absent | NX | Built in 0.6.0 (4.6) |
 | Plans | Absent | NX | Built in 0.6.0 |
 | Audit log | Absent | NX | Built in 0.6.0 |
-| Webhooks with outbox and replay | Absent (in-process bus only) | NX, Mirza sync | Build (4.7) |
+| Webhooks with outbox and replay | Absent (in-process bus only) | NX, Mirza sync | Built in 0.10.0 (4.7) |
 | API tokens | Present, 4 scopes | NX | Add reseller scope |
 | Two-factor login (TOTP) | Present | NX | Check recovery codes and session list |
 | Single sign-on | LDAP only | NX | Add OIDC |
 | Command palette, PWA | Present | NX | None |
-| Backup and restore | Present (DB backup, Telegram delivery); full backup with certificates and a move check built in 0.5.0 (4.10) | NX | Compare: encryption, schedule, retention, destinations |
+| Backup and restore | Present (DB backup, Telegram delivery); full backup with certificates and a move check built in 0.5.0 (4.10) | NX | Scheduled, encrypted, with retention, to a directory, S3 or SSH: built in 0.10.0 (4.15) |
 | First-run setup wizard | Not found | NX | Build |
 | Panel self-update | Present | NX | Repoint at the fork's releases |
 | Hosts and domain fronting | Present (`Host` model, hosts page) | NX | Compare in detail |
-| Managed node-to-node tunnels with status view | Built in 0.5.0 (4.8, 4.9): kernel and BackPack tunnels, relays managed by API, state on the overview | NX, user | Traffic limits per tunnel, failover between relays |
+| Managed node-to-node tunnels with status view | Built in 0.5.0 (4.8, 4.9): kernel and BackPack tunnels, relays managed by API, state on the overview | NX, user | Groups of origins with failover and balance built in 0.12.0 (4.8); traffic limits per tunnel and a REALITY tunnel kind open |
 | WARP, NordVPN, PIA outbound integration | Present | NX | None |
-| Subscription page themes, usage CSV | Partial or unverified | NX | Later phase |
+| Subscription page themes, usage CSV | Partial or unverified | NX | Themes and a theme catalogue built in 0.8.0 (4.12), usage history in 0.7.0 |
+| Certificate store with ACME, wildcards, renewal | Absent | NX | Built in 0.11.0 (4.17) |
+| Import from other panels, keeping old links | Absent | User | Built in 0.11.0 (4.18) |
+| Prometheus metrics, Grafana | Absent | NX | Built in 0.10.0 (4.16) |
 | Shop: customer portal, payments, agents, promotions | Absent | NX Shop addon | Mirza Bot covers this |
-| Addon platform, licence system | Absent | NX | Out of scope |
+| Addon platform, licence system | Absent | NX | Addon groundwork built in 0.12.0 (4.19); no licence system |
 | NaiveProxy, AnyTLS, ShadowTLS, Mieru, Snell, SSH, OpenConnect and similar | Absent (needs sing-box) | NX | Out of MVP |
 
 ## 6. Roadmap
@@ -350,8 +353,8 @@ This is the contract Mirza Bot will sync against.
 | P3 L2TP/IPsec | Engine 4.5, inbound form, the account's four values in the client pages, traffic and limits, node support, installer and unit | Done 2026-11-15 (0.4.0). A real L2TP client behind NAT connects through IPsec, is billed, is held to its device limit and is cut off when disabled or out of quota, under the installed service on Ubuntu 22.04, 24.04 and 26.04. No phone or Windows machine has connected yet. Open items in 8.4 |
 | P6a Tunnels and moves | 4.8 to 4.10, and the OpenVPN profile options of 4.4 | Done 2026-11-16 (0.5.0). A real GRE link between two network namespaces carries a forwarded port from a third, masqueraded and with the user's address kept; a BackPack reverse tunnel runs the packaged binary at both ends and carries a forwarded port; a real OpenVPN client connects on RSA keys with tls-auth and an MTU; the installed service makes a full backup and restores it, on Ubuntu 22.04, 24.04 and 26.04. Open items in 8.5 |
 | P4 Access model | Items in 4.6 | Done 2026-11-17 (0.6.0). A reseller creates users only within its limits and plans and reaches only its own, checked through the API by `internal/web/access_http_test.go`. Open items in 8.6 |
-| P5 Events and API freeze | Items in 4.7; OpenAPI v1 for accounts, plans, resellers, usage | A test receiver gets signed events for every account state change, including after downtime |
-| P6 NX-parity operations | Setup wizard, backup upgrades, OIDC, managed tunnels, subscription themes, usage CSV | Checked against the gap table |
+| P5 Events and API freeze | Items in 4.7; OpenAPI v1 for accounts, plans, resellers, usage | Events and webhooks done 2026-11-17 (0.10.0): a test receiver verifies the signature of each delivery, retries are scheduled and a delivery survives a restart in the outbox. The OpenAPI v1 freeze is still open. Open items in 8.10 |
+| P6 NX-parity operations | Setup wizard, backup upgrades, OIDC, managed tunnels, subscription themes, usage CSV | Largely done 2026-11-17 (0.7.0 to 0.12.0): usage, speed limits, subscriptions and themes, nodes, shared ports, scheduled backups, metrics, certificates, importers, tunnel groups, addon groundwork. The setup wizard and OIDC are still open. Open items in 8.7 to 8.14 |
 | P7 Mirza Bot | Section 7 | A purchase in the bot yields one account with every protocol output, and panel events update the bot without polling |
 
 The protocol engines come first because they carry the most technical risk and everything else builds on the account model they must fit into. The phases keep their numbers; they are built in the order of the table.
