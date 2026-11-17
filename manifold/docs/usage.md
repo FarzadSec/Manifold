@@ -248,6 +248,16 @@ Update each node with `manifold update` on that node, or with **Update over SSH*
 
 **Stats** on a node shows its health over an hour to a whole month: an availability bar (green answered, red not reporting, grey not watched while the panel was off), uptime counted only over watched time, CPU and memory, and each user's traffic through that node, with CSV. Samples are taken every five minutes and kept 90 days. **Logs** reads the node panel's own log at the level you choose.
 
+## Shared ports
+
+**Shared ports** (sidebar) lets one TCP port, usually 443, serve many things. Each connection is handed, untouched, to the target that its TLS server name (SNI) or HTTP `Host` names, so a REALITY inbound, a TLS inbound, the panel and the subscription server can all answer on 443.
+
+1. Move each service to a free local port: an inbound to `127.0.0.1:8443`, the panel to its own port as it is.
+2. Add a shared port on 443 with one route per service: its host names (for REALITY, the server name it imitates; `*.example.com` covers one label under the domain) and its target, such as `127.0.0.1:8443`.
+3. Optionally send everything else to a web site, or leave it closed.
+
+Routes are tried from the top; a route can also require an ALPN such as `h2`. A target sees the shared port as its client unless the route sends a PROXY header; then turn on **acceptProxyProtocol** in that inbound's transport so the device limit and the IP log see the real address. A shared port cannot take a port a local TCP inbound, the panel or the subscription server holds, and an inbound cannot take a shared port's. Shared ports run on this server only.
+
 ## Command line
 
 The `manifold` command manages the service and the panel settings; `manifold help` lists everything.

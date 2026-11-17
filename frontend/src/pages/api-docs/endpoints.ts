@@ -2143,6 +2143,36 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'ingress',
+    title: 'Shared ports',
+    description:
+      'One TCP port, such as 443, shared by many services: each connection goes to the target its TLS server name (SNI) or HTTP Host names, untouched, so REALITY and TLS inbounds, the panel and the subscription server can all answer on one port. Routes are tried in order; a route may also require an ALPN. A target may receive a PROXY protocol header so it sees the real client address. Runs on this server only. All endpoints under /panel/api/ingress.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/ingress/list',
+        summary: 'Every shared port with its routes, and why it is not serving when it is not.',
+        responseSchema: 'IngressStatus',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/ingress/save',
+        summary:
+          'Create (id 0) or replace a shared port and bind it at once. Refused when a local TCP inbound, the panel, the subscription server or another shared port holds the port.',
+        body: '{\n  "id": 0,\n  "remark": "443",\n  "enable": true,\n  "listen": "",\n  "port": 443,\n  "routes": [\n    { "hosts": ["panel.example.com"], "target": "127.0.0.1:2053", "proxyProtocol": 0 },\n    { "hosts": ["www.speedtest.net"], "target": "127.0.0.1:8443", "proxyProtocol": 1 }\n  ],\n  "defaultTarget": "",\n  "defaultProxyProtocol": 0\n}',
+        responseSchema: 'IngressListener',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/ingress/del/:id',
+        summary: 'Delete a shared port and free it.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Shared port ID.' }],
+      },
+    ],
+  },
+
+  {
     id: 'tunnels',
     title: 'Tunnels',
     description:

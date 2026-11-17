@@ -1992,3 +1992,25 @@ type NodeHealth struct {
 	Mem       float64 `json:"mem" example:"40.1"`
 	LatencyMs int     `json:"latencyMs" example:"42"`
 }
+
+// IngressListener shares one TCP port among services by the name each connection asks for.
+type IngressListener struct {
+	Id     int            `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Remark string         `json:"remark" example:"443 for everything"`
+	Enable bool           `json:"enable" example:"true"`
+	Listen string         `json:"listen" example:""`
+	Port   int            `json:"port" gorm:"index" example:"443"`
+	Routes []IngressRoute `json:"routes" gorm:"serializer:json"`
+	// DefaultTarget takes what no route names; empty closes it.
+	DefaultTarget        string `json:"defaultTarget" example:"127.0.0.1:8443"`
+	DefaultProxyProtocol int    `json:"defaultProxyProtocol" example:"0"`
+}
+
+// IngressRoute sends the TLS names or HTTP hosts in Hosts to Target.
+type IngressRoute struct {
+	Remark        string   `json:"remark" example:"panel"`
+	Hosts         []string `json:"hosts" example:"[\"panel.example.com\"]"`
+	ALPN          []string `json:"alpn,omitempty" example:"[\"h2\"]"`
+	Target        string   `json:"target" example:"127.0.0.1:2053"`
+	ProxyProtocol int      `json:"proxyProtocol" example:"0"`
+}

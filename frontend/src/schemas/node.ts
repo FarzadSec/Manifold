@@ -130,3 +130,31 @@ export const NodeInstallFormSchema = z.object({
 });
 
 export type NodeInstallFormValues = z.infer<typeof NodeInstallFormSchema>;
+
+const ingressTarget = z
+  .string()
+  .trim()
+  .regex(/^(\[[0-9a-fA-F:.]+\]|[A-Za-z0-9.-]+):\d{1,5}$/, {
+    message: 'pages.ingress.targetInvalid',
+  });
+
+export const IngressRouteFormSchema = z.object({
+  remark: z.string(),
+  hosts: z.array(z.string()).min(1, 'pages.ingress.hostsRequired'),
+  alpn: z.array(z.string()),
+  target: ingressTarget,
+  proxyProtocol: z.number().int().min(0).max(2),
+});
+
+export const IngressFormSchema = z.object({
+  id: z.number(),
+  remark: z.string(),
+  enable: z.boolean(),
+  listen: z.string().trim(),
+  port: z.number().int().min(1).max(65535),
+  routes: z.array(IngressRouteFormSchema),
+  defaultTarget: z.union([z.literal(''), ingressTarget]),
+  defaultProxyProtocol: z.number().int().min(0).max(2),
+});
+
+export type IngressFormValues = z.infer<typeof IngressFormSchema>;

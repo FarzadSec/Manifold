@@ -130,7 +130,8 @@
     "admins": "Admins",
     "roles": "Roles",
     "plans": "Plans",
-    "audit": "Audit log"
+    "audit": "Audit log",
+    "ingress": "Shared ports"
   },
   "pages": {
     "login": {
@@ -3086,6 +3087,38 @@
         "month": "Month"
       },
       "user": "User"
+    },
+    "ingress": {
+      "intro": "One TCP port, such as 443, for many services. Each connection goes to the target its TLS server name (SNI) or HTTP host names, unchanged, so REALITY and TLS inbounds, the panel and the subscription server can all answer on 443. Move each of them to a free local port, such as 127.0.0.1:8443, and point a route at it. Runs on this server only.",
+      "empty": "No shared ports yet",
+      "add": "Add shared port",
+      "edit": "Edit shared port",
+      "remark": "Remark",
+      "listen": "Listen address",
+      "listenHint": "An IP of this server; empty listens on all of them.",
+      "port": "Port",
+      "routes": "Routes",
+      "routesHint": "Tried from the top; the first whose host (and ALPN, if set) fits takes the connection.",
+      "hosts": "Hosts",
+      "hostsHint": "Names or addresses; *.example.com matches one label under it. For REALITY, the server name the inbound pretends to be.",
+      "hostsRequired": "Name at least one host",
+      "target": "Target",
+      "targetHint": "host:port the connection is handed to, usually an inbound or the panel moved to 127.0.0.1.",
+      "targetInvalid": "host:port, such as 127.0.0.1:8443",
+      "proxyProtocol": "PROXY protocol",
+      "proxyProtocolHint": "Tells the target the client's real address. Turn on acceptProxyProtocol in that inbound's transport, or the device limit and IP log see 127.0.0.1.",
+      "proxyOff": "Off",
+      "alpnHint": "Optional: only TLS clients offering one of these, such as h2.",
+      "addRoute": "Add route",
+      "defaultTarget": "Everything else goes to",
+      "defaultTargetHint": "Where a connection no route names goes, such as a web site to show scanners. Empty closes it.",
+      "defaultTargetPlaceholder": "Empty closes the connection",
+      "defaultIs": "Anything else goes to {target}",
+      "defaultClosed": "Anything else is closed",
+      "notServing": "Not serving: {reason}",
+      "confirmDelete": "Delete this shared port and free it?",
+      "saveFailed": "Saving the shared port failed",
+      "deleteFailed": "Deleting the shared port failed"
     }
   },
   "tgbot": {

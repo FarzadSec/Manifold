@@ -4247,6 +4247,151 @@
         ],
         "type": "object"
       },
+      "IngressListener": {
+        "description": "IngressListener shares one TCP port among services by the name each connection asks for.",
+        "properties": {
+          "defaultProxyProtocol": {
+            "example": 0,
+            "type": "integer"
+          },
+          "defaultTarget": {
+            "description": "DefaultTarget takes what no route names; empty closes it.",
+            "example": "127.0.0.1:8443",
+            "type": "string"
+          },
+          "enable": {
+            "example": true,
+            "type": "boolean"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "listen": {
+            "type": "string"
+          },
+          "port": {
+            "example": 443,
+            "type": "integer"
+          },
+          "remark": {
+            "example": "443 for everything",
+            "type": "string"
+          },
+          "routes": {
+            "items": {
+              "$ref": "#/components/schemas/IngressRoute"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "defaultProxyProtocol",
+          "defaultTarget",
+          "enable",
+          "id",
+          "listen",
+          "port",
+          "remark",
+          "routes"
+        ],
+        "type": "object"
+      },
+      "IngressRoute": {
+        "description": "IngressRoute sends the TLS names or HTTP hosts in Hosts to Target.",
+        "properties": {
+          "alpn": {
+            "example": [
+              "h2"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "hosts": {
+            "example": [
+              "panel.example.com"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "proxyProtocol": {
+            "example": 0,
+            "type": "integer"
+          },
+          "remark": {
+            "example": "panel",
+            "type": "string"
+          },
+          "target": {
+            "example": "127.0.0.1:2053",
+            "type": "string"
+          }
+        },
+        "required": [
+          "hosts",
+          "proxyProtocol",
+          "remark",
+          "target"
+        ],
+        "type": "object"
+      },
+      "IngressStatus": {
+        "description": "IngressStatus is a listener as saved, and the reason it is not serving if it is not.",
+        "properties": {
+          "defaultProxyProtocol": {
+            "example": 0,
+            "type": "integer"
+          },
+          "defaultTarget": {
+            "description": "DefaultTarget takes what no route names; empty closes it.",
+            "example": "127.0.0.1:8443",
+            "type": "string"
+          },
+          "enable": {
+            "example": true,
+            "type": "boolean"
+          },
+          "error": {
+            "type": "string"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "listen": {
+            "type": "string"
+          },
+          "port": {
+            "example": 443,
+            "type": "integer"
+          },
+          "remark": {
+            "example": "443 for everything",
+            "type": "string"
+          },
+          "routes": {
+            "items": {
+              "$ref": "#/components/schemas/IngressRoute"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "defaultProxyProtocol",
+          "defaultTarget",
+          "enable",
+          "id",
+          "listen",
+          "port",
+          "remark",
+          "routes"
+        ],
+        "type": "object"
+      },
       "LogEntry": {
         "properties": {
           "DateTime": {
@@ -7240,6 +7385,10 @@
     {
       "name": "Nodes",
       "description": "Manage remote Manifold panels acting as nodes for a central panel. All endpoints under /panel/api/nodes."
+    },
+    {
+      "name": "Shared ports",
+      "description": "One TCP port, such as 443, shared by many services: each connection goes to the target its TLS server name (SNI) or HTTP Host names, untouched, so REALITY and TLS inbounds, the panel and the subscription server can all answer on one port. Routes are tried in order; a route may also require an ALPN. A target may receive a PROXY protocol header so it sees the real client address. Runs on this server only. All endpoints under /panel/api/ingress."
     },
     {
       "name": "Tunnels",
@@ -15625,6 +15774,202 @@
                     ],
                     "nodeId": 3,
                     "state": "running"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/ingress/list": {
+      "get": {
+        "tags": [
+          "Shared ports"
+        ],
+        "summary": "Every shared port with its routes, and why it is not serving when it is not.",
+        "operationId": "get_panel_api_ingress_list",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/IngressStatus"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "defaultProxyProtocol": 0,
+                      "defaultTarget": "127.0.0.1:8443",
+                      "enable": true,
+                      "error": "",
+                      "id": 1,
+                      "listen": "",
+                      "port": 443,
+                      "remark": "443 for everything",
+                      "routes": [
+                        {
+                          "alpn": [
+                            "h2"
+                          ],
+                          "hosts": [
+                            "panel.example.com"
+                          ],
+                          "proxyProtocol": 0,
+                          "remark": "panel",
+                          "target": "127.0.0.1:2053"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/ingress/save": {
+      "post": {
+        "tags": [
+          "Shared ports"
+        ],
+        "summary": "Create (id 0) or replace a shared port and bind it at once. Refused when a local TCP inbound, the panel, the subscription server or another shared port holds the port.",
+        "operationId": "post_panel_api_ingress_save",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "id": 0,
+                "remark": "443",
+                "enable": true,
+                "listen": "",
+                "port": 443,
+                "routes": [
+                  {
+                    "hosts": [
+                      "panel.example.com"
+                    ],
+                    "target": "127.0.0.1:2053",
+                    "proxyProtocol": 0
+                  },
+                  {
+                    "hosts": [
+                      "www.speedtest.net"
+                    ],
+                    "target": "127.0.0.1:8443",
+                    "proxyProtocol": 1
+                  }
+                ],
+                "defaultTarget": "",
+                "defaultProxyProtocol": 0
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/IngressListener"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "defaultProxyProtocol": 0,
+                    "defaultTarget": "127.0.0.1:8443",
+                    "enable": true,
+                    "id": 1,
+                    "listen": "",
+                    "port": 443,
+                    "remark": "443 for everything",
+                    "routes": [
+                      {
+                        "alpn": [
+                          "h2"
+                        ],
+                        "hosts": [
+                          "panel.example.com"
+                        ],
+                        "proxyProtocol": 0,
+                        "remark": "panel",
+                        "target": "127.0.0.1:2053"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/ingress/del/{id}": {
+      "post": {
+        "tags": [
+          "Shared ports"
+        ],
+        "summary": "Delete a shared port and free it.",
+        "operationId": "post_panel_api_ingress_del_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Shared port ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
                   }
                 }
               }

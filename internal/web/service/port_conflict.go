@@ -359,6 +359,9 @@ func checkPortConflictTx(db *gorm.DB, inbound *model.Inbound, ignoreId int) (*po
 		forwardedBy.Transports = newBits
 		return forwardedBy, nil
 	}
+	if shared, err := ingressPortConflict(db, inbound, newBits); err != nil || shared != nil {
+		return shared, err
+	}
 	if inbound.NodeID == nil && inbound.Protocol == model.TUIC && ignoreId > 0 {
 		if self := tuicSocksSelfConflict(inbound, ignoreId); self != "" {
 			return nil, common.NewError(self)

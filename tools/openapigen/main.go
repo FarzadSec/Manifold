@@ -26,6 +26,8 @@ func run(root, outDir string) error {
 			StructAllow: setOf(
 				"User",
 				"Inbound",
+				"IngressListener",
+				"IngressRoute",
 				"TunnelRelay",
 				"FallbackParentInfo",
 				"OutboundTraffics",
@@ -142,6 +144,7 @@ func run(root, outDir string) error {
 				"NodeStatsView",
 				"NodeInstallRequest",
 				"NodeInstallJob",
+				"IngressStatus",
 				"NodeHealthPoint",
 				"AvailabilityBar",
 			),

@@ -80,6 +80,7 @@ export const PALETTE_KEYWORDS: Record<string, string[]> = {
   '/nodes': ['nodes', 'servers', 'cluster', 'remote nodes'],
   '/hosts': ['hosts', 'sni', 'domains'],
   '/tunnels': ['tunnels', 'gre', 'backpack', 'relay', 'pairing'],
+  '/ingress': ['ingress', 'shared port', '443', 'sni', 'proxy protocol', 'multiplex'],
   '/outbound': ['outbounds', 'freedom', 'blackhole', 'socks', 'http', 'warp', 'nord', 'pia'],
   '/routing': ['routing', 'rules', 'geoip', 'geosite', 'direct', 'block'],
   '/settings': ['settings', 'config', 'port', 'password', 'ssl', 'telegram'],

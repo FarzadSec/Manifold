@@ -287,6 +287,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	a.hostController = NewHostController(hosts)
 
 	NewTunnelController(api.Group("/tunnels"))
+	NewIngressController(api.Group("/ingress"))
 	NewAccessController(api.Group("/access"))
 
 	// Settings + Xray config management live under the API surface too, so the

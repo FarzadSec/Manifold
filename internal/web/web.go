@@ -401,6 +401,9 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	_, _ = s.cron.AddJob("@every 5m", job.NewNodeHealthJob())
 
 	s.startTunnelJob()
+	if err := (&service.IngressService{}).Apply(); err != nil {
+		logger.Warning("shared ports:", err)
+	}
 
 	// check client ips from log file every 10 sec
 	_, _ = s.cron.AddJob(cadenceClientIPScan, job.NewCheckClientIpJob())

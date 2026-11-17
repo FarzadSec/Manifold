@@ -4,6 +4,7 @@ Version 0.12 · 2026-11-17 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnel
 
 Decision log:
 
+- 2026-11-17 — Ingress is a layer-4 router of the panel's own (`internal/ingress`): it reads the ClientHello (reassembled across records) or an HTTP request head, picks a route by SNI or Host and ALPN, and hands the stream on byte for byte, so REALITY behind it still sees the client's handshake. It does not terminate TLS; NX Panel's HTTP-level listeners and routes for the panel itself are not built
 - 2026-11-17 — A node is installed over SSH by the panel the admin is signed in to, with credentials used for that job only. The host key is read with a handshake that stops at the key, so nothing is offered before the admin accepts it, and every later login checks that key. The node's self-signed certificate is pinned from the installer's output over that SSH channel, not by a first TLS connection that a man in the middle could answer
 - 2026-11-17 — A node's periodic usage limit switches its enabled inbounds off through the runtime and records which, so the next period switches back on exactly those; an inbound the admin had switched off is never turned on by it. The limit reads the per-node usage history, so it counts raw bytes, before the node's traffic multiplier
 - 2026-11-17 — Node availability is recorded every five minutes as samples; a stretch with no sample is "not watched", never "down", so a panel restart does not read as a node outage
@@ -257,6 +258,12 @@ This is the contract Mirza Bot will sync against, so it is frozen before the bot
 - `node_healths` holds a five-minute sample per enabled node (`NodeHealthJob`), kept 90 days; `/nodes/stats/:id` cuts a window into availability stretches and load points and adds per-user usage.
 - `/nodes/logs/:id` reads the node panel's log through `Remote.FetchLogs`; the node-sync scope may call `/server/logs/:count`.
 - `internal/nodessh` reads host keys and runs scripts over SSH; `NodeService.StartInstall` runs `install.sh` with flags, a self-signed certificate, `manifold cert`, `manifold setting -port -webBasePath` and a node-admin token, as a polled job.
+
+### 4.14 Shared ports (built, 0.9.0)
+
+- `ingress_listeners` (routes as JSON); `IngressService.Apply` binds every enabled row at start and on each save, and swaps routes in place without rebinding.
+- Port checks run both ways: a shared port refuses a local TCP inbound's, the panel's or the subscription server's port, and `checkPortConflictTx` refuses an inbound on a shared port.
+- PROXY protocol v1 and v2 per route, for targets that should see the client address.
 
 ## 5. Gap analysis
 

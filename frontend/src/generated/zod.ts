@@ -1025,6 +1025,40 @@ export const InboundTrafficSummarySchema = z.object({
 });
 export type InboundTrafficSummary = z.infer<typeof InboundTrafficSummarySchema>;
 
+export const IngressListenerSchema = z.object({
+  defaultProxyProtocol: z.number().int(),
+  defaultTarget: z.string(),
+  enable: z.boolean(),
+  id: z.number().int(),
+  listen: z.string(),
+  port: z.number().int(),
+  remark: z.string(),
+  routes: z.array(z.lazy(() => IngressRouteSchema)),
+});
+export type IngressListener = z.infer<typeof IngressListenerSchema>;
+
+export const IngressRouteSchema = z.object({
+  alpn: z.array(z.string()).optional(),
+  hosts: z.array(z.string()),
+  proxyProtocol: z.number().int(),
+  remark: z.string(),
+  target: z.string(),
+});
+export type IngressRoute = z.infer<typeof IngressRouteSchema>;
+
+export const IngressStatusSchema = z.object({
+  defaultProxyProtocol: z.number().int(),
+  defaultTarget: z.string(),
+  enable: z.boolean(),
+  error: z.string().optional(),
+  id: z.number().int(),
+  listen: z.string(),
+  port: z.number().int(),
+  remark: z.string(),
+  routes: z.array(z.lazy(() => IngressRouteSchema)),
+});
+export type IngressStatus = z.infer<typeof IngressStatusSchema>;
+
 export const LogEntrySchema = z.object({
   DateTime: z.string(),
   Email: z.string(),

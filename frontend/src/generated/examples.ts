@@ -1091,6 +1091,62 @@ export const EXAMPLES: Record<string, unknown> = {
     "total": 10737418240,
     "up": 1048576
   },
+  "IngressListener": {
+    "defaultProxyProtocol": 0,
+    "defaultTarget": "127.0.0.1:8443",
+    "enable": true,
+    "id": 1,
+    "listen": "",
+    "port": 443,
+    "remark": "443 for everything",
+    "routes": [
+      {
+        "alpn": [
+          "h2"
+        ],
+        "hosts": [
+          "panel.example.com"
+        ],
+        "proxyProtocol": 0,
+        "remark": "panel",
+        "target": "127.0.0.1:2053"
+      }
+    ]
+  },
+  "IngressRoute": {
+    "alpn": [
+      "h2"
+    ],
+    "hosts": [
+      "panel.example.com"
+    ],
+    "proxyProtocol": 0,
+    "remark": "panel",
+    "target": "127.0.0.1:2053"
+  },
+  "IngressStatus": {
+    "defaultProxyProtocol": 0,
+    "defaultTarget": "127.0.0.1:8443",
+    "enable": true,
+    "error": "",
+    "id": 1,
+    "listen": "",
+    "port": 443,
+    "remark": "443 for everything",
+    "routes": [
+      {
+        "alpn": [
+          "h2"
+        ],
+        "hosts": [
+          "panel.example.com"
+        ],
+        "proxyProtocol": 0,
+        "remark": "panel",
+        "target": "127.0.0.1:2053"
+      }
+    ]
+  },
   "LogEntry": {
     "DateTime": "2025-01-01T12:00:00Z",
     "Email": "alice@example.com",

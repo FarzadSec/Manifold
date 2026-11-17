@@ -130,7 +130,8 @@
     "admins": "管理员",
     "roles": "角色",
     "plans": "套餐",
-    "audit": "审计日志"
+    "audit": "审计日志",
+    "ingress": "共享端口"
   },
   "pages": {
     "login": {
@@ -3086,6 +3087,38 @@
         "month": "月份"
       },
       "user": "用户"
+    },
+    "ingress": {
+      "intro": "一个 TCP 端口(如 443)供多个服务共用。每个连接按其 TLS 服务器名(SNI)或 HTTP Host 原样转发到对应目标,因此 REALITY 和 TLS 入站、面板和订阅服务器都可以在 443 上响应。把它们各自移到空闲的本地端口(如 127.0.0.1:8443)并添加指向它的路由。仅在本服务器运行。",
+      "empty": "暂无共享端口",
+      "add": "添加共享端口",
+      "edit": "编辑共享端口",
+      "remark": "备注",
+      "listen": "监听地址",
+      "listenHint": "本服务器的 IP;留空监听全部。",
+      "port": "端口",
+      "routes": "路由",
+      "routesHint": "从上到下匹配;第一个主机(以及设置的 ALPN)匹配的路由接收连接。",
+      "hosts": "主机",
+      "hostsHint": "名称或地址;*.example.com 匹配其下一级。REALITY 填入站伪装的服务器名。",
+      "hostsRequired": "至少填写一个主机",
+      "target": "目标",
+      "targetHint": "连接转交的 host:port,通常是移到 127.0.0.1 的入站或面板。",
+      "targetInvalid": "host:port,如 127.0.0.1:8443",
+      "proxyProtocol": "PROXY 协议",
+      "proxyProtocolHint": "告知目标客户端真实地址。请在该入站传输中开启 acceptProxyProtocol,否则设备限制和 IP 日志只看到 127.0.0.1。",
+      "proxyOff": "关闭",
+      "alpnHint": "可选:仅匹配提供其中之一(如 h2)的 TLS 客户端。",
+      "addRoute": "添加路由",
+      "defaultTarget": "其余转发到",
+      "defaultTargetHint": "无路由匹配的连接去向,例如给扫描器看的网站。留空则关闭连接。",
+      "defaultTargetPlaceholder": "留空则关闭连接",
+      "defaultIs": "其余转发到 {target}",
+      "defaultClosed": "其余连接被关闭",
+      "notServing": "未在服务:{reason}",
+      "confirmDelete": "删除并释放此共享端口?",
+      "saveFailed": "保存共享端口失败",
+      "deleteFailed": "删除共享端口失败"
     }
   },
   "tgbot": {

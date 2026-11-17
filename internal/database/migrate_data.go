@@ -68,6 +68,7 @@ func migrationModels() []any {
 		&model.AuditEntry{},
 		&model.ClientUsage{},
 		&model.NodeHealth{},
+		&model.IngressListener{},
 	}
 }
 

@@ -4221,6 +4221,151 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "IngressListener": {
+    "description": "IngressListener shares one TCP port among services by the name each connection asks for.",
+    "properties": {
+      "defaultProxyProtocol": {
+        "example": 0,
+        "type": "integer"
+      },
+      "defaultTarget": {
+        "description": "DefaultTarget takes what no route names; empty closes it.",
+        "example": "127.0.0.1:8443",
+        "type": "string"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "listen": {
+        "type": "string"
+      },
+      "port": {
+        "example": 443,
+        "type": "integer"
+      },
+      "remark": {
+        "example": "443 for everything",
+        "type": "string"
+      },
+      "routes": {
+        "items": {
+          "$ref": "#/components/schemas/IngressRoute"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "defaultProxyProtocol",
+      "defaultTarget",
+      "enable",
+      "id",
+      "listen",
+      "port",
+      "remark",
+      "routes"
+    ],
+    "type": "object"
+  },
+  "IngressRoute": {
+    "description": "IngressRoute sends the TLS names or HTTP hosts in Hosts to Target.",
+    "properties": {
+      "alpn": {
+        "example": [
+          "h2"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "hosts": {
+        "example": [
+          "panel.example.com"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "proxyProtocol": {
+        "example": 0,
+        "type": "integer"
+      },
+      "remark": {
+        "example": "panel",
+        "type": "string"
+      },
+      "target": {
+        "example": "127.0.0.1:2053",
+        "type": "string"
+      }
+    },
+    "required": [
+      "hosts",
+      "proxyProtocol",
+      "remark",
+      "target"
+    ],
+    "type": "object"
+  },
+  "IngressStatus": {
+    "description": "IngressStatus is a listener as saved, and the reason it is not serving if it is not.",
+    "properties": {
+      "defaultProxyProtocol": {
+        "example": 0,
+        "type": "integer"
+      },
+      "defaultTarget": {
+        "description": "DefaultTarget takes what no route names; empty closes it.",
+        "example": "127.0.0.1:8443",
+        "type": "string"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "error": {
+        "type": "string"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "listen": {
+        "type": "string"
+      },
+      "port": {
+        "example": 443,
+        "type": "integer"
+      },
+      "remark": {
+        "example": "443 for everything",
+        "type": "string"
+      },
+      "routes": {
+        "items": {
+          "$ref": "#/components/schemas/IngressRoute"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "defaultProxyProtocol",
+      "defaultTarget",
+      "enable",
+      "id",
+      "listen",
+      "port",
+      "remark",
+      "routes"
+    ],
+    "type": "object"
+  },
   "LogEntry": {
     "properties": {
       "DateTime": {

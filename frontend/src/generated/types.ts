@@ -962,6 +962,37 @@ export interface InboundTrafficSummary {
   up: number;
 }
 
+export interface IngressListener {
+  defaultProxyProtocol: number;
+  defaultTarget: string;
+  enable: boolean;
+  id: number;
+  listen: string;
+  port: number;
+  remark: string;
+  routes: IngressRoute[];
+}
+
+export interface IngressRoute {
+  alpn?: string[];
+  hosts: string[];
+  proxyProtocol: number;
+  remark: string;
+  target: string;
+}
+
+export interface IngressStatus {
+  defaultProxyProtocol: number;
+  defaultTarget: string;
+  enable: boolean;
+  error?: string;
+  id: number;
+  listen: string;
+  port: number;
+  remark: string;
+  routes: IngressRoute[];
+}
+
 export interface LogEntry {
   DateTime: string;
   Email: string;
