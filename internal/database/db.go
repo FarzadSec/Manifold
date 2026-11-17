@@ -101,6 +101,7 @@ func allModels() []any {
 		&model.Certificate{},
 		&model.SubAlias{},
 		&model.TunnelGroup{},
+		&model.Addon{},
 		&model.LegacySubSecret{},
 	}
 }

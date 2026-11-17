@@ -10,6 +10,49 @@ export type staticEgressResolver = string;
 export type trafficLocalApplyAction = number;
 export type transportBits = number;
 
+export interface Addon {
+  addonId: string;
+  createdAt: number;
+  enable: boolean;
+  id: number;
+  installedBy: number;
+  name: string;
+  tokenId: number;
+  version: string;
+  webhookId: number;
+}
+
+export interface AddonInstalled {
+  addon: AddonView;
+  token?: string;
+  webhookSecret?: string;
+}
+
+export interface AddonManifest {
+  description?: string;
+  events?: string[];
+  homepage?: string;
+  id: string;
+  name: string;
+  panelUrl?: string;
+  permissions: string[];
+  version: string;
+  webhook?: string;
+}
+
+export interface AddonView {
+  addonId: string;
+  createdAt: number;
+  enable: boolean;
+  id: number;
+  installedBy: number;
+  manifest: AddonManifest;
+  name: string;
+  tokenId: number;
+  version: string;
+  webhookId: number;
+}
+
 export interface AdminInput {
   allowedInboundIds: number[];
   allowedPlanIds: number[];

@@ -34,6 +34,7 @@ func run(root, outDir string) error {
 				"Certificate",
 				"TunnelRelay",
 				"TunnelGroup",
+				"Addon",
 				"FallbackParentInfo",
 				"OutboundTraffics",
 				"InboundClientIps",
@@ -173,7 +174,7 @@ func run(root, outDir string) error {
 		},
 		{
 			Path:        resolveRel(root, "internal/web/service/panel"),
-			StructAllow: setOf("ApiTokenView", "PanelUpdateStatus", "AdminView", "AdminInput"),
+			StructAllow: setOf("ApiTokenView", "PanelUpdateStatus", "AdminView", "AdminInput", "AddonManifest", "AddonView", "AddonInstalled"),
 		},
 		{
 			Path:        resolveRel(root, "internal/web/controller"),

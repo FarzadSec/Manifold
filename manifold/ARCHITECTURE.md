@@ -4,6 +4,8 @@ Version 0.13 · 2026-11-17 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnel
 
 Decision log:
 
+- 2026-11-17 — Addons run outside the panel and reach it only through a scoped token and a webhook, not as code loaded into it: a broken or hostile addon is limited to what its manifest asked for and the installer granted, and uninstalling it is revoking two credentials
+
 - 2026-11-17 — Several origins behind one relay are balanced in the relay's kernel (nftables `numgen` over DNAT targets), not in a proxy process: conntrack keeps each connection on the origin it started on, nothing is in the data path to crash, and failover is a table rewrite driven by the tunnel probes the panel already runs
 
 - 2026-11-17 — Old Marzban/PasarGuard links are verified, not looked up: their tokens carry the username and a signature with the old panel's secret, and a new one was minted every time a link was shown, so no list of tokens exists to import. The panel keeps the secret and checks each token as Marzban did, refusing tokens older than the user's revocation
@@ -278,6 +280,11 @@ This is the contract Mirza Bot will sync against.
 - Port checks run both ways: a shared port refuses a local TCP inbound's, the panel's or the subscription server's port, and `checkPortConflictTx` refuses an inbound on a shared port.
 - PROXY protocol v1 and v2 per route, for targets that should see the client address.
 
+### 4.19 Addons (groundwork, 0.12.0)
+
+- An addon is a manifest (`addons` row): id, name, version, the permissions it needs, the events it hears, a webhook URL and a link to its own UI. Installing creates an admin-scope API token bound to the installing account and narrowed to those permissions (refused when the account lacks one), and a webhook for those events; the plaintext token and signing secret are returned once.
+- The contract an addon programs against is the panel's API (`/panel/api/openapi.json`) and the webhook payload of 4.7, nothing addon-specific. Mirza Bot is meant to be the first.
+
 ### 4.18 Importers (built, 0.11.0)
 
 - `internal/importer` reads Marzban, PasarGuard, Marzneshin, 3x-ui/x-ui and s-ui from their SQLite file (recognised by tables and columns, read-only), Hiddify from its JSON backup, Marzban/PasarGuard and Remnawave over their APIs, into one `User` shape with a credential per protocol.
@@ -460,6 +467,11 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - SSH install downloads the installer from GitHub on the server; a server that cannot reach GitHub needs the package copied by hand (`install.sh --package`).
 - Node templates (one configuration applied to many nodes) are not built; a node's inbounds are created on it from the master as before.
 - Live connections per node are still not listed (see 8.7).
+
+### 8.14 Open items after the addon groundwork (0.12.0)
+
+- The panel does not run addons (no sidecar process or container management) or list a catalogue of them; the admin runs the addon and pastes its manifest.
+- An addon's UI is a link, not embedded in the panel.
 
 ### 8.13 Open items after tunnel groups (0.12.0)
 

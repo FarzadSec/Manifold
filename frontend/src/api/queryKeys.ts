@@ -17,6 +17,9 @@ export const keys = {
   certs: {
     list: () => ['certs', 'list'] as const,
   },
+  addons: {
+    list: () => ['addons', 'list'] as const,
+  },
   webhooks: {
     list: () => ['webhooks', 'list'] as const,
     events: () => ['webhooks', 'events'] as const,

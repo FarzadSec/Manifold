@@ -295,6 +295,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	NewMetricsController(api, &a.serverController.serverService)
 	NewCertificateController(api.Group("/certs"))
 	NewPanelImportController(api.Group("/import"))
+	NewAddonController(api.Group("/addons"))
 	NewAccessController(api.Group("/access"))
 
 	// Settings + Xray config management live under the API surface too, so the

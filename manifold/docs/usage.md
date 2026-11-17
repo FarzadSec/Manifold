@@ -332,6 +332,24 @@ ok = hmac.compare_digest(expected, request.headers["X-Manifold-Signature"])
 
 A reseller sees only its own webhooks, hears only about its own users, and can only send to public addresses.
 
+## Addons
+
+**Addons** (sidebar) installs programs that run next to the panel, such as a sales bot, from their manifest (`addon.json`):
+
+```json
+{
+  "id": "my-bot",
+  "name": "My bot",
+  "version": "1.0.0",
+  "permissions": ["users:read", "users:write"],
+  "events": ["user.created", "user.limited", "user.expired"],
+  "webhook": "https://bot.example.com/manifold",
+  "panelUrl": "https://bot.example.com/admin"
+}
+```
+
+Installing gives the addon an API token that acts as your account, limited to the permissions it lists and never more than you have, and a signed webhook for the events it lists (see Webhooks for the signature). Both are shown once; put them into the addon's settings. Installing the same id again updates its permissions and events and keeps the token. The switch turns the token and the webhook off together; uninstalling removes them, after which the addon can do nothing on the panel.
+
 ## Monitoring
 
 The overview opens with the business side: active users, who is online, who expires within a day, who is out of traffic, today's traffic and how many nodes answer. A failing backup target or webhook deliveries given up show as a warning under the tiles.

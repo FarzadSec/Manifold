@@ -4,6 +4,7 @@ import {
   CloudUploadOutlined,
   ShareAltOutlined,
   ApiOutlined,
+  AppstoreAddOutlined,
   NotificationOutlined,
   AuditOutlined,
   ClusterOutlined,
@@ -37,6 +38,7 @@ const BackupsPage = lazy(() => import('@/pages/backups/BackupsPage'));
 const WebhooksPage = lazy(() => import('@/pages/webhooks/WebhooksPage'));
 const CertificatesPage = lazy(() => import('@/pages/certs/CertificatesPage'));
 const ImportPage = lazy(() => import('@/pages/import/ImportPage'));
+const AddonsPage = lazy(() => import('@/pages/addons/AddonsPage'));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
 const XrayPage = lazy(() => import('@/pages/xray/XrayPage'));
 const ApiDocsPage = lazy(() => import('@/pages/api-docs/ApiDocsPage'));
@@ -179,6 +181,15 @@ export const PANEL_ROUTES: PanelRoute[] = [
     icon: SwapOutlined,
     component: XrayPage,
     perm: 'pool:read',
+  },
+  {
+    path: '/addons',
+    section: 'system',
+    titleKey: 'menu.addons',
+    icon: AppstoreAddOutlined,
+    component: AddonsPage,
+    perm: 'settings:read',
+    staff: true,
   },
   {
     path: '/settings',

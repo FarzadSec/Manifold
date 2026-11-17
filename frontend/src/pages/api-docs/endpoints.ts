@@ -2167,6 +2167,47 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'addons',
+    title: 'Addons',
+    description:
+      "An addon is a program next to the panel, such as a sales bot, installed from its manifest (addon.json: id, name, version, permissions, events, webhook, panelUrl). Installing gives it an API token that acts as the installing account, narrowed to the permissions it asks for and never above that account, and a signed webhook for the events it names; both are shown once and go into the addon's own settings. Installing the same id again updates the permissions, events and webhook in place. Disabling turns the token and webhook off together; uninstalling removes them. All endpoints under /panel/api/addons.",
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/addons/list',
+        summary: 'Installed addons with their manifests.',
+        responseSchema: 'AddonView',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/addons/install',
+        summary: 'Install or update an addon; the body is its manifest.',
+        body: '{\n  "id": "mirza-bot",\n  "name": "Mirza Bot",\n  "version": "1.0.0",\n  "permissions": ["users:read", "users:write"],\n  "events": ["user.limited", "user.expired"],\n  "webhook": "https://bot.example.com/manifold"\n}',
+        responseSchema: 'AddonInstalled',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/addons/enable/:id',
+        summary: "Turn an addon's token and webhook back on.",
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Addon ID.' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/addons/disable/:id',
+        summary: "Turn an addon's token and webhook off; it can neither act nor hear events.",
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Addon ID.' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/addons/uninstall/:id',
+        summary: 'Remove an addon with its token and webhook.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Addon ID.' }],
+      },
+    ],
+  },
+
+  {
     id: 'import',
     title: 'Import from another panel',
     description:

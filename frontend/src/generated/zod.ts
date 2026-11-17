@@ -30,6 +30,53 @@ export type trafficLocalApplyAction = z.infer<typeof trafficLocalApplyActionSche
 export const transportBitsSchema = z.number().int();
 export type transportBits = z.infer<typeof transportBitsSchema>;
 
+export const AddonSchema = z.object({
+  addonId: z.string(),
+  createdAt: z.number().int(),
+  enable: z.boolean(),
+  id: z.number().int(),
+  installedBy: z.number().int(),
+  name: z.string(),
+  tokenId: z.number().int(),
+  version: z.string(),
+  webhookId: z.number().int(),
+});
+export type Addon = z.infer<typeof AddonSchema>;
+
+export const AddonInstalledSchema = z.object({
+  addon: z.lazy(() => AddonViewSchema),
+  token: z.string().optional(),
+  webhookSecret: z.string().optional(),
+});
+export type AddonInstalled = z.infer<typeof AddonInstalledSchema>;
+
+export const AddonManifestSchema = z.object({
+  description: z.string().optional(),
+  events: z.array(z.string()).optional(),
+  homepage: z.string().optional(),
+  id: z.string(),
+  name: z.string(),
+  panelUrl: z.string().optional(),
+  permissions: z.array(z.string()),
+  version: z.string(),
+  webhook: z.string().optional(),
+});
+export type AddonManifest = z.infer<typeof AddonManifestSchema>;
+
+export const AddonViewSchema = z.object({
+  addonId: z.string(),
+  createdAt: z.number().int(),
+  enable: z.boolean(),
+  id: z.number().int(),
+  installedBy: z.number().int(),
+  manifest: z.lazy(() => AddonManifestSchema),
+  name: z.string(),
+  tokenId: z.number().int(),
+  version: z.string(),
+  webhookId: z.number().int(),
+});
+export type AddonView = z.infer<typeof AddonViewSchema>;
+
 export const AdminInputSchema = z.object({
   allowedInboundIds: z.array(z.number().int()),
   allowedPlanIds: z.array(z.number().int()),

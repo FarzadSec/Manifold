@@ -26,6 +26,197 @@
       }
     },
     "schemas": {
+      "Addon": {
+        "description": "Addon is a program installed into the panel through its manifest: it acts with its own\nAPI token, narrowed to the permissions it asked for, and hears events through a webhook.",
+        "properties": {
+          "addonId": {
+            "example": "mirza-bot",
+            "type": "string"
+          },
+          "createdAt": {
+            "example": 1763300000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "enable": {
+            "example": true,
+            "type": "boolean"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "installedBy": {
+            "example": 1,
+            "type": "integer"
+          },
+          "name": {
+            "example": "Mirza Bot",
+            "type": "string"
+          },
+          "tokenId": {
+            "example": 7,
+            "type": "integer"
+          },
+          "version": {
+            "example": "1.0.0",
+            "type": "string"
+          },
+          "webhookId": {
+            "example": 3,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "addonId",
+          "createdAt",
+          "enable",
+          "id",
+          "installedBy",
+          "name",
+          "tokenId",
+          "version",
+          "webhookId"
+        ],
+        "type": "object"
+      },
+      "AddonInstalled": {
+        "description": "AddonInstalled is an install's answer: the token and signing secret, shown once.",
+        "properties": {
+          "addon": {
+            "$ref": "#/components/schemas/AddonView"
+          },
+          "token": {
+            "example": "new-token-string",
+            "type": "string"
+          },
+          "webhookSecret": {
+            "example": "4f1c…",
+            "type": "string"
+          }
+        },
+        "required": [
+          "addon"
+        ],
+        "type": "object"
+      },
+      "AddonManifest": {
+        "description": "AddonManifest is what an addon publishes about itself (addon.json).",
+        "properties": {
+          "description": {
+            "example": "Sells subscriptions in Telegram",
+            "type": "string"
+          },
+          "events": {
+            "example": [
+              "user.limited"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "homepage": {
+            "example": "https://github.com/example/bot",
+            "type": "string"
+          },
+          "id": {
+            "example": "mirza-bot",
+            "type": "string"
+          },
+          "name": {
+            "example": "Mirza Bot",
+            "type": "string"
+          },
+          "panelUrl": {
+            "example": "https://bot.example.com/admin",
+            "type": "string"
+          },
+          "permissions": {
+            "example": [
+              "users:read",
+              "users:write"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "version": {
+            "example": "1.0.0",
+            "type": "string"
+          },
+          "webhook": {
+            "example": "https://bot.example.com/manifold",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "permissions",
+          "version"
+        ],
+        "type": "object"
+      },
+      "AddonView": {
+        "description": "AddonView is an installed addon with its manifest.",
+        "properties": {
+          "addonId": {
+            "example": "mirza-bot",
+            "type": "string"
+          },
+          "createdAt": {
+            "example": 1763300000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "enable": {
+            "example": true,
+            "type": "boolean"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "installedBy": {
+            "example": 1,
+            "type": "integer"
+          },
+          "manifest": {
+            "$ref": "#/components/schemas/AddonManifest"
+          },
+          "name": {
+            "example": "Mirza Bot",
+            "type": "string"
+          },
+          "tokenId": {
+            "example": 7,
+            "type": "integer"
+          },
+          "version": {
+            "example": "1.0.0",
+            "type": "string"
+          },
+          "webhookId": {
+            "example": 3,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "addonId",
+          "createdAt",
+          "enable",
+          "id",
+          "installedBy",
+          "manifest",
+          "name",
+          "tokenId",
+          "version",
+          "webhookId"
+        ],
+        "type": "object"
+      },
       "AdminInput": {
         "description": "AdminInput is what the Admins form sends; an empty password keeps the current one.",
         "properties": {
@@ -8779,6 +8970,10 @@
       "description": "Manage remote Manifold panels acting as nodes for a central panel. All endpoints under /panel/api/nodes."
     },
     {
+      "name": "Addons",
+      "description": "An addon is a program next to the panel, such as a sales bot, installed from its manifest (addon.json: id, name, version, permissions, events, webhook, panelUrl). Installing gives it an API token that acts as the installing account, narrowed to the permissions it asks for and never above that account, and a signed webhook for the events it names; both are shown once and go into the addon's own settings. Installing the same id again updates the permissions, events and webhook in place. Disabling turns the token and webhook off together; uninstalling removes them. All endpoints under /panel/api/addons."
+    },
+    {
       "name": "Import from another panel",
       "description": "Moves users in from Marzban, PasarGuard, Marzneshin, 3x-ui/x-ui and s-ui (their SQLite database), Hiddify (its JSON backup), or Marzban, PasarGuard and Remnawave over their API. A read returns a preview held for 30 minutes; apply creates the users on the inbounds picked for each protocol, keeping each user's UUID or password, quota, usage, expiry and reset cycle. With keepLinks the old panel's subscription links keep working on this panel's subscription server: kept ids (3x-ui, s-ui, Hiddify, Remnawave), Marzneshin's /sub/<user>/<key>, and Marzban/PasarGuard tokens checked against the old panel's secret. Users whose name is already taken are skipped. All endpoints under /panel/api/import."
     },
@@ -17276,6 +17471,286 @@
                     ],
                     "nodeId": 3,
                     "state": "running"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/addons/list": {
+      "get": {
+        "tags": [
+          "Addons"
+        ],
+        "summary": "Installed addons with their manifests.",
+        "operationId": "get_panel_api_addons_list",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AddonView"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "addonId": "mirza-bot",
+                      "createdAt": 1763300000000,
+                      "enable": true,
+                      "id": 1,
+                      "installedBy": 1,
+                      "manifest": {
+                        "description": "Sells subscriptions in Telegram",
+                        "events": [
+                          "user.limited"
+                        ],
+                        "homepage": "https://github.com/example/bot",
+                        "id": "mirza-bot",
+                        "name": "Mirza Bot",
+                        "panelUrl": "https://bot.example.com/admin",
+                        "permissions": [
+                          "users:read",
+                          "users:write"
+                        ],
+                        "version": "1.0.0",
+                        "webhook": "https://bot.example.com/manifold"
+                      },
+                      "name": "Mirza Bot",
+                      "tokenId": 7,
+                      "version": "1.0.0",
+                      "webhookId": 3
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/addons/install": {
+      "post": {
+        "tags": [
+          "Addons"
+        ],
+        "summary": "Install or update an addon; the body is its manifest.",
+        "operationId": "post_panel_api_addons_install",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "id": "mirza-bot",
+                "name": "Mirza Bot",
+                "version": "1.0.0",
+                "permissions": [
+                  "users:read",
+                  "users:write"
+                ],
+                "events": [
+                  "user.limited",
+                  "user.expired"
+                ],
+                "webhook": "https://bot.example.com/manifold"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/AddonInstalled"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "addon": {
+                      "addonId": "mirza-bot",
+                      "createdAt": 1763300000000,
+                      "enable": true,
+                      "id": 1,
+                      "installedBy": 1,
+                      "manifest": {
+                        "description": "Sells subscriptions in Telegram",
+                        "events": [
+                          "user.limited"
+                        ],
+                        "homepage": "https://github.com/example/bot",
+                        "id": "mirza-bot",
+                        "name": "Mirza Bot",
+                        "panelUrl": "https://bot.example.com/admin",
+                        "permissions": [
+                          "users:read",
+                          "users:write"
+                        ],
+                        "version": "1.0.0",
+                        "webhook": "https://bot.example.com/manifold"
+                      },
+                      "name": "Mirza Bot",
+                      "tokenId": 7,
+                      "version": "1.0.0",
+                      "webhookId": 3
+                    },
+                    "token": "new-token-string",
+                    "webhookSecret": "4f1c…"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/addons/enable/{id}": {
+      "post": {
+        "tags": [
+          "Addons"
+        ],
+        "summary": "Turn an addon's token and webhook back on.",
+        "operationId": "post_panel_api_addons_enable_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Addon ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/addons/disable/{id}": {
+      "post": {
+        "tags": [
+          "Addons"
+        ],
+        "summary": "Turn an addon's token and webhook off; it can neither act nor hear events.",
+        "operationId": "post_panel_api_addons_disable_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Addon ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/addons/uninstall/{id}": {
+      "post": {
+        "tags": [
+          "Addons"
+        ],
+        "summary": "Remove an addon with its token and webhook.",
+        "operationId": "post_panel_api_addons_uninstall_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Addon ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
                   }
                 }
               }

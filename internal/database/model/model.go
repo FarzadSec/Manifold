@@ -1973,6 +1973,21 @@ type TunnelEnd struct {
 	UpdatedAt int64  `json:"updatedAt" gorm:"autoUpdateTime:milli" example:"1763300000000"`
 }
 
+// Addon is a program installed into the panel through its manifest: it acts with its own
+// API token, narrowed to the permissions it asked for, and hears events through a webhook.
+type Addon struct {
+	Id          int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	AddonId     string `json:"addonId" gorm:"uniqueIndex;not null" example:"mirza-bot"`
+	Name        string `json:"name" example:"Mirza Bot"`
+	Version     string `json:"version" example:"1.0.0"`
+	Manifest    string `json:"-" gorm:"type:text"`
+	TokenId     int    `json:"tokenId" example:"7"`
+	WebhookId   int    `json:"webhookId" example:"3"`
+	Enable      bool   `json:"enable" example:"true"`
+	InstalledBy int    `json:"installedBy" example:"1"`
+	CreatedAt   int64  `json:"createdAt" gorm:"autoCreateTime:milli" example:"1763300000000"`
+}
+
 // TunnelGroup is a set of this relay's tunnels to several origins that share forwarded
 // ports, in failover or balance; Settings holds the forwards as tunnel settings do.
 type TunnelGroup struct {

@@ -141,7 +141,8 @@
       "network": "Network",
       "operations": "Operations",
       "system": "System"
-    }
+    },
+    "addons": "Addons"
   },
   "pages": {
     "login": {
@@ -3360,6 +3361,22 @@
       "another": "Import another panel",
       "readFailed": "Could not read the old panel",
       "applyFailed": "Could not import the users"
+    },
+    "addons": {
+      "intro": "An addon is a program next to the panel, such as a sales bot. Installing it from its manifest gives it an API token limited to the permissions it asks for, never more than your account has, and a signed webhook for the events it names. Disabling or uninstalling takes both away.",
+      "empty": "No addons installed",
+      "install": "Install",
+      "name": "Addon",
+      "permissions": "Can",
+      "events": "Hears",
+      "open": "Open the addon",
+      "confirmUninstall": "Uninstall it? Its token and webhook are removed.",
+      "manifest": "Manifest",
+      "manifestHint": "Paste the addon's addon.json. Installing an id that is already here updates it and keeps its token.",
+      "shownOnce": "Put these into the addon's settings now; the panel will not show them again.",
+      "token": "API token",
+      "installFailed": "Could not install the addon",
+      "changeFailed": "Could not change the addon"
     }
   },
   "tgbot": {

@@ -141,7 +141,8 @@
       "network": "网络",
       "operations": "运维",
       "system": "系统"
-    }
+    },
+    "addons": "扩展"
   },
   "pages": {
     "login": {
@@ -3360,6 +3361,22 @@
       "another": "导入其他面板",
       "readFailed": "无法读取旧面板",
       "applyFailed": "无法导入用户"
+    },
+    "addons": {
+      "intro": "扩展是面板旁的程序，例如销售机器人。按清单安装会给它一个只含所请求权限（不超过你的账户）的 API 令牌，以及其所列事件的签名 Webhook。停用或卸载会同时收回两者。",
+      "empty": "未安装扩展",
+      "install": "安装",
+      "name": "扩展",
+      "permissions": "权限",
+      "events": "事件",
+      "open": "打开扩展",
+      "confirmUninstall": "卸载？其令牌和 Webhook 将被删除。",
+      "manifest": "清单",
+      "manifestHint": "粘贴扩展的 addon.json。安装已存在的 id 会更新它并保留其令牌。",
+      "shownOnce": "请立即填入扩展设置，面板不会再次显示。",
+      "token": "API 令牌",
+      "installFailed": "无法安装扩展",
+      "changeFailed": "无法更改扩展"
     }
   },
   "tgbot": {
