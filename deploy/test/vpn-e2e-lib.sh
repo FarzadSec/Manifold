@@ -160,13 +160,13 @@ PY
     field "$response" 'r["obj"]["id"]'
 }
 
-# add_client EMAIL QUOTA_BYTES INBOUND_ID [DEVICE_LIMIT]
+# add_client EMAIL QUOTA_BYTES INBOUND_ID [USER_LIMIT]: USER_LIMIT caps its OpenVPN and L2TP connections.
 add_client() {
     ACCOUNTS+=("$1")
     must_succeed "$(api POST /panel/api/clients/add "$(python3 - "$1" "$2" "$3" "${4:-0}" <<'PY'
 import json, sys
 email, total, inbound, limit = sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4])
-print(json.dumps({"client": {"email": email, "enable": True, "totalGB": total, "limitIp": limit}, "inboundIds": [inbound]}))
+print(json.dumps({"client": {"email": email, "enable": True, "totalGB": total, "userLimit": limit}, "inboundIds": [inbound]}))
 PY
 )")" "adding client $1"
 }

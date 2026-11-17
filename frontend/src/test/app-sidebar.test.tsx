@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, expect, test, vi } from 'vitest';
 
@@ -73,8 +73,11 @@ test('groups the pages under section headings, and only separates them on the ra
 
   localStorage.setItem('sidebar-collapsed', 'true');
   const rail = await renderSidebar();
+  // The menu settles into its collapsed mode a tick after the first render.
+  await waitFor(() =>
+    expect(rail.container.querySelectorAll('.sider-nav .ant-menu-item-divider')).toHaveLength(4),
+  );
   expect(rail.container.querySelectorAll('.sider-nav .ant-menu-item-group-title')).toHaveLength(0);
-  expect(rail.container.querySelectorAll('.sider-nav .ant-menu-item-divider')).toHaveLength(4);
 });
 
 test('names Manifold Relay on a relay', async () => {

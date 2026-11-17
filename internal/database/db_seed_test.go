@@ -508,12 +508,9 @@ func TestSessionCapsMoveToTheUserLimitOnUpgrade(t *testing.T) {
 		}
 	}
 	inbounds := []*model.Inbound{
-		{Tag: "ovpn", Port: 1194, Protocol: model.OpenVPN, Enable: true,
-			Settings: `{"clients":[{"email":"ovpn@x","limitIp":2},{"email":"both@x","limitIp":3}]}`},
-		{Tag: "l2tp", Port: 1701, Protocol: model.L2TP, Enable: true,
-			Settings: `{"clients":[{"email":"l2tp@x","limitIp":1}]}`},
-		{Tag: "vless", Port: 443, Protocol: model.VLESS, Enable: true,
-			Settings: `{"clients":[{"email":"both@x","limitIp":3},{"email":"xray@x","limitIp":4}]}`},
+		{Tag: "ovpn", Port: 1194, Protocol: model.OpenVPN, Enable: true, Settings: `{"clients":[{"email":"ovpn@x","limitIp":2},{"email":"both@x","limitIp":3}]}`},
+		{Tag: "l2tp", Port: 1701, Protocol: model.L2TP, Enable: true, Settings: `{"clients":[{"email":"l2tp@x","limitIp":1}]}`},
+		{Tag: "vless", Port: 443, Protocol: model.VLESS, Enable: true, Settings: `{"clients":[{"email":"both@x","limitIp":3},{"email":"xray@x","limitIp":4}]}`},
 	}
 	for _, ib := range inbounds {
 		if err := db.Create(ib).Error; err != nil {
