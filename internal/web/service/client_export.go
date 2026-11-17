@@ -46,7 +46,7 @@ func (s *SettingService) SubscriptionURLs(subID string) (string, string) {
 		}
 	}
 	host := subDomain
-	if !(subPort == 443 && tls) && !(subPort == 80 && !tls) {
+	if standardPort := (subPort == 443 && tls) || (subPort == 80 && !tls); !standardPort {
 		host = fmt.Sprintf("%s:%d", subDomain, subPort)
 	}
 	slashed := func(p string) string {

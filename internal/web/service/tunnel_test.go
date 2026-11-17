@@ -68,6 +68,14 @@ func TestASavedTunnelIsAppliedByTheRequestLoopUntilItStops(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("the request loop kept running after its context ended")
 	}
+	// A request queued before the stop may have been applied already; only later ones count.
+	for drained := false; !drained; {
+		select {
+		case <-engine.applied:
+		default:
+			drained = true
+		}
+	}
 	if err := s.Delete(v.Id); err != nil {
 		t.Fatal(err)
 	}

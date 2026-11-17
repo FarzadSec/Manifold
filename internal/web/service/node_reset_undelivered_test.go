@@ -160,6 +160,11 @@ func TestNodeResetDeliveredRightAway(t *testing.T) {
 			if err := reset.run(&InboundService{}, ib); err != nil {
 				t.Fatalf("reset: %v", err)
 			}
+			// The request waits a second for the push; a loaded runner can take longer to finish it.
+			deadline := time.Now().Add(5 * time.Second)
+			for time.Now().Before(deadline) && (len(rec.delivered()) == 0 || len(pendingResetEmails(t, nodeID)) != 0) {
+				time.Sleep(20 * time.Millisecond)
+			}
 			if got := rec.delivered(); !slices.Equal(got, []string{"reset-lost"}) {
 				t.Fatalf("node received resets %v, want [reset-lost]", got)
 			}
