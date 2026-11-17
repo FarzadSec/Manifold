@@ -24,6 +24,16 @@ SUB_PORT=""
 FIRST_INSTALL=0
 WORK_DIR=""
 EDITION=""
+INTERACTIVE=0
+SERVER_IP=""
+PANEL_SCHEME=http
+PANEL_HOST=""
+LISTEN_LOCAL=0
+API_TOKEN=""
+
+IP4_SOURCES=(https://api4.ipify.org https://ipv4.icanhazip.com https://v4.api.ipinfo.io/ip
+    https://ipv4.myexternalip.com/raw https://4.ident.me https://check-host.net/ip)
+IP6_SOURCES=(https://api6.ipify.org https://ipv6.icanhazip.com https://6.ident.me)
 
 usage() {
     cat <<'USAGE'
@@ -31,6 +41,12 @@ Usage: install.sh [options]
 
 Installs Manifold, or updates it in place when it is already installed.
 The database and settings in /etc/manifold are kept on update.
+
+Run from a terminal, a first install asks for the panel port (unless --port
+is given) and how to secure the panel: a Let's Encrypt certificate for a
+domain or for the server's IP address, certificate files of your own, or
+plain HTTP. Without a terminal it asks nothing and the panel starts on HTTP;
+get a certificate later with: manifold cert issue -domain NAME
 
   --package FILE     Install from a package file instead of downloading one
   --version vX.Y.Z   Install this release instead of the latest
@@ -62,6 +78,62 @@ cleanup() {
 
 info() {
     echo "==> $*"
+}
+
+warn() {
+    echo "warning: $*" >&2
+}
+
+valid_port() {
+    [[ "$1" =~ ^[0-9]+$ ]] && [ "$1" -ge 1 ] && [ "$1" -le 65535 ]
+}
+
+valid_ipv4() {
+    local IFS=. part
+    [[ "$1" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]] || return 1
+    for part in $1; do
+        [ "$part" -le 255 ] || return 1
+    done
+}
+
+valid_ipv6() {
+    [[ "$1" == *:* && "$1" =~ ^[0-9A-Fa-f:.]+$ ]]
+}
+
+valid_domain() {
+    [[ "$1" =~ ^([A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}$ ]]
+}
+
+# public_ip: this server's address as the internet sees it, IPv4 before IPv6.
+public_ip() {
+    local url ip
+    for url in "${IP4_SOURCES[@]}"; do
+        ip=$(curl -fsS --max-time 3 "$url" 2>/dev/null | tr -d '[:space:]"') || continue
+        if valid_ipv4 "$ip"; then
+            echo "$ip"
+            return 0
+        fi
+    done
+    for url in "${IP6_SOURCES[@]}"; do
+        ip=$(curl -fsS --max-time 3 "$url" 2>/dev/null | tr -d '[:space:]"') || continue
+        if valid_ipv6 "$ip"; then
+            echo "$ip"
+            return 0
+        fi
+    done
+    return 1
+}
+
+# url_host HOST: the host as it goes in a URL, with an IPv6 address bracketed.
+url_host() {
+    case "$1" in *:*) echo "[$1]" ;; *) echo "$1" ;; esac
+}
+
+# cert_name FILE: the first name a certificate is for, DNS or IP.
+cert_name() {
+    command -v openssl >/dev/null 2>&1 || return 1
+    openssl x509 -in "$1" -noout -ext subjectAltName 2>/dev/null |
+        grep -oE '(DNS|IP Address):[^,[:space:]]+' | head -n 1 | cut -d: -f2- | sed 's/^\*\.//'
 }
 
 # Maps `uname -m` output to the architecture label used in package names.
@@ -235,11 +307,32 @@ set_edition() {
     fi
 }
 
+# choose_port asks for the panel port; a random free one is taken when the answer is no.
+choose_port() {
+    local reply=""
+    read -rp "Choose the panel port yourself? A random free port is used otherwise [y/N]: " reply || true
+    case "$reply" in y | Y | yes) ;; *) return 0 ;; esac
+    while true; do
+        read -rp "Panel port [1-65535]: " reply || return 0
+        if ! valid_port "$reply"; then
+            echo "Not a port: ${reply}"
+        elif port_in_use "$reply"; then
+            echo "Another program listens on port ${reply}."
+        else
+            PANEL_PORT="$reply"
+            return 0
+        fi
+    done
+}
+
 # Chooses the login, port and path of a new panel. An existing database is left alone.
 first_setup() {
     FIRST_INSTALL=0
     [ -f "${DATA_DIR}/manifold.db" ] && return 0
     FIRST_INSTALL=1
+    if [ -z "$PANEL_PORT" ] && [ "$INTERACTIVE" -eq 1 ]; then
+        choose_port
+    fi
     [ -n "$PANEL_PORT" ] || PANEL_PORT=$(free_port) || die "found no free port for the panel"
     # Another panel on the server usually holds the default subscription port,
     # and the subscription server could not start next to it.
@@ -258,6 +351,67 @@ first_setup() {
     case "$out" in
         *Failed*) die "first setup failed: ${out}" ;;
     esac
+}
+
+# issue_panel_cert NAME: a Let's Encrypt certificate the panel serves and renews.
+issue_panel_cert() {
+    info "Getting a Let's Encrypt certificate for $1"
+    if "${INSTALL_DIR}/manifold" cert issue -domain "$1"; then
+        PANEL_SCHEME=https PANEL_HOST="$1"
+        return 0
+    fi
+    warn "no certificate, so the panel answers over plain HTTP for now. HTTP-01 needs"
+    warn "port 80 free and open to the internet; try again later with: manifold → 18"
+}
+
+# setup_ssl asks how a new panel is reached: over HTTPS with a certificate, or plain HTTP.
+setup_ssl() {
+    local choice="" domain="" cert="" key="" reply=""
+    echo
+    echo "How should the panel be reached?"
+    echo "  1. HTTPS with a Let's Encrypt certificate for a domain that points at this server"
+    echo "  2. HTTPS with a Let's Encrypt certificate for this server's IP address${SERVER_IP:+ (${SERVER_IP})}"
+    echo "     (six-day certificates the panel renews on its own)"
+    echo "  3. HTTPS with certificate files you already have"
+    echo "  4. Plain HTTP (not recommended)"
+    read -rp "Choose [2]: " choice || true
+    case "${choice:-2}" in
+        1)
+            while ! valid_domain "$domain"; do
+                read -rp "Domain: " domain || return 0
+            done
+            issue_panel_cert "$domain"
+            ;;
+        2)
+            while ! valid_ipv4 "$SERVER_IP" && ! valid_ipv6 "$SERVER_IP"; do
+                read -rp "This server's public IP address: " SERVER_IP || return 0
+            done
+            issue_panel_cert "$SERVER_IP"
+            ;;
+        3)
+            read -rp "Certificate (full chain) file: " cert || true
+            read -rp "Private key file: " key || true
+            if [ -r "$cert" ] && [ -r "$key" ] && "${INSTALL_DIR}/manifold" cert -webCert "$cert" -webCertKey "$key" >/dev/null; then
+                PANEL_SCHEME=https PANEL_HOST=$(cert_name "$cert" || true)
+            else
+                warn "the files were not taken; the panel answers over plain HTTP for now"
+            fi
+            ;;
+        *)
+            read -rp "Listen on 127.0.0.1 only, and reach the panel through an SSH tunnel? [y/N]: " reply || true
+            case "$reply" in
+                y | Y | yes)
+                    "${INSTALL_DIR}/manifold" setting -listenIP 127.0.0.1 >/dev/null
+                    LISTEN_LOCAL=1
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+# mint_api_token: the token the summary shows, for a bot or script to drive the panel.
+mint_api_token() {
+    API_TOKEN=$("${INSTALL_DIR}/manifold" setting -getApiToken 2>/dev/null | sed -n 's/^apiToken: //p' || true)
 }
 
 command_exists() { command -v "$1" >/dev/null 2>&1; }
@@ -411,33 +565,49 @@ start_service() {
     die "the service did not start; see: journalctl -u manifold -n 50"
 }
 
+# access_line: the address the panel answers on, as the summary prints it.
+access_line() {
+    local host="${PANEL_HOST:-${SERVER_IP:-SERVER-IP}}"
+    if [ "$LISTEN_LOCAL" -eq 1 ]; then
+        echo "http://localhost:2222${PANEL_PATH}  (after: ssh -L 2222:127.0.0.1:${PANEL_PORT} root@$(url_host "${SERVER_IP:-SERVER-IP}"))"
+    else
+        echo "${PANEL_SCHEME}://$(url_host "$host"):${PANEL_PORT}${PANEL_PATH}"
+    fi
+}
+
 print_summary() {
-    local version
+    local version line="═══════════════════════════════════════════════════════════════"
     version=$("${INSTALL_DIR}/manifold" -v 2>/dev/null || echo unknown)
     echo
-    if [ "$(installed_edition)" = tunnel ]; then
-        echo "Manifold Tunnel Server ${version} is installed."
-    else
-        echo "Manifold ${version} is installed."
+    if [ "$FIRST_INSTALL" -ne 1 ]; then
+        echo "Manifold ${version} is installed. The existing database and settings were kept."
+        echo "Manage it with: manifold"
+        return 0
     fi
-    if [ "$FIRST_INSTALL" -eq 1 ]; then
-        cat <<SUMMARY
-
-  Address:   http://SERVER-IP:${PANEL_PORT}${PANEL_PATH}
-  Username:  ${PANEL_USERNAME}
-  Password:  ${PANEL_PASSWORD}
-
-This is shown once. Sign in, then change the login under Panel Settings.
-Open port ${PANEL_PORT}/tcp in your firewall if the page does not load.
-SUMMARY
-        if [ -n "$SUB_PORT" ]; then
-            echo "Subscriptions use port ${SUB_PORT}: port ${DEFAULT_SUB_PORT} is taken by another program on this server."
-        fi
+    echo "$line"
+    if [ "$(installed_edition)" = tunnel ]; then
+        echo "  Manifold Tunnel Server ${version} is installed"
     else
-        echo "The existing database and settings were kept."
+        echo "  Manifold ${version} is installed"
+    fi
+    echo "$line"
+    echo "  Username:     ${PANEL_USERNAME}"
+    echo "  Password:     ${PANEL_PASSWORD}"
+    echo "  Port:         ${PANEL_PORT}"
+    echo "  WebBasePath:  ${PANEL_PATH}"
+    echo "  Access URL:   $(access_line)"
+    [ -z "$API_TOKEN" ] || echo "  API token:    ${API_TOKEN}"
+    echo "$line"
+    echo "This is shown once. Sign in, then change the login under Panel Settings."
+    echo "Open port ${PANEL_PORT}/tcp in your firewall if the page does not load."
+    if [ "$PANEL_SCHEME" = http ] && [ "$LISTEN_LOCAL" -eq 0 ]; then
+        echo "The panel is on plain HTTP. Get a certificate any time: manifold → 18"
+    fi
+    if [ -n "$SUB_PORT" ]; then
+        echo "Subscriptions use port ${SUB_PORT}: port ${DEFAULT_SUB_PORT} is taken by another program on this server."
     fi
     echo
-    echo "Manage it with: manifold help"
+    echo "Manage it with: manifold"
 }
 
 main() {
@@ -460,7 +630,18 @@ main() {
 
     install_files "$WORK_DIR"
     install_dependencies
+    if [ -t 0 ]; then
+        INTERACTIVE=1
+    fi
     first_setup
+    if [ "$FIRST_INSTALL" -eq 1 ]; then
+        info "Finding this server's public address"
+        SERVER_IP=$(public_ip || true)
+        if [ "$INTERACTIVE" -eq 1 ]; then
+            setup_ssl
+        fi
+        mint_api_token
+    fi
     start_service
     print_summary
 }

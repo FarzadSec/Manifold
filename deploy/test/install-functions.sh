@@ -183,5 +183,61 @@ PANEL_PORT=2097
 check "a free port is neither taken nor the panel's own" "$(shuf() { printf '2096\n2097\n31337\n'; }; free_port)" "31337"
 unset -f ss
 
+# A fake panel binary for the first-install questions: it records each call.
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+INSTALL_DIR="$work/opt"
+DATA_DIR="$work/data"
+mkdir -p "$INSTALL_DIR" "$DATA_DIR"
+cat >"$INSTALL_DIR/manifold" <<'FAKE'
+#!/usr/bin/env bash
+echo "[$*]" >>"$FAKE_LOG"
+case "$1 $2" in "cert issue") exit "${FAKE_ISSUE_EXIT:-0}" ;; esac
+FAKE
+chmod +x "$INSTALL_DIR/manifold"
+export FAKE_LOG="$work/calls.log"
+calls() { tr -d '\n' <"$FAKE_LOG"; : >"$FAKE_LOG"; }
+: >"$FAKE_LOG"
+PANEL_PORT=2053 PANEL_PATH=/p/
+
+# The default answer secures the panel with a certificate for the server's own address.
+SERVER_IP=203.0.113.9 PANEL_SCHEME=http PANEL_HOST="" LISTEN_LOCAL=0
+setup_ssl <<<"" >/dev/null
+check "the default is a certificate for the server's IP" "$(calls)" "[cert issue -domain 203.0.113.9]"
+check "the summary gives the HTTPS address" "$(access_line)" "https://203.0.113.9:2053/p/"
+
+PANEL_SCHEME=http PANEL_HOST=""
+setup_ssl <<<$'1\nnot a domain\npanel.example.com' >/dev/null
+check "a domain certificate asks again until it gets a domain" "$(calls)" "[cert issue -domain panel.example.com]"
+check "the summary gives the domain" "$(access_line)" "https://panel.example.com:2053/p/"
+
+# A certificate that could not be had leaves the install going, on plain HTTP.
+PANEL_SCHEME=http PANEL_HOST=""
+FAKE_ISSUE_EXIT=1 setup_ssl <<<"2" >/dev/null 2>&1
+check "a failed certificate leaves the panel on HTTP" "$(access_line)" "http://203.0.113.9:2053/p/"
+: >"$FAKE_LOG"
+
+SERVER_IP=2001:db8::9
+check "an IPv6 address is bracketed" "$(access_line)" "http://[2001:db8::9]:2053/p/"
+SERVER_IP=203.0.113.9
+
+setup_ssl <<<$'4\ny' >/dev/null
+check "plain HTTP behind an SSH tunnel listens on loopback" "$(calls)" "[setting -listenIP 127.0.0.1]"
+check "the summary gives the tunnel" "$(access_line)" \
+    "http://localhost:2222/p/  (after: ssh -L 2222:127.0.0.1:2053 root@203.0.113.9)"
+LISTEN_LOCAL=0
+
+# The port question: refused answers are asked again; without a terminal nothing is asked.
+port_in_use() { [ "$1" = 8080 ]; }
+PANEL_PORT=""
+choose_port <<<$'y\nabc\n70000\n8080\n8443' >/dev/null
+check "the chosen port, after a bad one and a taken one" "$PANEL_PORT" "8443"
+PANEL_PORT=""
+INTERACTIVE=0
+free_port() { echo 31337; }
+first_setup <<<$'y\n8443' >/dev/null
+check "a first install without a terminal asks nothing" "$PANEL_PORT" "31337"
+unset -f port_in_use free_port
+
 [ "$failures" -eq 0 ] || exit 1
 echo "all installer function tests passed"
