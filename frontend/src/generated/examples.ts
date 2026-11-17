@@ -1940,6 +1940,67 @@ export const EXAMPLES: Record<string, unknown> = {
     "email": "alice",
     "up": 1048576
   },
+  "Webhook": {
+    "chatId": "",
+    "createdAt": 1700000000000,
+    "enable": true,
+    "events": [
+      "user.limited"
+    ],
+    "id": 1,
+    "kind": "http",
+    "name": "mirza",
+    "url": "https://bot.example.com/manifold",
+    "userId": 1
+  },
+  "WebhookDelivery": {
+    "attempts": 0,
+    "createdAt": 1700000000000,
+    "deliveredAt": 0,
+    "event": "user.limited",
+    "eventId": "0f3c2a9b5d7e4f61",
+    "id": 10,
+    "lastCode": 200,
+    "lastError": "",
+    "nextAt": 1700000000000,
+    "payload": "",
+    "status": "pending",
+    "webhookId": 1
+  },
+  "WebhookInput": {
+    "chatId": "",
+    "enable": true,
+    "events": [
+      "user.limited"
+    ],
+    "id": 0,
+    "kind": "http",
+    "name": "mirza",
+    "secret": null,
+    "url": "https://bot.example.com/manifold"
+  },
+  "WebhookPayload": {
+    "data": null,
+    "id": "0f3c2a9b5d7e4f61",
+    "source": "alice",
+    "time": "2026-11-17T03:00:00Z",
+    "type": "user.limited"
+  },
+  "WebhookView": {
+    "chatId": "",
+    "createdAt": 1700000000000,
+    "enable": true,
+    "events": [
+      "user.limited"
+    ],
+    "hasSecret": true,
+    "id": 1,
+    "kind": "http",
+    "name": "mirza",
+    "secret": "",
+    "url": "https://bot.example.com/manifold",
+    "userId": 1
+  },
   "WireGuardImportResult": {
     "clients": 42,
     "disabled": 3,

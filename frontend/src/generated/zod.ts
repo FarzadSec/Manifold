@@ -1816,6 +1816,71 @@ export const UserUsageSchema = z.object({
 });
 export type UserUsage = z.infer<typeof UserUsageSchema>;
 
+export const WebhookSchema = z.object({
+  chatId: z.string(),
+  createdAt: z.number().int(),
+  enable: z.boolean(),
+  events: z.array(z.string()),
+  id: z.number().int(),
+  kind: z.string(),
+  name: z.string(),
+  url: z.string(),
+  userId: z.number().int(),
+});
+export type Webhook = z.infer<typeof WebhookSchema>;
+
+export const WebhookDeliverySchema = z.object({
+  attempts: z.number().int(),
+  createdAt: z.number().int(),
+  deliveredAt: z.number().int(),
+  event: z.string(),
+  eventId: z.string(),
+  id: z.number().int(),
+  lastCode: z.number().int(),
+  lastError: z.string(),
+  nextAt: z.number().int(),
+  payload: z.string(),
+  status: z.string(),
+  webhookId: z.number().int(),
+});
+export type WebhookDelivery = z.infer<typeof WebhookDeliverySchema>;
+
+export const WebhookInputSchema = z.object({
+  chatId: z.string(),
+  enable: z.boolean(),
+  events: z.array(z.string()),
+  id: z.number().int(),
+  kind: z.string(),
+  name: z.string(),
+  secret: z.string().nullable().optional(),
+  url: z.string(),
+});
+export type WebhookInput = z.infer<typeof WebhookInputSchema>;
+
+export const WebhookPayloadSchema = z.object({
+  data: z.unknown(),
+  id: z.string(),
+  source: z.string(),
+  time: z.string(),
+  type: z.string(),
+});
+export type WebhookPayload = z.infer<typeof WebhookPayloadSchema>;
+
+export const WebhookViewSchema = z.object({
+  chatId: z.string(),
+  createdAt: z.number().int(),
+  enable: z.boolean(),
+  events: z.array(z.string()),
+  hasSecret: z.boolean(),
+  id: z.number().int(),
+  kind: z.string(),
+  name: z.string(),
+  secret: z.string().optional(),
+  url: z.string(),
+  userId: z.number().int(),
+});
+export type WebhookView = z.infer<typeof WebhookViewSchema>;
+
 export const WireGuardImportResultSchema = z.object({
   clients: z.number().int(),
   disabled: z.number().int(),

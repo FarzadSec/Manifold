@@ -2043,3 +2043,34 @@ type BackupTarget struct {
 	LastSize   int64  `json:"lastSize" example:"1048576"`
 	LastError  string `json:"lastError" example:""`
 }
+
+// Webhook receives events: a signed HTTP POST, an ntfy topic, or a Bale bot message.
+type Webhook struct {
+	Id     int      `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Name   string   `json:"name" example:"mirza"`
+	Enable bool     `json:"enable" example:"true"`
+	Kind   string   `json:"kind" example:"http"`
+	URL    string   `json:"url" example:"https://bot.example.com/manifold"`
+	Secret string   `json:"-"`
+	ChatId string   `json:"chatId" example:""`
+	Events []string `json:"events" gorm:"serializer:json" example:"[\"user.limited\"]"`
+	// UserId is the account the webhook belongs to; a reseller's hears only its own users.
+	UserId    int   `json:"userId" gorm:"index" example:"1"`
+	CreatedAt int64 `json:"createdAt" gorm:"autoCreateTime:milli" example:"1700000000000"`
+}
+
+// WebhookDelivery is one event owed to one webhook: the outbox row and its delivery log.
+type WebhookDelivery struct {
+	Id          int    `json:"id" gorm:"primaryKey;autoIncrement" example:"10"`
+	WebhookId   int    `json:"webhookId" gorm:"index" example:"1"`
+	EventId     string `json:"eventId" gorm:"index" example:"0f3c2a9b5d7e4f61"`
+	Event       string `json:"event" example:"user.limited"`
+	Payload     string `json:"payload"`
+	Status      string `json:"status" gorm:"index" example:"pending"`
+	Attempts    int    `json:"attempts" example:"0"`
+	NextAt      int64  `json:"nextAt" gorm:"index" example:"1700000000000"`
+	LastCode    int    `json:"lastCode" example:"200"`
+	LastError   string `json:"lastError" example:""`
+	CreatedAt   int64  `json:"createdAt" example:"1700000000000"`
+	DeliveredAt int64  `json:"deliveredAt" example:"0"`
+}

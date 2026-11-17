@@ -7522,6 +7522,282 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "Webhook": {
+    "description": "Webhook receives events: a signed HTTP POST, an ntfy topic, or a Bale bot message.",
+    "properties": {
+      "chatId": {
+        "type": "string"
+      },
+      "createdAt": {
+        "example": 1700000000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "events": {
+        "example": [
+          "user.limited"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "kind": {
+        "example": "http",
+        "type": "string"
+      },
+      "name": {
+        "example": "mirza",
+        "type": "string"
+      },
+      "url": {
+        "example": "https://bot.example.com/manifold",
+        "type": "string"
+      },
+      "userId": {
+        "description": "UserId is the account the webhook belongs to; a reseller's hears only its own users.",
+        "example": 1,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "chatId",
+      "createdAt",
+      "enable",
+      "events",
+      "id",
+      "kind",
+      "name",
+      "url",
+      "userId"
+    ],
+    "type": "object"
+  },
+  "WebhookDelivery": {
+    "description": "WebhookDelivery is one event owed to one webhook: the outbox row and its delivery log.",
+    "properties": {
+      "attempts": {
+        "example": 0,
+        "type": "integer"
+      },
+      "createdAt": {
+        "example": 1700000000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "deliveredAt": {
+        "example": 0,
+        "format": "int64",
+        "type": "integer"
+      },
+      "event": {
+        "example": "user.limited",
+        "type": "string"
+      },
+      "eventId": {
+        "example": "0f3c2a9b5d7e4f61",
+        "type": "string"
+      },
+      "id": {
+        "example": 10,
+        "type": "integer"
+      },
+      "lastCode": {
+        "example": 200,
+        "type": "integer"
+      },
+      "lastError": {
+        "type": "string"
+      },
+      "nextAt": {
+        "example": 1700000000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "payload": {
+        "type": "string"
+      },
+      "status": {
+        "example": "pending",
+        "type": "string"
+      },
+      "webhookId": {
+        "example": 1,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "attempts",
+      "createdAt",
+      "deliveredAt",
+      "event",
+      "eventId",
+      "id",
+      "lastCode",
+      "lastError",
+      "nextAt",
+      "payload",
+      "status",
+      "webhookId"
+    ],
+    "type": "object"
+  },
+  "WebhookInput": {
+    "description": "WebhookInput saves a webhook; a nil Secret keeps the stored one.",
+    "properties": {
+      "chatId": {
+        "type": "string"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "events": {
+        "example": [
+          "user.limited"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "id": {
+        "example": 0,
+        "type": "integer"
+      },
+      "kind": {
+        "example": "http",
+        "type": "string"
+      },
+      "name": {
+        "example": "mirza",
+        "type": "string"
+      },
+      "secret": {
+        "nullable": true,
+        "type": "string"
+      },
+      "url": {
+        "example": "https://bot.example.com/manifold",
+        "type": "string"
+      }
+    },
+    "required": [
+      "chatId",
+      "enable",
+      "events",
+      "id",
+      "kind",
+      "name",
+      "url"
+    ],
+    "type": "object"
+  },
+  "WebhookPayload": {
+    "description": "WebhookPayload is the JSON body a webhook receives.",
+    "properties": {
+      "data": {},
+      "id": {
+        "example": "0f3c2a9b5d7e4f61",
+        "type": "string"
+      },
+      "source": {
+        "example": "alice",
+        "type": "string"
+      },
+      "time": {
+        "example": "2026-11-17T03:00:00Z",
+        "type": "string"
+      },
+      "type": {
+        "example": "user.limited",
+        "type": "string"
+      }
+    },
+    "required": [
+      "data",
+      "id",
+      "source",
+      "time",
+      "type"
+    ],
+    "type": "object"
+  },
+  "WebhookView": {
+    "description": "WebhookView is a webhook without its secret; Secret is filled once, when it is made.",
+    "properties": {
+      "chatId": {
+        "type": "string"
+      },
+      "createdAt": {
+        "example": 1700000000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "events": {
+        "example": [
+          "user.limited"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "hasSecret": {
+        "example": true,
+        "type": "boolean"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "kind": {
+        "example": "http",
+        "type": "string"
+      },
+      "name": {
+        "example": "mirza",
+        "type": "string"
+      },
+      "secret": {
+        "type": "string"
+      },
+      "url": {
+        "example": "https://bot.example.com/manifold",
+        "type": "string"
+      },
+      "userId": {
+        "description": "UserId is the account the webhook belongs to; a reseller's hears only its own users.",
+        "example": 1,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "chatId",
+      "createdAt",
+      "enable",
+      "events",
+      "hasSecret",
+      "id",
+      "kind",
+      "name",
+      "url",
+      "userId"
+    ],
+    "type": "object"
+  },
   "WireGuardImportResult": {
     "description": "WireGuardImportResult says what an imported interface became.",
     "properties": {

@@ -132,7 +132,8 @@
     "plans": "Plans",
     "audit": "Audit log",
     "ingress": "Shared ports",
-    "backups": "Backups"
+    "backups": "Backups",
+    "webhooks": "Webhooks"
   },
   "pages": {
     "login": {
@@ -3165,6 +3166,57 @@
       "listFailed": "Reading the stored backups failed",
       "sealedTitle": "Encrypted backup",
       "sealedHint": "This backup is sealed. Enter the passphrase of the target that made it."
+    },
+    "webhooks": {
+      "add": "Add webhook",
+      "edit": "Edit webhook",
+      "intro": "Events are sent out as they happen: users created, changed, disabled, expiring, out of traffic or connecting for the first time; nodes going down or hitting their usage limit; backups; the panel's health. Send them to your own bot (signed JSON), an ntfy topic for push notifications, or a Bale chat. A failed delivery is retried for about a day.",
+      "empty": "No webhooks yet",
+      "bale": "Bale",
+      "url": "URL",
+      "urlHint": "Receives a POST with the event as JSON. Check X-Manifold-Signature: sha256=HMAC-SHA256(secret, timestamp + \".\" + body), with the timestamp from X-Manifold-Timestamp.",
+      "urlInvalid": "Enter an http:// or https:// address",
+      "ntfyTopic": "Topic URL",
+      "ntfyHint": "The ntfy.sh topic or your own ntfy server, such as https://ntfy.sh/my-panel. Subscribe to the same topic in the ntfy app.",
+      "chatId": "Chat ID",
+      "chatIdHint": "The Bale chat, group or channel the bot posts to; the bot must be a member.",
+      "signingSecret": "Signing secret",
+      "ntfyToken": "Access token",
+      "baleToken": "Bot token",
+      "secretGenerated": "Leave empty and one is made for you, shown once.",
+      "events": "Events",
+      "eventsHint": "Leave empty for every event, including ones added later.",
+      "allEvents": "All events",
+      "nEvents": "{count} events",
+      "group": {
+        "user": "Users",
+        "node": "Nodes",
+        "backup": "Backups",
+        "system": "Panel and server"
+      },
+      "target": "Sends to",
+      "test": "Send a test",
+      "testQueued": "Test sent; see the delivery log for the answer",
+      "log": "Delivery log",
+      "logOf": "Deliveries to {name}",
+      "noDeliveries": "Nothing sent yet",
+      "time": "Time",
+      "event": "Event",
+      "status": "Status",
+      "answer": "Answer",
+      "replay": "Send again",
+      "state": {
+        "delivered": "Delivered",
+        "pending": "Retrying",
+        "failed": "Gave up"
+      },
+      "secretOnce": "Signing secret",
+      "secretOnceHint": "Copy it into your bot now; the panel will not show it again.",
+      "confirmDelete": "Delete this webhook and its delivery log?",
+      "saveFailed": "Could not save the webhook",
+      "deleteFailed": "Could not delete the webhook",
+      "testFailed": "Could not send the test",
+      "replayFailed": "Could not send it again"
     }
   },
   "tgbot": {

@@ -96,6 +96,8 @@ func allModels() []any {
 		&model.NodeHealth{},
 		&model.IngressListener{},
 		&model.BackupTarget{},
+		&model.Webhook{},
+		&model.WebhookDelivery{},
 	}
 }
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/eventbus"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 )
@@ -121,6 +122,7 @@ func (s *NodeService) stopForUsage(n *model.Node) error {
 		stopped = append(stopped, id)
 	}
 	logger.Info("node", n.Name, "reached its usage limit; stopped", len(stopped), "inbounds until the period turns")
+	publishNodeUsage(eventbus.EventNodeUsageStopped, n)
 	return database.GetDB().Model(&model.Node{}).Where("id = ?", n.Id).Updates(map[string]any{
 		"usage_disabled":         true,
 		"usage_stopped_inbounds": intListJSON(stopped),
@@ -135,6 +137,7 @@ func (s *NodeService) resumeAfterUsage(n *model.Node) error {
 		}
 	}
 	logger.Info("node", n.Name, "is under its usage limit again; started", len(n.UsageStoppedInbounds), "inbounds")
+	publishNodeUsage(eventbus.EventNodeUsageResumed, n)
 	return database.GetDB().Model(&model.Node{}).Where("id = ?", n.Id).Updates(map[string]any{
 		"usage_disabled":         false,
 		"usage_stopped_inbounds": intListJSON(nil),
@@ -148,4 +151,13 @@ func intListJSON(ids []int) string {
 	}
 	raw, _ := json.Marshal(ids)
 	return string(raw)
+}
+
+func publishNodeUsage(t eventbus.EventType, n *model.Node) {
+	if eventBus != nil {
+		eventBus.Publish(eventbus.Event{
+			Type: t, Source: n.Name, Timestamp: time.Now(),
+			Data: map[string]any{"nodeId": n.Id, "limit": n.UsageLimit, "period": n.UsagePeriod},
+		})
+	}
 }

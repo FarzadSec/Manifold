@@ -15,11 +15,11 @@ function accessFor(tier: string, perms: string[]): Access {
 
 // The sidebar and the palette read this list, so a page the account cannot open must not be on it.
 describe('navigable routes follow the account', () => {
-  it('shows a reseller only its dashboard, its users and the API docs', () => {
+  it('shows a reseller only its dashboard, its users, its webhooks and the API docs', () => {
     const paths = navigableRoutes(
       accessFor('reseller', ['users:read', 'users:write', 'stats:read']),
     ).map((r) => r.path);
-    expect(paths).toEqual(['/', '/clients', '/api-docs']);
+    expect(paths).toEqual(['/', '/clients', '/webhooks', '/api-docs']);
   });
 
   it('keeps the panel administration from an operator', () => {

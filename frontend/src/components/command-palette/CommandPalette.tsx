@@ -82,6 +82,7 @@ export const PALETTE_KEYWORDS: Record<string, string[]> = {
   '/tunnels': ['tunnels', 'gre', 'backpack', 'relay', 'pairing'],
   '/ingress': ['ingress', 'shared port', '443', 'sni', 'proxy protocol', 'multiplex'],
   '/backups': ['backup', 'schedule', 's3', 'sftp', 'retention', 'encrypt'],
+  '/webhooks': ['webhook', 'event', 'notify', 'ntfy', 'bale', 'hmac', 'callback'],
   '/outbound': ['outbounds', 'freedom', 'blackhole', 'socks', 'http', 'warp', 'nord', 'pia'],
   '/routing': ['routing', 'rules', 'geoip', 'geosite', 'direct', 'block'],
   '/settings': ['settings', 'config', 'port', 'password', 'ssl', 'telegram'],

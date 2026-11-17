@@ -13,6 +13,10 @@ export const keys = {
   backups: {
     targets: () => ['backups', 'targets'] as const,
   },
+  webhooks: {
+    list: () => ['webhooks', 'list'] as const,
+    events: () => ['webhooks', 'events'] as const,
+  },
   hosts: {
     root: () => ['hosts'] as const,
     list: () => ['hosts', 'list'] as const,

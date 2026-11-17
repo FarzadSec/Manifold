@@ -259,6 +259,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	api.Use(a.enforceTokenScope)
 	api.Use(a.enforceAccess)
 	api.Use(auditChanges)
+	api.Use(publishUserChanges)
 	// Decode + verify the node config envelope (zstd + X-Config-Sha256) and
 	// advertise support, before CSRF/handlers read the body.
 	api.Use(middleware.ConfigEnvelopeMiddleware())
@@ -289,6 +290,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	NewTunnelController(api.Group("/tunnels"))
 	NewIngressController(api.Group("/ingress"))
 	NewBackupController(api.Group("/backups"))
+	NewWebhookController(api.Group("/webhooks"))
 	NewAccessController(api.Group("/access"))
 
 	// Settings + Xray config management live under the API surface too, so the

@@ -1,8 +1,10 @@
 # Manifold — Architecture and Roadmap
 
-Version 0.12 · 2026-11-17 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnels, full backups and the access model delivered; see 8.1 to 8.6 for what they leave open
+Version 0.13 · 2026-11-17 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnels, full backups and the access model delivered; see 8.1 to 8.6 for what they leave open
 
 Decision log:
+
+- 2026-11-17 — Webhooks go through an outbox table, not straight from the bus: a delivery survives a restart, is retried on a schedule, and the log the admin reads is the same rows that are sent. A reseller's webhook is dialled through a connection guard that refuses loopback, private, link-local and shared address space after DNS, because its delivery log shows the answer and would otherwise read this server's own services back
 
 - 2026-11-17 — Scheduled backups reuse the full backup of 0.5.0 and add only where it goes: `internal/backupstore` writes to a directory, to S3 with a Signature V4 signer of its own (checked against AWS's worked example; no SDK), or to a server over SSH through its shell, which works with SFTP-only accounts that keep a shell. Sealing is AES-256-GCM under PBKDF2-SHA256 (600000 rounds, the standard library's), with the header authenticated
 - 2026-11-17 — Ingress is a layer-4 router of the panel's own (`internal/ingress`): it reads the ClientHello (reassembled across records) or an HTTP request head, picks a route by SNI or Host and ALPN, and hands the stream on byte for byte, so REALITY behind it still sees the client's handshake. It does not terminate TLS; NX Panel's HTTP-level listeners and routes for the panel itself are not built
@@ -208,15 +210,16 @@ Requirement: root, the `wireguard-tools` package and the kernel WireGuard module
 - The audit log (`audit_entries`) always holds sign-ins, failed and new-address sign-ins and two-factor changes; while change logging is on, every change a person makes, with secrets redacted, kept for the retention (90 days by default).
 - Pages: Admins, Roles, Plans, Audit log; the users page gains an owner column, an owner filter, change owner, a plan picker and, for main admins, an owner picker; a reseller's overview shows its allowance and users; every account has its own password and two-factor dialog.
 
-### 4.7 Events and webhooks
+### 4.7 Events and webhooks (built, 0.10.0)
 
-3x-ui has an in-process event bus with 8 events (`node.up`, `node.down`, `outbound.up`, `outbound.down`, `xray.crash`, `cpu.high`, `memory.high`, `login.attempt`) and Telegram, Discord and email notifiers on top. To build:
+3x-ui had an in-process event bus with 8 events and Telegram, Discord and email notifiers on top. Manifold adds:
 
-- Account events: created, updated, expired, quota exhausted, quota threshold, disabled, deleted, first connection
-- Webhook subscribers with their own URL, signing secret and event list
-- Outbox delivery with retries, a delivery log and replay
+- User events from two sources. Changes through the API (`user.created`, `user.updated`, `user.deleted`, `users.bulk_changed`) come from a middleware that publishes only after the handler answered success. What traffic and dates do to a user (`user.enabled`, `user.disabled`, `user.expired`, `user.expiring` a day ahead, `user.limited`, `user.quota_warning` at 80%, `user.first_connected`, `user.traffic_reset`) comes from a watcher every 15 seconds that compares each user with its last look; a user's first look only records it.
+- `node.usage_stopped`/`node.usage_resumed` and `backup.succeeded`/`backup.failed`.
+- `webhooks` (HTTP, ntfy or Bale; an event list, empty for all) and an outbox, `webhook_deliveries`: one row per webhook per event, written by a bus subscriber, sent by a delivery loop with a backoff of 30s to 8h over eight retries, kept a week. An HTTP delivery is signed: `X-Manifold-Signature: sha256=HMAC-SHA256(secret, "<timestamp>.<body>")`.
+- A reseller's webhooks hear only about its own users and may only reach public addresses.
 
-This is the contract Mirza Bot will sync against, so it is frozen before the bot phase starts.
+This is the contract Mirza Bot will sync against.
 
 ### 4.8 Tunnels (built, 0.5.0)
 
@@ -430,6 +433,11 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - SSH install downloads the installer from GitHub on the server; a server that cannot reach GitHub needs the package copied by hand (`install.sh --package`).
 - Node templates (one configuration applied to many nodes) are not built; a node's inbounds are created on it from the master as before.
 - Live connections per node are still not listed (see 8.7).
+
+### 8.10 Open items after webhooks (0.10.0)
+
+- Soroush, Rubika and SMS channels are not built; Bale and ntfy are. A per-admin Telegram channel still goes through the base code's bot.
+- Changes a node makes on its own (its own cron) reach the master's webhooks only through the user watcher, not as `user.updated`.
 
 ### 8.8 Open items after subscriptions (0.8.0)
 

@@ -132,7 +132,8 @@
     "plans": "套餐",
     "audit": "审计日志",
     "ingress": "共享端口",
-    "backups": "备份"
+    "backups": "备份",
+    "webhooks": "Webhook"
   },
   "pages": {
     "login": {
@@ -3165,6 +3166,57 @@
       "listFailed": "读取已存备份失败",
       "sealedTitle": "加密备份",
       "sealedHint": "此备份已加密。请输入生成它的目标的口令。"
+    },
+    "webhooks": {
+      "add": "添加 Webhook",
+      "edit": "编辑 Webhook",
+      "intro": "事件发生时即刻发送：用户创建、修改、停用、即将到期、流量耗尽或首次连接；节点掉线或达到用量上限；备份；面板健康状况。可发送到你自己的机器人（签名 JSON）、ntfy 主题推送或 Bale 聊天。投递失败会在约一天内重试。",
+      "empty": "还没有 Webhook",
+      "bale": "Bale",
+      "url": "URL",
+      "urlHint": "以 JSON 形式接收 POST 事件。校验 X-Manifold-Signature：sha256=HMAC-SHA256(secret, timestamp + \".\" + body)，timestamp 取自 X-Manifold-Timestamp。",
+      "urlInvalid": "请输入 http:// 或 https:// 地址",
+      "ntfyTopic": "主题 URL",
+      "ntfyHint": "ntfy.sh 主题或你自己的 ntfy 服务器，例如 https://ntfy.sh/my-panel。在 ntfy 应用中订阅同一主题。",
+      "chatId": "聊天 ID",
+      "chatIdHint": "机器人发消息的 Bale 聊天、群组或频道；机器人必须是成员。",
+      "signingSecret": "签名密钥",
+      "ntfyToken": "访问令牌",
+      "baleToken": "机器人令牌",
+      "secretGenerated": "留空将自动生成，仅显示一次。",
+      "events": "事件",
+      "eventsHint": "留空表示所有事件，包括以后新增的。",
+      "allEvents": "全部事件",
+      "nEvents": "{count} 个事件",
+      "group": {
+        "user": "用户",
+        "node": "节点",
+        "backup": "备份",
+        "system": "面板与服务器"
+      },
+      "target": "发送到",
+      "test": "发送测试",
+      "testQueued": "测试已发送，结果见投递日志",
+      "log": "投递日志",
+      "logOf": "发往 {name} 的投递",
+      "noDeliveries": "尚未发送",
+      "time": "时间",
+      "event": "事件",
+      "status": "状态",
+      "answer": "响应",
+      "replay": "重新发送",
+      "state": {
+        "delivered": "已送达",
+        "pending": "重试中",
+        "failed": "已放弃"
+      },
+      "secretOnce": "签名密钥",
+      "secretOnceHint": "请立即复制到你的机器人中，面板不会再次显示。",
+      "confirmDelete": "删除此 Webhook 及其投递日志？",
+      "saveFailed": "无法保存 Webhook",
+      "deleteFailed": "无法删除 Webhook",
+      "testFailed": "无法发送测试",
+      "replayFailed": "无法重新发送"
     }
   },
   "tgbot": {

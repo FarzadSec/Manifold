@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"bytes"
 	"flag"
 	"fmt"
@@ -61,7 +62,7 @@ func runBackupCLI(args []string) int {
 		fmt.Println("Wrote", *out)
 		return 0
 	case "restore":
-		if !*force && exec.Command("systemctl", "is-active", "--quiet", "manifold").Run() == nil {
+		if !*force && exec.CommandContext(context.Background(), "systemctl", "is-active", "--quiet", "manifold").Run() == nil {
 			fmt.Println("the panel is running: stop it first (systemctl stop manifold), or pass -force")
 			return 1
 		}

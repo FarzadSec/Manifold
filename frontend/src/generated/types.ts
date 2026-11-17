@@ -1697,6 +1697,66 @@ export interface UserUsage {
   up: number;
 }
 
+export interface Webhook {
+  chatId: string;
+  createdAt: number;
+  enable: boolean;
+  events: string[];
+  id: number;
+  kind: string;
+  name: string;
+  url: string;
+  userId: number;
+}
+
+export interface WebhookDelivery {
+  attempts: number;
+  createdAt: number;
+  deliveredAt: number;
+  event: string;
+  eventId: string;
+  id: number;
+  lastCode: number;
+  lastError: string;
+  nextAt: number;
+  payload: string;
+  status: string;
+  webhookId: number;
+}
+
+export interface WebhookInput {
+  chatId: string;
+  enable: boolean;
+  events: string[];
+  id: number;
+  kind: string;
+  name: string;
+  secret?: string | null;
+  url: string;
+}
+
+export interface WebhookPayload {
+  data: unknown;
+  id: string;
+  source: string;
+  time: string;
+  type: string;
+}
+
+export interface WebhookView {
+  chatId: string;
+  createdAt: number;
+  enable: boolean;
+  events: string[];
+  hasSecret: boolean;
+  id: number;
+  kind: string;
+  name: string;
+  secret?: string;
+  url: string;
+  userId: number;
+}
+
 export interface WireGuardImportResult {
   clients: number;
   disabled: number;

@@ -13,6 +13,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/config"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/eventbus"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/nodessh"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
@@ -213,11 +214,19 @@ func (s *BackupService) Run(id int, now time.Time) (BackupTargetView, error) {
 	name, size, runErr := runBackup(t, now)
 	t.LastRun = now.UnixMilli()
 	t.LastError = ""
+	evType := eventbus.EventBackupSucceeded
 	if runErr != nil {
 		t.LastError = runErr.Error()
+		evType = eventbus.EventBackupFailed
 		logger.Warning("backup to", t.Name, "failed:", runErr)
 	} else {
 		t.LastFile, t.LastSize = name, size
+	}
+	if eventBus != nil {
+		eventBus.Publish(eventbus.Event{
+			Type: evType, Source: t.Name, Timestamp: now,
+			Data: map[string]any{"target": t.Name, "file": name, "size": size, "error": t.LastError},
+		})
 	}
 	if err := database.GetDB().Model(&model.BackupTarget{}).Where("id = ?", t.Id).Updates(map[string]any{
 		"last_run": t.LastRun, "last_file": t.LastFile, "last_size": t.LastSize, "last_error": t.LastError,

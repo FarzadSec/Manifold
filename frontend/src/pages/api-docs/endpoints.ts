@@ -2143,6 +2143,63 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'webhooks',
+    title: 'Webhooks',
+    description:
+      'Events sent out as they happen: to your own URL (JSON, signed), an ntfy topic, or a Bale chat. An HTTP delivery carries X-Manifold-Event, X-Manifold-Delivery (the event id, for de-duplication), X-Manifold-Timestamp and X-Manifold-Signature = sha256=HMAC-SHA256(secret, "<timestamp>.<body>"). A delivery that does not get a 2xx is retried after 30s, 2m, 10m, 30m, 1h, 2h, 4h and 8h, then given up; the log keeps a week. A reseller sees and makes only its own webhooks, hears only about its own users, and may only reach public addresses. All endpoints under /panel/api/webhooks.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/webhooks/list',
+        summary: 'Every webhook you may see, without its secret.',
+        responseSchema: 'WebhookView',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/webhooks/events',
+        summary:
+          'The event types a webhook may subscribe to. An empty list on a webhook means all.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/webhooks/save',
+        summary:
+          'Create (id 0) or replace a webhook. A new HTTP webhook without a secret gets one, shown in this answer only. For Bale the secret is the bot token.',
+        body: '{\n  "id": 0,\n  "name": "mirza",\n  "enable": true,\n  "kind": "http",\n  "url": "https://bot.example.com/manifold",\n  "events": ["user.limited", "user.expired"]\n}',
+        responseSchema: 'WebhookView',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/webhooks/del/:id',
+        summary: 'Delete a webhook and its delivery log.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Webhook ID.' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/webhooks/test/:id',
+        summary: 'Queue a webhook.test event for this webhook alone.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Webhook ID.' }],
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/webhooks/deliveries/:id',
+        summary:
+          "A webhook's last 200 deliveries, newest first, with the payload sent and the answer.",
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Webhook ID.' }],
+        responseSchema: 'WebhookDelivery',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/webhooks/replay/:id',
+        summary: 'Send a logged delivery again, from its first attempt.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Delivery ID.' }],
+      },
+    ],
+  },
+
+  {
     id: 'backups',
     title: 'Scheduled backups',
     description:

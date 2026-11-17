@@ -400,6 +400,7 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	_, _ = s.cron.AddJob("@every 1m", job.NewNodeUsageLimitJob())
 	_, _ = s.cron.AddJob("@every 5m", job.NewNodeHealthJob())
 	_, _ = s.cron.AddJob("@every 10m", job.NewBackupJob())
+	_, _ = s.cron.AddJob("@every 15s", job.NewUserEventsJob())
 
 	s.startTunnelJob()
 	if err := (&service.IngressService{}).Apply(); err != nil {
@@ -723,6 +724,14 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 	// Create event bus before startTask so jobs can use it
 	s.bus = eventbus.New(eventbus.DefaultBufferSize)
 	service.SetEventBus(s.bus)
+	controller.SetEventBus(s.bus)
+	webhooks := &service.WebhookService{}
+	s.bus.Subscribe("webhooks", func(ev eventbus.Event) {
+		if err := webhooks.Enqueue(ev); err != nil {
+			logger.Warning("webhooks:", err)
+		}
+	})
+	common.GoRecover("webhook-delivery", func() { webhooks.RunWebhooks(s.ctx) })
 	job.EventBus = s.bus
 	tgbot.EventBus = s.bus
 

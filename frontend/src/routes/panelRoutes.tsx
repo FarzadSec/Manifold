@@ -4,6 +4,7 @@ import {
   CloudUploadOutlined,
   ShareAltOutlined,
   ApiOutlined,
+  NotificationOutlined,
   AuditOutlined,
   ClusterOutlined,
   CrownOutlined,
@@ -33,6 +34,7 @@ const HostsPage = lazy(() => import('@/pages/hosts/HostsPage'));
 const TunnelsPage = lazy(() => import('@/pages/tunnels/TunnelsPage'));
 const IngressPage = lazy(() => import('@/pages/ingress/IngressPage'));
 const BackupsPage = lazy(() => import('@/pages/backups/BackupsPage'));
+const WebhooksPage = lazy(() => import('@/pages/webhooks/WebhooksPage'));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
 const XrayPage = lazy(() => import('@/pages/xray/XrayPage'));
 const ApiDocsPage = lazy(() => import('@/pages/api-docs/ApiDocsPage'));
@@ -119,6 +121,13 @@ export const PANEL_ROUTES: PanelRoute[] = [
     component: BackupsPage,
     perm: 'backup:read',
     staff: true,
+  },
+  {
+    path: '/webhooks',
+    titleKey: 'menu.webhooks',
+    icon: NotificationOutlined,
+    component: WebhooksPage,
+    perm: 'users:read',
   },
   {
     path: '/outbound',

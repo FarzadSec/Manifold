@@ -7548,6 +7548,282 @@
         ],
         "type": "object"
       },
+      "Webhook": {
+        "description": "Webhook receives events: a signed HTTP POST, an ntfy topic, or a Bale bot message.",
+        "properties": {
+          "chatId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "example": 1700000000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "enable": {
+            "example": true,
+            "type": "boolean"
+          },
+          "events": {
+            "example": [
+              "user.limited"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "kind": {
+            "example": "http",
+            "type": "string"
+          },
+          "name": {
+            "example": "mirza",
+            "type": "string"
+          },
+          "url": {
+            "example": "https://bot.example.com/manifold",
+            "type": "string"
+          },
+          "userId": {
+            "description": "UserId is the account the webhook belongs to; a reseller's hears only its own users.",
+            "example": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "chatId",
+          "createdAt",
+          "enable",
+          "events",
+          "id",
+          "kind",
+          "name",
+          "url",
+          "userId"
+        ],
+        "type": "object"
+      },
+      "WebhookDelivery": {
+        "description": "WebhookDelivery is one event owed to one webhook: the outbox row and its delivery log.",
+        "properties": {
+          "attempts": {
+            "example": 0,
+            "type": "integer"
+          },
+          "createdAt": {
+            "example": 1700000000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "deliveredAt": {
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
+          },
+          "event": {
+            "example": "user.limited",
+            "type": "string"
+          },
+          "eventId": {
+            "example": "0f3c2a9b5d7e4f61",
+            "type": "string"
+          },
+          "id": {
+            "example": 10,
+            "type": "integer"
+          },
+          "lastCode": {
+            "example": 200,
+            "type": "integer"
+          },
+          "lastError": {
+            "type": "string"
+          },
+          "nextAt": {
+            "example": 1700000000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "payload": {
+            "type": "string"
+          },
+          "status": {
+            "example": "pending",
+            "type": "string"
+          },
+          "webhookId": {
+            "example": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "attempts",
+          "createdAt",
+          "deliveredAt",
+          "event",
+          "eventId",
+          "id",
+          "lastCode",
+          "lastError",
+          "nextAt",
+          "payload",
+          "status",
+          "webhookId"
+        ],
+        "type": "object"
+      },
+      "WebhookInput": {
+        "description": "WebhookInput saves a webhook; a nil Secret keeps the stored one.",
+        "properties": {
+          "chatId": {
+            "type": "string"
+          },
+          "enable": {
+            "example": true,
+            "type": "boolean"
+          },
+          "events": {
+            "example": [
+              "user.limited"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "example": 0,
+            "type": "integer"
+          },
+          "kind": {
+            "example": "http",
+            "type": "string"
+          },
+          "name": {
+            "example": "mirza",
+            "type": "string"
+          },
+          "secret": {
+            "nullable": true,
+            "type": "string"
+          },
+          "url": {
+            "example": "https://bot.example.com/manifold",
+            "type": "string"
+          }
+        },
+        "required": [
+          "chatId",
+          "enable",
+          "events",
+          "id",
+          "kind",
+          "name",
+          "url"
+        ],
+        "type": "object"
+      },
+      "WebhookPayload": {
+        "description": "WebhookPayload is the JSON body a webhook receives.",
+        "properties": {
+          "data": {},
+          "id": {
+            "example": "0f3c2a9b5d7e4f61",
+            "type": "string"
+          },
+          "source": {
+            "example": "alice",
+            "type": "string"
+          },
+          "time": {
+            "example": "2026-11-17T03:00:00Z",
+            "type": "string"
+          },
+          "type": {
+            "example": "user.limited",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "id",
+          "source",
+          "time",
+          "type"
+        ],
+        "type": "object"
+      },
+      "WebhookView": {
+        "description": "WebhookView is a webhook without its secret; Secret is filled once, when it is made.",
+        "properties": {
+          "chatId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "example": 1700000000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "enable": {
+            "example": true,
+            "type": "boolean"
+          },
+          "events": {
+            "example": [
+              "user.limited"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "hasSecret": {
+            "example": true,
+            "type": "boolean"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "kind": {
+            "example": "http",
+            "type": "string"
+          },
+          "name": {
+            "example": "mirza",
+            "type": "string"
+          },
+          "secret": {
+            "type": "string"
+          },
+          "url": {
+            "example": "https://bot.example.com/manifold",
+            "type": "string"
+          },
+          "userId": {
+            "description": "UserId is the account the webhook belongs to; a reseller's hears only its own users.",
+            "example": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "chatId",
+          "createdAt",
+          "enable",
+          "events",
+          "hasSecret",
+          "id",
+          "kind",
+          "name",
+          "url",
+          "userId"
+        ],
+        "type": "object"
+      },
       "WireGuardImportResult": {
         "description": "WireGuardImportResult says what an imported interface became.",
         "properties": {
@@ -7742,6 +8018,10 @@
     {
       "name": "Nodes",
       "description": "Manage remote Manifold panels acting as nodes for a central panel. All endpoints under /panel/api/nodes."
+    },
+    {
+      "name": "Webhooks",
+      "description": "Events sent out as they happen: to your own URL (JSON, signed), an ntfy topic, or a Bale chat. An HTTP delivery carries X-Manifold-Event, X-Manifold-Delivery (the event id, for de-duplication), X-Manifold-Timestamp and X-Manifold-Signature = sha256=HMAC-SHA256(secret, \"<timestamp>.<body>\"). A delivery that does not get a 2xx is retried after 30s, 2m, 10m, 30m, 1h, 2h, 4h and 8h, then given up; the log keeps a week. A reseller sees and makes only its own webhooks, hears only about its own users, and may only reach public addresses. All endpoints under /panel/api/webhooks."
     },
     {
       "name": "Scheduled backups",
@@ -16135,6 +16415,350 @@
                     ],
                     "nodeId": 3,
                     "state": "running"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/webhooks/list": {
+      "get": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Every webhook you may see, without its secret.",
+        "operationId": "get_panel_api_webhooks_list",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/WebhookView"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "chatId": "",
+                      "createdAt": 1700000000000,
+                      "enable": true,
+                      "events": [
+                        "user.limited"
+                      ],
+                      "hasSecret": true,
+                      "id": 1,
+                      "kind": "http",
+                      "name": "mirza",
+                      "secret": "",
+                      "url": "https://bot.example.com/manifold",
+                      "userId": 1
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/webhooks/events": {
+      "get": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "The event types a webhook may subscribe to. An empty list on a webhook means all.",
+        "operationId": "get_panel_api_webhooks_events",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/webhooks/save": {
+      "post": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Create (id 0) or replace a webhook. A new HTTP webhook without a secret gets one, shown in this answer only. For Bale the secret is the bot token.",
+        "operationId": "post_panel_api_webhooks_save",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "id": 0,
+                "name": "mirza",
+                "enable": true,
+                "kind": "http",
+                "url": "https://bot.example.com/manifold",
+                "events": [
+                  "user.limited",
+                  "user.expired"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/WebhookView"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "chatId": "",
+                    "createdAt": 1700000000000,
+                    "enable": true,
+                    "events": [
+                      "user.limited"
+                    ],
+                    "hasSecret": true,
+                    "id": 1,
+                    "kind": "http",
+                    "name": "mirza",
+                    "secret": "",
+                    "url": "https://bot.example.com/manifold",
+                    "userId": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/webhooks/del/{id}": {
+      "post": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Delete a webhook and its delivery log.",
+        "operationId": "post_panel_api_webhooks_del_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Webhook ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/webhooks/test/{id}": {
+      "post": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Queue a webhook.test event for this webhook alone.",
+        "operationId": "post_panel_api_webhooks_test_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Webhook ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/webhooks/deliveries/{id}": {
+      "get": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "A webhook's last 200 deliveries, newest first, with the payload sent and the answer.",
+        "operationId": "get_panel_api_webhooks_deliveries_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Webhook ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/WebhookDelivery"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "attempts": 0,
+                      "createdAt": 1700000000000,
+                      "deliveredAt": 0,
+                      "event": "user.limited",
+                      "eventId": "0f3c2a9b5d7e4f61",
+                      "id": 10,
+                      "lastCode": 200,
+                      "lastError": "",
+                      "nextAt": 1700000000000,
+                      "payload": "",
+                      "status": "pending",
+                      "webhookId": 1
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/webhooks/replay/{id}": {
+      "post": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Send a logged delivery again, from its first attempt.",
+        "operationId": "post_panel_api_webhooks_replay_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Delivery ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
                   }
                 }
               }

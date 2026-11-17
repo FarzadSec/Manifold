@@ -67,6 +67,9 @@ func (j *UsagePruneJob) Run() {
 	if err := (&service.NodeService{}).PruneHealth(time.Now()); err != nil {
 		logger.Warning("node health prune:", err)
 	}
+	if err := (&service.WebhookService{}).PruneDeliveries(time.Now()); err != nil {
+		logger.Warning("webhook log prune:", err)
+	}
 }
 
 // NodeUsageLimitJob stops nodes over their period's traffic limit and starts them when it turns.
@@ -110,4 +113,15 @@ func NewBackupJob() *BackupJob {
 
 func (j *BackupJob) Run() {
 	j.backupService.RunDue(time.Now())
+}
+
+// UserEventsJob publishes what users' traffic and dates did since the last look.
+type UserEventsJob struct{}
+
+func NewUserEventsJob() *UserEventsJob {
+	return new(UserEventsJob)
+}
+
+func (j *UserEventsJob) Run() {
+	service.WatchUsers(time.Now())
 }

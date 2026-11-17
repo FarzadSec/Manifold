@@ -282,6 +282,24 @@ The `manifold` command manages the service and the panel settings; `manifold hel
 
 Everything the interface does goes through the HTTP API. The API Docs page lists every endpoint, and the OpenAPI description is served at `/panel/api/openapi.json`. Requests authenticate with a bearer token; give each integration its own token with the narrowest scope that works.
 
+## Webhooks
+
+**Webhooks** (sidebar) sends events out as they happen. A webhook is your own URL, an [ntfy](https://ntfy.sh) topic (push notifications on a phone) or a Bale chat (a bot token and the chat id; the bot must be in the chat). Pick the events it hears, or none for all of them. **Send a test** queues a `webhook.test` event; the history button shows every delivery with what was sent and what came back, and sends one again.
+
+Events: `user.created`, `user.updated`, `user.deleted`, `users.bulk_changed`, `user.enabled`, `user.disabled`, `user.expired`, `user.expiring` (a day before), `user.limited`, `user.quota_warning` (80% used), `user.first_connected`, `user.traffic_reset`, `node.up`, `node.down`, `node.usage_stopped`, `node.usage_resumed`, `outbound.up`, `outbound.down`, `xray.crash`, `cpu.high`, `memory.high`, `login.attempt`, `backup.succeeded`, `backup.failed`.
+
+An HTTP webhook receives a POST with JSON `{"id", "type", "time", "source", "data"}`; for user events `data` holds the email, sub id, owner, traffic, quota and expiry. Check the signature before trusting it:
+
+```python
+import hmac, hashlib
+expected = "sha256=" + hmac.new(secret.encode(), (timestamp + ".").encode() + body, hashlib.sha256).hexdigest()
+ok = hmac.compare_digest(expected, request.headers["X-Manifold-Signature"])
+```
+
+`timestamp` is the `X-Manifold-Timestamp` header; reject old ones. `X-Manifold-Delivery` is the event id, the same on every retry. A new HTTP webhook gets a secret if you leave it empty, shown once. Without a 2xx answer a delivery is retried after 30 seconds, then up to 8 hours apart, about a day in all.
+
+A reseller sees only its own webhooks, hears only about its own users, and can only send to public addresses.
+
 ## Backup
 
 **Backups** (sidebar) makes full backups on a schedule. A target is this server (`/etc/manifold/backups` by default), an S3-compatible bucket (AWS, Cloudflare R2, ArvanCloud, MinIO; give the endpoint without the bucket) or another server over SSH or SFTP (read and accept its host key first). Each target has its own interval in hours (0 for by hand only) and how many of the newest backups to keep; older ones there are deleted, and files the panel did not write are never touched. **Run now** backs up at once, and the folder button lists what the target holds.
