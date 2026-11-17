@@ -211,6 +211,10 @@ type Inbound struct {
 
 	DisableFlow bool `json:"disableFlow" form:"disableFlow" gorm:"column:disable_flow;default:false" example:"false"`
 
+	// LinkGroup ties copies of one inbound on several hosts: an edit to one reaches all,
+	// and a user put on one is put on all. Empty for an inbound on its own.
+	LinkGroup string `json:"linkGroup,omitempty" form:"-" gorm:"column:link_group;index"`
+
 	// OriginNodeGuid is the panelGuid of the node that physically hosts this
 	// inbound, propagated up across hops (#4983). Empty for an inbound that
 	// lives on this panel's own xray; set to the originating node's GUID when

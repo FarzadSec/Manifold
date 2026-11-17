@@ -1418,6 +1418,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "fallbackParent": null,
     "id": 1,
     "lastTrafficResetTime": 0,
+    "linkGroup": "",
     "listen": "",
     "nodeId": null,
     "originNodeGuid": "",
@@ -1440,6 +1441,12 @@ export const EXAMPLES: Record<string, unknown> = {
     "clientEmail": "",
     "id": 0,
     "ips": null
+  },
+  "InboundDeployResult": {
+    "created": [
+      12,
+      13
+    ]
   },
   "InboundFallback": {
     "alpn": "",

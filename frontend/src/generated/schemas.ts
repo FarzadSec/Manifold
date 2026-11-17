@@ -5305,6 +5305,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "format": "int64",
         "type": "integer"
       },
+      "linkGroup": {
+        "description": "LinkGroup ties copies of one inbound on several hosts: an edit to one reaches all,\nand a user put on one is put on all. Empty for an inbound on its own.",
+        "type": "string"
+      },
       "listen": {
         "description": "Xray configuration fields",
         "type": "string"
@@ -5444,6 +5448,25 @@ export const SCHEMAS: Record<string, unknown> = {
       "clientEmail",
       "id",
       "ips"
+    ],
+    "type": "object"
+  },
+  "InboundDeployResult": {
+    "description": "InboundDeployResult names the copies a deploy created.",
+    "properties": {
+      "created": {
+        "example": [
+          12,
+          13
+        ],
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "created"
     ],
     "type": "object"
   },

@@ -1291,6 +1291,7 @@ export const InboundSchema = z.object({
   fallbackParent: z.lazy(() => FallbackParentInfoSchema).nullable().optional(),
   id: z.number().int(),
   lastTrafficResetTime: z.number().int(),
+  linkGroup: z.string().optional(),
   listen: z.string(),
   nodeId: z.number().int().nullable().optional(),
   originNodeGuid: z.string().optional(),
@@ -1317,6 +1318,11 @@ export const InboundClientIpsSchema = z.object({
   ips: z.unknown(),
 });
 export type InboundClientIps = z.infer<typeof InboundClientIpsSchema>;
+
+export const InboundDeployResultSchema = z.object({
+  created: z.array(z.number().int()),
+});
+export type InboundDeployResult = z.infer<typeof InboundDeployResultSchema>;
 
 export const InboundFallbackSchema = z.object({
   alpn: z.string(),

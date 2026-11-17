@@ -33,6 +33,7 @@ interface UseInboundColumnsParams {
   hasActiveNode: boolean;
   nodesById: Map<number, NodeRecord>;
   hostRemarksByInboundId: Map<number, string[]>;
+  linkCounts: Map<string, number>;
   clientCount: Record<number, ClientCountEntry>;
   inboundSpeed: Record<number, InboundSpeedEntry>;
   subEnable: boolean;
@@ -48,6 +49,7 @@ export function useInboundColumns({
   hasActiveNode,
   nodesById,
   hostRemarksByInboundId,
+  linkCounts,
   clientCount,
   inboundSpeed,
   subEnable,
@@ -173,14 +175,31 @@ export function useInboundColumns({
         width: 130,
         sorter: (a, b) => compareText(nodeName(a), nodeName(b)),
         render: (_, record) => {
+          const linked = record.linkGroup ? (linkCounts.get(record.linkGroup) ?? 0) : 0;
+          const linkTag = linked > 1 && (
+            <Tooltip title={t('pages.inbounds.linkedHint')}>
+              <Tag color="geekblue">{t('pages.inbounds.linkedCopies', { n: linked })}</Tag>
+            </Tooltip>
+          );
           if (record.nodeId == null) {
-            return <Tag color="default">{t('pages.inbounds.localPanel')}</Tag>;
+            return (
+              <>
+                <Tag color="default">{t('pages.inbounds.localPanel')}</Tag>
+                {linkTag}
+              </>
+            );
           }
           const node = nodesById.get(record.nodeId);
-          if (!node) {
-            return <Tag color="orange">node #{record.nodeId}</Tag>;
-          }
-          return <Tag color={node.status === 'online' ? 'blue' : 'red'}>{node.name}</Tag>;
+          return (
+            <>
+              {node ? (
+                <Tag color={node.status === 'online' ? 'blue' : 'red'}>{node.name}</Tag>
+              ) : (
+                <Tag color="orange">node #{record.nodeId}</Tag>
+              )}
+              {linkTag}
+            </>
+          );
         },
       });
     }
@@ -476,6 +495,7 @@ export function useInboundColumns({
     hasActiveNode,
     nodesById,
     hostRemarksByInboundId,
+    linkCounts,
     clientCount,
     inboundSpeed,
     subEnable,

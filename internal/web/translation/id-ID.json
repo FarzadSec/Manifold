@@ -552,7 +552,8 @@
         "invalidClientField": "Klien {client}: kolom {field} — {reason}",
         "invalidField": "{field} — {reason}",
         "invalidCertificate": "Sertifikat TLS {index}: {reason}",
-        "moreIssues": "{message}  (+{count} lainnya)"
+        "moreIssues": "{message}  (+{count} lainnya)",
+        "linkedMany": "{count} linked copies made"
       },
       "form": {
         "moveUp": "Naik",
@@ -971,7 +972,14 @@
         "pskHint": "Dimasukkan sekali di setiap perangkat, bersama nama pengguna dan kata sandi akun. Kunci baru memutus semua perangkat sampai kunci itu dimasukkan di sana. Kosongkan agar panel membuat kunci atau mempertahankan yang sudah ada.",
         "pskInvalid": "Gunakan 8 sampai 64 huruf, angka, atau karakter ! @ # $ % ^ & * ( ) _ + = . , : ; ~ -",
         "dnsTooMany": "L2TP memberi perangkat paling banyak dua server DNS."
-      }
+      },
+      "unlink": "Unlink from its copies",
+      "unlinkConfirmTitle": "Unlink \"{remark}\" from its copies?",
+      "unlinkConfirmContent": "It keeps its settings and users, but edits to it or to the other copies no longer reach each other.",
+      "linkedHint": "Edits to this inbound reach every copy, and a user put on or taken off one is put on or taken off all.",
+      "linkedCopies": "{n} linked",
+      "linkCopies": "Keep the copies in step",
+      "linkCopiesHint": "Each node gets a copy with this inbound's port, settings and users. From then on an edit to any copy reaches all, and a user put on one is put on all."
     },
     "clients": {
       "tabBasics": "Dasar",

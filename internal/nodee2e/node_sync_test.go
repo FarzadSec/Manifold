@@ -139,6 +139,7 @@ func runNodeSyncScenarios(t *testing.T, bin, scope string) {
 		offlinePort   = freePort(t)
 		unmanagedPort = freePort(t)
 		localPort     = freePort(t)
+		linkedPort    = freePort(t)
 	)
 	node.call(http.MethodPost, "/panel/api/inbounds/add", vlessInbound("pre-existing", adoptedPort, nil))
 
@@ -503,6 +504,40 @@ func runNodeSyncScenarios(t *testing.T, bin, scope string) {
 		if ib, ok := pr.nodeInbound(unmanagedPort); !ok || ib.client("u1") == nil {
 			t.Fatal("reconcile swept or rewrote an unselected node inbound")
 		}
+	})
+
+	t.Run("a local inbound deployed to the node lands there with its users and stays in step", func(t *testing.T) {
+		pr.t = t
+		obj := master.call(http.MethodPost, "/panel/api/inbounds/add", vlessInbound("fleet", linkedPort, nil))
+		var src inboundView
+		_ = json.Unmarshal(obj, &src)
+		for _, email := range []string{"f1", "f2"} {
+			master.call(http.MethodPost, "/panel/api/clients/add", map[string]any{
+				"client": map[string]any{"email": email, "enable": true}, "inboundIds": []int{src.Id},
+			})
+		}
+		var res struct {
+			Created []int `json:"created"`
+		}
+		obj = master.call(http.MethodPost, "/panel/api/inbounds/deploy/"+strconv.Itoa(src.Id), map[string]any{"nodeIds": []int{pr.nodeID}})
+		if err := json.Unmarshal(obj, &res); err != nil || len(res.Created) != 1 {
+			t.Fatalf("deploy = %s (%v)", obj, err)
+		}
+		pr.waitNode("node holds the deployed copy with both users", linkedPort, func(ib inboundView) bool {
+			return hasAll(ib.emails(), "f1", "f2")
+		})
+		master.call(http.MethodPost, "/panel/api/clients/add", map[string]any{
+			"client": map[string]any{"email": "f3", "enable": true}, "inboundIds": []int{src.Id},
+		})
+		pr.waitNode("a user put on the local inbound reaches the node copy", linkedPort, func(ib inboundView) bool {
+			return hasAll(ib.emails(), "f3")
+		})
+		body := vlessInbound("fleet-renamed", linkedPort, nil)
+		body["settings"] = `{"decryption":"none"}`
+		master.call(http.MethodPost, "/panel/api/inbounds/update/"+strconv.Itoa(src.Id), body)
+		pr.waitNode("an edit of the local inbound reaches the node copy and keeps its users", linkedPort, func(ib inboundView) bool {
+			return ib.Remark == "fleet-renamed" && hasAll(ib.emails(), "f1", "f2", "f3")
+		})
 	})
 }
 

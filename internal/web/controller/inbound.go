@@ -101,6 +101,8 @@ func (a *InboundController) initRouter(g *gin.RouterGroup) {
 	g.POST("/import", a.importInbound)
 	g.POST("/wireguard/import", a.importWireGuard)
 	g.POST("/:id/fallbacks", a.setFallbacks)
+	g.POST("/deploy/:id", a.deployInbound)
+	g.POST("/unlink/:id", a.unlinkInbound)
 	g.POST("/pushClientTraffics", a.pushClientTraffics)
 }
 
@@ -278,10 +280,23 @@ func (a *InboundController) updateInbound(c *gin.Context) {
 	if inbound.NodeID != nil && *inbound.NodeID == 0 {
 		inbound.NodeID = nil
 	}
-	inbound, needRestart, err := a.inboundServiceFor(c).UpdateInbound(inbound)
+	svc := a.inboundServiceFor(c)
+	inbound, needRestart, err := svc.UpdateInbound(inbound)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
+	}
+	if !svc.FromNodeSync {
+		copiesRestart, cerr := svc.UpdateLinkedCopies(inbound)
+		needRestart = needRestart || copiesRestart
+		if cerr != nil {
+			if needRestart {
+				a.xrayService.SetToNeedRestart()
+			}
+			a.broadcastInboundsUpdate(inboundPool().Id)
+			jsonMsg(c, I18nWeb(c, "somethingWentWrong"), cerr)
+			return
+		}
 	}
 	jsonMsgObj(c, I18nWeb(c, "pages.inbounds.toasts.inboundUpdateSuccess"), inbound, nil)
 	if needRestart {
@@ -579,4 +594,45 @@ func inboundPool() *model.User {
 		return &model.User{}
 	}
 	return &owner
+}
+
+type inboundDeployBody struct {
+	NodeIds []int `json:"nodeIds"`
+}
+
+// deployInbound puts linked copies of an inbound on more nodes, 0 being this panel.
+func (a *InboundController) deployInbound(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	var body inboundDeployBody
+	if err := c.ShouldBindJSON(&body); err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	result, needRestart, err := a.inboundService.DeployToNodes(id, body.NodeIds)
+	if needRestart {
+		a.xrayService.SetToNeedRestart()
+	}
+	if result != nil && len(result.Created) > 0 {
+		a.broadcastInboundsUpdate(inboundPool().Id)
+		notifyClientsChanged()
+	}
+	jsonMsgObj(c, I18nWeb(c, "pages.inbounds.toasts.inboundCreateSuccess"), result, err)
+}
+
+// unlinkInbound lets one copy of a linked inbound be edited on its own.
+func (a *InboundController) unlinkInbound(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	err = a.inboundService.Unlink(id)
+	if err == nil {
+		a.broadcastInboundsUpdate(inboundPool().Id)
+	}
+	jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.inboundUpdateSuccess"), err)
 }

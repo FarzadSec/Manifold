@@ -183,6 +183,10 @@ func (s *ClientService) BulkDetach(inboundSvc *InboundService, emails []string, 
 	if len(emails) == 0 || len(inboundIds) == 0 {
 		return result, false, nil
 	}
+	inboundIds, err := LinkedIDs(inboundIds)
+	if err != nil {
+		return result, false, err
+	}
 
 	recordErr := func(format string, args ...any) {
 		msg := fmt.Sprintf(format, args...)

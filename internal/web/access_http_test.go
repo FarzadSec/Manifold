@@ -684,3 +684,58 @@ func TestTokenRequestCap(t *testing.T) {
 		t.Errorf("uncapped token lastUsed=%d count=%d, want a time and no count", openRow.LastUsedAt, openRow.RequestCount)
 	}
 }
+
+// Through the API, a deployed inbound's copies get every user put on it and every edit made
+// to it, while a reseller still lands only on the copies it may use.
+func TestLinkedInboundsThroughTheAPI(t *testing.T) {
+	f := newAccessFixture(t)
+	db := database.GetDB()
+	node := model.Node{Name: "fra", Address: "fra.example.com", Port: 2053, Scheme: "https", Enable: true, Status: "online", TlsVerifyMode: "verify"}
+	if err := db.Create(&node).Error; err != nil {
+		t.Fatal(err)
+	}
+	adminTok := f.token(t, "admin", panel.TokenAccess{UserId: f.owner.Id})
+	_, reply := f.call(t, adminTok, http.MethodPost, "/inbounds/deploy/"+itoa(f.inbound.Id), `{"nodeIds":[`+itoa(node.Id)+`]}`)
+	var deployed struct {
+		Created []int `json:"created"`
+	}
+	if err := json.Unmarshal(reply.Obj, &deployed); err != nil || !reply.Success || len(deployed.Created) != 1 {
+		t.Fatalf("deploy = %s %s", reply.Msg, reply.Obj)
+	}
+	copyID := deployed.Created[0]
+	both := []int{f.inbound.Id, copyID}
+
+	if reply := f.addClient(t, adminTok, "everywhere"); !reply.Success {
+		t.Fatalf("add: %s", reply.Msg)
+	}
+	if got := inboundsOf(t, "everywhere"); !slices.Equal(got, both) {
+		t.Errorf("a user put on the inbound is on %v, want it and its copy %v", got, both)
+	}
+	seller := f.account(t, model.User{Username: "seller", Tier: access.TierReseller, MayEditUsers: true, InboundsLimited: true, AllowedInboundIds: []int{f.inbound.Id}})
+	sellerTok := f.token(t, "seller", panel.TokenAccess{UserId: seller.Id})
+	if reply := f.addClient(t, sellerTok, "local"); !reply.Success {
+		t.Fatalf("reseller add: %s", reply.Msg)
+	}
+	if got := inboundsOf(t, "local"); !slices.Equal(got, []int{f.inbound.Id}) {
+		t.Errorf("a reseller kept to one copy put its user on %v", got)
+	}
+
+	var src model.Inbound
+	if err := db.First(&src, f.inbound.Id).Error; err != nil {
+		t.Fatal(err)
+	}
+	body, _ := json.Marshal(map[string]any{
+		"remark": "renamed", "port": src.Port, "protocol": src.Protocol, "enable": true,
+		"settings": src.Settings, "streamSettings": src.StreamSettings, "sniffing": src.Sniffing,
+	})
+	if _, reply := f.call(t, adminTok, http.MethodPost, "/inbounds/update/"+itoa(src.Id), string(body)); !reply.Success {
+		t.Fatalf("update: %s", reply.Msg)
+	}
+	var cp model.Inbound
+	if err := db.First(&cp, copyID).Error; err != nil {
+		t.Fatal(err)
+	}
+	if cp.Remark != "renamed" {
+		t.Errorf("the copy's remark is %q after the edit, want it carried over", cp.Remark)
+	}
+}

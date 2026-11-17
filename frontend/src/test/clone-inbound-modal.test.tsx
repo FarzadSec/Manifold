@@ -83,6 +83,21 @@ beforeEach(() => {
 });
 
 describe('CloneInboundModal', () => {
+  // A linked deploy goes to the deploy endpoint once, for every target but the source's host.
+  it('deploys linked copies to the chosen nodes but not the source node', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    postSpy.mockResolvedValue({ success: true, obj: { created: [12] } } as any);
+    const { onCloned } = renderModal();
+    fireEvent.click(screen.getByRole('switch', { name: 'Keep the copies in step' }));
+    expect(selectedTitles()).not.toContain('arm2');
+    openTargetDropdown();
+    clickOption('Local panel');
+    clickOk();
+    await waitFor(() => expect(postSpy).toHaveBeenCalledTimes(1));
+    expect(postSpy.mock.calls[0][0]).toBe('/panel/api/inbounds/deploy/7');
+    expect(postedBodies()[0]).toEqual({ nodeIds: [0] });
+    await waitFor(() => expect(onCloned).toHaveBeenCalledTimes(1));
+  });
   it('pre-selects the source node and clones onto it with a fresh port and no clients', async () => {
     const { onCloned, onClose } = renderModal();
 

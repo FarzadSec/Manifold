@@ -5331,6 +5331,10 @@
             "format": "int64",
             "type": "integer"
           },
+          "linkGroup": {
+            "description": "LinkGroup ties copies of one inbound on several hosts: an edit to one reaches all,\nand a user put on one is put on all. Empty for an inbound on its own.",
+            "type": "string"
+          },
           "listen": {
             "description": "Xray configuration fields",
             "type": "string"
@@ -5470,6 +5474,25 @@
           "clientEmail",
           "id",
           "ips"
+        ],
+        "type": "object"
+      },
+      "InboundDeployResult": {
+        "description": "InboundDeployResult names the copies a deploy created.",
+        "properties": {
+          "created": {
+            "example": [
+              12,
+              13
+            ],
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "created"
         ],
         "type": "object"
       },
@@ -9748,6 +9771,7 @@
                       "fallbackParent": null,
                       "id": 1,
                       "lastTrafficResetTime": 0,
+                      "linkGroup": "",
                       "listen": "",
                       "nodeId": null,
                       "originNodeGuid": "",
@@ -10215,7 +10239,7 @@
         "tags": [
           "Inbounds"
         ],
-        "summary": "Replace an inbound’s configuration. Body shape mirrors /add, but the inbound keeps its stored client list and enable flag: settings.clients and enable in the body are ignored. Manage clients through the /panel/api/clients endpoints and toggle the inbound with /setEnable. Remove effective fallback rules before enabling VLESS server decryption.",
+        "summary": "Replace an inbound’s configuration. Body shape mirrors /add, but the inbound keeps its stored client list and enable flag: settings.clients and enable in the body are ignored. Manage clients through the /panel/api/clients endpoints and toggle the inbound with /setEnable. Remove effective fallback rules before enabling VLESS server decryption. A linked inbound carries the edit to its copies, each keeping its own node, tag, traffic, users, switch and share address.",
         "operationId": "post_panel_api_inbounds_update_id",
         "parameters": [
           {
@@ -10271,6 +10295,127 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/inbounds/deploy/{id}": {
+      "post": {
+        "tags": [
+          "Inbounds"
+        ],
+        "summary": "Put linked copies of an inbound on more nodes (0 is this panel): the same settings and port, its users attached. From then on an edit to any copy reaches all, and a user put on or taken off one is put on or taken off all. A node already holding a copy is skipped.",
+        "operationId": "post_panel_api_inbounds_deploy_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Inbound ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nodeIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    },
+                    "description": "Nodes to deploy to; 0 is this panel."
+                  }
+                },
+                "required": [
+                  "nodeIds"
+                ]
+              },
+              "example": {
+                "nodeIds": [
+                  2,
+                  3
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/InboundDeployResult"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "created": [
+                      12,
+                      13
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/inbounds/unlink/{id}": {
+      "post": {
+        "tags": [
+          "Inbounds"
+        ],
+        "summary": "Take one copy out of its linked group so it can be edited on its own. The other copies stay linked.",
+        "operationId": "post_panel_api_inbounds_unlink_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Inbound ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -27453,6 +27598,7 @@
                   "fallbackParent": null,
                   "id": 1,
                   "lastTrafficResetTime": 0,
+                  "linkGroup": "",
                   "listen": "",
                   "nodeId": null,
                   "originNodeGuid": "",

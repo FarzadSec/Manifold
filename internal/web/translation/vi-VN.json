@@ -552,7 +552,8 @@
         "invalidClientField": "Khách hàng {client}: trường {field} — {reason}",
         "invalidField": "{field} — {reason}",
         "invalidCertificate": "Chứng chỉ TLS {index}: {reason}",
-        "moreIssues": "{message}  (+{count} lỗi khác)"
+        "moreIssues": "{message}  (+{count} lỗi khác)",
+        "linkedMany": "{count} linked copies made"
       },
       "form": {
         "echSockopt": "ECH Sockopt",
@@ -971,7 +972,14 @@
         "pskHint": "Được nhập một lần trên mỗi thiết bị, cùng với tên đăng nhập và mật khẩu của tài khoản. Khóa mới sẽ ngắt mọi thiết bị cho đến khi khóa đó được nhập trên thiết bị. Để trống để bảng điều khiển tự tạo khóa hoặc giữ khóa đang có.",
         "pskInvalid": "Dùng từ 8 đến 64 chữ cái, chữ số hoặc các ký tự ! @ # $ % ^ & * ( ) _ + = . , : ; ~ -",
         "dnsTooMany": "L2TP chỉ cấp cho thiết bị tối đa hai máy chủ DNS."
-      }
+      },
+      "unlink": "Unlink from its copies",
+      "unlinkConfirmTitle": "Unlink \"{remark}\" from its copies?",
+      "unlinkConfirmContent": "It keeps its settings and users, but edits to it or to the other copies no longer reach each other.",
+      "linkedHint": "Edits to this inbound reach every copy, and a user put on or taken off one is put on or taken off all.",
+      "linkedCopies": "{n} linked",
+      "linkCopies": "Keep the copies in step",
+      "linkCopiesHint": "Each node gets a copy with this inbound's port, settings and users. From then on an edit to any copy reaches all, and a user put on one is put on all."
     },
     "clients": {
       "tabBasics": "Cơ bản",

@@ -109,6 +109,8 @@ var routeRules = map[string]Rule{
 	key("GET", "/inbounds/wireguard/importable"):     need(PoolRead),
 	key("POST", "/inbounds/add"):                     need(PoolWrite),
 	key("POST", "/inbounds/update/:id"):              need(PoolWrite),
+	key("POST", "/inbounds/deploy/:id"):              need(PoolWrite),
+	key("POST", "/inbounds/unlink/:id"):              need(PoolWrite),
 	key("POST", "/inbounds/del/:id"):                 need(PoolWrite),
 	key("POST", "/inbounds/bulkDel"):                 need(PoolWrite),
 	key("POST", "/inbounds/import"):                  need(PoolWrite),

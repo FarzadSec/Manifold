@@ -1195,6 +1195,7 @@ export interface Inbound {
   fallbackParent?: FallbackParentInfo | null;
   id: number;
   lastTrafficResetTime: number;
+  linkGroup?: string;
   listen: string;
   nodeId?: number | null;
   originNodeGuid?: string;
@@ -1218,6 +1219,10 @@ export interface InboundClientIps {
   clientEmail: string;
   id: number;
   ips: unknown;
+}
+
+export interface InboundDeployResult {
+  created: number[];
 }
 
 export interface InboundFallback {

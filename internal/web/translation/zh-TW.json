@@ -552,7 +552,8 @@
         "invalidClientField": "用戶端 {client}：欄位 {field} — {reason}",
         "invalidField": "{field} — {reason}",
         "invalidCertificate": "第 {index} 組 TLS 憑證：{reason}",
-        "moreIssues": "{message}  (另有 {count} 項)"
+        "moreIssues": "{message}  (另有 {count} 項)",
+        "linkedMany": "{count} linked copies made"
       },
       "form": {
         "moveUp": "上移",
@@ -971,7 +972,14 @@
         "pskHint": "在每台裝置上與帳戶的使用者名稱和密碼一起輸入一次。更換金鑰後，所有裝置在輸入新金鑰前都會中斷連線。留空則由面板產生金鑰，或保留現有金鑰。",
         "pskInvalid": "請使用 8 到 64 個字母、數字或 ! @ # $ % ^ & * ( ) _ + = . , : ; ~ - 字元。",
         "dnsTooMany": "L2TP 最多向裝置下發兩個 DNS 伺服器。"
-      }
+      },
+      "unlink": "Unlink from its copies",
+      "unlinkConfirmTitle": "Unlink \"{remark}\" from its copies?",
+      "unlinkConfirmContent": "It keeps its settings and users, but edits to it or to the other copies no longer reach each other.",
+      "linkedHint": "Edits to this inbound reach every copy, and a user put on or taken off one is put on or taken off all.",
+      "linkedCopies": "{n} linked",
+      "linkCopies": "Keep the copies in step",
+      "linkCopiesHint": "Each node gets a copy with this inbound's port, settings and users. From then on an edit to any copy reaches all, and a user put on one is put on all."
     },
     "clients": {
       "tabBasics": "基本",

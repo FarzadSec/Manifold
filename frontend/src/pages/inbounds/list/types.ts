@@ -34,6 +34,7 @@ export interface DBInboundRecord extends ProtocolFlags {
   expiryTime: number;
   _expiryTime: { valueOf(): number } | null;
   nodeId?: number | null;
+  linkGroup?: string;
   settings: unknown;
   streamSettings: unknown;
 }
@@ -61,7 +62,8 @@ export type RowAction =
   | 'delete'
   | 'resetTraffic'
   | 'delAllClients'
-  | 'clone';
+  | 'clone'
+  | 'unlink';
 
 export type GeneralAction = 'import' | 'importWireguard' | 'export' | 'subs' | 'resetInbounds';
 

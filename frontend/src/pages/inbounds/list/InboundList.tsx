@@ -99,6 +99,13 @@ export default function InboundList({
   );
 
   const hostRemarksByInboundId = useMemo(() => buildHostRemarksByInboundId(hosts), [hosts]);
+  const linkCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const ib of dbInbounds) {
+      if (ib.linkGroup) counts.set(ib.linkGroup, (counts.get(ib.linkGroup) ?? 0) + 1);
+    }
+    return counts;
+  }, [dbInbounds]);
 
   const visibleInbounds = useMemo(() => {
     let list = dbInbounds;
@@ -172,6 +179,7 @@ export default function InboundList({
     hasActiveNode,
     nodesById,
     hostRemarksByInboundId,
+    linkCounts,
     clientCount,
     inboundSpeed,
     subEnable,

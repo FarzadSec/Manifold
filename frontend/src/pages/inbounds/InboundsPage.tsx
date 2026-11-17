@@ -71,7 +71,8 @@ type RowAction =
   | 'attachExisting'
   | 'detachClients'
   | 'addToGroup'
-  | 'clone';
+  | 'clone'
+  | 'unlink';
 
 interface ClientMatchTarget {
   id?: string;
@@ -552,6 +553,22 @@ export default function InboundsPage() {
     [modal, refresh, t],
   );
 
+  const confirmUnlink = useCallback(
+    (dbInbound: DBInbound) => {
+      modal.confirm({
+        title: t('pages.inbounds.unlinkConfirmTitle', { remark: dbInbound.remark }),
+        content: t('pages.inbounds.unlinkConfirmContent'),
+        okText: t('pages.inbounds.unlink'),
+        cancelText: t('cancel'),
+        onOk: async () => {
+          const msg = await HttpUtil.post(`/panel/api/inbounds/unlink/${dbInbound.id}`);
+          if (msg?.success) await refresh();
+        },
+      });
+    },
+    [modal, refresh, t],
+  );
+
   const confirmDelAllClients = useCallback(
     (dbInbound: DBInbound) => {
       const count = clientCount[dbInbound.id]?.clients || 0;
@@ -698,6 +715,9 @@ export default function InboundsPage() {
         case 'clone':
           confirmClone(target);
           break;
+        case 'unlink':
+          confirmUnlink(target);
+          break;
         default:
           messageApi.info(`Action "${key}" — coming in a later 5f subphase`);
       }
@@ -714,6 +734,7 @@ export default function InboundsPage() {
       confirmResetTraffic,
       confirmDelAllClients,
       confirmClone,
+      confirmUnlink,
       messageApi,
     ],
   );

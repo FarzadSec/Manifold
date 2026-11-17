@@ -128,13 +128,18 @@ func (ca ClientAccess) CheckMayChangeLimits() error {
 	return nil
 }
 
-// NarrowInbounds keeps only the inbounds the actor may put its users on.
+// NarrowInbounds is the inbounds a user put on ids lands on: their linked copies too, kept to
+// those the actor may put its users on.
 func (ca ClientAccess) NarrowInbounds(ids []int) ([]int, error) {
 	r, err := ca.Reach()
 	if err != nil {
 		return nil, err
 	}
-	return r.narrowInbounds(ids)
+	linked, err := LinkedIDs(ids)
+	if err != nil {
+		return nil, err
+	}
+	return r.narrowInbounds(linked)
 }
 
 func (r Reach) narrowInbounds(ids []int) ([]int, error) {
@@ -262,7 +267,11 @@ func (ca ClientAccess) PrepareCreate(payloads []*ClientCreatePayload, planID, re
 		if plan != nil {
 			ApplyPlan(plan, p, allInboundIDs, now)
 		}
-		narrowed, err := reach.narrowInbounds(p.InboundIds)
+		linked, err := LinkedIDs(p.InboundIds)
+		if err != nil {
+			return 0, err
+		}
+		narrowed, err := reach.narrowInbounds(linked)
 		if err != nil {
 			return 0, err
 		}

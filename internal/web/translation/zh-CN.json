@@ -552,7 +552,8 @@
         "invalidClientField": "客户端 {client}：字段 {field} — {reason}",
         "invalidField": "{field} — {reason}",
         "invalidCertificate": "第 {index} 组 TLS 证书：{reason}",
-        "moreIssues": "{message}  (另有 {count} 项)"
+        "moreIssues": "{message}  (另有 {count} 项)",
+        "linkedMany": "已创建 {count} 个关联副本"
       },
       "form": {
         "echSockopt": "ECH Sockopt",
@@ -971,7 +972,14 @@
         "pskHint": "在每台设备上与账户的用户名和密码一起输入一次。更换密钥后，所有设备在输入新密钥前都会断开。留空则由面板生成密钥，或保留现有密钥。",
         "pskInvalid": "请使用 8 到 64 个字母、数字或 ! @ # $ % ^ & * ( ) _ + = . , : ; ~ - 字符。",
         "dnsTooMany": "L2TP 最多向设备下发两个 DNS 服务器。"
-      }
+      },
+      "unlink": "与副本解除关联",
+      "unlinkConfirmTitle": "将“{remark}”与其副本解除关联？",
+      "unlinkConfirmContent": "它保留自己的设置和用户，但它与其他副本的修改将不再互相同步。",
+      "linkedHint": "对此入站的修改会同步到所有副本，添加到或移出其中一个的用户也会添加到或移出全部副本。",
+      "linkedCopies": "{n} 个关联",
+      "linkCopies": "保持副本同步",
+      "linkCopiesHint": "每个节点都会获得一个使用此入站端口、设置和用户的副本。此后对任一副本的修改都会同步到全部副本，添加到其中一个的用户也会添加到全部。"
     },
     "clients": {
       "tabBasics": "基本",

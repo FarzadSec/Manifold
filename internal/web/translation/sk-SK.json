@@ -553,7 +553,8 @@
         "invalidClientField": "Klient {client}: {field} — {reason}",
         "invalidField": "{field} — {reason}",
         "invalidCertificate": "Certifikát TLS {index}: {reason}",
-        "moreIssues": "{message}  (ďalšie: +{count})"
+        "moreIssues": "{message}  (ďalšie: +{count})",
+        "linkedMany": "{count} linked copies made"
       },
       "form": {
         "autoFill": "Vyplniť automaticky",
@@ -971,7 +972,14 @@
         "pskHint": "Zadáva sa raz na každom zariadení spolu s menom a heslom účtu. Nový kľúč odpojí všetky zariadenia, kým ho na nich nezadáte. Ak pole necháte prázdne, panel kľúč vygeneruje alebo ponechá ten, ktorý má.",
         "pskInvalid": "Použite 8 až 64 písmen, číslic alebo znakov ! @ # $ % ^ & * ( ) _ + = . , : ; ~ -",
         "dnsTooMany": "L2TP odovzdá zariadeniu najviac dva servery DNS."
-      }
+      },
+      "unlink": "Unlink from its copies",
+      "unlinkConfirmTitle": "Unlink \"{remark}\" from its copies?",
+      "unlinkConfirmContent": "It keeps its settings and users, but edits to it or to the other copies no longer reach each other.",
+      "linkedHint": "Edits to this inbound reach every copy, and a user put on or taken off one is put on or taken off all.",
+      "linkedCopies": "{n} linked",
+      "linkCopies": "Keep the copies in step",
+      "linkCopiesHint": "Each node gets a copy with this inbound's port, settings and users. From then on an edit to any copy reaches all, and a user put on one is put on all."
     },
     "clients": {
       "tabBasics": "Základné údaje",

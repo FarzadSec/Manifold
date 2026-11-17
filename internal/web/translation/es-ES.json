@@ -552,7 +552,8 @@
         "invalidClientField": "Cliente {client}: campo {field} — {reason}",
         "invalidField": "{field} — {reason}",
         "invalidCertificate": "Certificado TLS {index}: {reason}",
-        "moreIssues": "{message}  (+{count} más)"
+        "moreIssues": "{message}  (+{count} más)",
+        "linkedMany": "{count} linked copies made"
       },
       "form": {
         "moveUp": "Subir",
@@ -971,7 +972,14 @@
         "pskHint": "Se introduce una vez en cada dispositivo, junto al usuario y la contraseña de la cuenta. Una clave nueva desconecta todos los dispositivos hasta que se introduzca en ellos. Déjala vacía y el panel genera una o conserva la que tiene.",
         "pskInvalid": "Usa de 8 a 64 letras, dígitos o los caracteres ! @ # $ % ^ & * ( ) _ + = . , : ; ~ -",
         "dnsTooMany": "L2TP entrega a un dispositivo como máximo dos servidores DNS."
-      }
+      },
+      "unlink": "Unlink from its copies",
+      "unlinkConfirmTitle": "Unlink \"{remark}\" from its copies?",
+      "unlinkConfirmContent": "It keeps its settings and users, but edits to it or to the other copies no longer reach each other.",
+      "linkedHint": "Edits to this inbound reach every copy, and a user put on or taken off one is put on or taken off all.",
+      "linkedCopies": "{n} linked",
+      "linkCopies": "Keep the copies in step",
+      "linkCopiesHint": "Each node gets a copy with this inbound's port, settings and users. From then on an edit to any copy reaches all, and a user put on one is put on all."
     },
     "clients": {
       "tabBasics": "Básico",

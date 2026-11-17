@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, Select, Typography, message } from 'antd';
+import { Form, Modal, Select, Switch, Typography, message } from 'antd';
 
 import { HttpUtil } from '@/utils';
 import { SelectAllClearButtons, selectTagRender } from '@/components/form';
@@ -32,7 +32,9 @@ export default function CloneInboundModal({
   const { t } = useTranslation();
   const [messageApi, messageContextHolder] = message.useMessage();
   const [targets, setTargets] = useState<number[]>([LOCAL_PANEL]);
+  const [linked, setLinked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const sourceHost = dbInbound?.nodeId ?? LOCAL_PANEL;
 
   const targetOptions = useMemo(
     () => [
@@ -70,13 +72,32 @@ export default function CloneInboundModal({
     const srcNode = (nodes || []).find((n) => n.id === src);
     const selectable = !!srcNode && !!srcNode.enable && srcNode.status === 'online';
     setTargets([selectable ? src : LOCAL_PANEL]);
+    setLinked(false);
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, [open]);
+
+  async function deployLinked(inbound: DBInbound) {
+    const msg = await HttpUtil.post(
+      `/panel/api/inbounds/deploy/${inbound.id}`,
+      { nodeIds: targets.filter((target) => target !== sourceHost) },
+      { headers: { 'Content-Type': 'application/json' } },
+    );
+    const created = (msg?.obj as { created?: number[] } | null)?.created?.length ?? 0;
+    if (msg?.success) {
+      messageApi.success(t('pages.inbounds.toasts.linkedMany', { count: created }));
+    }
+    if (created > 0) await onCloned();
+    if (msg?.success) onClose();
+  }
 
   async function submit() {
     if (!dbInbound || targets.length === 0) return;
     setSubmitting(true);
     try {
+      if (linked) {
+        await deployLinked(dbInbound);
+        return;
+      }
       // Sequential posts keep per-target results in selection order; every
       // target gets its own fresh port because ports are only node-scoped.
       const results: { ok: boolean; reason: string }[] = [];
@@ -126,8 +147,18 @@ export default function CloneInboundModal({
         destroyOnHidden
       >
         <Typography.Paragraph type="secondary">
-          {t('pages.inbounds.cloneConfirmContent')}
+          {t(linked ? 'pages.inbounds.linkCopiesHint' : 'pages.inbounds.cloneConfirmContent')}
         </Typography.Paragraph>
+        <Form.Item label={t('pages.inbounds.linkCopies')} htmlFor="clone-link-copies">
+          <Switch
+            id="clone-link-copies"
+            checked={linked}
+            onChange={(on) => {
+              setLinked(on);
+              if (on) setTargets((prev) => prev.filter((target) => target !== sourceHost));
+            }}
+          />
+        </Form.Item>
         <SelectAllClearButtons options={selectableOptions} value={targets} onChange={setTargets} />
         <Select
           aria-label={t('pages.inbounds.deployTo')}
@@ -136,7 +167,11 @@ export default function CloneInboundModal({
           style={{ width: '100%' }}
           value={targets}
           onChange={setTargets}
-          options={targetOptions}
+          options={
+            linked
+              ? targetOptions.map((o) => (o.value === sourceHost ? { ...o, disabled: true } : o))
+              : targetOptions
+          }
           placeholder={t('pages.inbounds.deployTo')}
           showSearch={{ optionFilterProp: 'label' }}
           autoFocus

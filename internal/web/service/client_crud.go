@@ -1443,6 +1443,10 @@ func (s *ClientService) UpdateByEmail(inboundSvc *InboundService, email string, 
 }
 
 func (s *ClientService) Detach(inboundSvc *InboundService, id int, inboundIds []int) (bool, error) {
+	inboundIds, err := LinkedIDs(inboundIds)
+	if err != nil {
+		return false, err
+	}
 	existing, err := s.GetByID(id)
 	if err != nil {
 		return false, err

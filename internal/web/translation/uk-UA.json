@@ -552,7 +552,8 @@
         "invalidClientField": "Клієнт {client}: поле {field} — {reason}",
         "invalidField": "{field} — {reason}",
         "invalidCertificate": "Сертифікат TLS {index}: {reason}",
-        "moreIssues": "{message}  (+{count} ще)"
+        "moreIssues": "{message}  (+{count} ще)",
+        "linkedMany": "{count} linked copies made"
       },
       "form": {
         "moveUp": "Вгору",
@@ -971,7 +972,14 @@
         "pskHint": "Вводиться один раз на кожному пристрої разом з іменем користувача та паролем. Новий ключ відключає всі пристрої, доки його не введуть на них. Залиште порожнім, і панель створить ключ або збереже наявний.",
         "pskInvalid": "Використовуйте від 8 до 64 літер, цифр або символів ! @ # $ % ^ & * ( ) _ + = . , : ; ~ -",
         "dnsTooMany": "L2TP передає пристрою щонайбільше два DNS-сервери."
-      }
+      },
+      "unlink": "Unlink from its copies",
+      "unlinkConfirmTitle": "Unlink \"{remark}\" from its copies?",
+      "unlinkConfirmContent": "It keeps its settings and users, but edits to it or to the other copies no longer reach each other.",
+      "linkedHint": "Edits to this inbound reach every copy, and a user put on or taken off one is put on or taken off all.",
+      "linkedCopies": "{n} linked",
+      "linkCopies": "Keep the copies in step",
+      "linkCopiesHint": "Each node gets a copy with this inbound's port, settings and users. From then on an edit to any copy reaches all, and a user put on one is put on all."
     },
     "clients": {
       "tabBasics": "Основні",

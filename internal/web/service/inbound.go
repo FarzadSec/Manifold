@@ -2070,6 +2070,7 @@ func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, 
 	// Restore the stored NodeID before any host-scoped check so a node inbound
 	// stays scoped to its own node (the payload's nodeId is unreliable, often absent).
 	inbound.NodeID = oldInbound.NodeID
+	inbound.LinkGroup = oldInbound.LinkGroup
 	if err := normalizeVlessFallbacks(inbound); err != nil {
 		return nil, false, err
 	}

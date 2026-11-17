@@ -12,6 +12,7 @@ import {
   TagsOutlined,
   UsergroupAddOutlined,
   UsergroupDeleteOutlined,
+  DisconnectOutlined,
 } from '@ant-design/icons';
 
 import { isInboundMultiUser } from './helpers';
@@ -77,6 +78,13 @@ export function buildRowActionsMenu({
     icon: <BlockOutlined aria-hidden />,
     label: t('pages.inbounds.clone'),
   });
+  if (record.linkGroup) {
+    items.push({
+      key: 'unlink',
+      icon: <DisconnectOutlined aria-hidden />,
+      label: t('pages.inbounds.unlink'),
+    });
+  }
   if (isInboundMultiUser(record)) {
     items.push({
       key: 'attachExisting',

@@ -325,9 +325,33 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/inbounds/update/:id',
         summary:
-          'Replace an inbound’s configuration. Body shape mirrors /add, but the inbound keeps its stored client list and enable flag: settings.clients and enable in the body are ignored. Manage clients through the /panel/api/clients endpoints and toggle the inbound with /setEnable. Remove effective fallback rules before enabling VLESS server decryption.',
+          'Replace an inbound’s configuration. Body shape mirrors /add, but the inbound keeps its stored client list and enable flag: settings.clients and enable in the body are ignored. Manage clients through the /panel/api/clients endpoints and toggle the inbound with /setEnable. Remove effective fallback rules before enabling VLESS server decryption. A linked inbound carries the edit to its copies, each keeping its own node, tag, traffic, users, switch and share address.',
         params: [{ name: 'id', in: 'path', type: 'number', desc: 'Inbound ID.' }],
         body: inboundBody,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/inbounds/deploy/:id',
+        summary:
+          'Put linked copies of an inbound on more nodes (0 is this panel): the same settings and port, its users attached. From then on an edit to any copy reaches all, and a user put on or taken off one is put on or taken off all. A node already holding a copy is skipped.',
+        params: [
+          { name: 'id', in: 'path', type: 'number', desc: 'Inbound ID.' },
+          {
+            name: 'nodeIds',
+            in: 'body',
+            type: 'integer[]',
+            desc: 'Nodes to deploy to; 0 is this panel.',
+          },
+        ],
+        body: '{\n  "nodeIds": [2, 3]\n}',
+        responseSchema: 'InboundDeployResult',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/inbounds/unlink/:id',
+        summary:
+          'Take one copy out of its linked group so it can be edited on its own. The other copies stay linked.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Inbound ID.' }],
       },
       {
         method: 'POST',

@@ -48,6 +48,7 @@ export type DBInboundInit = Partial<{
   disableFlow: boolean;
   originNodeGuid: string;
   fallbackParent: FallbackParentRef | null;
+  linkGroup: string;
 }>;
 
 export function coerceInboundJsonField(value: unknown): Record<string, unknown> {
@@ -98,6 +99,7 @@ export class DBInbound {
   disableFlow: boolean;
   originNodeGuid: string;
   fallbackParent: FallbackParentRef | null;
+  linkGroup: string;
 
   private _clientStatsMap: Map<string, ClientStats> | null = null;
 
@@ -130,6 +132,7 @@ export class DBInbound {
     this.disableFlow = false;
     this.originNodeGuid = '';
     this.fallbackParent = null;
+    this.linkGroup = '';
     if (data == null) {
       return;
     }
