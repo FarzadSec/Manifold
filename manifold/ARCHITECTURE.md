@@ -466,7 +466,7 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - A relay that is itself behind NAT with a mapped address must have its public address entered in the tunnel; the panel detects only its own public address.
 - The full backup holds certificate files of at most 1 MiB found under certificate and key fields; a path written elsewhere (an Xray template outside those keys, a script) is not carried.
 - A restore stops at the first error of the import itself; the files it wrote before stay written.
-- The tunnel edition still carries Xray and the engines' code in its package; it only never starts them.
+- Since 0.14.0 Manifold Relay's package leaves Xray, mtg and the geo files out; the program itself still holds their code (see 8.16).
 
 ### 8.7 Open items after limits and usage (0.7.0)
 
