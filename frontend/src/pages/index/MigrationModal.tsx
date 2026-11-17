@@ -7,6 +7,8 @@ import { HttpUtil, PromiseUtil } from '@/utils';
 
 interface MigrationModalProps {
   file: File;
+  // The passphrase that opened a sealed backup, sent again with the restore.
+  passphrase?: string;
   report: MigrationReport;
   onClose: () => void;
   onBusy: (e: { busy: boolean; tip?: string }) => void;
@@ -30,7 +32,13 @@ const ISSUE_TYPES: Record<string, 'error' | 'warning' | 'info'> = {
 };
 
 // What a restore would do on this server, read before anything is changed.
-export default function MigrationModal({ file, report, onClose, onBusy }: MigrationModalProps) {
+export default function MigrationModal({
+  file,
+  passphrase,
+  report,
+  onClose,
+  onBusy,
+}: MigrationModalProps) {
   const { t } = useTranslation();
   const [keepPanelAccess, setKeepPanelAccess] = useState(true);
   const [rewriteAddress, setRewriteAddress] = useState(false);
@@ -40,6 +48,7 @@ export default function MigrationModal({ file, report, onClose, onBusy }: Migrat
   async function restore() {
     const form = new FormData();
     form.append('backup', file);
+    if (passphrase) form.append('passphrase', passphrase);
     form.append('keepPanelAccess', String(keepPanelAccess));
     form.append('rewriteAddress', String(rewriteAddress));
     onClose();

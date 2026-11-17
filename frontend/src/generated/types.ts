@@ -529,6 +529,79 @@ export interface BackupFile {
   sha256: string;
 }
 
+export interface BackupTarget {
+  accessKey: string;
+  bucket: string;
+  dir: string;
+  enable: boolean;
+  endpoint: string;
+  everyHours: number;
+  host: string;
+  hostKey: string;
+  id: number;
+  keep: number;
+  kind: string;
+  lastError: string;
+  lastFile: string;
+  lastRun: number;
+  lastSize: number;
+  name: string;
+  port: number;
+  prefix: string;
+  region: string;
+  user: string;
+}
+
+export interface BackupTargetInput {
+  accessKey: string;
+  bucket: string;
+  dir: string;
+  enable: boolean;
+  endpoint: string;
+  everyHours: number;
+  host: string;
+  hostKey: string;
+  id: number;
+  keep: number;
+  kind: string;
+  name: string;
+  passphrase?: string | null;
+  password?: string | null;
+  port: number;
+  prefix: string;
+  privateKey?: string | null;
+  region: string;
+  secretKey?: string | null;
+  user: string;
+}
+
+export interface BackupTargetView {
+  accessKey: string;
+  bucket: string;
+  dir: string;
+  enable: boolean;
+  endpoint: string;
+  everyHours: number;
+  hasPassphrase: boolean;
+  hasPassword: boolean;
+  hasPrivateKey: boolean;
+  hasSecretKey: boolean;
+  host: string;
+  hostKey: string;
+  id: number;
+  keep: number;
+  kind: string;
+  lastError: string;
+  lastFile: string;
+  lastRun: number;
+  lastSize: number;
+  name: string;
+  port: number;
+  prefix: string;
+  region: string;
+  user: string;
+}
+
 export interface Blocker {
   code: BlockerCode;
   detail?: string;
@@ -748,6 +821,11 @@ export interface EngineStatus {
 export interface FallbackParentInfo {
   masterId: number;
   path?: string;
+}
+
+export interface File {
+  name: string;
+  size: number;
 }
 
 export interface GeoCategory {

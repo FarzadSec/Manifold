@@ -33,7 +33,7 @@ func recordAudit(c *gin.Context, entity, action, target string, detail any) {
 
 var auditEntities = map[string]string{
 	"clients": "users", "inbounds": "inbounds", "nodes": "nodes", "hosts": "hosts", "tunnels": "tunnels",
-	"setting": "settings", "xray": "xray", "sub-balancers": "xray", "server": "server", "ingress": "settings",
+	"setting": "settings", "xray": "xray", "sub-balancers": "xray", "server": "server", "ingress": "settings", "backups": "settings",
 }
 
 // auditEntity names what a change was about, and the action, from its route.

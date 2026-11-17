@@ -2014,3 +2014,32 @@ type IngressRoute struct {
 	Target        string   `json:"target" example:"127.0.0.1:2053"`
 	ProxyProtocol int      `json:"proxyProtocol" example:"0"`
 }
+
+// BackupTarget is where scheduled full backups go: this server, an S3 bucket or another
+// server over SSH. Secrets are write-only and never leave the panel.
+type BackupTarget struct {
+	Id         int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Name       string `json:"name" example:"offsite"`
+	Enable     bool   `json:"enable" example:"true"`
+	Kind       string `json:"kind" example:"s3"`
+	EveryHours int    `json:"everyHours" example:"24"`
+	Keep       int    `json:"keep" example:"7"`
+	Passphrase string `json:"-"`
+	Dir        string `json:"dir" example:"/var/backups/manifold"`
+	Endpoint   string `json:"endpoint" example:"https://s3.ir-thr-at1.arvanstorage.ir"`
+	Region     string `json:"region" example:"us-east-1"`
+	Bucket     string `json:"bucket" example:"manifold"`
+	Prefix     string `json:"prefix" example:"fra-1"`
+	AccessKey  string `json:"accessKey" example:"AKIA..."`
+	SecretKey  string `json:"-"`
+	Host       string `json:"host" example:"backup.example.com"`
+	Port       int    `json:"port" example:"22"`
+	User       string `json:"user" example:"backup"`
+	Password   string `json:"-"`
+	PrivateKey string `json:"-"`
+	HostKey    string `json:"hostKey" example:"SHA256:..."`
+	LastRun    int64  `json:"lastRun" example:"1700000000000"`
+	LastFile   string `json:"lastFile" example:"manifold-backup-panel-20261117-030000.tar.gz.enc"`
+	LastSize   int64  `json:"lastSize" example:"1048576"`
+	LastError  string `json:"lastError" example:""`
+}

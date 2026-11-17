@@ -1,8 +1,10 @@
 package controller
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"regexp"
 	"slices"
@@ -407,7 +409,12 @@ func (a *ServerController) inspectBackup(c *gin.Context) {
 		return
 	}
 	defer file.Close()
-	report, err := a.serverService.InspectBackup(file)
+	archive, err := openUploadedBackup(file, c.Request.FormValue("passphrase"))
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.index.readDatabaseError"), err)
+		return
+	}
+	report, err := a.serverService.InspectBackup(archive)
 	jsonObj(c, report, err)
 }
 
@@ -419,7 +426,12 @@ func (a *ServerController) restoreBackup(c *gin.Context) {
 		return
 	}
 	defer file.Close()
-	report, err := a.serverService.RestoreBackup(file, service.RestoreOptions{
+	archive, err := openUploadedBackup(file, c.Request.FormValue("passphrase"))
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.index.readDatabaseError"), err)
+		return
+	}
+	report, err := a.serverService.RestoreBackup(archive, service.RestoreOptions{
 		KeepPanelAccess: c.Request.FormValue("keepPanelAccess") != "false",
 		RewriteAddress:  c.Request.FormValue("rewriteAddress") == "true",
 	})
@@ -615,4 +627,20 @@ func (a *ServerController) setClientIps(c *gin.Context) {
 	}
 	err := (&service.InboundService{}).MergeInboundClientIps(ips)
 	jsonMsg(c, "Client IPs merged", err)
+}
+
+// maxUploadedBackup bounds what a restore reads into memory to open a sealed backup.
+const maxUploadedBackup = 2 << 30
+
+// openUploadedBackup reads an uploaded full backup, opening it with passphrase when sealed.
+func openUploadedBackup(r io.Reader, passphrase string) (io.Reader, error) {
+	data, err := io.ReadAll(io.LimitReader(r, maxUploadedBackup))
+	if err != nil {
+		return nil, err
+	}
+	opened, err := service.OpenBackup(data, passphrase)
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewReader(opened), nil
 }

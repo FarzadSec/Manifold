@@ -547,6 +547,76 @@ export const EXAMPLES: Record<string, unknown> = {
     "path": "/root/cert/fullchain.pem",
     "sha256": "9f86d0..."
   },
+  "BackupTarget": {
+    "accessKey": "AKIA...",
+    "bucket": "manifold",
+    "dir": "/var/backups/manifold",
+    "enable": true,
+    "endpoint": "https://s3.ir-thr-at1.arvanstorage.ir",
+    "everyHours": 24,
+    "host": "backup.example.com",
+    "hostKey": "SHA256:...",
+    "id": 1,
+    "keep": 7,
+    "kind": "s3",
+    "lastError": "",
+    "lastFile": "manifold-backup-panel-20261117-030000.tar.gz.enc",
+    "lastRun": 1700000000000,
+    "lastSize": 1048576,
+    "name": "offsite",
+    "port": 22,
+    "prefix": "fra-1",
+    "region": "us-east-1",
+    "user": "backup"
+  },
+  "BackupTargetInput": {
+    "accessKey": "AKIA...",
+    "bucket": "manifold",
+    "dir": "",
+    "enable": true,
+    "endpoint": "https://s3.example.com",
+    "everyHours": 24,
+    "host": "",
+    "hostKey": "",
+    "id": 0,
+    "keep": 7,
+    "kind": "s3",
+    "name": "offsite",
+    "passphrase": null,
+    "password": null,
+    "port": 22,
+    "prefix": "fra-1",
+    "privateKey": null,
+    "region": "us-east-1",
+    "secretKey": null,
+    "user": ""
+  },
+  "BackupTargetView": {
+    "accessKey": "AKIA...",
+    "bucket": "manifold",
+    "dir": "/var/backups/manifold",
+    "enable": true,
+    "endpoint": "https://s3.ir-thr-at1.arvanstorage.ir",
+    "everyHours": 24,
+    "hasPassphrase": true,
+    "hasPassword": false,
+    "hasPrivateKey": false,
+    "hasSecretKey": true,
+    "host": "backup.example.com",
+    "hostKey": "SHA256:...",
+    "id": 1,
+    "keep": 7,
+    "kind": "s3",
+    "lastError": "",
+    "lastFile": "manifold-backup-panel-20261117-030000.tar.gz.enc",
+    "lastRun": 1700000000000,
+    "lastSize": 1048576,
+    "name": "offsite",
+    "port": 22,
+    "prefix": "fra-1",
+    "region": "us-east-1",
+    "user": "backup"
+  },
   "Blocker": {
     "code": "tools",
     "detail": "awg"
@@ -829,6 +899,10 @@ export const EXAMPLES: Record<string, unknown> = {
   "FallbackParentInfo": {
     "masterId": 0,
     "path": ""
+  },
+  "File": {
+    "name": "manifold-backup-panel-20261117-030000.tar.gz.enc",
+    "size": 1048576
   },
   "GeoCategory": {
     "attributes": [

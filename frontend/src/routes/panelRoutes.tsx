@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 import type { ComponentType } from 'react';
 import {
+  CloudUploadOutlined,
   ShareAltOutlined,
   ApiOutlined,
   AuditOutlined,
@@ -31,6 +32,7 @@ const NodesPage = lazy(() => import('@/pages/nodes/NodesPage'));
 const HostsPage = lazy(() => import('@/pages/hosts/HostsPage'));
 const TunnelsPage = lazy(() => import('@/pages/tunnels/TunnelsPage'));
 const IngressPage = lazy(() => import('@/pages/ingress/IngressPage'));
+const BackupsPage = lazy(() => import('@/pages/backups/BackupsPage'));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
 const XrayPage = lazy(() => import('@/pages/xray/XrayPage'));
 const ApiDocsPage = lazy(() => import('@/pages/api-docs/ApiDocsPage'));
@@ -108,6 +110,14 @@ export const PANEL_ROUTES: PanelRoute[] = [
     icon: ShareAltOutlined,
     component: IngressPage,
     perm: 'settings:read',
+    staff: true,
+  },
+  {
+    path: '/backups',
+    titleKey: 'menu.backups',
+    icon: CloudUploadOutlined,
+    component: BackupsPage,
+    perm: 'backup:read',
     staff: true,
   },
   {

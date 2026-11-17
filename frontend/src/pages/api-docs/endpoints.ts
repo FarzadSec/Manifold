@@ -2143,6 +2143,69 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'backups',
+    title: 'Scheduled backups',
+    description:
+      'Targets that receive a full backup on a schedule: a directory of this server, an S3-compatible bucket (AWS, Cloudflare R2, ArvanCloud, MinIO; path-style, Signature V4) or another server over SSH. With a passphrase the backup is sealed with AES-256-GCM under a PBKDF2 key; restore asks for it. Only the newest backups the target keeps are left; other files there are never touched. Secrets (passphrase, secret key, password, private key) are write-only. All endpoints under /panel/api/backups.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/backups/targets',
+        summary: 'Every backup target with its last run, and which secrets are set.',
+        responseSchema: 'BackupTargetView',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/backups/targets/save',
+        summary:
+          'Create (id 0) or replace a target. A secret left out keeps the stored one; an empty string clears it.',
+        body: '{\n  "id": 0,\n  "name": "offsite",\n  "enable": true,\n  "kind": "s3",\n  "everyHours": 24,\n  "keep": 7,\n  "endpoint": "https://s3.example.com",\n  "region": "us-east-1",\n  "bucket": "manifold",\n  "prefix": "fra-1",\n  "accessKey": "AKIA…",\n  "secretKey": "…",\n  "passphrase": "…"\n}',
+        responseSchema: 'BackupTargetView',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/backups/targets/del/:id',
+        summary: 'Delete a target. Backups already stored there stay.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Target ID.' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/backups/targets/run/:id',
+        summary: 'Back up to the target now, then prune; answers with the outcome recorded on it.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Target ID.' }],
+        responseSchema: 'BackupTargetView',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/backups/targets/files/:id',
+        summary: 'The files a target holds, newest first.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Target ID.' }],
+        responseSchema: 'File',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/backups/sshHostKey',
+        summary:
+          "Read an SSH target's host key fingerprint without logging in, to accept before saving.",
+        params: [
+          { name: 'host', in: 'body', type: 'string', desc: 'SSH host.' },
+          {
+            name: 'port',
+            in: 'body',
+            type: 'number',
+            desc: 'SSH port, 22 when 0.',
+            optional: true,
+          },
+        ],
+        body: '{\n  "host": "backup.example.com",\n  "port": 22\n}',
+        response: '{\n  "success": true,\n  "obj": "SHA256:Zm9vYmFy"\n}',
+      },
+    ],
+  },
+
+  {
     id: 'ingress',
     title: 'Shared ports',
     description:

@@ -288,6 +288,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 
 	NewTunnelController(api.Group("/tunnels"))
 	NewIngressController(api.Group("/ingress"))
+	NewBackupController(api.Group("/backups"))
 	NewAccessController(api.Group("/access"))
 
 	// Settings + Xray config management live under the API surface too, so the

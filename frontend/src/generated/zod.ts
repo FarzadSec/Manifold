@@ -561,6 +561,82 @@ export const BackupFileSchema = z.object({
 });
 export type BackupFile = z.infer<typeof BackupFileSchema>;
 
+export const BackupTargetSchema = z.object({
+  accessKey: z.string(),
+  bucket: z.string(),
+  dir: z.string(),
+  enable: z.boolean(),
+  endpoint: z.string(),
+  everyHours: z.number().int(),
+  host: z.string(),
+  hostKey: z.string(),
+  id: z.number().int(),
+  keep: z.number().int(),
+  kind: z.string(),
+  lastError: z.string(),
+  lastFile: z.string(),
+  lastRun: z.number().int(),
+  lastSize: z.number().int(),
+  name: z.string(),
+  port: z.number().int(),
+  prefix: z.string(),
+  region: z.string(),
+  user: z.string(),
+});
+export type BackupTarget = z.infer<typeof BackupTargetSchema>;
+
+export const BackupTargetInputSchema = z.object({
+  accessKey: z.string(),
+  bucket: z.string(),
+  dir: z.string(),
+  enable: z.boolean(),
+  endpoint: z.string(),
+  everyHours: z.number().int(),
+  host: z.string(),
+  hostKey: z.string(),
+  id: z.number().int(),
+  keep: z.number().int(),
+  kind: z.string(),
+  name: z.string(),
+  passphrase: z.string().nullable().optional(),
+  password: z.string().nullable().optional(),
+  port: z.number().int(),
+  prefix: z.string(),
+  privateKey: z.string().nullable().optional(),
+  region: z.string(),
+  secretKey: z.string().nullable().optional(),
+  user: z.string(),
+});
+export type BackupTargetInput = z.infer<typeof BackupTargetInputSchema>;
+
+export const BackupTargetViewSchema = z.object({
+  accessKey: z.string(),
+  bucket: z.string(),
+  dir: z.string(),
+  enable: z.boolean(),
+  endpoint: z.string(),
+  everyHours: z.number().int(),
+  hasPassphrase: z.boolean(),
+  hasPassword: z.boolean(),
+  hasPrivateKey: z.boolean(),
+  hasSecretKey: z.boolean(),
+  host: z.string(),
+  hostKey: z.string(),
+  id: z.number().int(),
+  keep: z.number().int(),
+  kind: z.string(),
+  lastError: z.string(),
+  lastFile: z.string(),
+  lastRun: z.number().int(),
+  lastSize: z.number().int(),
+  name: z.string(),
+  port: z.number().int(),
+  prefix: z.string(),
+  region: z.string(),
+  user: z.string(),
+});
+export type BackupTargetView = z.infer<typeof BackupTargetViewSchema>;
+
 export const BlockerSchema = z.object({
   code: z.lazy(() => BlockerCodeSchema),
   detail: z.string().optional(),
@@ -796,6 +872,12 @@ export const FallbackParentInfoSchema = z.object({
   path: z.string().optional(),
 });
 export type FallbackParentInfo = z.infer<typeof FallbackParentInfoSchema>;
+
+export const FileSchema = z.object({
+  name: z.string(),
+  size: z.number().int(),
+});
+export type File = z.infer<typeof FileSchema>;
 
 export const GeoCategorySchema = z.object({
   attributes: z.array(z.string()),

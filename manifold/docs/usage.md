@@ -284,6 +284,19 @@ Everything the interface does goes through the HTTP API. The API Docs page lists
 
 ## Backup
 
+**Backups** (sidebar) makes full backups on a schedule. A target is this server (`/etc/manifold/backups` by default), an S3-compatible bucket (AWS, Cloudflare R2, ArvanCloud, MinIO; give the endpoint without the bucket) or another server over SSH or SFTP (read and accept its host key first). Each target has its own interval in hours (0 for by hand only) and how many of the newest backups to keep; older ones there are deleted, and files the panel did not write are never touched. **Run now** backs up at once, and the folder button lists what the target holds.
+
+With a **passphrase** every backup to that target is sealed with AES-256-GCM and named `….tar.gz.enc`. Restoring one under Overview → Backup asks for it. Without the passphrase nobody can restore it, so keep it somewhere other than the server. From the command line, with the panel stopped:
+
+```bash
+manifold backup decrypt -in backup.tar.gz.enc -out backup.tar.gz -passphrase '…'
+systemctl stop manifold
+manifold backup restore -in backup.tar.gz.enc -passphrase '…'
+systemctl start manifold
+```
+
+`MANIFOLD_BACKUP_PASSPHRASE` can carry the passphrase instead of `-passphrase`.
+
 For a move to another server, use the full backup described above. Everything the panel knows is in `/etc/manifold/`. For a consistent copy, either stop the panel first or write a dump:
 
 ```bash

@@ -158,3 +158,30 @@ export const IngressFormSchema = z.object({
 });
 
 export type IngressFormValues = z.infer<typeof IngressFormSchema>;
+
+export const BackupTargetFormSchema = z
+  .object({
+    id: z.number(),
+    name: z.string().trim().min(1, 'pages.nodes.toasts.fillRequired'),
+    enable: z.boolean(),
+    kind: z.enum(['local', 's3', 'ssh']),
+    everyHours: z.number().int().min(0).max(720),
+    keep: z.number().int().min(0).max(1000),
+    dir: z.string().trim(),
+    endpoint: z.string().trim(),
+    region: z.string().trim(),
+    bucket: z.string().trim(),
+    prefix: z.string().trim(),
+    accessKey: z.string().trim(),
+    host: z.string().trim(),
+    port: z.number().int().min(0).max(65535),
+    user: z.string().trim(),
+    hostKey: z.string().trim(),
+    passphrase: z.string(),
+    secretKey: z.string(),
+    password: z.string(),
+    privateKey: z.string(),
+  })
+  .loose();
+
+export type BackupTargetFormValues = z.infer<typeof BackupTargetFormSchema>;

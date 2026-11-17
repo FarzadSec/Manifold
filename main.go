@@ -712,6 +712,8 @@ func main() {
 		migrateDb()
 	case "encrypt-tokens":
 		encryptNodeTokens()
+	case "backup":
+		os.Exit(runBackupCLI(os.Args[2:]))
 	case "migrate-db":
 		if err := migrateDbCmd.Parse(os.Args[2:]); err != nil {
 			fmt.Println(err)
@@ -817,6 +819,7 @@ Commands:
     migrate        migrate a database from an older schema
     migrate-db     SQLite <-> .dump (--dump/--restore) or copy into PostgreSQL (--dsn)
     encrypt-tokens encrypt node bearer tokens with the configured active key
+    backup         open a sealed backup, or restore a full backup with the panel stopped
     setting        set settings
     install-awg-kernel
                    build and install the AmneziaWG kernel module (required for

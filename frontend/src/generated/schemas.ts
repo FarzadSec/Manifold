@@ -2211,6 +2211,344 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "BackupTarget": {
+    "description": "BackupTarget is where scheduled full backups go: this server, an S3 bucket or another\nserver over SSH. Secrets are write-only and never leave the panel.",
+    "properties": {
+      "accessKey": {
+        "example": "AKIA...",
+        "type": "string"
+      },
+      "bucket": {
+        "example": "manifold",
+        "type": "string"
+      },
+      "dir": {
+        "example": "/var/backups/manifold",
+        "type": "string"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "endpoint": {
+        "example": "https://s3.ir-thr-at1.arvanstorage.ir",
+        "type": "string"
+      },
+      "everyHours": {
+        "example": 24,
+        "type": "integer"
+      },
+      "host": {
+        "example": "backup.example.com",
+        "type": "string"
+      },
+      "hostKey": {
+        "example": "SHA256:...",
+        "type": "string"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "keep": {
+        "example": 7,
+        "type": "integer"
+      },
+      "kind": {
+        "example": "s3",
+        "type": "string"
+      },
+      "lastError": {
+        "type": "string"
+      },
+      "lastFile": {
+        "example": "manifold-backup-panel-20261117-030000.tar.gz.enc",
+        "type": "string"
+      },
+      "lastRun": {
+        "example": 1700000000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "lastSize": {
+        "example": 1048576,
+        "format": "int64",
+        "type": "integer"
+      },
+      "name": {
+        "example": "offsite",
+        "type": "string"
+      },
+      "port": {
+        "example": 22,
+        "type": "integer"
+      },
+      "prefix": {
+        "example": "fra-1",
+        "type": "string"
+      },
+      "region": {
+        "example": "us-east-1",
+        "type": "string"
+      },
+      "user": {
+        "example": "backup",
+        "type": "string"
+      }
+    },
+    "required": [
+      "accessKey",
+      "bucket",
+      "dir",
+      "enable",
+      "endpoint",
+      "everyHours",
+      "host",
+      "hostKey",
+      "id",
+      "keep",
+      "kind",
+      "lastError",
+      "lastFile",
+      "lastRun",
+      "lastSize",
+      "name",
+      "port",
+      "prefix",
+      "region",
+      "user"
+    ],
+    "type": "object"
+  },
+  "BackupTargetInput": {
+    "description": "BackupTargetInput saves a target; a nil secret keeps the stored one, \"\" clears it.",
+    "properties": {
+      "accessKey": {
+        "example": "AKIA...",
+        "type": "string"
+      },
+      "bucket": {
+        "example": "manifold",
+        "type": "string"
+      },
+      "dir": {
+        "type": "string"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "endpoint": {
+        "example": "https://s3.example.com",
+        "type": "string"
+      },
+      "everyHours": {
+        "example": 24,
+        "type": "integer"
+      },
+      "host": {
+        "type": "string"
+      },
+      "hostKey": {
+        "type": "string"
+      },
+      "id": {
+        "example": 0,
+        "type": "integer"
+      },
+      "keep": {
+        "example": 7,
+        "type": "integer"
+      },
+      "kind": {
+        "example": "s3",
+        "type": "string"
+      },
+      "name": {
+        "example": "offsite",
+        "type": "string"
+      },
+      "passphrase": {
+        "nullable": true,
+        "type": "string"
+      },
+      "password": {
+        "nullable": true,
+        "type": "string"
+      },
+      "port": {
+        "example": 22,
+        "type": "integer"
+      },
+      "prefix": {
+        "example": "fra-1",
+        "type": "string"
+      },
+      "privateKey": {
+        "nullable": true,
+        "type": "string"
+      },
+      "region": {
+        "example": "us-east-1",
+        "type": "string"
+      },
+      "secretKey": {
+        "nullable": true,
+        "type": "string"
+      },
+      "user": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "accessKey",
+      "bucket",
+      "dir",
+      "enable",
+      "endpoint",
+      "everyHours",
+      "host",
+      "hostKey",
+      "id",
+      "keep",
+      "kind",
+      "name",
+      "port",
+      "prefix",
+      "region",
+      "user"
+    ],
+    "type": "object"
+  },
+  "BackupTargetView": {
+    "description": "BackupTargetView is a target without its secrets, saying which are set.",
+    "properties": {
+      "accessKey": {
+        "example": "AKIA...",
+        "type": "string"
+      },
+      "bucket": {
+        "example": "manifold",
+        "type": "string"
+      },
+      "dir": {
+        "example": "/var/backups/manifold",
+        "type": "string"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "endpoint": {
+        "example": "https://s3.ir-thr-at1.arvanstorage.ir",
+        "type": "string"
+      },
+      "everyHours": {
+        "example": 24,
+        "type": "integer"
+      },
+      "hasPassphrase": {
+        "example": true,
+        "type": "boolean"
+      },
+      "hasPassword": {
+        "example": false,
+        "type": "boolean"
+      },
+      "hasPrivateKey": {
+        "example": false,
+        "type": "boolean"
+      },
+      "hasSecretKey": {
+        "example": true,
+        "type": "boolean"
+      },
+      "host": {
+        "example": "backup.example.com",
+        "type": "string"
+      },
+      "hostKey": {
+        "example": "SHA256:...",
+        "type": "string"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "keep": {
+        "example": 7,
+        "type": "integer"
+      },
+      "kind": {
+        "example": "s3",
+        "type": "string"
+      },
+      "lastError": {
+        "type": "string"
+      },
+      "lastFile": {
+        "example": "manifold-backup-panel-20261117-030000.tar.gz.enc",
+        "type": "string"
+      },
+      "lastRun": {
+        "example": 1700000000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "lastSize": {
+        "example": 1048576,
+        "format": "int64",
+        "type": "integer"
+      },
+      "name": {
+        "example": "offsite",
+        "type": "string"
+      },
+      "port": {
+        "example": 22,
+        "type": "integer"
+      },
+      "prefix": {
+        "example": "fra-1",
+        "type": "string"
+      },
+      "region": {
+        "example": "us-east-1",
+        "type": "string"
+      },
+      "user": {
+        "example": "backup",
+        "type": "string"
+      }
+    },
+    "required": [
+      "accessKey",
+      "bucket",
+      "dir",
+      "enable",
+      "endpoint",
+      "everyHours",
+      "hasPassphrase",
+      "hasPassword",
+      "hasPrivateKey",
+      "hasSecretKey",
+      "host",
+      "hostKey",
+      "id",
+      "keep",
+      "kind",
+      "lastError",
+      "lastFile",
+      "lastRun",
+      "lastSize",
+      "name",
+      "port",
+      "prefix",
+      "region",
+      "user"
+    ],
+    "type": "object"
+  },
   "Blocker": {
     "description": "Blocker is one unmet requirement.",
     "properties": {
@@ -3244,6 +3582,25 @@ export const SCHEMAS: Record<string, unknown> = {
     },
     "required": [
       "masterId"
+    ],
+    "type": "object"
+  },
+  "File": {
+    "description": "File is one stored backup.",
+    "properties": {
+      "name": {
+        "example": "manifold-backup-panel-20261117-030000.tar.gz.enc",
+        "type": "string"
+      },
+      "size": {
+        "example": 1048576,
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "name",
+      "size"
     ],
     "type": "object"
   },

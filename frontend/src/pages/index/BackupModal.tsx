@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Checkbox, Modal } from 'antd';
+import { Button, Checkbox, Input, Modal } from 'antd';
 import { DownloadOutlined, UploadOutlined } from '@ant-design/icons';
 
 import { HttpUtil, PromiseUtil } from '@/utils';
@@ -29,8 +29,29 @@ export default function BackupModal({
   const { t } = useTranslation();
   const isPostgres = window.X_UI_DB_TYPE === 'postgres';
   const [keepHostSettings, setKeepHostSettings] = useState(true);
-  const [inspected, setInspected] = useState<{ file: File; report: MigrationReport } | null>(null);
+  const [inspected, setInspected] = useState<{
+    file: File;
+    report: MigrationReport;
+    passphrase: string;
+  } | null>(null);
   const [inspecting, setInspecting] = useState(false);
+  const [sealed, setSealed] = useState<File | null>(null);
+  const [passphrase, setPassphrase] = useState('');
+
+  async function inspect(file: File, secret: string) {
+    const form = new FormData();
+    form.append('backup', file);
+    if (secret) form.append('passphrase', secret);
+    setInspecting(true);
+    try {
+      const msg = await HttpUtil.post<MigrationReport>('/panel/api/server/inspectBackup', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (msg?.success && msg.obj) setInspected({ file, report: msg.obj, passphrase: secret });
+    } finally {
+      setInspecting(false);
+    }
+  }
 
   function exportFullBackup() {
     window.location.href = (window.X_UI_BASE_PATH || '') + 'panel/api/server/getFullBackup';
@@ -39,21 +60,16 @@ export default function BackupModal({
   function inspectFullBackup() {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.accept = '.tar.gz,.tgz,application/gzip';
-    fileInput.addEventListener('change', async (e) => {
+    fileInput.accept = '.tar.gz,.tgz,.enc,application/gzip,application/octet-stream';
+    fileInput.addEventListener('change', (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
-      const form = new FormData();
-      form.append('backup', file);
-      setInspecting(true);
-      try {
-        const msg = await HttpUtil.post<MigrationReport>('/panel/api/server/inspectBackup', form, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        if (msg?.success && msg.obj) setInspected({ file, report: msg.obj });
-      } finally {
-        setInspecting(false);
+      if (file.name.endsWith('.enc')) {
+        setPassphrase('');
+        setSealed(file);
+        return;
       }
+      void inspect(file, '');
     });
     fileInput.click();
   }
@@ -99,6 +115,27 @@ export default function BackupModal({
 
   return (
     <Modal open={open} title={t('pages.index.backupTitle')} footer={null} onCancel={onClose}>
+      <Modal
+        open={!!sealed}
+        title={t('pages.backups.sealedTitle')}
+        okText={t('pages.index.migration.upload')}
+        okButtonProps={{ disabled: !passphrase, loading: inspecting }}
+        onOk={async () => {
+          if (!sealed) return;
+          await inspect(sealed, passphrase);
+          setSealed(null);
+        }}
+        onCancel={() => setSealed(null)}
+      >
+        <label htmlFor="sealed-backup-passphrase">{t('pages.backups.sealedHint')}</label>
+        <Input.Password
+          id="sealed-backup-passphrase"
+          value={passphrase}
+          autoComplete="off"
+          onChange={(e) => setPassphrase(e.target.value)}
+          style={{ marginTop: 8 }}
+        />
+      </Modal>
       {isPostgres && (
         <div className="backup-description" style={{ marginBottom: 16 }}>
           {t('pages.index.backupPostgresNote')}
@@ -196,6 +233,7 @@ export default function BackupModal({
       {inspected && (
         <MigrationModal
           file={inspected.file}
+          passphrase={inspected.passphrase}
           report={inspected.report}
           onBusy={onBusy}
           onClose={() => setInspected(null)}

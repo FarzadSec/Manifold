@@ -10,6 +10,9 @@ export const keys = {
   ingress: {
     list: () => ['ingress', 'list'] as const,
   },
+  backups: {
+    targets: () => ['backups', 'targets'] as const,
+  },
   hosts: {
     root: () => ['hosts'] as const,
     list: () => ['hosts', 'list'] as const,

@@ -98,3 +98,16 @@ func (j *NodeHealthJob) Run() {
 		logger.Warning("node health:", err)
 	}
 }
+
+// BackupJob runs the backup targets whose interval has passed.
+type BackupJob struct {
+	backupService service.BackupService
+}
+
+func NewBackupJob() *BackupJob {
+	return new(BackupJob)
+}
+
+func (j *BackupJob) Run() {
+	j.backupService.RunDue(time.Now())
+}

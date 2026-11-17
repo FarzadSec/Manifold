@@ -4,6 +4,7 @@ Version 0.12 · 2026-11-17 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnel
 
 Decision log:
 
+- 2026-11-17 — Scheduled backups reuse the full backup of 0.5.0 and add only where it goes: `internal/backupstore` writes to a directory, to S3 with a Signature V4 signer of its own (checked against AWS's worked example; no SDK), or to a server over SSH through its shell, which works with SFTP-only accounts that keep a shell. Sealing is AES-256-GCM under PBKDF2-SHA256 (600000 rounds, the standard library's), with the header authenticated
 - 2026-11-17 — Ingress is a layer-4 router of the panel's own (`internal/ingress`): it reads the ClientHello (reassembled across records) or an HTTP request head, picks a route by SNI or Host and ALPN, and hands the stream on byte for byte, so REALITY behind it still sees the client's handshake. It does not terminate TLS; NX Panel's HTTP-level listeners and routes for the panel itself are not built
 - 2026-11-17 — A node is installed over SSH by the panel the admin is signed in to, with credentials used for that job only. The host key is read with a handshake that stops at the key, so nothing is offered before the admin accepts it, and every later login checks that key. The node's self-signed certificate is pinned from the installer's output over that SSH channel, not by a first TLS connection that a man in the middle could answer
 - 2026-11-17 — A node's periodic usage limit switches its enabled inbounds off through the runtime and records which, so the next period switches back on exactly those; an inbound the admin had switched off is never turned on by it. The limit reads the per-node usage history, so it counts raw bytes, before the node's traffic multiplier
@@ -264,6 +265,12 @@ This is the contract Mirza Bot will sync against, so it is frozen before the bot
 - `ingress_listeners` (routes as JSON); `IngressService.Apply` binds every enabled row at start and on each save, and swaps routes in place without rebinding.
 - Port checks run both ways: a shared port refuses a local TCP inbound's, the panel's or the subscription server's port, and `checkPortConflictTx` refuses an inbound on a shared port.
 - PROXY protocol v1 and v2 per route, for targets that should see the client address.
+
+### 4.15 Scheduled backups (built, 0.10.0)
+
+- `backup_targets` rows: kind, interval, retention, connection fields, write-only secrets. `BackupJob` (every 10 minutes) runs the due ones one at a time.
+- Retention deletes only names the panel writes (`manifold-backup-<host>-<UTC stamp>.tar.gz[.enc]`), oldest first.
+- Restore and inspect accept a `passphrase` form field; `manifold backup decrypt|restore` does the same on the command line.
 
 ## 5. Gap analysis
 

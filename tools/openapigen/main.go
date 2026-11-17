@@ -28,6 +28,7 @@ func run(root, outDir string) error {
 				"Inbound",
 				"IngressListener",
 				"IngressRoute",
+				"BackupTarget",
 				"TunnelRelay",
 				"FallbackParentInfo",
 				"OutboundTraffics",
@@ -145,6 +146,8 @@ func run(root, outDir string) error {
 				"NodeInstallRequest",
 				"NodeInstallJob",
 				"IngressStatus",
+				"BackupTargetView",
+				"BackupTargetInput",
 				"NodeHealthPoint",
 				"AvailabilityBar",
 			),
@@ -169,6 +172,10 @@ func run(root, outDir string) error {
 		{
 			Path:        resolveRel(root, "internal/tunnel"),
 			StructAllow: setOf("TunnelSettings", "PortForward", "TunnelStatus"),
+		},
+		{
+			Path:        resolveRel(root, "internal/backupstore"),
+			StructAllow: setOf("File"),
 		},
 		{
 			Path:        resolveRel(root, "internal/subtheme"),

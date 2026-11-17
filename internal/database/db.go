@@ -95,6 +95,7 @@ func allModels() []any {
 		&model.ClientUsage{},
 		&model.NodeHealth{},
 		&model.IngressListener{},
+		&model.BackupTarget{},
 	}
 }
 
