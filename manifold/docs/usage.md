@@ -189,7 +189,7 @@ Not supported yet: IPv6 inside the tunnel, logins that use certificates instead 
 
 A tunnel joins this server to a relay: users connect to the relay, and the relay forwards their ports through the tunnel to this server. Users' configs then name the relay, so this server can be moved, or its IP blocked and changed, without handing anyone a new config.
 
-The two ends have names. The **client** end runs on the panel that serves the accounts, this one. The **server** end runs on the relay, which is best a second Manifold installed as the **tunnel edition** (see [installation](installation.md)): a panel with tunnels and nothing else.
+The two ends have names. The **client** end runs on the panel that serves the accounts, this one. The **server** end runs on the relay, which is best a server running **Manifold Relay** (see [installation](installation.md#manifold-relay)): the installer's second choice, with tunnels and nothing else.
 
 | Kind | What it is |
 |---|---|
@@ -204,7 +204,9 @@ BackPack tunnels run the BackPack program by Amin Mohammadi (AminMGMT), shipped 
 **Set up the relay's end**, one of two ways:
 
 1. **Pairing code.** The share button of a tunnel shows a code with the sides already swapped. On the relay's Tunnels page, **Import pairing code** and paste it. Importing a newer code of the same tunnel updates it in place.
-2. **Managed relay.** On the relay, create an API token with the **tunnel** scope (Panel Settings → Security). Here, under **Relays**, add the relay's panel URL and that token, then choose the relay in the tunnel. This panel then creates, updates and deletes the relay's end itself. A tunnel-scoped token can do nothing on the relay but that.
+2. **Managed relay.** The relay's installer prints its **relay token**, an API token of the **tunnel** scope (make a new one with `manifold relay-token`, or under Panel Settings → Security). Here, under **Relays**, add the relay's panel URL and that token, then choose the relay in the tunnel. This panel then creates, updates and deletes the relay's end itself. A tunnel-scoped token can do nothing on the relay but that. The Relays window asks each relay for its tunnels when it opens and shows whether it answers and which version it runs, marked when it differs from this panel's.
+
+On the relay, `manifold tunnel import CODE` takes a pairing code from the command line, and `manifold tunnel list` shows each end's state measured on the spot.
 
 **Users' addresses** (kernel links): with **Masquerade on the relay**, every user seems to come from the relay. **Keep each user's address** lets the panel see each user's own IP, which the device limit and the IP log need; the replies are then routed back through the tunnel by a routing table of its own.
 

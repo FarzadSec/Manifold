@@ -21,7 +21,7 @@ As root on the server:
 bash <(curl -Ls https://raw.githubusercontent.com/FarzadSec/Manifold/main/install.sh)
 ```
 
-The installer:
+Run from a terminal, the installer first asks what the server runs: **Manifold**, the full panel, or **Manifold Relay**, a tunnel server only (below). Then it:
 
 1. downloads the latest release for the server's architecture and verifies its checksum,
 2. installs the program, the `manifold` command and the `manifold` service,
@@ -51,17 +51,27 @@ A package you install by hand later is found without a reinstall or a restart: t
 
 The login and the API token are shown once. Sign in, then change the login under Panel Settings. If the installer could not find the server's public address it prints `SERVER-IP` in its place. Open the printed port in the firewall.
 
-### The tunnel edition, for a relay
+### Manifold Relay
 
-A relay that users connect to and that forwards their ports through tunnels to the main panel needs no Xray, inbounds or subscriptions. Install it as the tunnel edition:
+A relay is the server users connect to; it forwards their ports through tunnels to the Manifold panel that serves them. It needs no Xray, inbounds or subscriptions, so it is a product of its own: **Manifold Relay**. Choose it at the installer's first question, or without asking:
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/FarzadSec/Manifold/main/install.sh) --edition tunnel
+bash <(curl -Ls https://raw.githubusercontent.com/FarzadSec/Manifold/main/install.sh) --edition relay
 ```
 
-It is the same package. The edition is recorded as `MANIFOLD_EDITION=tunnel` in `/etc/default/manifold`, so `manifold update` keeps it; it installs only `nftables`, `iptables` and `iproute2`, and its panel shows the overview, the tunnels, the settings and the API. To let the main panel manage the relay's tunnels, create an API token with the tunnel scope on the relay (Panel Settings → Security, or `manifold setting -getApiToken -tokenName owner -tokenScope tunnel`) and add the relay under Tunnels → Relays on the main panel. See [Tunnels](usage.md#tunnels).
+- It downloads its own package, `manifold-relay-linux-<arch>.tar.gz`: the same program with BackPack and none of Xray, mtg or the geo files. It installs only `nftables`, `iptables` and `iproute2`.
+- Its pages are the overview, with every tunnel end in full (state, latency and loss, traffic, forwarded ports, the peer), the tunnels, the settings and the API.
+- Its summary prints a **relay token**: an API token of the tunnel scope, which reaches the relay's tunnels and nothing else.
+- `manifold` opens the relay's own menu: no Xray, IP limit or geo files; the state of each tunnel end, importing a pairing code, and a new relay token.
 
-Running the installer again with `--edition full` turns a relay into a full panel.
+Connect it to your Manifold panel one of two ways:
+
+1. **Managed by the panel.** On the panel: Tunnels → Relays → add the relay's address and its relay token. The panel then creates, changes and removes the relay's end of each tunnel you give it, and the Relays window shows whether each relay answers and which version it runs (marked when it differs from the panel's: run `manifold update` on the relay).
+2. **Pairing code.** Make a tunnel on the panel, copy its pairing code from the share button, and on the relay run `manifold tunnel import CODE` (or paste it under Tunnels → Import pairing code). A relay set up this way never needs its own pages.
+
+`manifold tunnel list` on either server checks each end itself (its link or BackPack, and three echoes through it), so it answers while the pages are down.
+
+The relay is recorded as `MANIFOLD_EDITION=tunnel` in `/etc/default/manifold`, so `manifold update` keeps it (`--edition tunnel` is the old name of `--edition relay`). Running the installer with `--edition full` turns a relay into a full panel; `--edition relay` on a panel turns it into a relay and removes the engines a relay does not run.
 
 ### Choosing the port and login yourself
 
@@ -81,6 +91,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/FarzadSec/Manifold/main/instal
 | `--package FILE` | Install from a package file instead of downloading |
 | `--no-start` | Install without starting the service |
 | `--no-deps` | Do not install system packages; OpenVPN and WireGuard inbounds then need `openvpn`, `wireguard-tools` and `nftables` installed by hand |
+| `--edition full` or `--edition relay` | Manifold or Manifold Relay, without the question; kept on update |
 
 These first-install options are ignored when a database already exists.
 
@@ -124,6 +135,9 @@ Manifold shares no file, service name or command with other panels, so it can be
 | 22 | Recovery: turn two-factor off, drop the panel to plain HTTP, listen everywhere, a new API token, run the database migrations again |
 | 23 | Backups: write a full backup to `/root`, sealed with a passphrase if you give one; restore one |
 | 24–25 | BBR on or off; update Xray's geo files (Loyalsoldier, chocolate4u, runetfreedom) |
+| 26 | Tunnels: the state of each end, checked on the spot |
+
+On Manifold Relay the menu has its own numbers, without Xray, IP limit or geo files and with the tunnels' state, importing a pairing code and a new relay token.
 
 The same things as commands:
 
@@ -131,7 +145,8 @@ The same things as commands:
 manifold status          # service state
 manifold restart         # also: start, stop, enable, disable, restart-xray
 manifold log             # last 100 log lines; `manifold log -f` follows
-manifold doctor          # why the panel cannot be reached
+manifold doctor          # why the panel cannot be reached, and which tunnel is down
+manifold tunnel list     # each tunnel end and its state; `manifold tunnel import CODE` adds one
 manifold settings        # panel port, URL path, address, login state
 manifold login           # set a new random login and print it
 manifold login NAME PASS # set a chosen login

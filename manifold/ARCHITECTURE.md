@@ -1,8 +1,10 @@
 # Manifold — Architecture and Roadmap
 
-Version 0.15 · 2026-11-17 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnels, full backups, the access model, limits and usage, subscriptions, nodes, shared ports, scheduled backups, webhooks, monitoring, the certificate store, importers, tunnel groups, the addon groundwork and the 3x-ui style installer and management menu delivered; see 8.1 to 8.15 for what they leave open
+Version 0.16 · 2026-11-17 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnels, full backups, the access model, limits and usage, subscriptions, nodes, shared ports, scheduled backups, webhooks, monitoring, the certificate store, importers, tunnel groups, the addon groundwork, the 3x-ui style installer and management menu, and Manifold Relay delivered; see 8.1 to 8.16 for what they leave open
 
 Decision log:
+
+- 2026-11-17 — The relay is a product of its own, Manifold Relay, chosen at the installer's first question, but built from the same code and released with it: both ends of a tunnel speak one pairing format and one relay API, and one code base keeps them in step. It has its own package without Xray, mtg or the geo files, its own pages and menu, a tunnel-scoped token in its install summary, and the managing panel shows each relay's version (sent as `X-Manifold-Version` on tunnel answers) so drift is seen
 
 - 2026-11-17 — The installer and the `manifold` command follow 3x-ui's: a first install from a terminal asks for the port and how to secure the panel (a Let's Encrypt certificate for the server's IP is the default), and `manifold` alone opens a numbered menu. Both stay non-interactive without a terminal, because CI, scripts and the master's SSH node install feed them on stdin. Certificates they get go through the certificate store, so the panel renews them like any other
 
@@ -246,9 +248,10 @@ This is the contract Mirza Bot will sync against.
 - A save is refused when a port it listens on belongs to another tunnel, an enabled inbound, SSH or the panel, or when its tunnel subnet overlaps another tunnel's.
 - Groups (0.12.0): `tunnel_groups` joins 2 to 16 relay ends with an interface under shared forwards, in `manifold_tg<id>`. Balance writes `dnat to numgen inc mod N map { … }` over the members that answer; failover writes a plain DNAT to the first. `ReconcileGroups` runs after every reconcile and every ten seconds, and rewrites the table only when the chosen set changes; with no member answering it uses all of them, so a probe that cannot run never takes the ports away. A group's ports are checked against tunnels, other groups, inbounds and the panel, and a member cannot be deleted while a group lists it.
 
-### 4.9 Tunnel edition (built, 0.5.0)
+### 4.9 Manifold Relay, the tunnel edition (built, 0.5.0; its own product in 0.14.0)
 
-- `MANIFOLD_EDITION=tunnel` in `/etc/default/manifold`, set by `install.sh --edition tunnel` and kept on update. `config.IsTunnelEdition` makes the panel start only the tunnel job and housekeeping, keeps the subscription server off, and tells the page through `window.X_UI_EDITION`; the sidebar and command palette then list the overview, tunnels, settings and API only, and the overview hides the Xray controls.
+- Since 0.14.0 the installer asks Manifold or Manifold Relay on a first install from a terminal (`--edition full|relay` otherwise), and a relay downloads `manifold-relay-linux-<arch>`: the program, BackPack and the scripts. A relay's pages say Manifold Relay and list each tunnel end in full on the overview; its `manifold` menu is its own table; `manifold tunnel list|import` and `manifold relay-token` serve a relay run over SSH alone. `tunnel.Manager.Check` measures an end from outside the panel's process (link, BackPack process and snapshot, three echoes).
+- `MANIFOLD_EDITION=tunnel` in `/etc/default/manifold`, set by `install.sh --edition relay` (or the old `tunnel`) and kept on update. `config.IsTunnelEdition` makes the panel start only the tunnel job and housekeeping, keeps the subscription server off, and tells the page through `window.X_UI_EDITION`; the sidebar and command palette then list the overview, tunnels, settings and API only, and the overview hides the Xray controls.
 - The installer installs `nftables`, `iptables` and `iproute2` for it and none of the VPN engines.
 
 ### 4.10 Full backup and restore (built, 0.5.0)
@@ -475,6 +478,12 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - SSH install downloads the installer from GitHub on the server; a server that cannot reach GitHub needs the package copied by hand (`install.sh --package`).
 - Node templates (one configuration applied to many nodes) are not built; a node's inbounds are created on it from the master as before.
 - Live connections per node are still not listed (see 8.7).
+
+### 8.16 Open items after Manifold Relay (0.14.0)
+
+- A relay's version is learnt only when the managing panel talks to it (saving a tunnel, a resync, opening the Relays window); nothing polls relays in the background.
+- The relay package still holds the whole panel program; only Xray, mtg and the geo files are left out. A build without the Xray library and the inbound code would be smaller still.
+- The login page of a relay still says Manifold, so as not to tell an outsider the server is a relay.
 
 ### 8.15 Open items after the installer and menu (0.13.0)
 

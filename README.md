@@ -22,7 +22,7 @@ One control panel for several VPN protocols. A customer has one account with one
 - L2TP/IPsec inbounds: the panel runs the L2TP server and hands strongSwan its IPsec side; a customer types four values into the device's own VPN settings and needs no app. Usage is counted per account, and quota, expiry and the device limit cut a session
 - OpenVPN profiles set by the admin: MTU, ciphers, split tunnelling, `tls-crypt`, `tls-auth` or no control channel key, extra profile lines, and certificates issued with a chosen key type or brought in
 - Tunnels to a relay: kernel GRE, GRETAP, IP6GRE, IP6GRETAP, IPIP and SIT links and BackPack reverse and layer-3 tunnels, with the relay's forwarded ports, their state on the overview, pairing codes, and relays set up by this panel itself
-- A tunnel edition for the relay: the same package with tunnels only
+- Manifold Relay for the server users connect to: tunnels only, its own small package, chosen at install
 - A full backup that moves a panel to another server, with a check of what the move does to every address users' configs carry
 - One client attached to several inbounds, and client groups
 - Subscription server: share links, JSON and Clash output
@@ -58,10 +58,10 @@ manifold settings
 manifold help
 ```
 
-A relay that forwards users to this panel through tunnels is installed as the tunnel edition:
+The installer asks whether the server runs Manifold or **Manifold Relay**, the tunnel server users connect to in front of a Manifold panel. Without the question:
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/FarzadSec/Manifold/main/install.sh) --edition tunnel
+bash <(curl -Ls https://raw.githubusercontent.com/FarzadSec/Manifold/main/install.sh) --edition relay
 ```
 
 Docker and offline installs are covered in the [installation guide](manifold/docs/installation.md).
