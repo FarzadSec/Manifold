@@ -67,8 +67,10 @@ func seedSummary(t *testing.T, now time.Time) {
 		{Name: "local", Enable: true, Kind: "local", LastRun: 1000, LastSize: 2048},
 		{Name: "s3", Enable: true, Kind: "s3", LastRun: 3000, LastError: "denied"},
 	})
-	db.Create(&model.Inbound{UserId: 1, Enable: true, Port: 4433, Tag: "in-4433", Protocol: model.VLESS,
-		Up: 11, Down: 22, Settings: `{"clients":[]}`})
+	db.Create(&model.Inbound{
+		UserId: 1, Enable: true, Port: 4433, Tag: "in-4433", Protocol: model.VLESS,
+		Up: 11, Down: 22, Settings: `{"clients":[]}`,
+	})
 }
 
 func TestSummaryCountsEachState(t *testing.T) {
