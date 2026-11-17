@@ -547,6 +547,12 @@ export const AuditSettingsSchema = z.object({
 });
 export type AuditSettings = z.infer<typeof AuditSettingsSchema>;
 
+export const AvailabilityBarSchema = z.object({
+  from: z.number().int(),
+  state: z.string(),
+});
+export type AvailabilityBar = z.infer<typeof AvailabilityBarSchema>;
+
 export const BackupFileSchema = z.object({
   exists: z.boolean(),
   mode: z.number().int(),
@@ -1169,6 +1175,13 @@ export const NodeSchema = z.object({
 });
 export type Node = z.infer<typeof NodeSchema>;
 
+export const NodeHealthPointSchema = z.object({
+  at: z.number().int(),
+  cpu: z.number(),
+  mem: z.number(),
+});
+export type NodeHealthPoint = z.infer<typeof NodeHealthPointSchema>;
+
 export const NodeMutationRequestSchema = z.object({
   address: z.string(),
   allowPrivateAddress: z.boolean(),
@@ -1194,6 +1207,17 @@ export const NodeMutationRequestSchema = z.object({
   usageResetMonth: z.number().int(),
 });
 export type NodeMutationRequest = z.infer<typeof NodeMutationRequestSchema>;
+
+export const NodeStatsViewSchema = z.object({
+  availability: z.array(z.lazy(() => AvailabilityBarSchema)),
+  from: z.number().int(),
+  points: z.array(z.lazy(() => NodeHealthPointSchema)),
+  to: z.number().int(),
+  uptimePct: z.number(),
+  users: z.array(z.lazy(() => UserUsageSchema)),
+  watchedPct: z.number(),
+});
+export type NodeStatsView = z.infer<typeof NodeStatsViewSchema>;
 
 export const NodeUsageSchema = z.object({
   down: z.number().int(),

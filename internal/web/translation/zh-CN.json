@@ -1400,7 +1400,19 @@
       "usageLimit": "上限",
       "usageResetsOn": "周期开始于",
       "usageStopped": "因用量上限停止",
-      "usageOfLimit": "本周期 {used} / {limit}"
+      "usageOfLimit": "本周期 {used} / {limit}",
+      "stats": {
+        "menu": "统计",
+        "title": "{name} 的健康状况",
+        "hour": "1 小时",
+        "uptime": "可用率",
+        "availability": "可用性",
+        "availabilityHint": "绿色:有响应。红色:无响应。灰色:未监测(面板关闭或节点尚不存在);可用率只计算监测时间。每五分钟采样,保留 90 天。",
+        "up": "在线",
+        "down": "无响应",
+        "unwatched": "未监测",
+        "noSamples": "此时间段内尚无采样"
+      }
     },
     "settings": {
       "defaultTag": "默认",
@@ -3040,7 +3052,8 @@
         "7d": "7 天",
         "30d": "30 天",
         "month": "月份"
-      }
+      },
+      "user": "用户"
     }
   },
   "tgbot": {

@@ -139,6 +139,9 @@ func run(root, outDir string) error {
 				"UsagePoint",
 				"NodeUsage",
 				"UserUsage",
+				"NodeStatsView",
+				"NodeHealthPoint",
+				"AvailabilityBar",
 			),
 		},
 		{

@@ -64,6 +64,9 @@ func (j *UsagePruneJob) Run() {
 	if err := j.usageService.Prune(time.Now()); err != nil {
 		logger.Warning("usage history prune:", err)
 	}
+	if err := (&service.NodeService{}).PruneHealth(time.Now()); err != nil {
+		logger.Warning("node health prune:", err)
+	}
 }
 
 // NodeUsageLimitJob stops nodes over their period's traffic limit and starts them when it turns.
@@ -78,5 +81,20 @@ func NewNodeUsageLimitJob() *NodeUsageLimitJob {
 func (j *NodeUsageLimitJob) Run() {
 	if err := j.nodeService.EnforceUsageLimits(time.Now()); err != nil {
 		logger.Warning("node usage limits:", err)
+	}
+}
+
+// NodeHealthJob records whether each node answered, and its load, every five minutes.
+type NodeHealthJob struct {
+	nodeService service.NodeService
+}
+
+func NewNodeHealthJob() *NodeHealthJob {
+	return new(NodeHealthJob)
+}
+
+func (j *NodeHealthJob) Run() {
+	if err := j.nodeService.RecordHealth(time.Now()); err != nil {
+		logger.Warning("node health:", err)
 	}
 }

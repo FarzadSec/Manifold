@@ -517,6 +517,11 @@ export interface AuditSettings {
   retentionDays: number;
 }
 
+export interface AvailabilityBar {
+  from: number;
+  state: string;
+}
+
 export interface BackupFile {
   exists: boolean;
   mode: number;
@@ -1096,6 +1101,12 @@ export interface Node {
   xrayVersion: string;
 }
 
+export interface NodeHealthPoint {
+  at: number;
+  cpu: number;
+  mem: number;
+}
+
 export interface NodeMutationRequest {
   address: string;
   allowPrivateAddress: boolean;
@@ -1119,6 +1130,16 @@ export interface NodeMutationRequest {
   usageResetCalendar: string;
   usageResetDay: number;
   usageResetMonth: number;
+}
+
+export interface NodeStatsView {
+  availability: AvailabilityBar[];
+  from: number;
+  points: NodeHealthPoint[];
+  to: number;
+  uptimePct: number;
+  users: UserUsage[];
+  watchedPct: number;
 }
 
 export interface NodeUsage {

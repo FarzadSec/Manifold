@@ -1400,7 +1400,19 @@
       "usageLimit": "Limit",
       "usageResetsOn": "Period starts on",
       "usageStopped": "Stopped by usage limit",
-      "usageOfLimit": "{used} of {limit} this period"
+      "usageOfLimit": "{used} of {limit} this period",
+      "stats": {
+        "menu": "Stats",
+        "title": "Health of {name}",
+        "hour": "1 hour",
+        "uptime": "Uptime",
+        "availability": "Availability",
+        "availabilityHint": "Green: answered. Red: not reporting. Grey: not watched, while the panel was off or before the node existed; uptime counts only watched time. Samples every five minutes, kept 90 days.",
+        "up": "Up",
+        "down": "Not reporting",
+        "unwatched": "Not watched",
+        "noSamples": "No samples in this window yet"
+      }
     },
     "settings": {
       "defaultTag": "預設",
@@ -3040,7 +3052,8 @@
         "7d": "7 days",
         "30d": "30 days",
         "month": "Month"
-      }
+      },
+      "user": "User"
     }
   },
   "tgbot": {

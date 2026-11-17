@@ -537,6 +537,10 @@ export const EXAMPLES: Record<string, unknown> = {
     "enabled": false,
     "retentionDays": 90
   },
+  "AvailabilityBar": {
+    "from": 1700000000,
+    "state": "up"
+  },
   "BackupFile": {
     "exists": false,
     "mode": 384,
@@ -1258,6 +1262,11 @@ export const EXAMPLES: Record<string, unknown> = {
     "xrayState": "",
     "xrayVersion": "25.10.31"
   },
+  "NodeHealthPoint": {
+    "at": 1700000000,
+    "cpu": 12.5,
+    "mem": 40.1
+  },
   "NodeMutationRequest": {
     "address": "",
     "allowPrivateAddress": false,
@@ -1283,6 +1292,32 @@ export const EXAMPLES: Record<string, unknown> = {
     "usageResetCalendar": "gregorian",
     "usageResetDay": 0,
     "usageResetMonth": 0
+  },
+  "NodeStatsView": {
+    "availability": [
+      {
+        "from": 1700000000,
+        "state": "up"
+      }
+    ],
+    "from": 1700000000,
+    "points": [
+      {
+        "at": 1700000000,
+        "cpu": 12.5,
+        "mem": 40.1
+      }
+    ],
+    "to": 1700086400,
+    "uptimePct": 99.5,
+    "users": [
+      {
+        "down": 4194304,
+        "email": "alice",
+        "up": 1048576
+      }
+    ],
+    "watchedPct": 100
   },
   "NodeUsage": {
     "down": 4194304,

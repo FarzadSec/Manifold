@@ -42,6 +42,7 @@ func (a *NodeController) initRouter(g *gin.RouterGroup) {
 	g.POST("/probe/:id", a.probe)
 	g.POST("/updatePanel", a.updatePanel)
 	g.GET("/history/:id/:metric/:bucket", a.history)
+	g.GET("/stats/:id", a.stats)
 	g.POST("/mtls/ca", a.mtlsCa)
 	g.POST("/mtls/trustCA", a.setMtlsTrustCA)
 	g.POST("/mtls/reloadClient", a.reloadMtlsClient)
@@ -366,4 +367,21 @@ func (a *NodeController) history(c *gin.Context) {
 		return
 	}
 	jsonObj(c, a.nodeService.AggregateNodeMetric(id, metric, bucket, 60), nil)
+}
+
+// stats is a node's health and per-user traffic over a window, as the client usage window reads it.
+func (a *NodeController) stats(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "get"), err)
+		return
+	}
+	now := time.Now()
+	w, err := service.ParseUsageWindow(c.Query("window"), c.Query("month"), c.Query("calendar"), now)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "get"), err)
+		return
+	}
+	view, err := a.nodeService.Stats(id, w, now)
+	jsonObj(c, view, err)
 }

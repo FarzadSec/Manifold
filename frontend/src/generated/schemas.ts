@@ -2164,6 +2164,25 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "AvailabilityBar": {
+    "description": "AvailabilityBar is one stretch of the availability bar: up, down (any slot unanswered) or\nunwatched (the panel recorded nothing, being off or the node not yet added).",
+    "properties": {
+      "from": {
+        "example": 1700000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "state": {
+        "example": "up",
+        "type": "string"
+      }
+    },
+    "required": [
+      "from",
+      "state"
+    ],
+    "type": "object"
+  },
   "BackupFile": {
     "description": "BackupFile is one certificate or key the panel's settings point at.",
     "properties": {
@@ -4870,6 +4889,30 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "NodeHealthPoint": {
+    "description": "NodeHealthPoint is the node's load over one stretch of the chart.",
+    "properties": {
+      "at": {
+        "example": 1700000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "cpu": {
+        "example": 12.5,
+        "type": "number"
+      },
+      "mem": {
+        "example": 40.1,
+        "type": "number"
+      }
+    },
+    "required": [
+      "at",
+      "cpu",
+      "mem"
+    ],
+    "type": "object"
+  },
   "NodeMutationRequest": {
     "description": "NodeMutationRequest is the node write/probe contract. ApiToken is accepted\nonly as input. On update, nil means keep the stored token; replacement and\nclearing are explicit and mutually exclusive.",
     "properties": {
@@ -4991,6 +5034,57 @@ export const SCHEMAS: Record<string, unknown> = {
       "usageResetCalendar",
       "usageResetDay",
       "usageResetMonth"
+    ],
+    "type": "object"
+  },
+  "NodeStatsView": {
+    "description": "NodeStatsView is a node's health and traffic over a window.",
+    "properties": {
+      "availability": {
+        "items": {
+          "$ref": "#/components/schemas/AvailabilityBar"
+        },
+        "type": "array"
+      },
+      "from": {
+        "example": 1700000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "points": {
+        "items": {
+          "$ref": "#/components/schemas/NodeHealthPoint"
+        },
+        "type": "array"
+      },
+      "to": {
+        "example": 1700086400,
+        "format": "int64",
+        "type": "integer"
+      },
+      "uptimePct": {
+        "example": 99.5,
+        "type": "number"
+      },
+      "users": {
+        "items": {
+          "$ref": "#/components/schemas/UserUsage"
+        },
+        "type": "array"
+      },
+      "watchedPct": {
+        "example": 100,
+        "type": "number"
+      }
+    },
+    "required": [
+      "availability",
+      "from",
+      "points",
+      "to",
+      "uptimePct",
+      "users",
+      "watchedPct"
     ],
     "type": "object"
   },

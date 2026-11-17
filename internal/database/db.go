@@ -93,6 +93,7 @@ func allModels() []any {
 		&model.Plan{},
 		&model.AuditEntry{},
 		&model.ClientUsage{},
+		&model.NodeHealth{},
 	}
 }
 

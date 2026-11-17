@@ -1981,3 +1981,14 @@ type TunnelRelay struct {
 	Token     string `json:"-" gorm:"column:token"`
 	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime:milli" example:"1763300000000"`
 }
+
+// NodeHealth is one five-minute look at a node: whether it answered, and its load then.
+type NodeHealth struct {
+	Id        int     `json:"-" gorm:"primaryKey;autoIncrement"`
+	NodeId    int     `json:"-" gorm:"uniqueIndex:idx_node_health_slot"`
+	At        int64   `json:"at" gorm:"uniqueIndex:idx_node_health_slot" example:"1700000000"`
+	Up        bool    `json:"up" example:"true"`
+	Cpu       float64 `json:"cpu" example:"12.5"`
+	Mem       float64 `json:"mem" example:"40.1"`
+	LatencyMs int     `json:"latencyMs" example:"42"`
+}

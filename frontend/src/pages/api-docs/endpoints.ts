@@ -2064,6 +2064,29 @@ export const sections: readonly Section[] = [
           },
         ],
       },
+      {
+        method: 'GET',
+        path: '/panel/api/nodes/stats/:id',
+        summary:
+          "A node's health over a window from its five-minute samples (kept 90 days): availability stretches (up, down, or unwatched while the panel recorded nothing), uptime counted over watched time only, load, and each user's traffic on it.",
+        params: [
+          { name: 'id', in: 'path', type: 'number', desc: 'Node ID.' },
+          {
+            name: 'window',
+            in: 'query',
+            type: 'string',
+            desc: '1h, 24h (default), 7d, 30d or month.',
+          },
+          { name: 'month', in: 'query', type: 'string', desc: 'With window=month: YYYY-MM.' },
+          {
+            name: 'calendar',
+            in: 'query',
+            type: 'string',
+            desc: 'gregorian (default) or persian.',
+          },
+        ],
+        responseSchema: 'NodeStatsView',
+      },
     ],
   },
 

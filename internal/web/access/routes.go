@@ -169,6 +169,7 @@ var routeRules = map[string]Rule{
 	key("GET", "/nodes/list"):                        need(NodesRead),
 	key("GET", "/nodes/get/:id"):                     need(NodesRead),
 	key("GET", "/nodes/history/:id/:metric/:bucket"): need(NodesRead),
+	key("GET", "/nodes/stats/:id"):                   need(NodesRead),
 	key("GET", "/nodes/webCert/:id"):                 need(NodesRead),
 	key("POST", "/nodes/add"):                        need(NodesWrite),
 	key("POST", "/nodes/update/:id"):                 need(NodesWrite),

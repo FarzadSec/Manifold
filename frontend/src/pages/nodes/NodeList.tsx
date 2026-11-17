@@ -4,6 +4,7 @@ import { Badge, Button, Card, Dropdown, Modal, Space, Switch, Table, Tag, Toolti
 import type { BadgeProps } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
+  LineChartOutlined,
   ApartmentOutlined,
   ClusterOutlined,
   CloudDownloadOutlined,
@@ -23,6 +24,7 @@ import {
 
 import NodeHistoryPanel from './NodeHistoryPanel';
 import NodeTrafficTags from './NodeTrafficTags';
+import NodeStatsModal from './NodeStatsModal';
 import type { NodeRecord } from '@/api/queries/useNodesQuery';
 import { isPanelUpdateAvailable } from '@/lib/panel-version';
 import { activateOnKey } from '@/utils/a11y';
@@ -194,6 +196,7 @@ export default function NodeList({
 
   const [showAddress, setShowAddress] = useState(false);
   const [statsNode, setStatsNode] = useState<NodeRow | null>(null);
+  const [healthNode, setHealthNode] = useState<NodeRow | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
   // Map a direct node's GUID to its display name so a transitive sub-node can show
@@ -254,7 +257,7 @@ export default function NodeList({
       {
         title: t('pages.nodes.actions'),
         align: 'center',
-        width: 190,
+        width: 226,
         render: (_value, record) =>
           record.transitive ? (
             <Tooltip
@@ -290,6 +293,16 @@ export default function NodeList({
                   />
                 </Tooltip>
               )}
+              <Tooltip title={t('pages.nodes.stats.menu')}>
+                <Button
+                  type="text"
+                  size="small"
+                  style={{ fontSize: 16 }}
+                  icon={<LineChartOutlined aria-hidden />}
+                  aria-label={t('pages.nodes.stats.menu')}
+                  onClick={() => setHealthNode(record)}
+                />
+              </Tooltip>
               <Tooltip title={t('edit')}>
                 <Button
                   type="text"
@@ -699,6 +712,15 @@ export default function NodeList({
                                   ]
                                 : []),
                               {
+                                key: 'stats',
+                                label: (
+                                  <>
+                                    <LineChartOutlined aria-hidden /> {t('pages.nodes.stats.menu')}
+                                  </>
+                                ),
+                                onClick: () => setHealthNode(record),
+                              },
+                              {
                                 key: 'edit',
                                 label: (
                                   <>
@@ -877,6 +899,7 @@ export default function NodeList({
       ) : (
         nodeTable
       )}
+      <NodeStatsModal node={healthNode} onClose={() => setHealthNode(null)} />
     </Card>
   );
 }
