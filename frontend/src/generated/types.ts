@@ -1079,10 +1079,18 @@ export interface Node {
   scheme: string;
   status: string;
   tlsVerifyMode: string;
+  trafficMultiplier: number;
   transitive?: boolean;
   unavailableMetrics?: string[];
   updatedAt: number;
   uptimeSecs: number;
+  usageDisabled: boolean;
+  usageLimit: number;
+  usagePeriod: string;
+  usageResetCalendar: string;
+  usageResetDay: number;
+  usageResetMonth: number;
+  usageUsed: number;
   xrayError: string;
   xrayState: string;
   xrayVersion: string;
@@ -1105,6 +1113,12 @@ export interface NodeMutationRequest {
   remark: string;
   scheme: string;
   tlsVerifyMode: string;
+  trafficMultiplier: number;
+  usageLimit: number;
+  usagePeriod: string;
+  usageResetCalendar: string;
+  usageResetDay: number;
+  usageResetMonth: number;
 }
 
 export interface NodeUsage {
@@ -1150,10 +1164,18 @@ export interface NodeView {
   scheme: string;
   status: string;
   tlsVerifyMode: string;
+  trafficMultiplier: number;
   transitive?: boolean;
   unavailableMetrics?: string[];
   updatedAt: number;
   uptimeSecs: number;
+  usageDisabled: boolean;
+  usageLimit: number;
+  usagePeriod: string;
+  usageResetCalendar: string;
+  usageResetDay: number;
+  usageResetMonth: number;
+  usageUsed: number;
   xrayError: string;
   xrayState: string;
   xrayVersion: string;

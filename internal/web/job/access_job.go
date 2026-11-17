@@ -65,3 +65,18 @@ func (j *UsagePruneJob) Run() {
 		logger.Warning("usage history prune:", err)
 	}
 }
+
+// NodeUsageLimitJob stops nodes over their period's traffic limit and starts them when it turns.
+type NodeUsageLimitJob struct {
+	nodeService service.NodeService
+}
+
+func NewNodeUsageLimitJob() *NodeUsageLimitJob {
+	return new(NodeUsageLimitJob)
+}
+
+func (j *NodeUsageLimitJob) Run() {
+	if err := j.nodeService.EnforceUsageLimits(time.Now()); err != nil {
+		logger.Warning("node usage limits:", err)
+	}
+}

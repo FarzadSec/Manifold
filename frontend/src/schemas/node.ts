@@ -40,6 +40,14 @@ export const NodeRecordSchema = z
     // Backend serializes a nil []string as null for nodes saved before #5178.
     inboundTags: z.array(z.string()).nullish(),
     outboundTag: z.string().optional(),
+    trafficMultiplier: z.number().optional(),
+    usageLimit: z.number().optional(),
+    usagePeriod: z.string().optional(),
+    usageResetDay: z.number().optional(),
+    usageResetMonth: z.number().optional(),
+    usageResetCalendar: z.string().optional(),
+    usageDisabled: z.boolean().optional(),
+    usageUsed: z.number().optional(),
     // Multi-hop node tree (#4983): a node's stable GUID, its parent's GUID, and
     // whether it's a read-only transitive sub-node surfaced from a downstream node.
     guid: z.string().optional(),
@@ -88,6 +96,12 @@ export const NodeFormSchema = z
       .nullish()
       .transform((tags) => tags ?? []),
     outboundTag: z.string().optional(),
+    trafficMultiplier: z.number().min(0.01).max(100),
+    usagePeriod: z.enum(['', 'weekly', 'monthly', 'yearly']),
+    usageLimitGB: z.number().min(0),
+    usageResetDay: z.number().int().min(1).max(31),
+    usageResetMonth: z.number().int().min(1).max(12),
+    usageResetCalendar: z.enum(['gregorian', 'persian']),
   })
   .superRefine((val, ctx) => {
     if (val.tlsVerifyMode !== 'mtls' && val.apiToken.length === 0 && !val.hasStoredToken) {

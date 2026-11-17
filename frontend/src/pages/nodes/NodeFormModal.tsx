@@ -54,8 +54,17 @@ function defaultValues(): NodeFormValues {
     inboundSyncMode: 'all',
     inboundTags: [],
     outboundTag: '',
+    trafficMultiplier: 1,
+    usagePeriod: '',
+    usageLimitGB: 0,
+    usageResetDay: 1,
+    usageResetMonth: 1,
+    usageResetCalendar: 'gregorian',
   };
 }
+
+const GB = 1024 ** 3;
+const WEEKDAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
 export default function NodeFormModal({
   open,
@@ -80,6 +89,7 @@ export default function NodeFormModal({
   const scheme = useWatch({ control: methods.control, name: 'scheme' }) ?? 'https';
   const tlsVerifyMode = useWatch({ control: methods.control, name: 'tlsVerifyMode' }) ?? 'verify';
   const inboundSyncMode = useWatch({ control: methods.control, name: 'inboundSyncMode' }) ?? 'all';
+  const usagePeriod = useWatch({ control: methods.control, name: 'usagePeriod' }) ?? '';
   const { data: outboundGroups } = useOutboundTagGroups({ excludeBlackhole: true });
 
   // Outbounds and balancers share one picker (like the panel-outbound selector);
@@ -122,6 +132,12 @@ export default function NodeFormModal({
             inboundTags: node.inboundTags ?? [],
             apiToken: '',
             hasStoredToken: node.hasApiToken ?? false,
+            trafficMultiplier: node.trafficMultiplier || 1,
+            usagePeriod: (node.usagePeriod as NodeFormValues['usagePeriod']) || '',
+            usageLimitGB: node.usageLimit ? Math.round((node.usageLimit / GB) * 100) / 100 : 0,
+            usageResetDay: node.usageResetDay || 1,
+            usageResetMonth: node.usageResetMonth || 1,
+            usageResetCalendar: node.usageResetCalendar === 'persian' ? 'persian' : 'gregorian',
           }
         : base;
     if (next.scheme === 'http') next.tlsVerifyMode = 'skip';
@@ -154,6 +170,12 @@ export default function NodeFormModal({
       inboundSyncMode: values.inboundSyncMode,
       inboundTags: values.inboundSyncMode === 'selected' ? values.inboundTags : [],
       outboundTag: values.outboundTag || '',
+      trafficMultiplier: values.trafficMultiplier || 1,
+      usagePeriod: values.usagePeriod,
+      usageLimit: values.usagePeriod ? Math.round(values.usageLimitGB * GB) : 0,
+      usageResetDay: values.usagePeriod ? values.usageResetDay : 0,
+      usageResetMonth: values.usagePeriod === 'yearly' ? values.usageResetMonth : 0,
+      usageResetCalendar: values.usageResetCalendar,
     };
     if (token) payload.apiToken = token;
     return payload;
@@ -410,6 +432,96 @@ export default function NodeFormModal({
                 options={outboundOptions}
               />
             </FormField>
+
+            <Row gutter={12}>
+              <Col xs={24} md={8}>
+                <FormField
+                  label={t('pages.nodes.trafficMultiplier')}
+                  name="trafficMultiplier"
+                  tooltip={t('pages.nodes.trafficMultiplierHint')}
+                  rules={{ validate: rhfZodValidate(NodeFormSchema.shape.trafficMultiplier) }}
+                >
+                  <InputNumber
+                    min={0.01}
+                    max={100}
+                    step={0.1}
+                    addonBefore="×"
+                    style={{ width: '100%' }}
+                  />
+                </FormField>
+              </Col>
+              <Col xs={24} md={8}>
+                <FormField
+                  label={t('pages.nodes.usagePeriod')}
+                  name="usagePeriod"
+                  tooltip={t('pages.nodes.usagePeriodHint')}
+                >
+                  <Select
+                    options={[
+                      { value: '', label: t('pages.nodes.usageNoLimit') },
+                      { value: 'weekly', label: t('pages.clients.cycle.weekly') },
+                      { value: 'monthly', label: t('pages.clients.cycle.monthly') },
+                      { value: 'yearly', label: t('pages.clients.cycle.yearly') },
+                    ]}
+                  />
+                </FormField>
+              </Col>
+              {usagePeriod !== '' && (
+                <Col xs={24} md={8}>
+                  <FormField
+                    label={t('pages.nodes.usageLimit')}
+                    name="usageLimitGB"
+                    rules={{ validate: rhfZodValidate(NodeFormSchema.shape.usageLimitGB) }}
+                  >
+                    <InputNumber min={0} step={100} addonAfter="GB" style={{ width: '100%' }} />
+                  </FormField>
+                </Col>
+              )}
+            </Row>
+            {usagePeriod !== '' && (
+              <Row gutter={12}>
+                {usagePeriod === 'weekly' ? (
+                  <Col xs={24} md={8}>
+                    <FormField label={t('pages.nodes.usageResetsOn')} name="usageResetDay">
+                      <Select
+                        options={WEEKDAYS.map((d, i) => ({
+                          value: i + 1,
+                          label: t(`pages.access.weekday.${d}`),
+                        }))}
+                      />
+                    </FormField>
+                  </Col>
+                ) : (
+                  <>
+                    <Col xs={12} md={6}>
+                      <FormField label={t('pages.nodes.usageResetsOn')} name="usageResetDay">
+                        <InputNumber min={1} max={31} style={{ width: '100%' }} />
+                      </FormField>
+                    </Col>
+                    {usagePeriod === 'yearly' && (
+                      <Col xs={12} md={6}>
+                        <FormField label={t('pages.clients.cycle.month')} name="usageResetMonth">
+                          <InputNumber min={1} max={12} style={{ width: '100%' }} />
+                        </FormField>
+                      </Col>
+                    )}
+                    <Col xs={24} md={12}>
+                      <FormField
+                        label={t('pages.clients.cycle.calendar')}
+                        name="usageResetCalendar"
+                      >
+                        <Select
+                          options={[
+                            { value: 'gregorian', label: t('pages.clients.cycle.gregorian') },
+                            { value: 'persian', label: t('pages.clients.cycle.persian') },
+                          ]}
+                        />
+                      </FormField>
+                    </Col>
+                  </>
+                )}
+              </Row>
+            )}
 
             <FormField
               label={t('pages.nodes.inboundSyncMode')}

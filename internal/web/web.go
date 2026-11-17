@@ -397,6 +397,7 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	go speedJob.Run()
 	_, _ = s.cron.AddJob(cadenceAuditPrune, job.NewAuditPruneJob())
 	_, _ = s.cron.AddJob("@daily", job.NewUsagePruneJob())
+	_, _ = s.cron.AddJob("@every 1m", job.NewNodeUsageLimitJob())
 
 	s.startTunnelJob()
 

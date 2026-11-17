@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"math"
 	"sort"
 	"strings"
 	"sync"
@@ -226,11 +227,13 @@ func (s *InboundService) upsertNodeBaseline(tx *gorm.DB, nodeID int, email strin
 
 // mergeNodeClientTraffic folds one node-reported client into its central row.
 // While frozen (a push pending or just landed) only the counters may move.
-func (s *InboundService) mergeNodeClientTraffic(tx *gorm.DB, nodeID int, cs xray.ClientTraffic, canon nodeTrafficCounter, frozen bool, deltaUp, deltaDown, now int64) error {
+// mergeNodeClientTraffic charges the user deltaUp/deltaDown, the node's traffic times its
+// multiplier, and records raw, the bytes that crossed the node, in the usage history.
+func (s *InboundService) mergeNodeClientTraffic(tx *gorm.DB, nodeID int, cs xray.ClientTraffic, canon nodeTrafficCounter, frozen bool, deltaUp, deltaDown int64, raw usageDelta, now int64) error {
 	if err := chargeOwnerUsage(tx, map[string]int64{cs.Email: max(deltaUp, 0) + max(deltaDown, 0)}); err != nil {
 		return err
 	}
-	if err := recordClientUsage(tx, nodeID, map[string]usageDelta{cs.Email: {up: deltaUp, down: deltaDown}}, time.UnixMilli(now)); err != nil {
+	if err := recordClientUsage(tx, nodeID, map[string]usageDelta{cs.Email: raw}, time.UnixMilli(now)); err != nil {
 		return err
 	}
 	if frozen {
@@ -265,6 +268,14 @@ func (s *InboundService) mergeNodeClientTraffic(tx *gorm.DB, nodeID int, cs xray
 		cs.ExpiryTime, cs.Reset, cs.ResetDay, cs.ResetWeekday,
 		cs.LastOnline, cs.Email,
 	).Error
+}
+
+// scaleNodeTraffic is what n bytes on a node cost a user's quota; an unset multiplier is 1.
+func scaleNodeTraffic(n int64, multiplier float64) int64 {
+	if multiplier <= 0 || multiplier == 1 || n <= 0 {
+		return n
+	}
+	return clampTrafficCounter(int64(math.Round(float64(n) * multiplier)))
 }
 
 // mergeActivationExpiry: master absolute wins; node may only activate when
@@ -518,7 +529,7 @@ func (s *InboundService) setRemoteTrafficLocked(nodeID int, snap *runtime.Traffi
 	// origin (an inbound the node forwards from its own sub-node) is kept as-is,
 	// so a chained Node1->Node2->Node3 still attributes Node3's inbounds to Node3.
 	var nodeRow model.Node
-	db.Select("guid", "config_dirty", "inbound_sync_mode", "inbound_tags").Where("id = ?", nodeID).First(&nodeRow)
+	db.Select("guid", "config_dirty", "inbound_sync_mode", "inbound_tags", "traffic_multiplier").Where("id = ?", nodeID).First(&nodeRow)
 	// Re-read inside the serialized writer: a client added while this snapshot
 	// was in flight marks the node dirty after the caller sampled the flag.
 	dirty = dirty || nodeRow.ConfigDirty
@@ -1096,6 +1107,8 @@ func (s *InboundService) setRemoteTrafficLocked(nodeID int, snap *runtime.Traffi
 					deltaDown = 0
 				}
 			}
+			rawUp, rawDown := deltaUp, deltaDown
+			deltaUp, deltaDown = scaleNodeTraffic(deltaUp, nodeRow.TrafficMultiplier), scaleNodeTraffic(deltaDown, nodeRow.TrafficMultiplier)
 
 			if _, rowExists := statByEmail[cs.Email]; !rowExists {
 				if dirty {
@@ -1218,7 +1231,7 @@ func (s *InboundService) setRemoteTrafficLocked(nodeID int, snap *runtime.Traffi
 				// A multi-attached client is reported once per inbound and an idle one
 				// every tick: rewriting an unchanged row only holds its lock longer.
 				if next != *row {
-					if err := s.mergeNodeClientTraffic(tx, nodeID, cs, canon, clientFrozen, deltaUp, deltaDown, now); err != nil {
+					if err := s.mergeNodeClientTraffic(tx, nodeID, cs, canon, clientFrozen, deltaUp, deltaDown, usageDelta{up: rawUp, down: rawDown}, now); err != nil {
 						return false, err
 					}
 					*row = next

@@ -1391,7 +1391,16 @@
       "pinnedCertPlaceholder": "base64 或 hex 的 SHA-256",
       "fetchPin": "获取",
       "pinFetched": "已获取节点当前证书",
-      "pinFetchFailed": "无法获取证书"
+      "pinFetchFailed": "无法获取证书",
+      "trafficMultiplier": "流量倍率",
+      "trafficMultiplierHint": "用户在此节点的流量按此倍率计入配额:2 为双倍,0.5 为一半。用量历史记录真实字节。",
+      "usagePeriod": "周期用量上限",
+      "usagePeriodHint": "限制节点每周、每月或每年的自身流量。达到上限后其入站停止,直到下个周期开始时由面板重新启用。",
+      "usageNoLimit": "不限制",
+      "usageLimit": "上限",
+      "usageResetsOn": "周期开始于",
+      "usageStopped": "因用量上限停止",
+      "usageOfLimit": "本周期 {used} / {limit}"
     },
     "settings": {
       "defaultTag": "默认",

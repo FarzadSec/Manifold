@@ -1512,7 +1512,16 @@
       "pinnedCertPlaceholder": "SHA-256 vo formáte base64 alebo hex",
       "fetchPin": "Získať",
       "pinFetched": "Aktuálny certifikát servera bol načítaný",
-      "pinFetchFailed": "Nepodarilo sa získať certifikát"
+      "pinFetchFailed": "Nepodarilo sa získať certifikát",
+      "trafficMultiplier": "Traffic multiplier",
+      "trafficMultiplierHint": "Users' traffic on this node counts against their quota times this: 2 counts double, 0.5 half. Usage history keeps the real bytes.",
+      "usagePeriod": "Periodic usage limit",
+      "usagePeriodHint": "Caps the node's own traffic per week, month or year. At the limit its inbounds stop until the next period starts; then the panel starts them again.",
+      "usageNoLimit": "No limit",
+      "usageLimit": "Limit",
+      "usageResetsOn": "Period starts on",
+      "usageStopped": "Stopped by usage limit",
+      "usageOfLimit": "{used} of {limit} this period"
     },
     "settings": {
       "defaultTag": "Predvolené",

@@ -22,6 +22,7 @@ import {
 } from '@ant-design/icons';
 
 import NodeHistoryPanel from './NodeHistoryPanel';
+import NodeTrafficTags from './NodeTrafficTags';
 import type { NodeRecord } from '@/api/queries/useNodesQuery';
 import { isPanelUpdateAvailable } from '@/lib/panel-version';
 import { activateOnKey } from '@/utils/a11y';
@@ -346,6 +347,7 @@ export default function NodeList({
               {record.name}
             </span>
             {record.remark && <span className="remark">{record.remark}</span>}
+            <NodeTrafficTags record={record} />
           </div>
         ),
       },

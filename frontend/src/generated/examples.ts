@@ -1240,12 +1240,20 @@ export const EXAMPLES: Record<string, unknown> = {
     "scheme": "https",
     "status": "online",
     "tlsVerifyMode": "verify",
+    "trafficMultiplier": 1,
     "transitive": false,
     "unavailableMetrics": [
       ""
     ],
     "updatedAt": 1700000000,
     "uptimeSecs": 86400,
+    "usageDisabled": false,
+    "usageLimit": 1099511627776,
+    "usagePeriod": "monthly",
+    "usageResetCalendar": "gregorian",
+    "usageResetDay": 1,
+    "usageResetMonth": 0,
+    "usageUsed": 0,
     "xrayError": "",
     "xrayState": "",
     "xrayVersion": "25.10.31"
@@ -1268,7 +1276,13 @@ export const EXAMPLES: Record<string, unknown> = {
     "port": 1,
     "remark": "",
     "scheme": "http",
-    "tlsVerifyMode": "verify"
+    "tlsVerifyMode": "verify",
+    "trafficMultiplier": 0,
+    "usageLimit": 0,
+    "usagePeriod": "weekly",
+    "usageResetCalendar": "gregorian",
+    "usageResetDay": 0,
+    "usageResetMonth": 0
   },
   "NodeUsage": {
     "down": 4194304,
@@ -1314,12 +1328,20 @@ export const EXAMPLES: Record<string, unknown> = {
     "scheme": "https",
     "status": "online",
     "tlsVerifyMode": "verify",
+    "trafficMultiplier": 1,
     "transitive": false,
     "unavailableMetrics": [
       ""
     ],
     "updatedAt": 1700003600,
     "uptimeSecs": 86400,
+    "usageDisabled": false,
+    "usageLimit": 1099511627776,
+    "usagePeriod": "monthly",
+    "usageResetCalendar": "gregorian",
+    "usageResetDay": 1,
+    "usageResetMonth": 0,
+    "usageUsed": 53687091200,
     "xrayError": "",
     "xrayState": "running",
     "xrayVersion": "25.10.31"

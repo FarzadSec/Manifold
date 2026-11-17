@@ -4753,6 +4753,11 @@ export const SCHEMAS: Record<string, unknown> = {
         ],
         "type": "string"
       },
+      "trafficMultiplier": {
+        "description": "TrafficMultiplier scales what this node's traffic costs users' quotas; 0 is read as 1.",
+        "example": 1,
+        "type": "number"
+      },
       "transitive": {
         "type": "boolean"
       },
@@ -4770,6 +4775,36 @@ export const SCHEMAS: Record<string, unknown> = {
       },
       "uptimeSecs": {
         "example": 86400,
+        "format": "int64",
+        "type": "integer"
+      },
+      "usageDisabled": {
+        "type": "boolean"
+      },
+      "usageLimit": {
+        "description": "A cap on the node's raw traffic per period (bytes; 0 none): reaching it stops the\nnode's inbounds until the period turns.",
+        "example": 1099511627776,
+        "format": "int64",
+        "type": "integer"
+      },
+      "usagePeriod": {
+        "example": "monthly",
+        "type": "string"
+      },
+      "usageResetCalendar": {
+        "example": "gregorian",
+        "type": "string"
+      },
+      "usageResetDay": {
+        "example": 1,
+        "type": "integer"
+      },
+      "usageResetMonth": {
+        "example": 0,
+        "type": "integer"
+      },
+      "usageUsed": {
+        "example": 0,
         "format": "int64",
         "type": "integer"
       },
@@ -4819,8 +4854,16 @@ export const SCHEMAS: Record<string, unknown> = {
       "scheme",
       "status",
       "tlsVerifyMode",
+      "trafficMultiplier",
       "updatedAt",
       "uptimeSecs",
+      "usageDisabled",
+      "usageLimit",
+      "usagePeriod",
+      "usageResetCalendar",
+      "usageResetDay",
+      "usageResetMonth",
+      "usageUsed",
       "xrayError",
       "xrayState",
       "xrayVersion"
@@ -4897,6 +4940,34 @@ export const SCHEMAS: Record<string, unknown> = {
           "mtls"
         ],
         "type": "string"
+      },
+      "trafficMultiplier": {
+        "type": "number"
+      },
+      "usageLimit": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "usagePeriod": {
+        "enum": [
+          "weekly",
+          "monthly",
+          "yearly"
+        ],
+        "type": "string"
+      },
+      "usageResetCalendar": {
+        "enum": [
+          "gregorian",
+          "persian"
+        ],
+        "type": "string"
+      },
+      "usageResetDay": {
+        "type": "integer"
+      },
+      "usageResetMonth": {
+        "type": "integer"
       }
     },
     "required": [
@@ -4913,7 +4984,13 @@ export const SCHEMAS: Record<string, unknown> = {
       "port",
       "remark",
       "scheme",
-      "tlsVerifyMode"
+      "tlsVerifyMode",
+      "trafficMultiplier",
+      "usageLimit",
+      "usagePeriod",
+      "usageResetCalendar",
+      "usageResetDay",
+      "usageResetMonth"
     ],
     "type": "object"
   },
@@ -5097,6 +5174,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "verify",
         "type": "string"
       },
+      "trafficMultiplier": {
+        "example": 1,
+        "type": "number"
+      },
       "transitive": {
         "example": false,
         "type": "boolean"
@@ -5114,6 +5195,36 @@ export const SCHEMAS: Record<string, unknown> = {
       },
       "uptimeSecs": {
         "example": 86400,
+        "format": "int64",
+        "type": "integer"
+      },
+      "usageDisabled": {
+        "example": false,
+        "type": "boolean"
+      },
+      "usageLimit": {
+        "example": 1099511627776,
+        "format": "int64",
+        "type": "integer"
+      },
+      "usagePeriod": {
+        "example": "monthly",
+        "type": "string"
+      },
+      "usageResetCalendar": {
+        "example": "gregorian",
+        "type": "string"
+      },
+      "usageResetDay": {
+        "example": 1,
+        "type": "integer"
+      },
+      "usageResetMonth": {
+        "example": 0,
+        "type": "integer"
+      },
+      "usageUsed": {
+        "example": 53687091200,
         "format": "int64",
         "type": "integer"
       },
@@ -5164,8 +5275,16 @@ export const SCHEMAS: Record<string, unknown> = {
       "scheme",
       "status",
       "tlsVerifyMode",
+      "trafficMultiplier",
       "updatedAt",
       "uptimeSecs",
+      "usageDisabled",
+      "usageLimit",
+      "usagePeriod",
+      "usageResetCalendar",
+      "usageResetDay",
+      "usageResetMonth",
+      "usageUsed",
       "xrayError",
       "xrayState",
       "xrayVersion"

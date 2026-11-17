@@ -971,6 +971,18 @@ type Node struct {
 	InboundSyncMode     string   `json:"inboundSyncMode" form:"inboundSyncMode" gorm:"column:inbound_sync_mode;default:all" validate:"omitempty,oneof=all selected"`
 	InboundTags         []string `json:"inboundTags" form:"inboundTags" gorm:"serializer:json;column:inbound_tags"`
 	OutboundTag         string   `json:"outboundTag" form:"outboundTag" gorm:"column:outbound_tag"`
+	// TrafficMultiplier scales what this node's traffic costs users' quotas; 0 is read as 1.
+	TrafficMultiplier float64 `json:"trafficMultiplier" form:"trafficMultiplier" gorm:"column:traffic_multiplier;default:1" example:"1"`
+	// A cap on the node's raw traffic per period (bytes; 0 none): reaching it stops the
+	// node's inbounds until the period turns.
+	UsageLimit         int64  `json:"usageLimit" form:"usageLimit" gorm:"column:usage_limit;default:0" example:"1099511627776"`
+	UsagePeriod        string `json:"usagePeriod" form:"usagePeriod" gorm:"column:usage_period" example:"monthly"`
+	UsageResetDay      int    `json:"usageResetDay" form:"usageResetDay" gorm:"column:usage_reset_day" example:"1"`
+	UsageResetMonth    int    `json:"usageResetMonth" form:"usageResetMonth" gorm:"column:usage_reset_month" example:"0"`
+	UsageResetCalendar string `json:"usageResetCalendar" form:"usageResetCalendar" gorm:"column:usage_reset_calendar" example:"gregorian"`
+	UsageDisabled      bool   `json:"usageDisabled" form:"-" gorm:"column:usage_disabled;default:false"`
+	// The inbounds the limit switched off, the only ones the next period switches back on.
+	UsageStoppedInbounds []int `json:"-" form:"-" gorm:"serializer:json;column:usage_stopped_inbounds"`
 
 	// Guid is the remote panel's stable self-identifier (its panelGuid),
 	// learned from each heartbeat. It is the globally stable node identity used
@@ -1011,12 +1023,13 @@ type Node struct {
 
 	DownNotified bool `json:"-" gorm:"column:down_notified;default:false"`
 
-	InboundCount  int `json:"inboundCount" gorm:"-" example:"5"`
-	ClientCount   int `json:"clientCount" gorm:"-" example:"27"`
-	OnlineCount   int `json:"onlineCount" gorm:"-" example:"3"`
-	ActiveCount   int `json:"activeCount" gorm:"-" example:"23"`
-	DisabledCount int `json:"disabledCount" gorm:"-" example:"3"`
-	DepletedCount int `json:"depletedCount" gorm:"-" example:"1"`
+	UsageUsed     int64 `json:"usageUsed" gorm:"-" example:"0"`
+	InboundCount  int   `json:"inboundCount" gorm:"-" example:"5"`
+	ClientCount   int   `json:"clientCount" gorm:"-" example:"27"`
+	OnlineCount   int   `json:"onlineCount" gorm:"-" example:"3"`
+	ActiveCount   int   `json:"activeCount" gorm:"-" example:"23"`
+	DisabledCount int   `json:"disabledCount" gorm:"-" example:"3"`
+	DepletedCount int   `json:"depletedCount" gorm:"-" example:"1"`
 
 	// ParentGuid + Transitive are set only when a node is surfaced as part of a
 	// node tree (#4983): direct nodes carry the master panel's own GUID, a

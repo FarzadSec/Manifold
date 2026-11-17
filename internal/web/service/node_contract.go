@@ -25,6 +25,14 @@ type NodeView struct {
 	InboundSyncMode     string   `json:"inboundSyncMode" example:"all"`
 	InboundTags         []string `json:"inboundTags" example:"[\"in-443-tcp\"]"`
 	OutboundTag         string   `json:"outboundTag" example:"direct"`
+	TrafficMultiplier   float64  `json:"trafficMultiplier" example:"1"`
+	UsageLimit          int64    `json:"usageLimit" example:"1099511627776"`
+	UsagePeriod         string   `json:"usagePeriod" example:"monthly"`
+	UsageResetDay       int      `json:"usageResetDay" example:"1"`
+	UsageResetMonth     int      `json:"usageResetMonth" example:"0"`
+	UsageResetCalendar  string   `json:"usageResetCalendar" example:"gregorian"`
+	UsageDisabled       bool     `json:"usageDisabled" example:"false"`
+	UsageUsed           int64    `json:"usageUsed" example:"53687091200"`
 	Guid                string   `json:"guid" example:"node-guid"`
 	Status              string   `json:"status" example:"online"`
 	LastHeartbeat       int64    `json:"lastHeartbeat" example:"1700000000"`
@@ -74,6 +82,14 @@ func toNodeView(n *model.Node) *NodeView {
 		InboundSyncMode:     n.InboundSyncMode,
 		InboundTags:         n.InboundTags,
 		OutboundTag:         n.OutboundTag,
+		TrafficMultiplier:   n.TrafficMultiplier,
+		UsageLimit:          n.UsageLimit,
+		UsagePeriod:         n.UsagePeriod,
+		UsageResetDay:       n.UsageResetDay,
+		UsageResetMonth:     n.UsageResetMonth,
+		UsageResetCalendar:  n.UsageResetCalendar,
+		UsageDisabled:       n.UsageDisabled,
+		UsageUsed:           n.UsageUsed,
 		Guid:                n.Guid,
 		Status:              n.Status,
 		LastHeartbeat:       n.LastHeartbeat,
@@ -132,6 +148,12 @@ type NodeMutationRequest struct {
 	InboundSyncMode     string   `json:"inboundSyncMode" form:"inboundSyncMode" validate:"omitempty,oneof=all selected"`
 	InboundTags         []string `json:"inboundTags" form:"inboundTags"`
 	OutboundTag         string   `json:"outboundTag" form:"outboundTag"`
+	TrafficMultiplier   float64  `json:"trafficMultiplier" form:"trafficMultiplier"`
+	UsageLimit          int64    `json:"usageLimit" form:"usageLimit"`
+	UsagePeriod         string   `json:"usagePeriod" form:"usagePeriod" validate:"omitempty,oneof=weekly monthly yearly"`
+	UsageResetDay       int      `json:"usageResetDay" form:"usageResetDay"`
+	UsageResetMonth     int      `json:"usageResetMonth" form:"usageResetMonth"`
+	UsageResetCalendar  string   `json:"usageResetCalendar" form:"usageResetCalendar" validate:"omitempty,oneof=gregorian persian"`
 }
 
 func (r *NodeMutationRequest) validateCredentials(create bool) error {
@@ -180,6 +202,12 @@ func (r *NodeMutationRequest) toNode() *model.Node {
 		InboundSyncMode:     r.InboundSyncMode,
 		InboundTags:         r.InboundTags,
 		OutboundTag:         r.OutboundTag,
+		TrafficMultiplier:   r.TrafficMultiplier,
+		UsageLimit:          r.UsageLimit,
+		UsagePeriod:         r.UsagePeriod,
+		UsageResetDay:       r.UsageResetDay,
+		UsageResetMonth:     r.UsageResetMonth,
+		UsageResetCalendar:  r.UsageResetCalendar,
 	}
 	if r.ApiToken != nil {
 		n.ApiToken = *r.ApiToken

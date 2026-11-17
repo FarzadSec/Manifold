@@ -1391,7 +1391,16 @@
       "pinnedCertPlaceholder": "SHA-256 به‌صورت base64 یا hex",
       "fetchPin": "دریافت",
       "pinFetched": "گواهیِ فعلیِ نود دریافت شد",
-      "pinFetchFailed": "دریافت گواهی ممکن نشد"
+      "pinFetchFailed": "دریافت گواهی ممکن نشد",
+      "trafficMultiplier": "ضریب ترافیک",
+      "trafficMultiplierHint": "ترافیک کاربران روی این نود ضرب در این عدد از حجمشان کم می‌شود: ۲ یعنی دوبرابر، ۰٫۵ یعنی نصف. تاریخچه مصرف بایت‌های واقعی را نگه می‌دارد.",
+      "usagePeriod": "سقف مصرف دوره‌ای",
+      "usagePeriodHint": "سقف ترافیک خود نود در هفته، ماه یا سال. با رسیدن به سقف، inboundهای آن تا شروع دوره بعد متوقف می‌شوند و بعد پنل دوباره روشنشان می‌کند.",
+      "usageNoLimit": "بدون سقف",
+      "usageLimit": "سقف",
+      "usageResetsOn": "شروع دوره",
+      "usageStopped": "متوقف به‌دلیل سقف مصرف",
+      "usageOfLimit": "{used} از {limit} در این دوره"
     },
     "settings": {
       "defaultTag": "پیش‌فرض",

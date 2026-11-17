@@ -1391,7 +1391,16 @@
       "pinnedCertPlaceholder": "base64 または hex の SHA-256",
       "fetchPin": "取得",
       "pinFetched": "ノードの現在の証明書を取得しました",
-      "pinFetchFailed": "証明書を取得できませんでした"
+      "pinFetchFailed": "証明書を取得できませんでした",
+      "trafficMultiplier": "Traffic multiplier",
+      "trafficMultiplierHint": "Users' traffic on this node counts against their quota times this: 2 counts double, 0.5 half. Usage history keeps the real bytes.",
+      "usagePeriod": "Periodic usage limit",
+      "usagePeriodHint": "Caps the node's own traffic per week, month or year. At the limit its inbounds stop until the next period starts; then the panel starts them again.",
+      "usageNoLimit": "No limit",
+      "usageLimit": "Limit",
+      "usageResetsOn": "Period starts on",
+      "usageStopped": "Stopped by usage limit",
+      "usageOfLimit": "{used} of {limit} this period"
     },
     "settings": {
       "defaultTag": "デフォルト",

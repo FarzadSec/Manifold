@@ -130,8 +130,12 @@ func (s *NodeService) GetAll() ([]*model.Node, error) {
 	if err != nil || len(nodes) == 0 {
 		return nodes, err
 	}
+	now := time.Now()
 	for _, n := range nodes {
 		decryptToken(n)
+		if n.UsagePeriod != "" && n.UsageLimit > 0 {
+			n.UsageUsed, _ = nodePeriodUsage(n, now)
+		}
 	}
 
 	type inboundRow struct {
@@ -423,6 +427,16 @@ func (s *NodeService) normalize(n *model.Node) error {
 		return common.NewError("mtls requires the node scheme to be https")
 	}
 	n.PinnedCertSha256 = strings.TrimSpace(n.PinnedCertSha256)
+	if n.TrafficMultiplier == 0 {
+		n.TrafficMultiplier = 1
+	}
+	if n.TrafficMultiplier < 0.01 || n.TrafficMultiplier > 100 {
+		return common.NewError("node traffic multiplier must be from 0.01 to 100")
+	}
+	if err := validateNodeUsageLimit(n); err != nil {
+		return err
+	}
+	n.UsageDisabled, n.UsageStoppedInbounds = false, nil
 	if n.InboundSyncMode != "selected" {
 		n.InboundSyncMode = "all"
 		n.InboundTags = nil
@@ -547,6 +561,12 @@ func (s *NodeService) Update(id int, in *model.Node) error {
 		"inbound_sync_mode":     in.InboundSyncMode,
 		"inbound_tags":          string(inboundTagsJSON),
 		"outbound_tag":          in.OutboundTag,
+		"traffic_multiplier":    in.TrafficMultiplier,
+		"usage_limit":           in.UsageLimit,
+		"usage_period":          in.UsagePeriod,
+		"usage_reset_day":       in.UsageResetDay,
+		"usage_reset_month":     in.UsageResetMonth,
+		"usage_reset_calendar":  in.UsageResetCalendar,
 	}
 	if nodeSelectionGrew(existing, in) {
 		updates["inbounds_adopted_at"] = 0
