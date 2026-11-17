@@ -71,6 +71,9 @@ func judge(w *window) (loss, latencyMs float64, state string) {
 
 // childRunningFor reports whether a process runs on this BackPack config.
 func childRunningFor(config string) bool {
+	if abs, err := filepath.Abs(config); err == nil {
+		config = abs
+	}
 	procs, _ := filepath.Glob("/proc/[0-9]*/cmdline")
 	for _, p := range procs {
 		raw, err := os.ReadFile(p)

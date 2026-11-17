@@ -1,8 +1,11 @@
 package tunnel
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestBackPackConfigFollowsTheEnd(t *testing.T) {
@@ -71,5 +74,44 @@ func TestProbeWindowDecidesTheState(t *testing.T) {
 	}
 	if loss, _, recent, total := w.summary(); loss != 0 || recent != 0 || total != probeWindow {
 		t.Fatalf("old losses outlived the window: loss %v recent %d total %d", loss, recent, total)
+	}
+}
+
+// The installed panel keeps its bin folder relative to its working directory, and BackPack
+// runs in its config's folder; both paths it is given must still lead to their files.
+func TestBackPackStartsFromTheRelativeBinFolderTheServiceUses(t *testing.T) {
+	root := t.TempDir()
+	t.Chdir(root)
+	if err := os.MkdirAll("bin/tunnels", 0o700); err != nil {
+		t.Fatal(err)
+	}
+	script := "#!/bin/sh\ncat \"$2\" > \"$2.seen\"\nsleep 30\n"
+	if err := os.WriteFile("bin/backpack-test", []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile("bin/tunnels/t1.toml", []byte("mode = \"test\"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	c, err := startChild("bin/backpack-test", "bin/tunnels/t1.toml", "t1")
+	if err != nil {
+		t.Fatalf("BackPack did not start from the service's relative paths: %v", err)
+	}
+	t.Cleanup(c.stop)
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		if got, err := os.ReadFile(filepath.Join(root, "bin/tunnels/t1.toml.seen")); err == nil && string(got) == "mode = \"test\"\n" {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("BackPack could not read its config through the path it was given")
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	if !childRunningFor("bin/tunnels/t1.toml") {
+		t.Fatal("the command line does not see the BackPack that runs this config")
+	}
+	t.Chdir(t.TempDir())
+	if childRunningFor("bin/tunnels/t1.toml") {
+		t.Fatal("another install's BackPack was taken for this one's")
 	}
 }

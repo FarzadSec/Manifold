@@ -190,6 +190,15 @@ type child struct {
 }
 
 func startChild(binary, configPath, label string) (*child, error) {
+	// BackPack runs in its config's folder, and the service's bin folder is relative to
+	// its own: given as they are, both paths would point inside the config's folder.
+	binary, err := filepath.Abs(binary)
+	if err != nil {
+		return nil, err
+	}
+	if configPath, err = filepath.Abs(configPath); err != nil {
+		return nil, err
+	}
 	c := &child{done: make(chan struct{}), log: &logTail{label: label}, started: time.Now()}
 	c.cmd = exec.CommandContext(context.Background(), binary, "-c", configPath)
 	c.cmd.Dir = filepath.Dir(configPath)
