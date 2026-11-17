@@ -346,6 +346,21 @@
           "portBusy": "پورت {port} اینباند {inbound} روی این سرور دست برنامهٔ دیگری است؛ اول آزادش کنید.",
           "engineMissing": "{command} نصب نیست و اینباندهای {inbounds} به آن نیاز دارند: نصاب را دوباره اجرا کنید یا آن را نصب کنید."
         }
+      },
+      "biz": {
+        "active": "کاربرهای فعال",
+        "ofTotal": "از {total}",
+        "online": "آنلاین",
+        "expiring": "انقضا تا ۲۴ ساعت",
+        "expired": "{count} منقضی",
+        "limited": "حجم تمام‌شده",
+        "disabled": "{count} غیرفعال",
+        "today": "مصرف امروز",
+        "nodes": "نودهای آنلاین",
+        "nodesDown": "{count} قطع",
+        "backupsFailing": "آخرین اجرای {count} مقصد بکاپ ناموفق بود",
+        "webhooksFailed": "{count} ارسال وب‌هوک در ۲۴ ساعت گذشته ناموفق ماند",
+        "open": "باز کردن"
       }
     },
     "inbounds": {

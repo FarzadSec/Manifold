@@ -346,6 +346,21 @@
           "portBusy": "Порт {port} підключення {inbound} зайнятий іншою програмою; спершу звільніть його.",
           "engineMissing": "{command} не встановлено, а він потрібен підключенням {inbounds}: запустіть інсталятор знову або встановіть його."
         }
+      },
+      "biz": {
+        "active": "Active users",
+        "ofTotal": "of {total}",
+        "online": "Online now",
+        "expiring": "Expiring in 24h",
+        "expired": "{count} expired",
+        "limited": "Out of traffic",
+        "disabled": "{count} disabled",
+        "today": "Traffic today",
+        "nodes": "Nodes online",
+        "nodesDown": "{count} down",
+        "backupsFailing": "{count} backup targets failed their last run",
+        "webhooksFailed": "{count} webhook deliveries were given up in the last 24 hours",
+        "open": "Open"
       }
     },
     "inbounds": {

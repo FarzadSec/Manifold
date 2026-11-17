@@ -1456,6 +1456,18 @@ export const OwnerViewSchema = z.object({
 });
 export type OwnerView = z.infer<typeof OwnerViewSchema>;
 
+export const PanelSummarySchema = z.object({
+  backupsFailing: z.number().int(),
+  lastBackup: z.number().int(),
+  nodesOnline: z.number().int(),
+  nodesTotal: z.number().int(),
+  trafficToday: z.number().int(),
+  users: z.lazy(() => UserCountsSchema),
+  webhooksFailed: z.number().int(),
+  webhooksPending: z.number().int(),
+});
+export type PanelSummary = z.infer<typeof PanelSummarySchema>;
+
 export const PanelUpdateStatusSchema = z.object({
   exitCode: z.number().int(),
   finishedAt: z.number().int(),
@@ -1808,6 +1820,17 @@ export const UserSchema = z.object({
   volumeBytes: z.number().int(),
 });
 export type User = z.infer<typeof UserSchema>;
+
+export const UserCountsSchema = z.object({
+  active: z.number().int(),
+  disabled: z.number().int(),
+  expired: z.number().int(),
+  expiring: z.number().int(),
+  limited: z.number().int(),
+  online: z.number().int(),
+  total: z.number().int(),
+});
+export type UserCounts = z.infer<typeof UserCountsSchema>;
 
 export const UserUsageSchema = z.object({
   down: z.number().int(),

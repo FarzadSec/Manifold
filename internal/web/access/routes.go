@@ -174,6 +174,8 @@ var routeRules = map[string]Rule{
 	key("POST", "/nodes/ssh/hostKey"):                staff(NodesWrite),
 	key("GET", "/ingress/list"):                      need(SettingsRead),
 	key("GET", "/backups/targets"):                   staff(BackupRead),
+	key("GET", "/metrics"):                           staff(StatsRead),
+	key("GET", "/server/summary"):                    staff(StatsRead),
 	key("GET", "/webhooks/list"):                     need(UsersRead),
 	key("GET", "/webhooks/events"):                   need(UsersRead),
 	key("GET", "/webhooks/deliveries/:id"):           need(UsersRead),

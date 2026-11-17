@@ -1560,6 +1560,24 @@ export const EXAMPLES: Record<string, unknown> = {
     "tier": "reseller",
     "username": "seller1"
   },
+  "PanelSummary": {
+    "backupsFailing": 0,
+    "lastBackup": 1763340000000,
+    "nodesOnline": 3,
+    "nodesTotal": 3,
+    "trafficToday": 53687091200,
+    "users": {
+      "active": 96,
+      "disabled": 9,
+      "expired": 11,
+      "expiring": 4,
+      "limited": 6,
+      "online": 41,
+      "total": 120
+    },
+    "webhooksFailed": 0,
+    "webhooksPending": 0
+  },
   "PanelUpdateStatus": {
     "exitCode": 0,
     "finishedAt": 1735689612,
@@ -1934,6 +1952,15 @@ export const EXAMPLES: Record<string, unknown> = {
     "twoFactorEnabled": false,
     "username": "",
     "volumeBytes": 0
+  },
+  "UserCounts": {
+    "active": 96,
+    "disabled": 9,
+    "expired": 11,
+    "expiring": 4,
+    "limited": 6,
+    "online": 41,
+    "total": 120
   },
   "UserUsage": {
     "down": 4194304,

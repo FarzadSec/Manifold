@@ -479,6 +479,30 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'GET',
+        path: '/panel/api/metrics',
+        summary:
+          "Prometheus metrics in the text exposition format: this server, Xray, users by state, today's traffic, inbound traffic, nodes, webhooks and backups. Scrape it with an API token that has stats:read (authorization: Bearer). users=1 adds a series per user, which a large panel should leave out.",
+        params: [
+          {
+            name: 'users',
+            in: 'query',
+            type: 'string',
+            desc: '1 adds manifold_user_traffic_bytes_total and manifold_user_quota_bytes per user.',
+            optional: true,
+          },
+        ],
+        response:
+          '# HELP manifold_users Users by state; expired and limited overlap.\n# TYPE manifold_users gauge\nmanifold_users{state="active"} 96\n…',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/server/summary',
+        summary:
+          "The dashboard's business tiles: users by state and online, today's traffic, nodes online, webhook deliveries waiting or given up in 24 hours, failing backup targets and the last good backup.",
+        responseSchema: 'PanelSummary',
+      },
+      {
+        method: 'GET',
         path: '/panel/api/server/status',
         summary:
           'Real-time machine snapshot: CPU, memory, swap, disk, network IO, load averages, open connections, Xray state. Cached and refreshed every 2 seconds in the background.',

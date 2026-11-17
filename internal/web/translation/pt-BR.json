@@ -346,6 +346,21 @@
           "portBusy": "A porta {port} da entrada {inbound} está com outro programa aqui; libere-a primeiro.",
           "engineMissing": "{command} não está instalado e as entradas {inbounds} precisam dele: rode o instalador de novo ou instale-o."
         }
+      },
+      "biz": {
+        "active": "Active users",
+        "ofTotal": "of {total}",
+        "online": "Online now",
+        "expiring": "Expiring in 24h",
+        "expired": "{count} expired",
+        "limited": "Out of traffic",
+        "disabled": "{count} disabled",
+        "today": "Traffic today",
+        "nodes": "Nodes online",
+        "nodesDown": "{count} down",
+        "backupsFailing": "{count} backup targets failed their last run",
+        "webhooksFailed": "{count} webhook deliveries were given up in the last 24 hours",
+        "open": "Open"
       }
     },
     "inbounds": {

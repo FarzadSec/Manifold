@@ -6133,6 +6133,55 @@
         ],
         "type": "object"
       },
+      "PanelSummary": {
+        "description": "PanelSummary is the business side of the dashboard: users, today's traffic, nodes,\nwebhooks and backups.",
+        "properties": {
+          "backupsFailing": {
+            "example": 0,
+            "type": "integer"
+          },
+          "lastBackup": {
+            "example": 1763340000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "nodesOnline": {
+            "example": 3,
+            "type": "integer"
+          },
+          "nodesTotal": {
+            "example": 3,
+            "type": "integer"
+          },
+          "trafficToday": {
+            "example": 53687091200,
+            "format": "int64",
+            "type": "integer"
+          },
+          "users": {
+            "$ref": "#/components/schemas/UserCounts"
+          },
+          "webhooksFailed": {
+            "example": 0,
+            "type": "integer"
+          },
+          "webhooksPending": {
+            "example": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "backupsFailing",
+          "lastBackup",
+          "nodesOnline",
+          "nodesTotal",
+          "trafficToday",
+          "users",
+          "webhooksFailed",
+          "webhooksPending"
+        ],
+        "type": "object"
+      },
       "PanelUpdateStatus": {
         "description": "PanelUpdateStatus reports the outcome of the most recently launched panel\nself-update. RunID lets the caller confirm this status belongs to the\nupdate it started rather than a stale result left over from an earlier\nrun; State is one of \"pending\", \"success\", or \"failed\". RunID is a decimal\nstring, not a JSON number: it's a formatted UnixNano timestamp, and\nJavaScript's number type can't represent that precisely (it exceeds\nNumber.MAX_SAFE_INTEGER), which would let two different runs round to the\nsame value on the wire and defeat the whole point of this field.",
         "properties": {
@@ -7520,6 +7569,49 @@
           "twoFactorEnabled",
           "username",
           "volumeBytes"
+        ],
+        "type": "object"
+      },
+      "UserCounts": {
+        "description": "UserCounts is how many users are in each state; a user can be expired and limited at once.",
+        "properties": {
+          "active": {
+            "example": 96,
+            "type": "integer"
+          },
+          "disabled": {
+            "example": 9,
+            "type": "integer"
+          },
+          "expired": {
+            "example": 11,
+            "type": "integer"
+          },
+          "expiring": {
+            "example": 4,
+            "type": "integer"
+          },
+          "limited": {
+            "example": 6,
+            "type": "integer"
+          },
+          "online": {
+            "example": 41,
+            "type": "integer"
+          },
+          "total": {
+            "example": 120,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "active",
+          "disabled",
+          "expired",
+          "expiring",
+          "limited",
+          "online",
+          "total"
         ],
         "type": "object"
       },
@@ -9533,6 +9625,100 @@
                       "type": "string"
                     },
                     "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/metrics": {
+      "get": {
+        "tags": [
+          "Server"
+        ],
+        "summary": "Prometheus metrics in the text exposition format: this server, Xray, users by state, today's traffic, inbound traffic, nodes, webhooks and backups. Scrape it with an API token that has stats:read (authorization: Bearer). users=1 adds a series per user, which a large panel should leave out.",
+        "operationId": "get_panel_api_metrics",
+        "parameters": [
+          {
+            "name": "users",
+            "in": "query",
+            "required": false,
+            "description": "1 adds manifold_user_traffic_bytes_total and manifold_user_quota_bytes per user.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/server/summary": {
+      "get": {
+        "tags": [
+          "Server"
+        ],
+        "summary": "The dashboard's business tiles: users by state and online, today's traffic, nodes online, webhook deliveries waiting or given up in 24 hours, failing backup targets and the last good backup.",
+        "operationId": "get_panel_api_server_summary",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/PanelSummary"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "backupsFailing": 0,
+                    "lastBackup": 1763340000000,
+                    "nodesOnline": 3,
+                    "nodesTotal": 3,
+                    "trafficToday": 53687091200,
+                    "users": {
+                      "active": 96,
+                      "disabled": 9,
+                      "expired": 11,
+                      "expiring": 4,
+                      "limited": 6,
+                      "online": 41,
+                      "total": 120
+                    },
+                    "webhooksFailed": 0,
+                    "webhooksPending": 0
                   }
                 }
               }

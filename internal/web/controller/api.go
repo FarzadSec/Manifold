@@ -291,6 +291,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	NewIngressController(api.Group("/ingress"))
 	NewBackupController(api.Group("/backups"))
 	NewWebhookController(api.Group("/webhooks"))
+	NewMetricsController(api, &a.serverController.serverService)
 	NewAccessController(api.Group("/access"))
 
 	// Settings + Xray config management live under the API surface too, so the

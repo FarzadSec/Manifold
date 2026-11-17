@@ -1364,6 +1364,17 @@ export interface OwnerView {
   username: string;
 }
 
+export interface PanelSummary {
+  backupsFailing: number;
+  lastBackup: number;
+  nodesOnline: number;
+  nodesTotal: number;
+  trafficToday: number;
+  users: UserCounts;
+  webhooksFailed: number;
+  webhooksPending: number;
+}
+
 export interface PanelUpdateStatus {
   exitCode: number;
   finishedAt: number;
@@ -1689,6 +1700,16 @@ export interface User {
   twoFactorEnabled: boolean;
   username: string;
   volumeBytes: number;
+}
+
+export interface UserCounts {
+  active: number;
+  disabled: number;
+  expired: number;
+  expiring: number;
+  limited: number;
+  online: number;
+  total: number;
 }
 
 export interface UserUsage {

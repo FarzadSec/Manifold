@@ -4,6 +4,8 @@ Version 0.13 · 2026-11-17 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnel
 
 Decision log:
 
+- 2026-11-17 — Metrics are an API route behind `stats:read`, not a second listener with its own secret: tokens already have scopes, an expiry and a rate, and Prometheus sends a bearer token as it is
+
 - 2026-11-17 — Webhooks go through an outbox table, not straight from the bus: a delivery survives a restart, is retried on a schedule, and the log the admin reads is the same rows that are sent. A reseller's webhook is dialled through a connection guard that refuses loopback, private, link-local and shared address space after DNS, because its delivery log shows the answer and would otherwise read this server's own services back
 
 - 2026-11-17 — Scheduled backups reuse the full backup of 0.5.0 and add only where it goes: `internal/backupstore` writes to a directory, to S3 with a Signature V4 signer of its own (checked against AWS's worked example; no SDK), or to a server over SSH through its shell, which works with SFTP-only accounts that keep a shell. Sealing is AES-256-GCM under PBKDF2-SHA256 (600000 rounds, the standard library's), with the header authenticated
@@ -268,6 +270,12 @@ This is the contract Mirza Bot will sync against.
 - `ingress_listeners` (routes as JSON); `IngressService.Apply` binds every enabled row at start and on each save, and swaps routes in place without rebinding.
 - Port checks run both ways: a shared port refuses a local TCP inbound's, the panel's or the subscription server's port, and `checkPortConflictTx` refuses an inbound on a shared port.
 - PROXY protocol v1 and v2 per route, for targets that should see the client address.
+
+### 4.16 Monitoring (built, 0.10.0)
+
+- `GET /panel/api/metrics`: the Prometheus text format, written by `internal/metrics` (no client library: the panel only exposes gauges and counters it already holds). It is an API route, so a scoped token with `stats:read` scrapes it; per-user series only with `?users=1`.
+- `GET /panel/api/server/summary` feeds the overview's business tiles from the same counts.
+- `manifold/grafana/manifold.json`; a test reads every metric name its panels use and fails when the scrape no longer has it.
 
 ### 4.15 Scheduled backups (built, 0.10.0)
 

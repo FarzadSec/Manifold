@@ -31,6 +31,7 @@ import ThroughputCard from './ThroughputCard';
 import ConnectionsCard from './ConnectionsCard';
 import SystemStrip from './SystemStrip';
 import TunnelsCard from './TunnelsCard';
+import BusinessStrip from './BusinessStrip';
 import { mean, peak, useOverviewHistory } from './useOverviewHistory';
 const JsonEditor = lazy(() => import('@/components/form/JsonEditor'));
 const LogModal = lazy(() => import('./LogModal'));
@@ -205,6 +206,8 @@ function PanelOverview() {
                   )}
 
                   <hr className="ov-rule" />
+
+                  <BusinessStrip />
 
                   <div className="ov-vitals">
                     <VitalTile

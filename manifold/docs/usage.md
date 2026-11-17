@@ -300,6 +300,27 @@ ok = hmac.compare_digest(expected, request.headers["X-Manifold-Signature"])
 
 A reseller sees only its own webhooks, hears only about its own users, and can only send to public addresses.
 
+## Monitoring
+
+The overview opens with the business side: active users, who is online, who expires within a day, who is out of traffic, today's traffic and how many nodes answer. A failing backup target or webhook deliveries given up show as a warning under the tiles.
+
+For Prometheus, create an API token (Settings → API tokens) with `stats:read` and scrape `/panel/api/metrics` with it:
+
+```yaml
+scrape_configs:
+  - job_name: manifold
+    scheme: https
+    metrics_path: /<web base path>/panel/api/metrics
+    authorization:
+      credentials: <token>
+    static_configs:
+      - targets: ["panel.example.com:2053"]
+```
+
+It carries this server (CPU, memory, disk, load, network, connections), Xray, users by state, users online, today's traffic, each inbound's traffic, each node (up, latency, CPU, memory), webhook deliveries waiting or given up, and each backup target's last run. `?users=1` adds a series per user; leave it off on a panel with many users.
+
+`manifold/grafana/manifold.json` in this repository is a Grafana dashboard for it: Dashboards → New → Import, pick the Prometheus data source.
+
 ## Backup
 
 **Backups** (sidebar) makes full backups on a schedule. A target is this server (`/etc/manifold/backups` by default), an S3-compatible bucket (AWS, Cloudflare R2, ArvanCloud, MinIO; give the endpoint without the bucket) or another server over SSH or SFTP (read and accept its host key first). Each target has its own interval in hours (0 for by hand only) and how many of the newest backups to keep; older ones there are deleted, and files the panel did not write are never touched. **Run now** backs up at once, and the folder button lists what the target holds.

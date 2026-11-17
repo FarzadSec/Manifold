@@ -346,6 +346,21 @@
           "portBusy": "入站 {inbound} 的端口 {port} 被本服务器上其他程序占用；请先释放。",
           "engineMissing": "{command} 未安装，入站 {inbounds} 需要它：请重新运行安装程序或安装它。"
         }
+      },
+      "biz": {
+        "active": "活跃用户",
+        "ofTotal": "共 {total}",
+        "online": "在线",
+        "expiring": "24 小时内到期",
+        "expired": "已到期 {count}",
+        "limited": "流量用尽",
+        "disabled": "已停用 {count}",
+        "today": "今日流量",
+        "nodes": "在线节点",
+        "nodesDown": "{count} 个离线",
+        "backupsFailing": "{count} 个备份目标上次运行失败",
+        "webhooksFailed": "过去 24 小时有 {count} 次 Webhook 投递失败",
+        "open": "打开"
       }
     },
     "inbounds": {

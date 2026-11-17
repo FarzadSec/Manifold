@@ -346,6 +346,21 @@
           "portBusy": "Port {port} of inbound {inbound} is held by another program on this server; free it first.",
           "engineMissing": "{command} is not installed, and inbounds {inbounds} need it: run the installer again or install it."
         }
+      },
+      "biz": {
+        "active": "Active users",
+        "ofTotal": "of {total}",
+        "online": "Online now",
+        "expiring": "Expiring in 24h",
+        "expired": "{count} expired",
+        "limited": "Out of traffic",
+        "disabled": "{count} disabled",
+        "today": "Traffic today",
+        "nodes": "Nodes online",
+        "nodesDown": "{count} down",
+        "backupsFailing": "{count} backup targets failed their last run",
+        "webhooksFailed": "{count} webhook deliveries were given up in the last 24 hours",
+        "open": "Open"
       }
     },
     "inbounds": {

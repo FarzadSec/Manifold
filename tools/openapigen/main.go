@@ -153,6 +153,8 @@ func run(root, outDir string) error {
 				"WebhookView",
 				"WebhookInput",
 				"WebhookPayload",
+				"PanelSummary",
+				"UserCounts",
 				"NodeHealthPoint",
 				"AvailabilityBar",
 			),

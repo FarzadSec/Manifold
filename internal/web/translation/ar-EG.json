@@ -346,6 +346,21 @@
           "portBusy": "المنفذ {port} للوارد {inbound} يشغله برنامج آخر هنا؛ حرّره أولاً.",
           "engineMissing": "{command} غير مثبّت وتحتاجه الواردات {inbounds}: أعد تشغيل المثبّت أو ثبّته."
         }
+      },
+      "biz": {
+        "active": "Active users",
+        "ofTotal": "of {total}",
+        "online": "Online now",
+        "expiring": "Expiring in 24h",
+        "expired": "{count} expired",
+        "limited": "Out of traffic",
+        "disabled": "{count} disabled",
+        "today": "Traffic today",
+        "nodes": "Nodes online",
+        "nodesDown": "{count} down",
+        "backupsFailing": "{count} backup targets failed their last run",
+        "webhooksFailed": "{count} webhook deliveries were given up in the last 24 hours",
+        "open": "Open"
       }
     },
     "inbounds": {

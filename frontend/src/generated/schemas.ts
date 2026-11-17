@@ -6107,6 +6107,55 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "PanelSummary": {
+    "description": "PanelSummary is the business side of the dashboard: users, today's traffic, nodes,\nwebhooks and backups.",
+    "properties": {
+      "backupsFailing": {
+        "example": 0,
+        "type": "integer"
+      },
+      "lastBackup": {
+        "example": 1763340000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "nodesOnline": {
+        "example": 3,
+        "type": "integer"
+      },
+      "nodesTotal": {
+        "example": 3,
+        "type": "integer"
+      },
+      "trafficToday": {
+        "example": 53687091200,
+        "format": "int64",
+        "type": "integer"
+      },
+      "users": {
+        "$ref": "#/components/schemas/UserCounts"
+      },
+      "webhooksFailed": {
+        "example": 0,
+        "type": "integer"
+      },
+      "webhooksPending": {
+        "example": 0,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "backupsFailing",
+      "lastBackup",
+      "nodesOnline",
+      "nodesTotal",
+      "trafficToday",
+      "users",
+      "webhooksFailed",
+      "webhooksPending"
+    ],
+    "type": "object"
+  },
   "PanelUpdateStatus": {
     "description": "PanelUpdateStatus reports the outcome of the most recently launched panel\nself-update. RunID lets the caller confirm this status belongs to the\nupdate it started rather than a stale result left over from an earlier\nrun; State is one of \"pending\", \"success\", or \"failed\". RunID is a decimal\nstring, not a JSON number: it's a formatted UnixNano timestamp, and\nJavaScript's number type can't represent that precisely (it exceeds\nNumber.MAX_SAFE_INTEGER), which would let two different runs round to the\nsame value on the wire and defeat the whole point of this field.",
     "properties": {
@@ -7494,6 +7543,49 @@ export const SCHEMAS: Record<string, unknown> = {
       "twoFactorEnabled",
       "username",
       "volumeBytes"
+    ],
+    "type": "object"
+  },
+  "UserCounts": {
+    "description": "UserCounts is how many users are in each state; a user can be expired and limited at once.",
+    "properties": {
+      "active": {
+        "example": 96,
+        "type": "integer"
+      },
+      "disabled": {
+        "example": 9,
+        "type": "integer"
+      },
+      "expired": {
+        "example": 11,
+        "type": "integer"
+      },
+      "expiring": {
+        "example": 4,
+        "type": "integer"
+      },
+      "limited": {
+        "example": 6,
+        "type": "integer"
+      },
+      "online": {
+        "example": 41,
+        "type": "integer"
+      },
+      "total": {
+        "example": 120,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "active",
+      "disabled",
+      "expired",
+      "expiring",
+      "limited",
+      "online",
+      "total"
     ],
     "type": "object"
   },

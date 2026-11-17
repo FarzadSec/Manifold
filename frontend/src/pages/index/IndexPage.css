@@ -199,6 +199,65 @@
   overflow: hidden;
 }
 
+/* — business tiles — */
+
+.ov-biz {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--ov-gap);
+}
+
+@media (max-width: 1280px) {
+  .ov-biz {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .ov-biz {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.ov-biz-tile {
+  overflow: hidden;
+  padding-bottom: 14px;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.ov-biz-tile.ant-card-hoverable:hover {
+  transform: translateY(-1px);
+}
+
+.ov-biz-value {
+  padding: 10px var(--ov-pad) 0;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--ant-color-text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ov-biz-warn .ov-tile-head,
+.ov-biz-warn .ov-biz-value {
+  color: var(--ant-color-warning);
+}
+
+.ov-biz-bad .ov-tile-head,
+.ov-biz-bad .ov-biz-value {
+  color: var(--ant-color-error);
+}
+
+.ov-biz-alert {
+  margin-top: calc(var(--ov-gap) * -0.25);
+}
+
 .ov-tile-head {
   display: flex;
   align-items: center;
