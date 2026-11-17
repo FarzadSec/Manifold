@@ -75,6 +75,16 @@ export default function SubscriptionGeneralTab({
                   onChange={(v) => updateSetting({ subJsonEnable: v })}
                 />
               </SettingListItem>
+              <SettingListItem
+                paddings="small"
+                title={t('pages.settings.subSingboxEnableTitle')}
+                description={t('pages.settings.subSingboxEnableDesc')}
+              >
+                <Switch
+                  checked={allSetting.subSingboxEnable}
+                  onChange={(v) => updateSetting({ subSingboxEnable: v })}
+                />
+              </SettingListItem>
               <SettingListItem paddings="small" title={t('pages.settings.subClashEnableTitle')}>
                 <Switch
                   checked={allSetting.subClashEnable}

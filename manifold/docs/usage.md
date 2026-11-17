@@ -230,6 +230,8 @@ Every account keeps its keys, UUIDs, passwords and certificates, so **what decid
 
 **Settings → Subscription → Subscription domains** lists the hosts links are built on, one per line. New links use the first; every host on the list keeps answering, so a domain that gets blocked is replaced by putting a new one on top while users' apps refresh onto it. `*.sub.example.com` gives every user a host of its own, such as `k4m2xr8qv.sub.example.com`, so one blocked name costs one customer; it needs a wildcard DNS record and a wildcard certificate. A reseller's **Subscription domain** (its account form) puts its customers' links on its own domain. Behind a CDN, a subscription URI such as `https://*.cdn.example.com/sub/` names each user the same way.
 
+**sing-box profile** (Settings → Subscription, on by default at `/singbox/`) serves the same entries as a full sing-box profile for SFA, SFI, Hiddify and Karing: a `proxy` selector, an `auto` URL test, and WireGuard as an endpoint. **Base profile** takes a profile of your own whose DNS, inbounds and route are kept as written. With **Serve sing-box apps on the main link** on, those apps get the profile from the ordinary link. The QR window shows the sing-box link on its own tab.
+
 The subscription server is on by default and listens on its own port (2096). Its address, path and the extra formats (JSON and Clash, both off by default) are set under Panel Settings. Open that port in the firewall before handing out subscription links.
 
 ## Several servers

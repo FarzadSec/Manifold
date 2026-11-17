@@ -785,6 +785,24 @@
           "subShowIdentityOnAllLinks": {
             "type": "boolean"
           },
+          "subSingboxAutoDetect": {
+            "type": "boolean"
+          },
+          "subSingboxEnable": {
+            "type": "boolean"
+          },
+          "subSingboxPath": {
+            "type": "string"
+          },
+          "subSingboxTemplate": {
+            "type": "string"
+          },
+          "subSingboxURI": {
+            "type": "string"
+          },
+          "subSingboxUserAgentRegex": {
+            "type": "string"
+          },
           "subSupportUrl": {
             "type": "string"
           },
@@ -1037,6 +1055,12 @@
           "subProfileUrl",
           "subRoutingRules",
           "subShowIdentityOnAllLinks",
+          "subSingboxAutoDetect",
+          "subSingboxEnable",
+          "subSingboxPath",
+          "subSingboxTemplate",
+          "subSingboxURI",
+          "subSingboxUserAgentRegex",
           "subSupportUrl",
           "subThemeDir",
           "subTitle",
@@ -1581,6 +1605,24 @@
           "subShowIdentityOnAllLinks": {
             "type": "boolean"
           },
+          "subSingboxAutoDetect": {
+            "type": "boolean"
+          },
+          "subSingboxEnable": {
+            "type": "boolean"
+          },
+          "subSingboxPath": {
+            "type": "string"
+          },
+          "subSingboxTemplate": {
+            "type": "string"
+          },
+          "subSingboxURI": {
+            "type": "string"
+          },
+          "subSingboxUserAgentRegex": {
+            "type": "string"
+          },
           "subSupportUrl": {
             "type": "string"
           },
@@ -1841,6 +1883,12 @@
           "subProfileUrl",
           "subRoutingRules",
           "subShowIdentityOnAllLinks",
+          "subSingboxAutoDetect",
+          "subSingboxEnable",
+          "subSingboxPath",
+          "subSingboxTemplate",
+          "subSingboxURI",
+          "subSingboxUserAgentRegex",
           "subSupportUrl",
           "subThemeDir",
           "subTitle",
@@ -2832,6 +2880,10 @@
           },
           "subJsonUrl": {
             "example": "https://sub.example.com/json/abcd1234",
+            "type": "string"
+          },
+          "subSingboxUrl": {
+            "example": "https://sub.example.com/singbox/abcd1234",
             "type": "string"
           },
           "subUrl": {
@@ -10880,6 +10932,7 @@
                         "subClashUrl": "https://sub.example.com/clash/abcd1234",
                         "subId": "abcd1234",
                         "subJsonUrl": "https://sub.example.com/json/abcd1234",
+                        "subSingboxUrl": "https://sub.example.com/singbox/abcd1234",
                         "subUrl": "https://sub.example.com/sub/abcd1234",
                         "totalGB": 53687091200,
                         "traffic": null,

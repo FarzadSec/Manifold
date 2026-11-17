@@ -2034,7 +2034,14 @@
       "subHostSortHosts": "Orden de hosts",
       "subHostSortModeDesc": "Sigue el orden de la página de hosts entre distintas entradas. Determina el orden emitido por el servidor; las aplicaciones cliente pueden aplicar su propio orden.",
       "subDomains": "Subscription domains",
-      "subDomainsDesc": "One host per line. New links use the first; every host keeps serving the links already handed out, so a blocked domain is replaced by adding a new one on top. *.sub.example.com gives every subscriber a host of its own, which needs a wildcard DNS record and certificate. A host here replaces the host of the subscription URI."
+      "subDomainsDesc": "One host per line. New links use the first; every host keeps serving the links already handed out, so a blocked domain is replaced by adding a new one on top. *.sub.example.com gives every subscriber a host of its own, which needs a wildcard DNS record and certificate. A host here replaces the host of the subscription URI.",
+      "subSingboxEnableTitle": "sing-box profile",
+      "subSingboxEnableDesc": "Serves each subscription as a sing-box profile, for SFA, SFI, Hiddify and Karing.",
+      "subSingboxAutoDetect": "Serve sing-box apps on the main link",
+      "subSingboxAutoDetectDesc": "Apps the pattern below names get the sing-box profile from the ordinary subscription link, before the Clash check.",
+      "subSingboxUserAgentRegex": "sing-box app pattern",
+      "subSingboxTemplate": "Base profile",
+      "subSingboxTemplateDesc": "The sing-box profile the entries are merged into: its DNS, inbounds and route stay as written, and a proxy selector with the user's entries is added to its outbounds. Empty uses the built-in profile for sing-box 1.12 and later."
     },
     "xray": {
       "save": "Guardar configuración",

@@ -221,6 +221,12 @@ export interface AllSetting {
   subProfileUrl: string;
   subRoutingRules: string;
   subShowIdentityOnAllLinks: boolean;
+  subSingboxAutoDetect: boolean;
+  subSingboxEnable: boolean;
+  subSingboxPath: string;
+  subSingboxTemplate: string;
+  subSingboxURI: string;
+  subSingboxUserAgentRegex: string;
   subSupportUrl: string;
   subThemeDir: string;
   subTitle: string;
@@ -413,6 +419,12 @@ export interface AllSettingView {
   subProfileUrl: string;
   subRoutingRules: string;
   subShowIdentityOnAllLinks: boolean;
+  subSingboxAutoDetect: boolean;
+  subSingboxEnable: boolean;
+  subSingboxPath: string;
+  subSingboxTemplate: string;
+  subSingboxURI: string;
+  subSingboxUserAgentRegex: string;
   subSupportUrl: string;
   subThemeDir: string;
   subTitle: string;
@@ -658,6 +670,7 @@ export interface ClientSlim {
   subClashUrl?: string;
   subId: string;
   subJsonUrl?: string;
+  subSingboxUrl?: string;
   subUrl?: string;
   totalGB: number;
   traffic?: ClientTraffic | null;

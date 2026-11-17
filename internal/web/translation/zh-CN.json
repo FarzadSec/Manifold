@@ -2034,7 +2034,14 @@
       "subHostSortHosts": "主机顺序",
       "subHostSortModeDesc": "跨入站使用主机页面中的排序。此设置决定服务器输出顺序；客户端应用仍可能自行排序。",
       "subDomains": "订阅域名",
-      "subDomainsDesc": "每行一个主机名。新链接使用第一个;所有主机继续为已发出的链接服务,因此被封锁的域名可通过在顶部添加新域名来替换。*.sub.example.com 为每个订阅者生成专属主机名,需要通配符 DNS 记录和证书。此处的主机会替换订阅地址中的主机。"
+      "subDomainsDesc": "每行一个主机名。新链接使用第一个;所有主机继续为已发出的链接服务,因此被封锁的域名可通过在顶部添加新域名来替换。*.sub.example.com 为每个订阅者生成专属主机名,需要通配符 DNS 记录和证书。此处的主机会替换订阅地址中的主机。",
+      "subSingboxEnableTitle": "sing-box 配置",
+      "subSingboxEnableDesc": "以 sing-box 配置提供订阅,适用于 SFA、SFI、Hiddify 和 Karing。",
+      "subSingboxAutoDetect": "在主链接上为 sing-box 应用提供",
+      "subSingboxAutoDetectDesc": "下方模式匹配的应用通过普通订阅链接获得 sing-box 配置,先于 Clash 判断。",
+      "subSingboxUserAgentRegex": "sing-box 应用匹配",
+      "subSingboxTemplate": "基础配置",
+      "subSingboxTemplateDesc": "条目合并进的 sing-box 配置:其 DNS、入站和路由保持不变,并向出站添加包含用户条目的选择器。留空使用适用于 sing-box 1.12 及以上的内置配置。"
     },
     "xray": {
       "importRules": "导入规则",

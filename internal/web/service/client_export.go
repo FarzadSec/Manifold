@@ -22,8 +22,8 @@ import (
 // SubURLBuilder builds subscription addresses from settings read once, so a list of
 // thousands of users costs no query per row.
 type SubURLBuilder struct {
-	sub, json, clash string
-	plan             SubHostPlan
+	sub, json, clash, singbox string
+	plan                      SubHostPlan
 }
 
 // NewSubURLBuilder reads where subscription links point. A configured URI (the public
@@ -67,7 +67,8 @@ func (s *SettingService) NewSubURLBuilder() SubURLBuilder {
 	}
 	b := SubURLBuilder{sub: base(subURI, subPath), plan: LoadSubHostPlan()}
 	// A wildcard in the public address names each user too, so it needs the same key.
-	for _, uri := range []string{subURI, subJSONURI, subClashURI} {
+	singboxURI, _ := s.GetSubSingboxURI()
+	for _, uri := range []string{subURI, subJSONURI, subClashURI, singboxURI} {
 		if u, err := url.Parse(uri); err == nil && strings.HasPrefix(u.Hostname(), "*.") && b.plan.secret == nil {
 			b.plan.secret = subHostSecret()
 		}
@@ -77,6 +78,11 @@ func (s *SettingService) NewSubURLBuilder() SubURLBuilder {
 	}
 	if clashEnabled {
 		b.clash = base(subClashURI, subClashPath)
+	}
+	if on, _ := s.GetSubSingboxEnable(); on {
+		uri, _ := s.GetSubSingboxURI()
+		path, _ := s.GetSubSingboxPath()
+		b.singbox = base(uri, path)
 	}
 	return b
 }
@@ -101,6 +107,17 @@ func (b SubURLBuilder) For(recordID, ownerID int, subID string) (sub, json, clas
 		return base + subID
 	}
 	return build(b.sub), build(b.json), build(b.clash)
+}
+
+// SingboxFor is the user's sing-box profile address, "" while that format is off.
+func (b SubURLBuilder) SingboxFor(recordID, ownerID int, subID string) string {
+	if b.singbox == "" || subID == "" {
+		return ""
+	}
+	only := b
+	only.sub, only.json, only.clash = b.singbox, "", ""
+	link, _, _ := only.For(recordID, ownerID, subID)
+	return link
 }
 
 // SubscriptionURLs is For for the user holding subID, looked up by it.

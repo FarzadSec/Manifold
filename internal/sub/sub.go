@@ -345,7 +345,14 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 
 	g := engine.Group("/")
 
+	singboxEnable, _ := s.settingService.GetSubSingboxEnable()
+	singboxPath, _ := s.settingService.GetSubSingboxPath()
+	singboxAutoDetect, _ := s.settingService.GetSubSingboxAutoDetect()
+	singboxRegex, _ := s.settingService.GetSubSingboxUserAgentRegex()
+	singboxTemplate, _ := s.settingService.GetSubSingboxTemplate()
+
 	s.sub = NewSUBController(g,
+		WithSUBSingbox(singboxEnable, singboxPath, singboxAutoDetect, singboxRegex, singboxTemplate),
 		WithSUBPath(LinksPath),
 		WithSUBJsonPath(JsonPath),
 		WithSUBClashPath(ClashPath),

@@ -74,6 +74,12 @@ export class AllSetting {
   subURI = '';
   subJsonURI = '';
   subClashURI = '';
+  subSingboxEnable = true;
+  subSingboxPath = '/singbox/';
+  subSingboxURI = '';
+  subSingboxAutoDetect = false;
+  subSingboxUserAgentRegex = '';
+  subSingboxTemplate = '';
   subClashEnableRouting = false;
   subClashRules = '';
   subClashRemoteDNS = false;

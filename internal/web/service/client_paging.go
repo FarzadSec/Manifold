@@ -40,9 +40,10 @@ type ClientSlim struct {
 	OwnerId      int                 `json:"ownerId" example:"0"`
 	// SubUrl and its JSON and Clash siblings are the user's own subscription addresses,
 	// on its reseller's domain or its own host under a wildcard; "" when that format is off.
-	SubUrl      string `json:"subUrl,omitempty" example:"https://sub.example.com/sub/abcd1234"`
-	SubJsonUrl  string `json:"subJsonUrl,omitempty" example:"https://sub.example.com/json/abcd1234"`
-	SubClashUrl string `json:"subClashUrl,omitempty" example:"https://sub.example.com/clash/abcd1234"`
+	SubUrl        string `json:"subUrl,omitempty" example:"https://sub.example.com/sub/abcd1234"`
+	SubJsonUrl    string `json:"subJsonUrl,omitempty" example:"https://sub.example.com/json/abcd1234"`
+	SubClashUrl   string `json:"subClashUrl,omitempty" example:"https://sub.example.com/clash/abcd1234"`
+	SubSingboxUrl string `json:"subSingboxUrl,omitempty" example:"https://sub.example.com/singbox/abcd1234"`
 }
 
 // ClientPageParams are the query params accepted by /panel/api/clients/list/paged.
@@ -542,6 +543,7 @@ func (q clientQuery) pageRows(params ClientPageParams, onlines []string, offset,
 			Traffic:      trafficByEmail[rec.Email],
 		})
 		slim.SubUrl, slim.SubJsonUrl, slim.SubClashUrl = urls.For(rec.Id, rec.OwnerId, rec.SubID)
+		slim.SubSingboxUrl = urls.SingboxFor(rec.Id, rec.OwnerId, rec.SubID)
 		items = append(items, slim)
 	}
 	return items, nil

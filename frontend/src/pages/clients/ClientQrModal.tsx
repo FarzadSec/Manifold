@@ -249,6 +249,7 @@ function ClientQrModalContent({
 
   const subId = client?.subId;
   const { sub: subLink, json: subJsonLink } = clientSubUrls(client, subSettings);
+  const subSingboxLink = subSettings?.enable ? (client?.subSingboxUrl ?? '') : '';
   const clientId = client?.id;
   const clientSubId = subId ?? '';
   const happLinkEnabled = subSettings.happLinkEnable === true;
@@ -444,6 +445,13 @@ function ClientQrModalContent({
         ),
       });
     }
+    if (subSingboxLink) {
+      out.push({
+        key: 'subSingbox',
+        label: `${t('subscription.title')} (sing-box)`,
+        children: <QrPanel value={subSingboxLink} remark={`${client?.email || ''} — sing-box`} />,
+      });
+    }
     if (subJsonLink) {
       out.push({
         key: 'subJson',
@@ -585,6 +593,7 @@ function ClientQrModalContent({
     return out;
   }, [
     subLink,
+    subSingboxLink,
     subJsonLink,
     variant,
     happLink,

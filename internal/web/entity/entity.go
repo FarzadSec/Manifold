@@ -2,6 +2,7 @@ package entity
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"math"
 	"net"
 	"net/mail"
@@ -124,6 +125,12 @@ type AllSetting struct {
 	SubClashEnable              bool   `json:"subClashEnable" form:"subClashEnable"`
 	SubClashPath                string `json:"subClashPath" form:"subClashPath"`
 	SubClashURI                 string `json:"subClashURI" form:"subClashURI"`
+	SubSingboxEnable            bool   `json:"subSingboxEnable" form:"subSingboxEnable"`
+	SubSingboxPath              string `json:"subSingboxPath" form:"subSingboxPath"`
+	SubSingboxURI               string `json:"subSingboxURI" form:"subSingboxURI"`
+	SubSingboxAutoDetect        bool   `json:"subSingboxAutoDetect" form:"subSingboxAutoDetect"`
+	SubSingboxUserAgentRegex    string `json:"subSingboxUserAgentRegex" form:"subSingboxUserAgentRegex"`
+	SubSingboxTemplate          string `json:"subSingboxTemplate" form:"subSingboxTemplate"`
 	SubClashEnableRouting       bool   `json:"subClashEnableRouting" form:"subClashEnableRouting"`
 	SubClashRules               string `json:"subClashRules" form:"subClashRules"`
 	SubClashRemoteDNS           bool   `json:"subClashRemoteDNS" form:"subClashRemoteDNS"`
@@ -331,6 +338,7 @@ func (s *AllSetting) CheckValid() error {
 		{"subscription path", s.SubPath},
 		{"subscription JSON path", s.SubJsonPath},
 		{"subscription Clash path", s.SubClashPath},
+		{"subscription sing-box path", s.SubSingboxPath},
 	} {
 		if pathHasForbiddenChar(p.value) {
 			return common.NewError("URI path contains an invalid character:", p.name)
@@ -357,6 +365,18 @@ func (s *AllSetting) CheckValid() error {
 		s.SubJsonPath += "/"
 	}
 
+	if s.SubSingboxPath == "" {
+		s.SubSingboxPath = "/singbox/"
+	}
+	if !strings.HasPrefix(s.SubSingboxPath, "/") {
+		s.SubSingboxPath = "/" + s.SubSingboxPath
+	}
+	if !strings.HasSuffix(s.SubSingboxPath, "/") {
+		s.SubSingboxPath += "/"
+	}
+	if t := strings.TrimSpace(s.SubSingboxTemplate); t != "" && !json.Valid([]byte(t)) {
+		return common.NewError("the sing-box base profile is not valid JSON")
+	}
 	if !strings.HasPrefix(s.SubClashPath, "/") {
 		s.SubClashPath = "/" + s.SubClashPath
 	}

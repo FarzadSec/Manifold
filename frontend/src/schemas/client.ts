@@ -31,6 +31,7 @@ export const ClientRecordSchema = z
     subUrl: z.string().optional(),
     subJsonUrl: z.string().optional(),
     subClashUrl: z.string().optional(),
+    subSingboxUrl: z.string().optional(),
     uuid: z.string().optional(),
     password: z.string().optional(),
     auth: z.string().optional(),

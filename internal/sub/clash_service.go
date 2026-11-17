@@ -39,19 +39,21 @@ func (s *SubClashService) GetClashLegacy(subId string, host string) (string, str
 	return s.getClash(subId, host, true)
 }
 
-func (s *SubClashService) getClash(subId string, host string, legacy bool) (string, string, error) {
+// collectProxies gathers a subscription's proxies and its userinfo header; found is false
+// when no user holds the subscription, and an empty list with found means nothing fits.
+func (s *SubClashService) collectProxies(subId string, host string, legacy bool) ([]map[string]any, string, bool, error) {
 	subReq := s.SubService.ForRequest(host)
 	subReq.subscriptionBody = true
 	inbounds, err := subReq.getInboundsBySubId(subId)
 	if err != nil {
-		return "", "", err
+		return nil, "", false, err
 	}
 	externalLinks, err := subReq.getClientExternalLinksBySubId(subId)
 	if err != nil {
-		return "", "", err
+		return nil, "", false, err
 	}
 	if len(inbounds) == 0 && len(externalLinks) == 0 {
-		return "", "", nil
+		return nil, "", false, nil
 	}
 
 	var proxies []map[string]any
@@ -138,12 +140,12 @@ func (s *SubClashService) getClash(subId string, host string, legacy bool) (stri
 	}
 
 	if len(proxies) == 0 && !hasInactiveExternal && !hasBoundClosed {
-		return "", "", nil
+		return nil, "", false, nil
 	}
 	if legacy {
 		proxies = legacyClashProxies(proxies)
 		if len(proxies) == 0 {
-			return "", "", errNoLegacyClashProxies
+			return nil, "", false, errNoLegacyClashProxies
 		}
 	}
 
@@ -171,10 +173,21 @@ func (s *SubClashService) getClash(subId string, host string, legacy bool) (stri
 	}
 
 	if len(proxies) == 0 {
-		return "", header, nil
+		return nil, header, true, nil
 	}
 
 	ensureUniqueProxyNames(proxies)
+	return proxies, header, true, nil
+}
+
+func (s *SubClashService) getClash(subId string, host string, legacy bool) (string, string, error) {
+	proxies, header, found, err := s.collectProxies(subId, host, legacy)
+	if err != nil || !found {
+		return "", "", err
+	}
+	if len(proxies) == 0 {
+		return "", header, nil
+	}
 
 	proxyNames := make([]string, 0, len(proxies)+1)
 	for _, proxy := range proxies {

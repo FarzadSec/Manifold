@@ -259,6 +259,80 @@ export default function SubscriptionFormatsTab({
                   </SettingListItem>
                 </Card>
               )}
+              {allSetting.subSingboxEnable && (
+                <Card
+                  size="small"
+                  className="subscription-format-card"
+                  title={
+                    <span className="subscription-format-card-title">
+                      <NodeIndexOutlined aria-hidden />
+                      {t('pages.settings.subSingboxEnableTitle')}
+                    </span>
+                  }
+                >
+                  <SettingListItem
+                    paddings="small"
+                    title={<>sing-box {t('pages.settings.subPath')}</>}
+                    description={t('pages.settings.subPathDesc')}
+                  >
+                    <Input
+                      value={allSetting.subSingboxPath}
+                      placeholder="/singbox/"
+                      onChange={(e) =>
+                        updateSetting({ subSingboxPath: sanitizePath(e.target.value) })
+                      }
+                      onBlur={() =>
+                        updateSetting({ subSingboxPath: normalizePath(allSetting.subSingboxPath) })
+                      }
+                    />
+                  </SettingListItem>
+                  <SettingListItem
+                    paddings="small"
+                    title={<>sing-box {t('pages.settings.subURI')}</>}
+                    description={t('pages.settings.subURIDesc')}
+                  >
+                    <Input
+                      value={allSetting.subSingboxURI}
+                      placeholder="(http|https)://domain[:port]/path/"
+                      onChange={(e) => updateSetting({ subSingboxURI: e.target.value })}
+                    />
+                  </SettingListItem>
+                  <SettingListItem
+                    paddings="small"
+                    title={t('pages.settings.subSingboxAutoDetect')}
+                    description={t('pages.settings.subSingboxAutoDetectDesc')}
+                  >
+                    <Switch
+                      checked={allSetting.subSingboxAutoDetect}
+                      onChange={(v) => updateSetting({ subSingboxAutoDetect: v })}
+                    />
+                  </SettingListItem>
+                  <SettingListItem
+                    paddings="small"
+                    title={t('pages.settings.subSingboxUserAgentRegex')}
+                    description={t('pages.settings.subClashUserAgentRegexDesc')}
+                  >
+                    <GoRegexInput
+                      value={allSetting.subSingboxUserAgentRegex}
+                      placeholder="(?i)(^sing-box|^SF[AIMT]/|hiddify|karing)"
+                      onChange={(value) => updateSetting({ subSingboxUserAgentRegex: value })}
+                    />
+                  </SettingListItem>
+                  <SettingListItem
+                    paddings="small"
+                    title={t('pages.settings.subSingboxTemplate')}
+                    description={t('pages.settings.subSingboxTemplateDesc')}
+                  >
+                    <Input.TextArea
+                      aria-label={t('pages.settings.subSingboxTemplate')}
+                      value={allSetting.subSingboxTemplate}
+                      placeholder='{"dns": {...}, "inbounds": [...], "route": {...}}'
+                      onChange={(e) => updateSetting({ subSingboxTemplate: e.target.value })}
+                      autoSize={{ minRows: 2, maxRows: 10 }}
+                    />
+                  </SettingListItem>
+                </Card>
+              )}
               {allSetting.subClashEnable && (
                 <Card
                   size="small"

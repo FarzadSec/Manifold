@@ -759,6 +759,24 @@ export const SCHEMAS: Record<string, unknown> = {
       "subShowIdentityOnAllLinks": {
         "type": "boolean"
       },
+      "subSingboxAutoDetect": {
+        "type": "boolean"
+      },
+      "subSingboxEnable": {
+        "type": "boolean"
+      },
+      "subSingboxPath": {
+        "type": "string"
+      },
+      "subSingboxTemplate": {
+        "type": "string"
+      },
+      "subSingboxURI": {
+        "type": "string"
+      },
+      "subSingboxUserAgentRegex": {
+        "type": "string"
+      },
       "subSupportUrl": {
         "type": "string"
       },
@@ -1011,6 +1029,12 @@ export const SCHEMAS: Record<string, unknown> = {
       "subProfileUrl",
       "subRoutingRules",
       "subShowIdentityOnAllLinks",
+      "subSingboxAutoDetect",
+      "subSingboxEnable",
+      "subSingboxPath",
+      "subSingboxTemplate",
+      "subSingboxURI",
+      "subSingboxUserAgentRegex",
       "subSupportUrl",
       "subThemeDir",
       "subTitle",
@@ -1555,6 +1579,24 @@ export const SCHEMAS: Record<string, unknown> = {
       "subShowIdentityOnAllLinks": {
         "type": "boolean"
       },
+      "subSingboxAutoDetect": {
+        "type": "boolean"
+      },
+      "subSingboxEnable": {
+        "type": "boolean"
+      },
+      "subSingboxPath": {
+        "type": "string"
+      },
+      "subSingboxTemplate": {
+        "type": "string"
+      },
+      "subSingboxURI": {
+        "type": "string"
+      },
+      "subSingboxUserAgentRegex": {
+        "type": "string"
+      },
       "subSupportUrl": {
         "type": "string"
       },
@@ -1815,6 +1857,12 @@ export const SCHEMAS: Record<string, unknown> = {
       "subProfileUrl",
       "subRoutingRules",
       "subShowIdentityOnAllLinks",
+      "subSingboxAutoDetect",
+      "subSingboxEnable",
+      "subSingboxPath",
+      "subSingboxTemplate",
+      "subSingboxURI",
+      "subSingboxUserAgentRegex",
       "subSupportUrl",
       "subThemeDir",
       "subTitle",
@@ -2806,6 +2854,10 @@ export const SCHEMAS: Record<string, unknown> = {
       },
       "subJsonUrl": {
         "example": "https://sub.example.com/json/abcd1234",
+        "type": "string"
+      },
+      "subSingboxUrl": {
+        "example": "https://sub.example.com/singbox/abcd1234",
         "type": "string"
       },
       "subUrl": {

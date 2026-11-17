@@ -70,3 +70,22 @@ func TestAWildcardPublicAddressNamesEachUser(t *testing.T) {
 		t.Fatalf("link = %q, want a host of the user's own on the CDN domain", link)
 	}
 }
+
+// The sing-box link must sit on the same per-user host as the main one, and vanish when the format is off.
+func TestSingboxLinkSharesTheUsersHost(t *testing.T) {
+	setupConflictDB(t)
+	setSubSettings(t, map[string]string{
+		"subDomains": "*.sub.example.com", "subPort": "2096", "subPath": "/sub/", "subURI": "",
+		"subSingboxEnable": "true", "subSingboxPath": "/sb/", "subSingboxURI": "",
+	})
+	b := (&SettingService{}).NewSubURLBuilder()
+	main, _, _ := b.For(5, 0, "abc")
+	box := b.SingboxFor(5, 0, "abc")
+	if want := strings.Replace(main, "/sub/abc", "/sb/abc", 1); box != want || box == main {
+		t.Fatalf("sing-box link = %q, want %q", box, want)
+	}
+	setSubSettings(t, map[string]string{"subSingboxEnable": "false"})
+	if off := (&SettingService{}).NewSubURLBuilder().SingboxFor(5, 0, "abc"); off != "" {
+		t.Fatalf("sing-box link with the format off = %q, want none", off)
+	}
+}

@@ -80,6 +80,12 @@ type SUBController struct {
 	subEncrypt         bool
 	updateInterval     string
 
+	subSingboxPath    string
+	singboxEnabled    bool
+	singboxAutoDetect bool
+	singboxUserAgent  *regexp.Regexp
+	subSingboxService *SubSingboxService
+
 	subService      *SubService
 	subJsonService  *SubJsonService
 	subClashService *SubClashService
@@ -96,6 +102,12 @@ type subControllerConfig struct {
 	subPath      string
 	subJsonPath  string
 	subClashPath string
+
+	subSingboxPath           string
+	subSingboxEnabled        bool
+	subSingboxAutoDetect     bool
+	subSingboxUserAgentRegex string
+	subSingboxTemplate       string
 
 	subClashAutoDetect     bool
 	subClashUserAgentRegex string
@@ -135,6 +147,15 @@ type subControllerConfig struct {
 }
 
 type SUBControllerOption func(*subControllerConfig)
+
+// WithSUBSingbox serves sing-box profiles on path, and to the apps regex names when autoDetect.
+func WithSUBSingbox(enabled bool, path string, autoDetect bool, regex, template string) SUBControllerOption {
+	return func(config *subControllerConfig) {
+		config.subSingboxEnabled, config.subSingboxPath = enabled, path
+		config.subSingboxAutoDetect, config.subSingboxUserAgentRegex = autoDetect, regex
+		config.subSingboxTemplate = template
+	}
+}
 
 func WithSUBPath(value string) SUBControllerOption {
 	return func(config *subControllerConfig) { config.subPath = value }
@@ -334,9 +355,15 @@ func NewSUBController(g *gin.RouterGroup, options ...SUBControllerOption) *SUBCo
 		subJsonService:  subJsonSvc,
 		subClashService: NewSubClashService(config.subClashEnableRouting, config.subClashRules, config.subClashRemoteDNS, sub),
 
+		subSingboxPath:    config.subSingboxPath,
+		singboxEnabled:    config.subSingboxEnabled && config.subSingboxPath != "",
+		singboxAutoDetect: config.subSingboxAutoDetect,
+		singboxUserAgent:  compileUserAgentRegex("sing-box", config.subSingboxUserAgentRegex, service.DefaultSubSingboxUserAgentRegex),
+
 		subTemplateCache:     map[string]*cachedSubTemplate{},
 		releaseSettingsCache: releaseSettingsCache,
 	}
+	a.subSingboxService = NewSubSingboxService(a.subClashService, config.subSingboxTemplate)
 	a.initRouter(g)
 	return a
 }
@@ -353,6 +380,16 @@ func (a *SUBController) initRouter(g *gin.RouterGroup) {
 		gJson := g.Group(a.subJsonPath, setNoCacheHeaders)
 		gJson.GET(":subid", a.subJsons)
 		gJson.HEAD(":subid", a.subJsons)
+	}
+	if a.singboxEnabled {
+		if owner := a.configuredSubscriptionPathOwner(a.subSingboxPath); owner != "" {
+			logger.Warningf("sing-box subscription path %q is unavailable because it conflicts with the configured %s path", a.subSingboxPath, owner)
+			a.singboxEnabled = false
+		} else {
+			gSingbox := g.Group(a.subSingboxPath, setNoCacheHeaders)
+			gSingbox.GET(":subid", a.subSingbox)
+			gSingbox.HEAD(":subid", a.subSingbox)
+		}
 	}
 	if a.clashEnabled {
 		gClash := g.Group(a.subClashPath, setNoCacheHeaders)
@@ -485,6 +522,12 @@ func (a *SUBController) subs(c *gin.Context) {
 		return
 	}
 	if !a.enforceHwid(c) {
+		return
+	}
+	// Before Clash: Hiddify and Karing name Clash in their agent but read sing-box best.
+	if shouldAutoServeFormat(a.singboxAutoDetect, a.singboxEnabled, false, userAgent, a.singboxUserAgent) && a.serveSingboxBody(c, false) {
+		a.recordSubscriptionFetch(c)
+		logSubscriptionRoute(userAgent, "singbox")
 		return
 	}
 	if shouldAutoServeClash(a.subClashAutoDetect, a.clashEnabled, false, userAgent, a.clashUserAgent) && a.serveClashBody(c, false, false) {
@@ -864,6 +907,56 @@ func (a *SUBController) serveJsonBody(c *gin.Context, alwaysReturnArray bool, co
 	}
 
 	c.Data(200, contentType, []byte(jsonSub))
+	return true
+}
+
+// subSingbox answers a sing-box profile, or the page to a browser.
+func (a *SUBController) subSingbox(c *gin.Context) {
+	if strings.EqualFold(c.Query("view"), "raw") {
+		if !a.enforceHwid(c) {
+			return
+		}
+		if !a.serveSingboxBody(c, true) {
+			writeSubError(c, nil)
+		}
+		a.recordSubscriptionFetch(c)
+		return
+	}
+	if a.maybeServeSubPage(c) {
+		return
+	}
+	if !a.enforceHwid(c) {
+		return
+	}
+	if !a.serveSingboxBody(c, false) {
+		writeSubError(c, nil)
+	}
+	a.recordSubscriptionFetch(c)
+}
+
+func (a *SUBController) serveSingboxBody(c *gin.Context, rawDownload bool) bool {
+	subID := c.Param("subid")
+	scheme, host, hostWithPort, _ := a.subService.ResolveRequest(c)
+	profile, header, err := a.subSingboxService.GetSingbox(subID, host)
+	if err != nil {
+		writeSubError(c, err)
+		return true
+	}
+	if profile == "" && header == "" {
+		return false
+	}
+	var subReq *SubService
+	metadata := a.metadataForSubRequest(func() *SubService {
+		if subReq == nil {
+			subReq = a.subService.ForRequest(host)
+		}
+		return subReq
+	}, subID, builtinProfileURL(c, scheme, hostWithPort))
+	a.ApplyCommonHeaders(c, header, a.updateInterval, metadata.Title, metadata.SupportURL, metadata.ProfileURL, metadata.Announce, a.subEnableRouting, a.subRoutingRules, a.subHideSettings)
+	if rawDownload {
+		c.Writer.Header().Set("Content-Disposition", `attachment; filename="sing-box.json"`)
+	}
+	c.Data(http.StatusOK, "application/json; charset=utf-8", []byte(profile))
 	return true
 }
 

@@ -36,6 +36,7 @@ var xrayTemplateConfig string
 
 const (
 	DefaultSubClashUserAgentRegex     = `(?i)(clash|mihomo)`
+	DefaultSubSingboxUserAgentRegex   = `(?i)(^sing-box|^SF[AIMT]/|hiddify|karing)`
 	DefaultExternalSubUserAgent       = "v2rayNG/1.8.5"
 	DefaultSubJsonUserAgentRegex      = ``
 	DefaultRemarkTemplate             = "{{INBOUND}}-{{EMAIL}}|📊{{TRAFFIC_LEFT}}|⏳{{DAYS_LEFT}}D"
@@ -186,6 +187,12 @@ var defaultValueMap = map[string]string{
 	"subClashEnable":              "false",
 	"subClashPath":                "/clash/",
 	"subClashURI":                 "",
+	"subSingboxEnable":            "true",
+	"subSingboxPath":              "/singbox/",
+	"subSingboxURI":               "",
+	"subSingboxAutoDetect":        "false",
+	"subSingboxUserAgentRegex":    DefaultSubSingboxUserAgentRegex,
+	"subSingboxTemplate":          "",
 	"subClashEnableRouting":       "false",
 	"subClashRules":               "",
 	"subClashRemoteDNS":           "false",
@@ -907,6 +914,25 @@ func (s *SettingService) GetSubClashAutoDetect() (bool, error) {
 
 func (s *SettingService) GetSubClashUserAgentRegex() (string, error) {
 	return s.getString("subClashUserAgentRegex")
+}
+
+func (s *SettingService) GetSubSingboxEnable() (bool, error) { return s.getBool("subSingboxEnable") }
+
+func (s *SettingService) GetSubSingboxPath() (string, error) { return s.getString("subSingboxPath") }
+
+func (s *SettingService) GetSubSingboxURI() (string, error) { return s.getString("subSingboxURI") }
+
+func (s *SettingService) GetSubSingboxAutoDetect() (bool, error) {
+	return s.getBool("subSingboxAutoDetect")
+}
+
+func (s *SettingService) GetSubSingboxUserAgentRegex() (string, error) {
+	return s.getString("subSingboxUserAgentRegex")
+}
+
+// GetSubSingboxTemplate is the base sing-box profile the entries are merged into; "" is the built-in one.
+func (s *SettingService) GetSubSingboxTemplate() (string, error) {
+	return s.getString("subSingboxTemplate")
 }
 
 func (s *SettingService) GetSubTitle() (string, error) {
@@ -1776,8 +1802,13 @@ func validateSubUserAgentRegexes(allSetting *entity.AllSetting) error {
 	if err != nil {
 		return err
 	}
+	singboxPattern, err := validateSubUserAgentRegex("sing-box", allSetting.SubSingboxUserAgentRegex, DefaultSubSingboxUserAgentRegex)
+	if err != nil {
+		return err
+	}
 	allSetting.SubJsonUserAgentRegex = jsonPattern
 	allSetting.SubClashUserAgentRegex = clashPattern
+	allSetting.SubSingboxUserAgentRegex = singboxPattern
 	return nil
 }
 
@@ -1993,6 +2024,8 @@ func (s *SettingService) GetDefaultSettings(host string) (any, error) {
 		"subURI":           func() (any, error) { return s.GetSubURI() },
 		"subJsonURI":       func() (any, error) { return s.GetSubJsonURI() },
 		"subClashURI":      func() (any, error) { return s.GetSubClashURI() },
+		"subSingboxEnable": func() (any, error) { return s.GetSubSingboxEnable() },
+		"subSingboxURI":    func() (any, error) { return s.GetSubSingboxURI() },
 		"datepicker":       func() (any, error) { return s.GetDatepicker() },
 		"ipLimitEnable":    func() (any, error) { return s.GetIpLimitEnable() },
 		"accessLogEnable":  func() (any, error) { return s.GetAccessLogEnable() },
