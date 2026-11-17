@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router';
 
 import RolesPage from '@/pages/access/RolesPage';
 import { HttpUtil, Msg } from '@/utils';
-import { makeTestQueryClient, renderWithProviders } from './test-utils';
+import { chooseSelectOption, makeTestQueryClient, renderWithProviders } from './test-utils';
 
 const GB = 1024 ** 3;
 const ME = {
@@ -33,10 +33,46 @@ const SELLER = {
   createdAt: 0,
 };
 
+const PLAN = {
+  id: 4,
+  name: 'Month 50 GB',
+  sortOrder: 0,
+  totalBytes: 50 * GB,
+  days: 30,
+  startOnFirstUse: false,
+  limitIp: 0,
+  userLimit: 0,
+  limitHwid: 0,
+  speedLimit: 0,
+  reset: 0,
+  trafficReset: 'never',
+  trafficResetDay: 1,
+  trafficResetMonth: 0,
+  trafficResetEvery: 0,
+  trafficResetCalendar: '',
+  allInbounds: true,
+  inboundIds: [],
+  group: '',
+  namePrefix: '',
+  nameSuffix: '',
+  description: '',
+  createdAt: 0,
+};
+const INBOUND = {
+  id: 9,
+  remark: 'Germany',
+  tag: 'in-9',
+  protocol: 'vless',
+  port: 443,
+  enable: true,
+};
+
 function renderPage() {
   vi.spyOn(HttpUtil, 'get').mockImplementation(async (url: string) => {
     if (url === '/panel/api/access/me') return new Msg(true, '', ME);
     if (url === '/panel/api/access/roles') return new Msg(true, '', [SELLER]);
+    if (url === '/panel/api/access/plans') return new Msg(true, '', [PLAN]);
+    if (url === '/panel/api/inbounds/options') return new Msg(true, '', [INBOUND]);
     return new Msg(true, '', []);
   });
   renderWithProviders(
@@ -70,5 +106,29 @@ it('saves quota bounds in bytes', async () => {
   await waitFor(() => expect(saved()).toBeTruthy());
   expect(saved()?.[1]).toEqual(
     expect.objectContaining({ minUserBytes: 5 * GB, maxUserBytes: 50 * GB, minPlanDays: 30 }),
+  );
+});
+
+// A role can name the plans and inbounds its accounts sell from, as an account can.
+it('saves the plans and inbounds a role sells from', async () => {
+  renderPage();
+  const post = vi.spyOn(HttpUtil, 'post').mockResolvedValue(new Msg(true, '', null));
+  fireEvent.click(await screen.findByRole('button', { name: /Add role/ }));
+  fireEvent.change(await screen.findByLabelText('Name'), { target: { value: 'Desk' } });
+  fireEvent.click(screen.getByRole('switch', { name: 'Sell from plans only' }));
+  chooseSelectOption((await screen.findByLabelText('Allowed plans')).id, 'Month 50 GB');
+  fireEvent.click(screen.getByRole('switch', { name: 'Only chosen inbounds' }));
+  chooseSelectOption((await screen.findByLabelText('Allowed inbounds')).id, 'Germany · vless:443');
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+  const saved = () => post.mock.calls.find(([url]) => url === '/panel/api/access/roles/add');
+  await waitFor(() => expect(saved()).toBeTruthy());
+  expect(saved()?.[1]).toEqual(
+    expect.objectContaining({
+      plansOnly: true,
+      allowedPlanIds: [4],
+      inboundsLimited: true,
+      allowedInboundIds: [9],
+    }),
   );
 });

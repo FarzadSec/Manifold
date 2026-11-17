@@ -5,12 +5,11 @@ import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import dayjs, { type Dayjs } from 'dayjs';
 
 import { FormField } from '@/components/form/rhf';
-import { selectTagRender } from '@/components/form';
 import DateTimePicker from '@/components/form/DateTimePicker';
 import type { AdminInput, AdminView, Plan, Role } from '@/generated/types';
-import { useInboundOptions } from '@/api/queries/useInboundOptions';
 import { postJson } from '@/api/queries/useAccess';
 import { TIERS, WEEKDAYS, bytesAsGB } from './accessInfo';
+import SellsFromFields from './SellsFromFields';
 
 interface AdminFormModalProps {
   open: boolean;
@@ -72,9 +71,6 @@ export default function AdminFormModal({
   const { control, reset, handleSubmit } = methods;
   const tier = useWatch({ control, name: 'tier' });
   const cycle = useWatch({ control, name: 'resetCycle' });
-  const plansOnly = useWatch({ control, name: 'plansOnly' });
-  const inboundsLimited = useWatch({ control, name: 'inboundsLimited' });
-  const { data: inbounds = [] } = useInboundOptions();
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -242,51 +238,7 @@ export default function AdminFormModal({
                     <Switch />
                   </FormField>
                 </Col>
-                <Col xs={24} md={12}>
-                  <FormField
-                    name="plansOnly"
-                    label={t('pages.access.plansOnly')}
-                    valueProp="checked"
-                    tooltip={t('pages.access.plansOnlyHint')}
-                  >
-                    <Switch />
-                  </FormField>
-                </Col>
-                {plansOnly && (
-                  <Col xs={24}>
-                    <FormField name="allowedPlanIds" label={t('pages.access.allowedPlans')}>
-                      <Select
-                        mode="multiple"
-                        tagRender={selectTagRender}
-                        options={plans.map((p) => ({ label: p.name, value: p.id }))}
-                      />
-                    </FormField>
-                  </Col>
-                )}
-                <Col xs={24} md={12}>
-                  <FormField
-                    name="inboundsLimited"
-                    label={t('pages.access.inboundsLimited')}
-                    valueProp="checked"
-                    tooltip={t('pages.access.inboundsLimitedHint')}
-                  >
-                    <Switch />
-                  </FormField>
-                </Col>
-                {inboundsLimited && (
-                  <Col xs={24}>
-                    <FormField name="allowedInboundIds" label={t('pages.access.allowedInbounds')}>
-                      <Select
-                        mode="multiple"
-                        tagRender={selectTagRender}
-                        options={inbounds.map((ib) => ({
-                          label: `${ib.remark || ib.tag} · ${ib.protocol}:${ib.port}`,
-                          value: ib.id,
-                        }))}
-                      />
-                    </FormField>
-                  </Col>
-                )}
+                <SellsFromFields plans={plans} />
               </Row>
 
               <Divider titlePlacement="start">{t('pages.access.branding')}</Divider>

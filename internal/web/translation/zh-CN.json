@@ -3070,7 +3070,7 @@
       "handoverConfirm": "让 {name} 成为面板所有者？此后只有新所有者能再移交面板。",
       "inbounds": "入站",
       "inboundsLimited": "仅限所选入站",
-      "inboundsLimitedHint": "开启：该代理商的用户只会被分配到允许的入站，因此只能访问对应服务器。",
+      "inboundsLimitedHint": "开启：其创建的用户只会被分配到允许的入站，因此只能访问对应服务器。",
       "keepDays": "保留记录（天）",
       "lastLogin": "最后登录",
       "length": "时长",

@@ -1815,9 +1815,12 @@ export const RealityScanResultSchema = z.object({
 export type RealityScanResult = z.infer<typeof RealityScanResultSchema>;
 
 export const RoleSchema = z.object({
+  allowedInboundIds: z.array(z.number().int()),
+  allowedPlanIds: z.array(z.number().int()),
   createdAt: z.number().int(),
   description: z.string(),
   id: z.number().int(),
+  inboundsLimited: z.boolean(),
   maxDevicesPerUser: z.number().int(),
   maxPlanDays: z.number().int(),
   maxUserBytes: z.number().int(),
@@ -1827,6 +1830,7 @@ export const RoleSchema = z.object({
   minUserBytes: z.number().int(),
   name: z.string(),
   permissions: z.array(z.string()),
+  plansOnly: z.boolean(),
   tier: z.string(),
   usersReadScope: z.string(),
   usersWriteScope: z.string(),

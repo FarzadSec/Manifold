@@ -1681,9 +1681,12 @@ export interface RealityScanResult {
 }
 
 export interface Role {
+  allowedInboundIds: number[];
+  allowedPlanIds: number[];
   createdAt: number;
   description: string;
   id: number;
+  inboundsLimited: boolean;
   maxDevicesPerUser: number;
   maxPlanDays: number;
   maxUserBytes: number;
@@ -1693,6 +1696,7 @@ export interface Role {
   minUserBytes: number;
   name: string;
   permissions: string[];
+  plansOnly: boolean;
   tier: string;
   usersReadScope: string;
   usersWriteScope: string;

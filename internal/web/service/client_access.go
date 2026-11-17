@@ -67,36 +67,83 @@ func (ca ClientAccess) CheckMayEnable() error {
 	return nil
 }
 
-// CheckMayChangeLimits refuses limit changes for a reseller that sells from plans only.
-func (ca ClientAccess) CheckMayChangeLimits() error {
+// Reach is the plans and inbounds an account may hand its users; a list counts only when limited.
+type Reach struct {
+	PlansOnly       bool
+	Plans           []int
+	InboundsLimited bool
+	Inbounds        []int
+}
+
+// ReachOf is the stricter of a reseller account's lists and its role's; either may be absent.
+func ReachOf(acc *model.User, role *model.Role) Reach {
+	var r Reach
+	if acc != nil && acc.Tier == access.TierReseller {
+		r = Reach{PlansOnly: acc.PlansOnly, Plans: acc.AllowedPlanIds, InboundsLimited: acc.InboundsLimited, Inbounds: acc.AllowedInboundIds}
+	}
+	if role != nil {
+		r.PlansOnly, r.Plans = narrowIDs(r.PlansOnly, r.Plans, role.PlansOnly, role.AllowedPlanIds)
+		r.InboundsLimited, r.Inbounds = narrowIDs(r.InboundsLimited, r.Inbounds, role.InboundsLimited, role.AllowedInboundIds)
+	}
+	return r
+}
+
+func narrowIDs(limited bool, ids []int, alsoLimited bool, also []int) (bool, []int) {
+	switch {
+	case limited && alsoLimited:
+		both := []int{}
+		for _, id := range ids {
+			if slices.Contains(also, id) {
+				both = append(both, id)
+			}
+		}
+		return true, both
+	case alsoLimited:
+		return true, also
+	}
+	return limited, ids
+}
+
+// Reach is what the actor may hand its own users, from its account as stored now and its role.
+func (ca ClientAccess) Reach() (Reach, error) {
 	if !ca.reseller() {
-		return nil
+		return ReachOf(nil, ca.Actor.Bounds()), nil
 	}
 	acc, err := ca.account()
 	if err != nil {
+		return Reach{}, err
+	}
+	return ReachOf(&acc, ca.Actor.Bounds()), nil
+}
+
+// CheckMayChangeLimits refuses limit changes for an account that sells from plans only.
+func (ca ClientAccess) CheckMayChangeLimits() error {
+	r, err := ca.Reach()
+	if err != nil {
 		return err
 	}
-	if acc.PlansOnly {
+	if r.PlansOnly {
 		return common.NewError("this account sells from plans only: it may change names and credentials, not limits")
 	}
 	return nil
 }
 
-// NarrowInbounds keeps only the inbounds a reseller may put its users on.
+// NarrowInbounds keeps only the inbounds the actor may put its users on.
 func (ca ClientAccess) NarrowInbounds(ids []int) ([]int, error) {
-	if !ca.reseller() {
-		return ids, nil
-	}
-	acc, err := ca.account()
+	r, err := ca.Reach()
 	if err != nil {
 		return nil, err
 	}
-	if !acc.InboundsLimited {
+	return r.narrowInbounds(ids)
+}
+
+func (r Reach) narrowInbounds(ids []int) ([]int, error) {
+	if !r.InboundsLimited {
 		return ids, nil
 	}
 	out := make([]int, 0, len(ids))
 	for _, id := range ids {
-		if slices.Contains(acc.AllowedInboundIds, id) {
+		if slices.Contains(r.Inbounds, id) {
 			out = append(out, id)
 		}
 	}
@@ -106,19 +153,16 @@ func (ca ClientAccess) NarrowInbounds(ids []int) ([]int, error) {
 	return out, nil
 }
 
-// AllowedInboundIDs is the inbounds a reseller may use, or nil when it may use all of them.
+// AllowedInboundIDs is the inbounds the actor may use, or nil when it may use all of them.
 func (ca ClientAccess) AllowedInboundIDs() ([]int, error) {
-	if !ca.reseller() {
-		return nil, nil
-	}
-	acc, err := ca.account()
-	if err != nil || !acc.InboundsLimited {
+	r, err := ca.Reach()
+	if err != nil || !r.InboundsLimited {
 		return nil, err
 	}
-	if acc.AllowedInboundIds == nil {
+	if r.Inbounds == nil {
 		return []int{}, nil
 	}
-	return acc.AllowedInboundIds, nil
+	return r.Inbounds, nil
 }
 
 // UserChange is the limits an operation sets on a user; nil leaves one as it is, unchecked.
@@ -201,14 +245,16 @@ func (ca ClientAccess) PrepareCreate(payloads []*ClientCreatePayload, planID, re
 		}
 		plan = p
 	}
+	ownerRole := roleOf(ownerAcc)
+	reach := ReachOf(&ownerAcc, ownerRole)
+	if ownerAcc.Tier == access.TierReseller && ownerAcc.Suspended != "" {
+		return 0, common.NewError("this account's allowance is used up until its next cycle or renewal")
+	}
+	if reach.PlansOnly && (plan == nil || !slices.Contains(reach.Plans, plan.Id)) {
+		return 0, common.NewError("this account sells from its plans only")
+	}
 	if ownerAcc.Tier == access.TierReseller {
-		if ownerAcc.Suspended != "" {
-			return 0, common.NewError("this account's allowance is used up until its next cycle or renewal")
-		}
-		if ownerAcc.PlansOnly && (plan == nil || !slices.Contains(ownerAcc.AllowedPlanIds, plan.Id)) {
-			return 0, common.NewError("this account sells from its plans only")
-		}
-		if err := checkOwnerRoom(ownerAcc, len(payloads)); err != nil {
+		if err := checkOwnerRoom(ownerAcc, ownerRole, len(payloads)); err != nil {
 			return 0, err
 		}
 	}
@@ -216,18 +262,11 @@ func (ca ClientAccess) PrepareCreate(payloads []*ClientCreatePayload, planID, re
 		if plan != nil {
 			ApplyPlan(plan, p, allInboundIDs, now)
 		}
-		if ownerAcc.Tier == access.TierReseller && ownerAcc.InboundsLimited {
-			narrowed := make([]int, 0, len(p.InboundIds))
-			for _, id := range p.InboundIds {
-				if slices.Contains(ownerAcc.AllowedInboundIds, id) {
-					narrowed = append(narrowed, id)
-				}
-			}
-			if len(narrowed) == 0 {
-				return 0, common.NewError("none of the chosen inbounds is open to this account")
-			}
-			p.InboundIds = narrowed
+		narrowed, err := reach.narrowInbounds(p.InboundIds)
+		if err != nil {
+			return 0, err
 		}
+		p.InboundIds = narrowed
 		if err := ca.CheckChange(UserChange{Total: &p.Client.TotalGB, Expiry: &p.Client.ExpiryTime, Devices: &p.LimitHwid}, now); err != nil {
 			return 0, err
 		}
@@ -247,15 +286,22 @@ func (ca ClientAccess) PrepareCreate(payloads []*ClientCreatePayload, planID, re
 }
 
 // checkOwnerRoom refuses when the reseller would own more users than its account or role allow.
-func checkOwnerRoom(acc model.User, adding int) error {
+// roleOf is the account's role, nil when it has none or the role is gone.
+func roleOf(acc model.User) *model.Role {
+	if acc.RoleId == 0 {
+		return nil
+	}
+	var role model.Role
+	if database.GetDB().First(&role, acc.RoleId).Error != nil {
+		return nil
+	}
+	return &role
+}
+
+func checkOwnerRoom(acc model.User, role *model.Role, adding int) error {
 	limit := acc.MaxUsers
-	if acc.RoleId > 0 {
-		var role model.Role
-		if err := database.GetDB().First(&role, acc.RoleId).Error; err == nil && role.MaxUsersPerAccount > 0 {
-			if limit == 0 || role.MaxUsersPerAccount < limit {
-				limit = role.MaxUsersPerAccount
-			}
-		}
+	if role != nil && role.MaxUsersPerAccount > 0 && (limit == 0 || role.MaxUsersPerAccount < limit) {
+		limit = role.MaxUsersPerAccount
 	}
 	if limit == 0 {
 		return nil

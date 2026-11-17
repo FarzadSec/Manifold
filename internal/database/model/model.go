@@ -109,6 +109,11 @@ type Role struct {
 	MaxPlanDays       int   `json:"maxPlanDays" gorm:"default:0"`
 	MinDevicesPerUser int   `json:"minDevicesPerUser" gorm:"default:0"`
 	MaxDevicesPerUser int   `json:"maxDevicesPerUser" gorm:"default:0"`
+	// The plans and inbounds the role's accounts sell from; a reseller's own lists narrow them.
+	PlansOnly         bool  `json:"plansOnly" gorm:"default:false"`
+	AllowedPlanIds    []int `json:"allowedPlanIds" gorm:"serializer:json;column:allowed_plan_ids" example:"[1,2]"`
+	InboundsLimited   bool  `json:"inboundsLimited" gorm:"default:false"`
+	AllowedInboundIds []int `json:"allowedInboundIds" gorm:"serializer:json;column:allowed_inbound_ids" example:"[1]"`
 	CreatedAt         int64 `json:"createdAt" gorm:"autoCreateTime:milli"`
 }
 

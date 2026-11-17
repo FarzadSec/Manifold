@@ -282,7 +282,7 @@ func (s *ClientService) ChangeOwner(inboundSvc *InboundService, emails []string,
 			if err != nil {
 				return err
 			}
-			if err := checkOwnerRoom(acc, len(already)); err != nil {
+			if err := checkOwnerRoom(acc, roleOf(acc), len(already)); err != nil {
 				return err
 			}
 			if acc.Suspended != "" {

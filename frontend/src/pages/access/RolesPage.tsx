@@ -24,10 +24,11 @@ import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
 import { FormField } from '@/components/form/rhf';
 import { keys } from '@/api/queryKeys';
-import { postJson, useAccess, useRoles } from '@/api/queries/useAccess';
-import type { Role } from '@/generated/types';
+import { postJson, useAccess, usePlans, useRoles } from '@/api/queries/useAccess';
+import type { Plan, Role } from '@/generated/types';
 import PageShell from './PageShell';
 import PermissionPicker from './PermissionPicker';
+import SellsFromFields from './SellsFromFields';
 import { TIERS, TIER_COLORS, boundRange, bytesAsGB, formatBytes } from './accessInfo';
 
 function emptyRole(): Role {
@@ -46,6 +47,10 @@ function emptyRole(): Role {
     maxPlanDays: 0,
     minDevicesPerUser: 0,
     maxDevicesPerUser: 0,
+    plansOnly: false,
+    allowedPlanIds: [],
+    inboundsLimited: false,
+    allowedInboundIds: [],
     createdAt: 0,
   };
 }
@@ -54,11 +59,13 @@ function RoleFormModal({
   open,
   role,
   ceilings,
+  plans,
   onClose,
 }: {
   open: boolean;
   role: Role | null;
   ceilings: Record<string, string[]>;
+  plans: Plan[];
   onClose: (saved: boolean) => void;
 }) {
   const { t } = useTranslation();
@@ -71,7 +78,18 @@ function RoleFormModal({
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (open) reset(role ? { ...role, permissions: role.permissions ?? [] } : emptyRole());
+    if (open) {
+      reset(
+        role
+          ? {
+              ...role,
+              permissions: role.permissions ?? [],
+              allowedPlanIds: role.allowedPlanIds ?? [],
+              allowedInboundIds: role.allowedInboundIds ?? [],
+            }
+          : emptyRole(),
+      );
+    }
   }, [open, role, reset]);
 
   async function onSubmit(values: Role) {
@@ -212,6 +230,9 @@ function RoleFormModal({
               </FormField>
             </Col>
           </Row>
+          <Row gutter={12}>
+            <SellsFromFields plans={plans} />
+          </Row>
         </Form>
       </FormProvider>
     </Modal>
@@ -223,6 +244,7 @@ export default function RolesPage() {
   const queryClient = useQueryClient();
   const access = useAccess();
   const roles = useRoles();
+  const plans = usePlans();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Role | null>(null);
   const ceilings = access.me?.tierCeilings ?? {};
@@ -274,6 +296,8 @@ export default function RolesPage() {
           {r.maxUsersPerAccount > 0 && (
             <Tag>{t('pages.access.usersCap', { n: r.maxUsersPerAccount })}</Tag>
           )}
+          {r.plansOnly && <Tag color="gold">{t('pages.access.plansOnly')}</Tag>}
+          {r.inboundsLimited && <Tag color="gold">{t('pages.access.inboundsLimited')}</Tag>}
           {boundRange(r.minUserBytes, r.maxUserBytes) && (
             <Tag>
               {t('pages.access.bound.quota', {
@@ -392,6 +416,7 @@ export default function RolesPage() {
         open={formOpen}
         role={editing}
         ceilings={ceilings}
+        plans={plans.data ?? []}
         onClose={(saved) => {
           setFormOpen(false);
           if (saved) void refresh();

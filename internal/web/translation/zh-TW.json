@@ -3070,7 +3070,7 @@
       "handoverConfirm": "Make {name} the panel's owner? Only the new owner can hand the panel on after that.",
       "inbounds": "Inbounds",
       "inboundsLimited": "Only chosen inbounds",
-      "inboundsLimitedHint": "On: this reseller's users are put only on the allowed inbounds, and so reach only their servers.",
+      "inboundsLimitedHint": "On: the users it creates go only on the allowed inbounds, and so reach only their servers.",
       "keepDays": "Keep records for (days)",
       "lastLogin": "Last login",
       "length": "Length",

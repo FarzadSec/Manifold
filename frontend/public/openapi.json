@@ -7561,6 +7561,25 @@
       "Role": {
         "description": "Role narrows one tier: the permissions it keeps and the caps on what its accounts hand out.",
         "properties": {
+          "allowedInboundIds": {
+            "example": [
+              1
+            ],
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "allowedPlanIds": {
+            "example": [
+              1,
+              2
+            ],
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
           "createdAt": {
             "format": "int64",
             "type": "integer"
@@ -7571,6 +7590,9 @@
           "id": {
             "example": 1,
             "type": "integer"
+          },
+          "inboundsLimited": {
+            "type": "boolean"
           },
           "maxDevicesPerUser": {
             "type": "integer"
@@ -7611,6 +7633,10 @@
             },
             "type": "array"
           },
+          "plansOnly": {
+            "description": "The plans and inbounds the role's accounts sell from; a reseller's own lists narrow them.",
+            "type": "boolean"
+          },
           "tier": {
             "example": "operator",
             "type": "string"
@@ -7626,9 +7652,12 @@
           }
         },
         "required": [
+          "allowedInboundIds",
+          "allowedPlanIds",
           "createdAt",
           "description",
           "id",
+          "inboundsLimited",
           "maxDevicesPerUser",
           "maxPlanDays",
           "maxUserBytes",
@@ -7638,6 +7667,7 @@
           "minUserBytes",
           "name",
           "permissions",
+          "plansOnly",
           "tier",
           "usersReadScope",
           "usersWriteScope"
@@ -21209,9 +21239,17 @@
                   "success": true,
                   "obj": [
                     {
+                      "allowedInboundIds": [
+                        1
+                      ],
+                      "allowedPlanIds": [
+                        1,
+                        2
+                      ],
                       "createdAt": 0,
                       "description": "",
                       "id": 1,
+                      "inboundsLimited": false,
                       "maxDevicesPerUser": 0,
                       "maxPlanDays": 0,
                       "maxUserBytes": 107374182400,
@@ -21223,6 +21261,7 @@
                       "permissions": [
                         "users:read"
                       ],
+                      "plansOnly": false,
                       "tier": "operator",
                       "usersReadScope": "all",
                       "usersWriteScope": "own"
@@ -21281,9 +21320,17 @@
                 "example": {
                   "success": true,
                   "obj": {
+                    "allowedInboundIds": [
+                      1
+                    ],
+                    "allowedPlanIds": [
+                      1,
+                      2
+                    ],
                     "createdAt": 0,
                     "description": "",
                     "id": 1,
+                    "inboundsLimited": false,
                     "maxDevicesPerUser": 0,
                     "maxPlanDays": 0,
                     "maxUserBytes": 107374182400,
@@ -21295,6 +21342,7 @@
                     "permissions": [
                       "users:read"
                     ],
+                    "plansOnly": false,
                     "tier": "operator",
                     "usersReadScope": "all",
                     "usersWriteScope": "own"
@@ -21364,9 +21412,17 @@
                 "example": {
                   "success": true,
                   "obj": {
+                    "allowedInboundIds": [
+                      1
+                    ],
+                    "allowedPlanIds": [
+                      1,
+                      2
+                    ],
                     "createdAt": 0,
                     "description": "",
                     "id": 1,
+                    "inboundsLimited": false,
                     "maxDevicesPerUser": 0,
                     "maxPlanDays": 0,
                     "maxUserBytes": 107374182400,
@@ -21378,6 +21434,7 @@
                     "permissions": [
                       "users:read"
                     ],
+                    "plansOnly": false,
                     "tier": "operator",
                     "usersReadScope": "all",
                     "usersWriteScope": "own"

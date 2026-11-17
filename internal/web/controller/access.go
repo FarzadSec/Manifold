@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"slices"
 	"strconv"
 	"time"
 
@@ -89,6 +90,7 @@ func (a *AccessController) me(c *gin.Context) {
 		return
 	}
 	owned, _ := service.CountOwned(acc.Id)
+	reach, _ := service.ClientAccess{Actor: actor}.Reach()
 	roleName := ""
 	if actor.Role != nil {
 		roleName = actor.Role.Name
@@ -102,7 +104,7 @@ func (a *AccessController) me(c *gin.Context) {
 		Permissions: actor.Perms.List(), TwoFactorEnabled: acc.TwoFactorEnabled,
 		VolumeBytes: acc.VolumeBytes, CycleUsed: acc.CycleUsed, CycleStart: acc.CycleStart, ResetCycle: acc.ResetCycle,
 		ExpiresAt: acc.ExpiresAt, MaxUsers: acc.MaxUsers, OwnedUsers: owned, Suspended: acc.Suspended,
-		MayEditUsers: acc.MayEditUsers, PlansOnly: acc.PlansOnly,
+		MayEditUsers: acc.MayEditUsers, PlansOnly: reach.PlansOnly,
 		Catalogue: access.AllPermissions, TierCeilings: ceilings,
 	}, nil)
 }
@@ -226,19 +228,11 @@ func (a *AccessController) deleteRole(c *gin.Context) {
 func (a *AccessController) listPlans(c *gin.Context) {
 	plans, err := a.planService.List()
 	actor := access.ActorFrom(c)
-	if err == nil && actor.IsReseller() {
-		var acc model.User
-		if err = database.GetDB().First(&acc, actor.UserId).Error; err == nil && acc.PlansOnly {
-			kept := plans[:0]
-			for _, p := range plans {
-				for _, id := range acc.AllowedPlanIds {
-					if id == p.Id {
-						kept = append(kept, p)
-						break
-					}
-				}
-			}
-			plans = kept
+	if err == nil {
+		var reach service.Reach
+		reach, err = service.ClientAccess{Actor: actor}.Reach()
+		if err == nil && reach.PlansOnly && !actor.Perms.Has(access.PlansWrite) {
+			plans = slices.DeleteFunc(plans, func(p model.Plan) bool { return !slices.Contains(reach.Plans, p.Id) })
 		}
 	}
 	if plans == nil {

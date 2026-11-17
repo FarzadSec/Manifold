@@ -81,13 +81,13 @@ func refuse(c *gin.Context, err error) {
 	c.AbortWithStatusJSON(http.StatusOK, gin.H{"success": false, "msg": err.Error()})
 }
 
-// guardClientAccess keeps an actor scoped to its own users to those users, and a reseller to
-// the ways its account allows; an actor that reaches every user passes untouched.
+// guardClientAccess keeps an actor scoped to its own users to those users, and holds every
+// actor's changes to what its account and role allow.
 func guardClientAccess(c *gin.Context) {
 	actor := access.ActorFrom(c)
 	route := c.Request.Method + " " + relAPIPath(c.FullPath())
 	if !actor.ReadsOwnOnly() && !actor.WritesOwnOnly() {
-		if err := checkRoleBounds(c, service.ClientAccess{Actor: actor}, route); err != nil {
+		if err := checkUserPolicy(c, service.ClientAccess{Actor: actor}, route); err != nil {
 			refuse(c, err)
 			return
 		}
@@ -158,31 +158,37 @@ func guardClientAccess(c *gin.Context) {
 			return
 		}
 	}
-	switch route {
-	case "POST /clients/bulkEnable":
-		if err := ca.CheckMayEnable(); err != nil {
-			refuse(c, err)
-			return
-		}
-	case "POST /clients/bulkAdjust":
-		if err := ca.CheckMayChangeLimits(); err != nil {
-			refuse(c, err)
-			return
-		}
-		if err := checkRoleBounds(c, ca, route); err != nil {
-			refuse(c, err)
-			return
-		}
-	case "POST /clients/update", "POST /clients/update/:email":
-		if err := checkResellerEdit(c, ca, emails[0]); err != nil {
-			refuse(c, err)
-			return
-		}
+	if err := checkUserPolicy(c, ca, route); err != nil {
+		refuse(c, err)
+		return
 	}
 	c.Next()
 }
 
-// limitKeys are the fields a plans-only reseller may not change on its users.
+// checkUserPolicy holds a change inside what the actor's account and role let it set.
+func checkUserPolicy(c *gin.Context, ca service.ClientAccess, route string) error {
+	if ca.Actor.Bounds() == nil && !ca.Actor.IsReseller() {
+		return nil
+	}
+	switch route {
+	case "POST /clients/bulkEnable":
+		return ca.CheckMayEnable()
+	case "POST /clients/bulkAdjust":
+		if err := ca.CheckMayChangeLimits(); err != nil {
+			return err
+		}
+		return checkBulkBounds(c, ca)
+	case "POST /clients/update", "POST /clients/update/:email":
+		email := c.Param("email")
+		if email == "" {
+			email = c.Query("email")
+		}
+		return checkEdit(c, ca, email)
+	}
+	return nil
+}
+
+// limitKeys are the fields a plans-only account may not change on its users.
 var limitKeys = []string{"totalGB", "expiryTime", "limitIp", "userLimit", "speedLimit", "limitHwid", "reset", "resetDay", "resetWeekday", "resetMax", "trafficReset", "trafficResetDay"}
 
 // readBody returns a JSON body and puts it back for the handler.
@@ -205,16 +211,16 @@ func recordByEmail(email string) (model.ClientRecord, error) {
 	return rec, err
 }
 
-// checkResellerEdit applies a reseller's allowance and its role's bounds to an edit before the
-// body reaches the handler.
-func checkResellerEdit(c *gin.Context, ca service.ClientAccess, email string) error {
+// checkEdit applies the actor's allowance, plans-only rule and role bounds to an edit before
+// the body reaches the handler; an unknown user is left to the handler to report.
+func checkEdit(c *gin.Context, ca service.ClientAccess, email string) error {
 	body, err := readBody(c)
 	if err != nil {
 		return err
 	}
 	rec, err := recordByEmail(email)
 	if err != nil {
-		return err
+		return nil
 	}
 	stored := map[string]any{
 		"totalGB": rec.TotalGB, "expiryTime": rec.ExpiryTime, "limitIp": rec.LimitIP, "userLimit": rec.UserLimit, "speedLimit": rec.SpeedLimit, "limitHwid": rec.LimitHwid,
@@ -264,32 +270,6 @@ func editChange(body map[string]json.RawMessage, rec model.ClientRecord) service
 		}
 	}
 	return ch
-}
-
-// checkRoleBounds holds an edit or a bulk change inside the bounds of the actor's role.
-func checkRoleBounds(c *gin.Context, ca service.ClientAccess, route string) error {
-	if ca.Actor.Bounds() == nil {
-		return nil
-	}
-	switch route {
-	case "POST /clients/update", "POST /clients/update/:email":
-		email := c.Param("email")
-		if email == "" {
-			email = c.Query("email")
-		}
-		body, err := readBody(c)
-		if err != nil {
-			return err
-		}
-		rec, err := recordByEmail(email)
-		if err != nil {
-			return nil
-		}
-		return ca.CheckChange(editChange(body, rec), time.Now())
-	case "POST /clients/bulkAdjust":
-		return checkBulkBounds(c, ca)
-	}
-	return nil
 }
 
 // checkBulkBounds checks each selected user as the bulk change would leave it.

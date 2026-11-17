@@ -7535,6 +7535,25 @@ export const SCHEMAS: Record<string, unknown> = {
   "Role": {
     "description": "Role narrows one tier: the permissions it keeps and the caps on what its accounts hand out.",
     "properties": {
+      "allowedInboundIds": {
+        "example": [
+          1
+        ],
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "allowedPlanIds": {
+        "example": [
+          1,
+          2
+        ],
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
       "createdAt": {
         "format": "int64",
         "type": "integer"
@@ -7545,6 +7564,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "id": {
         "example": 1,
         "type": "integer"
+      },
+      "inboundsLimited": {
+        "type": "boolean"
       },
       "maxDevicesPerUser": {
         "type": "integer"
@@ -7585,6 +7607,10 @@ export const SCHEMAS: Record<string, unknown> = {
         },
         "type": "array"
       },
+      "plansOnly": {
+        "description": "The plans and inbounds the role's accounts sell from; a reseller's own lists narrow them.",
+        "type": "boolean"
+      },
       "tier": {
         "example": "operator",
         "type": "string"
@@ -7600,9 +7626,12 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
+      "allowedInboundIds",
+      "allowedPlanIds",
       "createdAt",
       "description",
       "id",
+      "inboundsLimited",
       "maxDevicesPerUser",
       "maxPlanDays",
       "maxUserBytes",
@@ -7612,6 +7641,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "minUserBytes",
       "name",
       "permissions",
+      "plansOnly",
       "tier",
       "usersReadScope",
       "usersWriteScope"

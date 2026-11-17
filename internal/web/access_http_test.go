@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -405,4 +406,129 @@ func TestRoleLimitsBoundWhatItsAccountsHandOut(t *testing.T) {
 	if _, reply := f.call(t, tok, http.MethodPost, "/clients/update/legacy", `{"comment":"vip","totalGB":0,"expiryTime":0,"limitHwid":0}`); !reply.Success {
 		t.Errorf("an edit repeating an unbounded user's own limits was refused: %s", reply.Msg)
 	}
+}
+
+// A role names the plans and inbounds its accounts sell from; a reseller's own lists narrow it.
+func TestRoleChoosesThePlansAndInboundsItsAccountsSell(t *testing.T) {
+	f := newAccessFixture(t)
+	db := database.GetDB()
+	extra := func(tag string, port int) int {
+		ib := model.Inbound{
+			UserId: f.owner.Id, Tag: tag, Remark: tag, Enable: true, Port: port, Protocol: model.VLESS,
+			Settings: `{"clients":[],"decryption":"none"}`, StreamSettings: `{"network":"tcp","security":"none"}`,
+		}
+		if err := db.Create(&ib).Error; err != nil {
+			t.Fatal(err)
+		}
+		return ib.Id
+	}
+	a, b, cIb := f.inbound.Id, extra("in-b", 41002), extra("in-c", 41003)
+	sold := model.Plan{Name: "sold", TotalBytes: 5 << 30, Days: 30, AllInbounds: true}
+	other := model.Plan{Name: "other", TotalBytes: 5 << 30, Days: 30, AllInbounds: true}
+	for _, p := range []*model.Plan{&sold, &other} {
+		if err := (&service.PlanService{}).Save(p); err != nil {
+			t.Fatal(err)
+		}
+	}
+	role := model.Role{
+		Name: "desk", Tier: access.TierOperator, Permissions: []string{access.UsersRead, access.UsersWrite},
+		PlansOnly: true, AllowedPlanIds: []int{sold.Id}, InboundsLimited: true, AllowedInboundIds: []int{b, cIb},
+	}
+	if err := db.Create(&role).Error; err != nil {
+		t.Fatal(err)
+	}
+	desk := f.account(t, model.User{Username: "desk", Tier: access.TierOperator, RoleId: role.Id})
+	tok := f.token(t, "desk", panel.TokenAccess{UserId: desk.Id})
+	fromPlan := func(tok, email string, plan int, ids string) apiReply {
+		body := `{"planId":` + itoa(plan) + `,"client":{"email":"` + email + `","id":"` + uuidFor(email) + `","enable":true},"inboundIds":[` + ids + `]}`
+		_, reply := f.call(t, tok, http.MethodPost, "/clients/add", body)
+		return reply
+	}
+	if reply := f.addClient(t, tok, "free"); reply.Success {
+		t.Error("a plans-only role created a user without a plan")
+	}
+	if reply := fromPlan(tok, "o1", other.Id, ""); reply.Success {
+		t.Error("a plans-only role sold a plan it was not given")
+	}
+	if reply := fromPlan(tok, "s1", sold.Id, ""); !reply.Success {
+		t.Fatalf("selling the role's plan was refused: %s", reply.Msg)
+	}
+	if got := inboundsOf(t, "s1"); !slices.Equal(got, []int{b, cIb}) {
+		t.Errorf("the role's user is on inbounds %v, want %v", got, []int{b, cIb})
+	}
+	if _, reply := f.call(t, tok, http.MethodPost, "/clients/update/s1", `{"totalGB":0}`); reply.Success {
+		t.Error("a plans-only role lifted its user's quota")
+	}
+	if _, reply := f.call(t, tok, http.MethodPost, "/clients/update/s1", `{"comment":"vip"}`); !reply.Success {
+		t.Errorf("a plans-only role could not rename-level edit its user: %s", reply.Msg)
+	}
+	if got := listedIDs(t, f, tok, "/access/plans"); !slices.Equal(got, []int{sold.Id}) {
+		t.Errorf("the role lists plans %v, want only %d", got, sold.Id)
+	}
+	if got := listedIDs(t, f, tok, "/inbounds/options"); !slices.Equal(got, []int{b, cIb}) {
+		t.Errorf("the role is offered inbounds %v, want %v", got, []int{b, cIb})
+	}
+	planner := model.Role{
+		Name: "planner", Tier: access.TierOperator, Permissions: []string{access.UsersRead, access.UsersWrite, access.PlansWrite},
+		PlansOnly: true, AllowedPlanIds: []int{sold.Id},
+	}
+	if err := db.Create(&planner).Error; err != nil {
+		t.Fatal(err)
+	}
+	plannerAcc := f.account(t, model.User{Username: "planner", Tier: access.TierOperator, RoleId: planner.Id})
+	plannerTok := f.token(t, "planner", panel.TokenAccess{UserId: plannerAcc.Id})
+	if got, want := listedIDs(t, f, plannerTok, "/access/plans"), []int{sold.Id, other.Id}; !slices.Equal(got, want) {
+		t.Errorf("a role that manages plans lists %v, want every plan %v", got, want)
+	}
+
+	open := model.Role{Name: "shop", Tier: access.TierReseller, Permissions: []string{access.UsersRead, access.UsersWrite}, InboundsLimited: true, AllowedInboundIds: []int{b, cIb}}
+	if err := db.Create(&open).Error; err != nil {
+		t.Fatal(err)
+	}
+	seller := f.account(t, model.User{Username: "shop", Tier: access.TierReseller, RoleId: open.Id, MayEditUsers: true, InboundsLimited: true, AllowedInboundIds: []int{a, b}})
+	sellerTok := f.token(t, "shop", panel.TokenAccess{UserId: seller.Id})
+	if got := listedIDs(t, f, sellerTok, "/inbounds/options"); !slices.Equal(got, []int{b}) {
+		t.Errorf("the reseller is offered inbounds %v, want only %d, on both its own and its role's lists", got, b)
+	}
+	body := func(email, ids string) string {
+		return `{"client":{"email":"` + email + `","id":"` + uuidFor(email) + `","enable":true},"inboundIds":[` + ids + `]}`
+	}
+	if _, reply := f.call(t, sellerTok, http.MethodPost, "/clients/add", body("r1", itoa(a)+","+itoa(cIb))); reply.Success {
+		t.Error("the reseller put a user on inbounds outside one of its two lists")
+	}
+	if _, reply := f.call(t, sellerTok, http.MethodPost, "/clients/add", body("r2", itoa(a)+","+itoa(b)+","+itoa(cIb))); !reply.Success {
+		t.Fatalf("add: %s", reply.Msg)
+	}
+	if got := inboundsOf(t, "r2"); !slices.Equal(got, []int{b}) {
+		t.Errorf("the reseller's user is on inbounds %v, want only %d", got, b)
+	}
+}
+
+func inboundsOf(t *testing.T, email string) []int {
+	t.Helper()
+	var ids []int
+	if err := database.GetDB().Model(&model.ClientInbound{}).
+		Joins("JOIN clients ON clients.id = client_inbounds.client_id").
+		Where("clients.email = ?", email).Order("client_inbounds.inbound_id").
+		Pluck("client_inbounds.inbound_id", &ids).Error; err != nil {
+		t.Fatal(err)
+	}
+	return ids
+}
+
+func listedIDs(t *testing.T, f *accessFixture, tok, path string) []int {
+	t.Helper()
+	_, reply := f.call(t, tok, http.MethodGet, path, "")
+	var items []struct {
+		Id int `json:"id"`
+	}
+	if err := json.Unmarshal(reply.Obj, &items); err != nil {
+		t.Fatalf("%s: %v (%s)", path, err, reply.Msg)
+	}
+	ids := make([]int, 0, len(items))
+	for _, it := range items {
+		ids = append(ids, it.Id)
+	}
+	slices.Sort(ids)
+	return ids
 }

@@ -1973,9 +1973,17 @@ export const EXAMPLES: Record<string, unknown> = {
     "x25519": true
   },
   "Role": {
+    "allowedInboundIds": [
+      1
+    ],
+    "allowedPlanIds": [
+      1,
+      2
+    ],
     "createdAt": 0,
     "description": "",
     "id": 1,
+    "inboundsLimited": false,
     "maxDevicesPerUser": 0,
     "maxPlanDays": 0,
     "maxUserBytes": 107374182400,
@@ -1987,6 +1995,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "permissions": [
       "users:read"
     ],
+    "plansOnly": false,
     "tier": "operator",
     "usersReadScope": "all",
     "usersWriteScope": "own"
