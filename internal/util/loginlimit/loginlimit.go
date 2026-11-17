@@ -1,4 +1,5 @@
-package controller
+// Package loginlimit slows down password guessing: per (address, name) and per address.
+package loginlimit
 
 import (
 	"strings"
@@ -7,9 +8,6 @@ import (
 )
 
 const (
-	loginLimitMaxFailures = 5
-	loginLimitWindow      = 5 * time.Minute
-	loginLimitCooldown    = 15 * time.Minute
 	// Hard ceiling on tracked (ip, username) records. The key includes the
 	// caller-supplied username, so an unauthenticated attacker rotating
 	// usernames would otherwise grow the map without bound.
@@ -19,9 +17,8 @@ const (
 	loginLimitIPFactor = 5
 )
 
-var defaultLoginLimiter = newLoginLimiter(loginLimitMaxFailures, loginLimitWindow, loginLimitCooldown)
-
-type loginLimiter struct {
+// Limiter blocks an (address, name) after maxFailures failures within window, for cooldown.
+type Limiter struct {
 	mu          sync.Mutex
 	now         func() time.Time
 	maxFailures int
@@ -39,8 +36,8 @@ type loginLimitRecord struct {
 	blockedUntil time.Time
 }
 
-func newLoginLimiter(maxFailures int, window, cooldown time.Duration) *loginLimiter {
-	return &loginLimiter{
+func New(maxFailures int, window, cooldown time.Duration) *Limiter {
+	return &Limiter{
 		now:         time.Now,
 		maxFailures: maxFailures,
 		window:      window,
@@ -52,7 +49,7 @@ func newLoginLimiter(maxFailures int, window, cooldown time.Duration) *loginLimi
 
 // allow admits an attempt and reserves a slot for it in both the (ip, username) and the
 // address-wide record; the caller reports the outcome through registerFailure or registerSuccess.
-func (l *loginLimiter) allow(ip, username string) (time.Time, bool) {
+func (l *Limiter) Allow(ip, username string) (time.Time, bool) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -70,7 +67,7 @@ func (l *loginLimiter) allow(ip, username string) (time.Time, bool) {
 
 // admit refuses a blocked key, or one whose failures and pending attempts already fill the
 // budget (starting its cooldown), and otherwise reserves a slot. Callers hold l.mu.
-func (l *loginLimiter) admit(records map[string]*loginLimitRecord, key string, limit int, now time.Time) (time.Time, bool) {
+func (l *Limiter) admit(records map[string]*loginLimitRecord, key string, limit int, now time.Time) (time.Time, bool) {
 	record := records[key]
 	if record == nil {
 		l.evictForRoom(records, now)
@@ -90,7 +87,7 @@ func (l *loginLimiter) admit(records map[string]*loginLimitRecord, key string, l
 	return time.Time{}, true
 }
 
-func (l *loginLimiter) registerFailure(ip, username string) (time.Time, bool) {
+func (l *Limiter) RegisterFailure(ip, username string) (time.Time, bool) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -103,7 +100,7 @@ func (l *loginLimiter) registerFailure(ip, username string) (time.Time, bool) {
 	return ipBlockedUntil, ipBlocked
 }
 
-func (l *loginLimiter) fail(records map[string]*loginLimitRecord, key string, limit int, now time.Time) (time.Time, bool) {
+func (l *Limiter) fail(records map[string]*loginLimitRecord, key string, limit int, now time.Time) (time.Time, bool) {
 	record := records[key]
 	if record == nil {
 		l.evictForRoom(records, now)
@@ -120,7 +117,7 @@ func (l *loginLimiter) fail(records map[string]*loginLimitRecord, key string, li
 	return time.Time{}, false
 }
 
-func (l *loginLimiter) registerSuccess(ip, username string) {
+func (l *Limiter) RegisterSuccess(ip, username string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	delete(l.attempts, loginLimitKey(ip, username))
@@ -151,7 +148,7 @@ func (r *loginLimitRecord) dropReservation() {
 // aged out of the window; if the map is still at the ceiling (a genuine
 // broad flood), it drops one record that is neither blocked nor awaiting an
 // outcome, then any, so memory can never grow past the cap. Callers hold l.mu.
-func (l *loginLimiter) evictForRoom(records map[string]*loginLimitRecord, now time.Time) {
+func (l *Limiter) evictForRoom(records map[string]*loginLimitRecord, now time.Time) {
 	if len(records) < loginLimitMaxRecords {
 		return
 	}
@@ -179,6 +176,14 @@ func (l *loginLimiter) evictForRoom(records map[string]*loginLimitRecord, now ti
 		delete(records, key)
 		return
 	}
+}
+
+// Tracked reports whether the limiter keeps a record for this (address, name).
+func (l *Limiter) Tracked(ip, username string) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	_, kept := l.attempts[loginLimitKey(ip, username)]
+	return kept
 }
 
 func loginLimitKey(ip, username string) string {

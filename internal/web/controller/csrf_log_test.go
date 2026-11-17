@@ -86,9 +86,7 @@ func TestLoginRefusesOversizedUsernameBeforeRecordingIt(t *testing.T) {
 			t.Fatal("the oversized username reached the log buffer")
 		}
 	}
-	defaultLoginLimiter.mu.Lock()
-	defer defaultLoginLimiter.mu.Unlock()
-	if _, kept := defaultLoginLimiter.attempts[loginLimitKey("198.51.100.10", username)]; kept {
+	if defaultLoginLimiter.Tracked("198.51.100.10", username) {
 		t.Fatal("the oversized username was kept in the limiter table")
 	}
 }
