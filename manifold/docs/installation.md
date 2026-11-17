@@ -26,8 +26,22 @@ The installer:
 1. downloads the latest release for the server's architecture and verifies its checksum,
 2. installs the program, the `manifold` command and the `manifold` service,
 3. installs the system packages the VPN engines need, if they are missing,
-4. chooses a free panel port and a random URL path, username and password,
-5. starts the service, waits until the panel holds its port, and prints the address and login.
+4. asks whether you want to choose the panel port (a random free one otherwise), and picks a random URL path, username and password,
+5. asks how the panel should be reached (below),
+6. starts the service, waits until the panel holds its port, and prints the address, the login and an API token in a box.
+
+How the panel is reached:
+
+| Choice | What you get |
+|---|---|
+| 1. Domain | A Let's Encrypt certificate for a domain that points at this server |
+| 2. IP address (the default) | A Let's Encrypt certificate for the server's public IP: six days long, renewed by the panel itself |
+| 3. Your own files | The panel serves a certificate and key you already have |
+| 4. Plain HTTP | No certificate; you can also have the panel listen on 127.0.0.1 only and reach it through an SSH tunnel |
+
+Choices 1 and 2 prove the name over HTTP-01, so port 80 must be free and open to the internet while the installer runs. If the certificate cannot be had, the install goes on over plain HTTP and says so; get one later from `manifold` → 18, or with `manifold cert issue -domain NAME`. The panel renews certificates it got itself, IP ones included.
+
+The installer asks only when it runs in a terminal. Piped, scripted or in CI it asks nothing, takes `--port` or a random port, and starts the panel on plain HTTP.
 
 If the panel does not come up, the installer prints the service's last log lines and exits with an error instead of an address.
 
@@ -35,7 +49,7 @@ Two of the packages come with services of their own, and the installer sets up t
 
 A package you install by hand later is found without a reinstall or a restart: the inbound form stops saying its engine is missing, and an inbound that could not start for lack of it starts within ten seconds.
 
-The login is shown once. Sign in, then change it under Panel Settings. Replace `SERVER-IP` in the printed address with the server's address, and open the printed port in the firewall.
+The login and the API token are shown once. Sign in, then change the login under Panel Settings. If the installer could not find the server's public address it prints `SERVER-IP` in its place. Open the printed port in the firewall.
 
 ### The tunnel edition, for a relay
 
@@ -95,15 +109,39 @@ Manifold shares no file, service name or command with other panels, so it can be
 
 ## Managing the service
 
+`manifold` on its own opens a menu, as `x-ui` does on a 3x-ui server. It works while the panel's pages are down, which is when it is needed:
+
+| | |
+|---|---|
+| 1–3 | Update, install a given version, uninstall |
+| 4–8 | Reset the login (and two-factor), the URL path or all settings; change the port; show the settings and the panel's address |
+| 9–16 | Start, stop, restart, restart Xray, status, logs, start at boot or not |
+| 17 | Doctor: checks the service, the panel port, the listen address, the certificate, the firewall and the disk, and says how to fix what it finds |
+| 18 | Certificates: Let's Encrypt for a domain, for the server's IP, or through Cloudflare or ArvanCloud DNS; your own files; show or remove the panel's certificate |
+| 19 | IP limit: install Fail2ban, ban length, unban everyone, ban and unban an address, ban log |
+| 20 | Firewall (ufw): turn it on with SSH, HTTP, HTTPS and the panel's ports open; open and close ports |
+| 21 | SSH port forwarding: listen on 127.0.0.1 only and print the `ssh -L` command, or listen everywhere again |
+| 22 | Recovery: turn two-factor off, drop the panel to plain HTTP, listen everywhere, a new API token, run the database migrations again |
+| 23 | Backups: write a full backup to `/root`, sealed with a passphrase if you give one; restore one |
+| 24–25 | BBR on or off; update Xray's geo files (Loyalsoldier, chocolate4u, runetfreedom) |
+
+The same things as commands:
+
 ```bash
 manifold status          # service state
-manifold restart         # also: start, stop, enable, disable
+manifold restart         # also: start, stop, enable, disable, restart-xray
 manifold log             # last 100 log lines; `manifold log -f` follows
-manifold settings        # panel port, URL path, login state
+manifold doctor          # why the panel cannot be reached
+manifold settings        # panel port, URL path, address, login state
 manifold login           # set a new random login and print it
 manifold login NAME PASS # set a chosen login
 manifold port 8443       # change the panel port
 manifold path /panel/    # change the URL path
+manifold cert issue -domain panel.example.com   # or the server's IP address
+manifold cert -reset     # serve the panel over plain HTTP
+manifold backup create -out /root -passphrase P
+manifold geo all         # update the geo files
+manifold bbr enable
 manifold help            # everything else
 ```
 
@@ -115,7 +153,7 @@ The per-client IP limit is enforced by Fail2ban. Set it up once:
 manifold iplimit install
 ```
 
-`manifold iplimit status` shows the jail, `manifold iplimit remove` deletes it.
+`manifold iplimit status` shows the jail, `manifold banlog` the last bans, `manifold iplimit bantime 60` makes a ban last an hour, `manifold iplimit unban-all` lifts every ban, and `manifold iplimit remove` deletes the jail.
 
 ## Update
 

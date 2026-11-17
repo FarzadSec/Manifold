@@ -280,7 +280,7 @@ Routes are tried from the top; a route can also require an ALPN such as `h2`. A 
 
 ## Command line
 
-The `manifold` command manages the service and the panel settings; `manifold help` lists everything.
+The `manifold` command manages the service and the panel settings, and works while the panel's pages are down. On its own it opens a menu ([Installation](installation.md#managing-the-service)); `manifold help` lists the commands.
 
 | Command | Effect |
 |---|---|
@@ -291,12 +291,15 @@ The `manifold` command manages the service and the panel settings; `manifold hel
 | `manifold path /p/` | Set the URL path the panel is served under |
 | `manifold setting -listenIP IP` | Bind the panel to one address |
 | `manifold setting -resetTwoFactor` | Turn two-factor login off, for a lost device |
-| `manifold setting -webCert FILE -webCertKey FILE` | Set the panel's certificate and key |
+| `manifold cert issue -domain NAME` | Get a Let's Encrypt certificate over HTTP-01 for a domain or the server's IP, serve the panel with it and keep it renewed. `-dns cloudflare` or `-dns arvancloud` with `MANIFOLD_DNS_TOKEN` proves it over DNS instead |
+| `manifold cert -webCert FILE -webCertKey FILE` | Set the panel's certificate and key; `manifold cert -reset` goes back to plain HTTP |
+| `manifold doctor` | Check what keeps the panel from being reached |
+| `manifold backup create [-out DIR] [-passphrase P]` | Write a full backup; `manifold backup restore -in FILE` puts one back with the panel stopped |
 | `manifold setting -getApiToken` | Print a fresh API token and invalidate the previous one. `-tokenName` and `-tokenScope` (`admin`, `monitor`, `node-sync`, `node-admin`, `tunnel`) choose which |
 | `manifold migrate-db --dsn DSN` | Copy the SQLite database into PostgreSQL |
 | `manifold migrate-db --dump FILE` | Write the SQLite database as a portable text dump |
 
-`login`, `port` and `path` restart the panel themselves. After `manifold setting ...`, run `manifold restart`.
+`login`, `port`, `path` and `cert` restart the panel themselves. After `manifold setting ...`, run `manifold restart`.
 
 ## API
 
@@ -304,15 +307,15 @@ Everything the interface does goes through the HTTP API. The API Docs page lists
 
 ## Certificates
 
-**Certificates** (sidebar) gets certificates from Let's Encrypt and renews them 30 days before they expire. Give the domains and how to prove them:
+**Certificates** (sidebar) gets certificates from Let's Encrypt and renews them in the last third of their life (30 days before a 90-day one expires). Give the domains and how to prove them:
 
 - **DNS-01**: the panel writes a TXT record through Cloudflare (an API token with Zone → DNS → Edit) or ArvanCloud (an API key). The only way to get a wildcard (`*.example.com`, which does not cover `example.com` itself; add both). Works behind a CDN and needs no free port.
-- **HTTP-01**: the domain points at this server and port 80 is free while the order runs.
+- **HTTP-01**: the domain points at this server and port 80 is free while the order runs. The server's IP address works too: Let's Encrypt gives it a six-day certificate, which the panel renews about two days before it ends.
 - **TLS-ALPN-01**: the same on port 443, so only when Xray is not on 443.
 
 Each certificate is kept as `/etc/manifold/certs/<name>/fullchain.pem` and `privkey.pem`. In an inbound's TLS settings, **From the certificate store** fills both paths; for the panel's own HTTPS, put the same paths under Settings. After a renewal Xray restarts if an inbound reads the files, and the panel serves the new certificate within a minute without a restart. Pick nodes under **Copy to nodes** and every renewal is copied to the same path on them. **Upload** keeps a certificate you got elsewhere (the chain and its key, checked to belong together); it is not renewed. The **Test CA** switch uses Let's Encrypt staging, which has no rate limits but is not trusted by browsers.
 
-Webhooks get `cert.issued`, `cert.failed`, and `cert.expiring` (once a day, two weeks ahead, for one that will not renew by itself).
+Webhooks get `cert.issued`, `cert.failed`, and `cert.expiring` (once a day, from two weeks ahead, or the last sixth of a short certificate's life, for one that will not renew by itself).
 
 ## Webhooks
 

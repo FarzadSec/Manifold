@@ -49,10 +49,11 @@ On a Linux server with systemd, as root:
 bash <(curl -Ls https://raw.githubusercontent.com/FarzadSec/Manifold/main/install.sh)
 ```
 
-The installer downloads the latest release, installs the `manifold` service and prints the panel address and login once. After that the server is managed with the `manifold` command:
+The installer downloads the latest release, asks for the panel port and whether to secure the panel with a Let's Encrypt certificate for a domain or for the server's IP, installs the `manifold` service and prints the address, login and an API token once. After that the server is managed with the `manifold` command, which opens a menu like `x-ui` and works while the panel's pages are down:
 
 ```bash
-manifold status
+manifold            # the menu
+manifold doctor     # why the panel cannot be reached
 manifold settings
 manifold help
 ```
