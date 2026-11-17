@@ -1,8 +1,12 @@
 # Manifold — Architecture and Roadmap
 
-Version 0.14 · 2026-11-17 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnels, full backups, the access model, limits and usage, subscriptions, nodes, shared ports, scheduled backups, webhooks, monitoring, the certificate store, importers, tunnel groups and the addon groundwork delivered; see 8.1 to 8.14 for what they leave open
+Version 0.15 · 2026-11-17 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnels, full backups, the access model, limits and usage, subscriptions, nodes, shared ports, scheduled backups, webhooks, monitoring, the certificate store, importers, tunnel groups, the addon groundwork and the 3x-ui style installer and management menu delivered; see 8.1 to 8.15 for what they leave open
 
 Decision log:
+
+- 2026-11-17 — The installer and the `manifold` command follow 3x-ui's: a first install from a terminal asks for the port and how to secure the panel (a Let's Encrypt certificate for the server's IP is the default), and `manifold` alone opens a numbered menu. Both stay non-interactive without a terminal, because CI, scripts and the master's SSH node install feed them on stdin. Certificates they get go through the certificate store, so the panel renews them like any other
+
+- 2026-11-17 — An IP address is a certificate name like a domain: ordered under Let's Encrypt's `shortlived` profile, over HTTP-01 only. Renewal and expiry warnings are a third and a sixth of each certificate's own life (capped at 30 and 14 days), not fixed days, which a 160-hour certificate would always be inside
 
 - 2026-11-17 — Addons run outside the panel and reach it only through a scoped token and a webhook, not as code loaded into it: a broken or hostile addon is limited to what its manifest asked for and the installer granted, and uninstalling it is revoking two credentials
 
@@ -294,7 +298,8 @@ This is the contract Mirza Bot will sync against.
 ### 4.17 Certificate store (built, 0.11.0)
 
 - `internal/certstore`: an ACME client on `golang.org/x/crypto/acme` with HTTP-01, TLS-ALPN-01 and DNS-01 solvers, and DNS providers for Cloudflare and ArvanCloud. `internal/certstore/acmetest` is a CA for tests that checks each challenge for real (an HTTP fetch, an `acme-tls/1` handshake, the TXT record).
-- `certificates`: domains, challenge, provider token, account key and the PEMs (secrets never leave the API). Files under `<data dir>/certs/<name>/`; `CertRenewJob` every six hours renews within 30 days of expiry, retries a failure after 12 hours.
+- `certificates`: domains, challenge, provider token, account key and the PEMs (secrets never leave the API). Files under `<data dir>/certs/<name>/`; `CertRenewJob` every six hours renews in the last third of a certificate's life (at most 30 days), retries a failure after 12 hours. An IP address is ordered as an `ip` identifier under the `shortlived` profile (0.13.0).
+- `manifold cert issue` (0.13.0) saves an HTTP-01 or DNS-01 entry, issues it synchronously (`CertificateService.IssueForPanel`) and points the panel at its files, for a panel whose pages cannot be reached.
 - A renewal writes the files, asks Xray to restart when an inbound's stream settings name the folder, and copies the pair to the certificate's nodes through `Remote.PutCertificate` (`POST /certs/put`, in the node-sync scope). The panel's own listener reads its certificate through `GetCertificate` and loads the files again when they change.
 
 ### 4.16 Monitoring (built, 0.10.0)
@@ -470,6 +475,12 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - SSH install downloads the installer from GitHub on the server; a server that cannot reach GitHub needs the package copied by hand (`install.sh --package`).
 - Node templates (one configuration applied to many nodes) are not built; a node's inbounds are created on it from the master as before.
 - Live connections per node are still not listed (see 8.7).
+
+### 8.15 Open items after the installer and menu (0.13.0)
+
+- IP certificates are HTTP-01 only: the TLS-ALPN-01 solver does not answer for an IP address (RFC 8738's reverse-DNS SNI).
+- The firewall menu manages ufw, so Debian and Ubuntu; elsewhere the admin uses the distribution's own firewall.
+- The installer's certificate step needs port 80 free while it runs; it does not offer DNS-01, which the menu and `manifold cert issue -dns` do.
 
 ### 8.14 Open items after the addon groundwork (0.12.0)
 
