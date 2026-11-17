@@ -1897,6 +1897,7 @@ export const TunnelRelaySchema = z.object({
   id: z.number().int(),
   name: z.string(),
   url: z.string(),
+  version: z.string(),
 });
 export type TunnelRelay = z.infer<typeof TunnelRelaySchema>;
 

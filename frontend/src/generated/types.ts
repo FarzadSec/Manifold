@@ -1771,6 +1771,7 @@ export interface TunnelRelay {
   id: number;
   name: string;
   url: string;
+  version: string;
 }
 
 export interface TunnelRequest {

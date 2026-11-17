@@ -2792,7 +2792,7 @@
     },
     "tunnels": {
       "title": "トンネル",
-      "editionName": "Manifold Tunnel Server",
+      "editionName": "Manifold Relay",
       "intro": "トンネルのクライアント側はアカウントを提供するこのサーバーで動き、サーバー側は利用者が接続するリレーで動いてポートをここへ転送します。もう一方はペアリングコードで作るか、リレーを追加してこのパネルに設定させます。",
       "introEdition": "このサーバーはリレーです。利用者はここへ接続し、ポートは各トンネルを通って利用者にサービスするパネルへ転送されます。そのパネルが表示するペアリングコードでトンネルを取り込むか、設定で tunnel スコープの API トークンを作って渡せば、パネルが自分でトンネルを設定します。",
       "empty": "トンネルはまだありません",
@@ -2900,7 +2900,12 @@
         "confirmDelete": "Delete this group? Its ports stop being forwarded.",
         "saveFailed": "Could not save the group",
         "deleteFailed": "Could not delete the group"
-      }
+      },
+      "relayVersion": "Version",
+      "relayVersionDiffers": "The relay runs {relay} and this panel {panel}. Update the relay with: manifold update",
+      "relayChecking": "Checking",
+      "relayAnswering": "Answering",
+      "relayNotAnswering": "Not answering"
     },
     "access": {
       "saved": "Saved",

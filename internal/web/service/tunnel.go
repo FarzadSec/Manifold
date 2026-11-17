@@ -583,6 +583,10 @@ func (s *TunnelService) DeleteRelay(id int) error {
 	})
 }
 
+// VersionHeader carries a panel's product version on its tunnel answers, so the panel
+// that manages a relay sees when the two have drifted apart.
+const VersionHeader = "X-Manifold-Version"
+
 // relayCall sends one API request to a relay with its tunnel token.
 func (s *TunnelService) relayCall(relayID int, method, path string, form url.Values, out any) error {
 	row := &model.TunnelRelay{}
@@ -612,6 +616,9 @@ func (s *TunnelService) relayCall(relayID int, method, path string, form url.Val
 		return err
 	}
 	defer resp.Body.Close()
+	if v := resp.Header.Get(VersionHeader); v != "" && v != row.Version {
+		database.GetDB().Model(row).Update("version", v)
+	}
 	raw, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("%s answered %s", row.Name, resp.Status)

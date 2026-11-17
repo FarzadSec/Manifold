@@ -43,6 +43,7 @@ import { ClipboardManager, HttpUtil, SizeFormatter } from '@/utils';
 import { setMessageInstance } from '@/utils/messageBus';
 import { isTunnelEdition } from '@/utils/edition';
 import TunnelFormModal from './TunnelFormModal';
+import RelaysTable from './RelaysTable';
 import TunnelGroupsCard from './TunnelGroupsCard';
 import { STATE_COLORS, endpointOf, kindLabel, stateOf } from './tunnelInfo';
 
@@ -441,52 +442,14 @@ export default function TunnelsPage() {
             style={{ marginBottom: 12 }}
             title={t('pages.tunnels.relaysHint')}
           />
-          <Table
-            rowKey="id"
-            size="small"
-            pagination={false}
-            dataSource={relays.data ?? []}
-            locale={{ emptyText: t('pages.tunnels.relaysEmpty') }}
-            columns={[
-              { title: t('pages.tunnels.name'), dataIndex: 'name' },
-              {
-                title: 'URL',
-                dataIndex: 'url',
-                render: (u: string) => <Typography.Text code>{u}</Typography.Text>,
-              },
-              {
-                title: t('pages.tunnels.actions'),
-                key: 'a',
-                render: (_, relay: TunnelRelay) => (
-                  <Space size={4}>
-                    <Button
-                      type="text"
-                      aria-label={t('edit')}
-                      icon={<EditOutlined aria-hidden />}
-                      onClick={() =>
-                        setRelayDraft({
-                          id: relay.id,
-                          name: relay.name,
-                          url: relay.url,
-                          token: '',
-                        })
-                      }
-                    />
-                    <Popconfirm
-                      title={t('pages.tunnels.deleteRelayConfirm')}
-                      onConfirm={() => void deleteRelay(relay)}
-                    >
-                      <Button
-                        type="text"
-                        danger
-                        aria-label={t('delete')}
-                        icon={<DeleteOutlined aria-hidden />}
-                      />
-                    </Popconfirm>
-                  </Space>
-                ),
-              },
-            ]}
+          <RelaysTable
+            relays={relays.data ?? []}
+            panelVersion={window.X_UI_CUR_VER ?? ''}
+            onEdit={(relay) =>
+              setRelayDraft({ id: relay.id, name: relay.name, url: relay.url, token: '' })
+            }
+            onDelete={(relay) => void deleteRelay(relay)}
+            onChecked={() => void relays.refetch()}
           />
           <Space direction="vertical" style={{ width: '100%', marginTop: 16 }}>
             <Input

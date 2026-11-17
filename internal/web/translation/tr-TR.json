@@ -2792,7 +2792,7 @@
     },
     "tunnels": {
       "title": "Tüneller",
-      "editionName": "Manifold Tunnel Server",
+      "editionName": "Manifold Relay",
       "intro": "Tünelin istemci ucu, hesapların sunulduğu burada çalışır. Sunucu ucu, kullanıcıların bağlandığı ve portlarını buraya yönlendiren aktarıcıda çalışır. Diğer ucu eşleştirme koduyla oluşturun ya da aktarıcıyı ekleyip bu panelin kurmasına izin verin.",
       "introEdition": "Bu sunucu bir aktarıcıdır: kullanıcılar buna bağlanır ve portları her tünel üzerinden onlara hizmet veren panele yönlendirilir. O panelin gösterdiği eşleştirme koduyla tünel içe aktarın ya da Ayarlar'dan tunnel kapsamlı bir API anahtarı verip tünelleri kendisinin kurmasına izin verin.",
       "empty": "Henüz tünel yok",
@@ -2900,7 +2900,12 @@
         "confirmDelete": "Delete this group? Its ports stop being forwarded.",
         "saveFailed": "Could not save the group",
         "deleteFailed": "Could not delete the group"
-      }
+      },
+      "relayVersion": "Version",
+      "relayVersionDiffers": "The relay runs {relay} and this panel {panel}. Update the relay with: manifold update",
+      "relayChecking": "Checking",
+      "relayAnswering": "Answering",
+      "relayNotAnswering": "Not answering"
     },
     "access": {
       "saved": "Saved",

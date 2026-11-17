@@ -7940,13 +7940,19 @@ export const SCHEMAS: Record<string, unknown> = {
       "url": {
         "example": "https://relay.example.com:2053/secret/",
         "type": "string"
+      },
+      "version": {
+        "description": "Version is the relay's product version as its last answer gave it; empty until it answers.",
+        "example": "0.14.0",
+        "type": "string"
       }
     },
     "required": [
       "createdAt",
       "id",
       "name",
-      "url"
+      "url",
+      "version"
     ],
     "type": "object"
   },

@@ -1,8 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 
 import TunnelFormModal from '@/pages/tunnels/TunnelFormModal';
+import RelaysTable from '@/pages/tunnels/RelaysTable';
 import TunnelsCard from '@/pages/index/TunnelsCard';
 import type { TunnelView } from '@/generated/types';
 import { HttpUtil, Msg } from '@/utils';
@@ -107,5 +108,72 @@ describe('overview tunnels card', () => {
     expect(await screen.findByText('1 Up')).toBeTruthy();
     expect(screen.getByText('1 Down')).toBeTruthy();
     expect(screen.getByText('de')).toBeTruthy();
+  });
+});
+
+describe('Manifold Relay', () => {
+  afterEach(() => {
+    delete window.X_UI_EDITION;
+  });
+
+  it('lists every end on the overview with its forwarded ports and the peer', async () => {
+    window.X_UI_EDITION = 'tunnel';
+    vi.mocked(HttpUtil.get).mockResolvedValue(
+      new Msg(true, '', [
+        tunnel({
+          kind: 'reverse',
+          role: 'server',
+          name: 'origin-de',
+          settings: {
+            transport: 'tcpmux',
+            port: 8443,
+            forwards: [{ listen: '443' }, { listen: '2201', target: '22' }],
+          },
+          status: {
+            id: 7,
+            state: 'up',
+            latencyMs: 0,
+            loss: 0,
+            rxBytes: 0,
+            txBytes: 0,
+            peer: '198.51.100.7:52011',
+            since: 0,
+          },
+        }),
+      ]),
+    );
+    renderWithProviders(
+      <MemoryRouter>
+        <TunnelsCard />
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText('443, 2201 → 22')).toBeTruthy();
+    expect(screen.getByText('198.51.100.7:52011')).toBeTruthy();
+  });
+
+  it('checks each relay and marks one that runs another version or does not answer', async () => {
+    vi.mocked(HttpUtil.get).mockImplementation(async (url: string) =>
+      url === '/panel/api/tunnels/relays/1/tunnels'
+        ? new Msg(true, '', [])
+        : new Msg(false, 'de: connection refused'),
+    );
+    const onChecked = vi.fn();
+    renderWithProviders(
+      <RelaysTable
+        relays={[
+          { id: 1, name: 'uk', url: 'https://uk.example/', version: '0.13.0', createdAt: 0 },
+          { id: 2, name: 'de', url: 'https://de.example/', version: '0.14.0', createdAt: 0 },
+        ]}
+        panelVersion="0.14.0"
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onChecked={onChecked}
+      />,
+    );
+    expect(await screen.findByText('Answering')).toBeTruthy();
+    expect(await screen.findByText('Not answering')).toBeTruthy();
+    expect(screen.getByText('0.13.0').closest('.ant-tag')?.className).toContain('orange');
+    expect(screen.getByText('0.14.0').closest('.ant-tag')?.className).toContain('green');
+    await waitFor(() => expect(onChecked).toHaveBeenCalled());
   });
 });

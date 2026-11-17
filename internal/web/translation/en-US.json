@@ -2792,7 +2792,7 @@
     },
     "tunnels": {
       "title": "Tunnels",
-      "editionName": "Manifold Tunnel Server",
+      "editionName": "Manifold Relay",
       "intro": "The client end of a tunnel runs here, where the accounts are served. Its server end runs on the relay users connect to, which forwards its ports here. Add the other end with its pairing code, or add the relay below and let this panel set it up.",
       "introEdition": "This server is a relay: users connect to it and it forwards their ports through each tunnel to the panel that serves them. Import a tunnel with the pairing code that panel shows, or give that panel an API token of the tunnel scope from Settings so it sets the tunnels up itself.",
       "empty": "No tunnels yet",
@@ -2900,7 +2900,12 @@
         "confirmDelete": "Delete this group? Its ports stop being forwarded.",
         "saveFailed": "Could not save the group",
         "deleteFailed": "Could not delete the group"
-      }
+      },
+      "relayVersion": "Version",
+      "relayVersionDiffers": "The relay runs {relay} and this panel {panel}. Update the relay with: manifold update",
+      "relayChecking": "Checking",
+      "relayAnswering": "Answering",
+      "relayNotAnswering": "Not answering"
     },
     "access": {
       "saved": "Saved",

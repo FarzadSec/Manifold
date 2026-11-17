@@ -1,9 +1,10 @@
 import { screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { PanelSummary } from '@/generated/types';
-import { BusinessTiles } from '@/pages/index/BusinessStrip';
+import BusinessStrip, { BusinessTiles } from '@/pages/index/BusinessStrip';
+import { HttpUtil } from '@/utils';
 
 import { renderWithProviders } from './test-utils';
 
@@ -44,5 +45,24 @@ describe('dashboard business tiles', () => {
       expect.stringContaining('1 backup targets failed their last run'),
       expect.stringContaining('4 webhook deliveries were given up'),
     ]);
+  });
+});
+
+describe('dashboard business tiles on a relay', () => {
+  it('shows no users or sales, and asks for none', () => {
+    window.X_UI_EDITION = 'tunnel';
+    try {
+      const get = vi.mocked(HttpUtil.get);
+      get.mockClear();
+      const { container } = renderWithProviders(
+        <MemoryRouter>
+          <BusinessStrip />
+        </MemoryRouter>,
+      );
+      expect(container.querySelector('.ov-biz')).toBeNull();
+      expect(get.mock.calls.filter(([url]) => url === '/panel/api/server/summary')).toHaveLength(0);
+    } finally {
+      delete window.X_UI_EDITION;
+    }
   });
 });

@@ -2792,7 +2792,7 @@
     },
     "tunnels": {
       "title": "الأنفاق",
-      "editionName": "Manifold Tunnel Server",
+      "editionName": "Manifold Relay",
       "intro": "يعمل طرف العميل من النفق هنا حيث تُخدم الحسابات، ويعمل طرف الخادم على المرحِّل الذي يتصل به المستخدمون ويوجّه منافذه إلى هنا. أضف الطرف الآخر برمز الاقتران، أو أضف المرحِّل لتتولى هذه اللوحة إعداده.",
       "introEdition": "هذا الخادم مرحِّل: يتصل به المستخدمون فيوجّه منافذهم عبر كل نفق إلى اللوحة التي تخدمهم. استورد نفقاً برمز الاقتران الذي تعرضه تلك اللوحة، أو امنحها رمز API بنطاق tunnel من الإعدادات لتعدّ الأنفاق بنفسها.",
       "empty": "لا توجد أنفاق بعد",
@@ -2900,7 +2900,12 @@
         "confirmDelete": "Delete this group? Its ports stop being forwarded.",
         "saveFailed": "Could not save the group",
         "deleteFailed": "Could not delete the group"
-      }
+      },
+      "relayVersion": "Version",
+      "relayVersionDiffers": "The relay runs {relay} and this panel {panel}. Update the relay with: manifold update",
+      "relayChecking": "Checking",
+      "relayAnswering": "Answering",
+      "relayNotAnswering": "Not answering"
     },
     "access": {
       "saved": "Saved",

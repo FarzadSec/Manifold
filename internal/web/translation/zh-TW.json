@@ -2792,7 +2792,7 @@
     },
     "tunnels": {
       "title": "通道",
-      "editionName": "Manifold Tunnel Server",
+      "editionName": "Manifold Relay",
       "intro": "通道的用戶端在此執行，即提供帳戶服務的伺服器；伺服器端執行於使用者連線的中繼伺服器，將其連接埠轉送到這裡。用配對碼建立另一端，或新增中繼伺服器讓本面板自動設定。",
       "introEdition": "本伺服器是中繼：使用者連線到這裡，其連接埠經各條通道轉送至為其服務的面板。用該面板顯示的配對碼匯入通道，或在設定中建立 tunnel 範圍的 API 權杖交給該面板，讓它自動設定通道。",
       "empty": "尚無通道",
@@ -2900,7 +2900,12 @@
         "confirmDelete": "Delete this group? Its ports stop being forwarded.",
         "saveFailed": "Could not save the group",
         "deleteFailed": "Could not delete the group"
-      }
+      },
+      "relayVersion": "Version",
+      "relayVersionDiffers": "The relay runs {relay} and this panel {panel}. Update the relay with: manifold update",
+      "relayChecking": "Checking",
+      "relayAnswering": "Answering",
+      "relayNotAnswering": "Not answering"
     },
     "access": {
       "saved": "Saved",

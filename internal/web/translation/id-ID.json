@@ -2792,7 +2792,7 @@
     },
     "tunnels": {
       "title": "Terowongan",
-      "editionName": "Manifold Tunnel Server",
+      "editionName": "Manifold Relay",
       "intro": "Ujung klien terowongan berjalan di sini, tempat akun dilayani. Ujung server berjalan di relay yang dihubungi pengguna, yang meneruskan port-nya ke sini. Buat ujung lain dengan kode pemasangan, atau tambahkan relay agar panel ini yang mengaturnya.",
       "introEdition": "Server ini adalah relay: pengguna terhubung ke sini dan port mereka diteruskan melalui setiap terowongan ke panel yang melayani mereka. Impor terowongan dengan kode pemasangan dari panel itu, atau beri panel itu token API cakupan tunnel dari Pengaturan agar ia mengatur terowongan sendiri.",
       "empty": "Belum ada terowongan",
@@ -2900,7 +2900,12 @@
         "confirmDelete": "Delete this group? Its ports stop being forwarded.",
         "saveFailed": "Could not save the group",
         "deleteFailed": "Could not delete the group"
-      }
+      },
+      "relayVersion": "Version",
+      "relayVersionDiffers": "The relay runs {relay} and this panel {panel}. Update the relay with: manifold update",
+      "relayChecking": "Checking",
+      "relayAnswering": "Answering",
+      "relayNotAnswering": "Not answering"
     },
     "access": {
       "saved": "Saved",

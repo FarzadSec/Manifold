@@ -3,6 +3,7 @@ package controller
 import (
 	"strconv"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/config"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 
 	"github.com/gin-gonic/gin"
@@ -17,6 +18,7 @@ type TunnelController struct {
 // NewTunnelController registers the tunnel routes on g.
 func NewTunnelController(g *gin.RouterGroup) *TunnelController {
 	a := &TunnelController{}
+	g.Use(func(c *gin.Context) { c.Header(service.VersionHeader, config.GetProductVersion()) })
 	g.GET("/list", a.list)
 	g.GET("/status", a.status)
 	g.GET("/suggest", a.suggest)

@@ -2061,7 +2061,8 @@ export const EXAMPLES: Record<string, unknown> = {
     "createdAt": 1763300000000,
     "id": 1,
     "name": "uk-relay",
-    "url": "https://relay.example.com:2053/secret/"
+    "url": "https://relay.example.com:2053/secret/",
+    "version": "0.14.0"
   },
   "TunnelRequest": {
     "enable": true,

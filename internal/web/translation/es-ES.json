@@ -2792,7 +2792,7 @@
     },
     "tunnels": {
       "title": "Túneles",
-      "editionName": "Manifold Tunnel Server",
+      "editionName": "Manifold Relay",
       "intro": "El extremo cliente del túnel corre aquí, donde se sirven las cuentas. El extremo servidor corre en el relé al que se conectan los usuarios, que reenvía sus puertos aquí. Cree el otro extremo con su código de emparejamiento, o añada el relé y deje que este panel lo configure.",
       "introEdition": "Este servidor es un relé: los usuarios se conectan a él y reenvía sus puertos por cada túnel al panel que los atiende. Importe un túnel con el código que muestra ese panel, o dele un token de API con el ámbito tunnel desde Ajustes para que configure los túneles él mismo.",
       "empty": "Aún no hay túneles",
@@ -2900,7 +2900,12 @@
         "confirmDelete": "Delete this group? Its ports stop being forwarded.",
         "saveFailed": "Could not save the group",
         "deleteFailed": "Could not delete the group"
-      }
+      },
+      "relayVersion": "Version",
+      "relayVersionDiffers": "The relay runs {relay} and this panel {panel}. Update the relay with: manifold update",
+      "relayChecking": "Checking",
+      "relayAnswering": "Answering",
+      "relayNotAnswering": "Not answering"
     },
     "access": {
       "saved": "Saved",

@@ -29,6 +29,7 @@ import {
 } from '@ant-design/icons';
 
 import { HttpUtil } from '@/utils';
+import { isTunnelEdition } from '@/utils/edition';
 import { formatPanelVersion } from '@/lib/panel-version';
 import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
 import { useAllSettings } from '@/api/queries/useAllSettings';
@@ -110,6 +111,7 @@ function saveSidebarPinned(pinned: boolean) {
 
 export default function AppSidebar() {
   const { t } = useTranslation();
+  const productName = isTunnelEdition() ? 'Manifold Relay' : 'Manifold';
   const { isDark, isUltra, toggleTheme, toggleUltra } = useTheme();
   const { open: openCommandPalette } = useCommandPalette();
   const navigate = useNavigate();
@@ -371,7 +373,7 @@ export default function AppSidebar() {
       >
         <div className="sider-brand">
           <div className="brand-block">
-            <span className="brand-text">{railCollapsed ? 'M' : 'Manifold'}</span>
+            <span className="brand-text">{railCollapsed ? 'M' : productName}</span>
           </div>
           {!railCollapsed && (
             <div className="brand-actions">
@@ -457,7 +459,7 @@ export default function AppSidebar() {
       >
         <div className="drawer-header">
           <div className="brand-block">
-            <span className="drawer-brand">Manifold</span>
+            <span className="drawer-brand">{productName}</span>
           </div>
           <div className="drawer-header-actions">
             <ThemeCycleButton

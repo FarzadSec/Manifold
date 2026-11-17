@@ -2792,7 +2792,7 @@
     },
     "tunnels": {
       "title": "隧道",
-      "editionName": "Manifold Tunnel Server",
+      "editionName": "Manifold Relay",
       "intro": "隧道的客户端在此运行，即提供账户服务的服务器；服务器端运行在用户连接的中转服务器上，把它的端口转发到这里。用配对码创建另一端，或添加中转服务器让本面板自动设置。",
       "introEdition": "本服务器是中转：用户连接到这里，其端口经各条隧道转发到为其服务的面板。用该面板显示的配对码导入隧道，或在设置中创建 tunnel 范围的 API 令牌交给该面板，让它自动设置隧道。",
       "empty": "暂无隧道",
@@ -2900,7 +2900,12 @@
         "confirmDelete": "删除此组？其端口将不再转发。",
         "saveFailed": "无法保存组",
         "deleteFailed": "无法删除组"
-      }
+      },
+      "relayVersion": "版本",
+      "relayVersionDiffers": "中继运行 {relay}，本面板运行 {panel}。请在中继上执行 manifold update 更新",
+      "relayChecking": "检查中",
+      "relayAnswering": "可达",
+      "relayNotAnswering": "不可达"
     },
     "access": {
       "saved": "已保存",

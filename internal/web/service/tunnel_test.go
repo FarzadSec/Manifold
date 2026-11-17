@@ -200,6 +200,7 @@ func (f *fakeRelay) handler() http.Handler {
 			f.calls[len(f.calls)-1] += " " + id
 		}
 		f.mu.Unlock()
+		w.Header().Set(VersionHeader, "0.13.0")
 		_, _ = w.Write([]byte(`{"success":true,"msg":"","obj":null}`))
 	})
 }
@@ -235,6 +236,11 @@ func TestARelayedTunnelIsSetUpAndRemovedOnTheRelay(t *testing.T) {
 	}
 	if other.Role != tunnel.RoleServer || other.Settings.RemoteAddr != "203.0.113.10" || other.Settings.PeerIP != "10.80.0.2" {
 		t.Fatalf("relay's end = %+v", other)
+	}
+	var seen model.TunnelRelay
+	database.GetDB().First(&seen, row.Id)
+	if seen.Version != "0.13.0" {
+		t.Fatalf("the relay's version is recorded as %q after it answered as 0.13.0", seen.Version)
 	}
 	if err := s.Delete(v.Id); err != nil {
 		t.Fatal(err)

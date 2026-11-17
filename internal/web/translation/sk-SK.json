@@ -2792,7 +2792,7 @@
     },
     "tunnels": {
       "title": "Tunely",
-      "editionName": "Manifold Tunnel Server",
+      "editionName": "Manifold Relay",
       "intro": "Klientský koniec tunela beží tu, kde sa obsluhujú účty. Serverový koniec beží na relé, ku ktorému sa pripájajú používatelia a ktoré sem presmeruje svoje porty. Druhý koniec vytvorte párovacím kódom alebo pridajte relé a nechajte ho nastaviť tento panel.",
       "introEdition": "Tento server je relé: používatelia sa pripájajú k nemu a ich porty idú cez každý tunel na panel, ktorý ich obsluhuje. Importujte tunel párovacím kódom z toho panela alebo mu v Nastaveniach dajte API token s rozsahom tunnel, aby tunely nastavoval sám.",
       "empty": "Zatiaľ žiadne tunely",
@@ -2900,7 +2900,12 @@
         "confirmDelete": "Delete this group? Its ports stop being forwarded.",
         "saveFailed": "Could not save the group",
         "deleteFailed": "Could not delete the group"
-      }
+      },
+      "relayVersion": "Version",
+      "relayVersionDiffers": "The relay runs {relay} and this panel {panel}. Update the relay with: manifold update",
+      "relayChecking": "Checking",
+      "relayAnswering": "Answering",
+      "relayNotAnswering": "Not answering"
     },
     "access": {
       "saved": "Saved",

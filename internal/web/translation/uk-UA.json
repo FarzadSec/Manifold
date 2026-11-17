@@ -2792,7 +2792,7 @@
     },
     "tunnels": {
       "title": "Тунелі",
-      "editionName": "Manifold Tunnel Server",
+      "editionName": "Manifold Relay",
       "intro": "Клієнтська сторона тунелю працює тут, де обслуговуються акаунти. Серверна — на ретрансляторі, до якого підключаються користувачі; він перенаправляє свої порти сюди. Створіть іншу сторону кодом спарювання або додайте ретранслятор, і панель налаштує його сама.",
       "introEdition": "Цей сервер — ретранслятор: користувачі підключаються до нього, а їхні порти йдуть через кожен тунель на панель, що їх обслуговує. Імпортуйте тунель кодом спарювання з тієї панелі або видайте їй у налаштуваннях API-токен з областю tunnel, щоб вона налаштовувала тунелі сама.",
       "empty": "Тунелів поки немає",
@@ -2900,7 +2900,12 @@
         "confirmDelete": "Delete this group? Its ports stop being forwarded.",
         "saveFailed": "Could not save the group",
         "deleteFailed": "Could not delete the group"
-      }
+      },
+      "relayVersion": "Version",
+      "relayVersionDiffers": "The relay runs {relay} and this panel {panel}. Update the relay with: manifold update",
+      "relayChecking": "Checking",
+      "relayAnswering": "Answering",
+      "relayNotAnswering": "Not answering"
     },
     "access": {
       "saved": "Saved",

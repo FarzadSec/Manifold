@@ -2792,7 +2792,7 @@
     },
     "tunnels": {
       "title": "Đường hầm",
-      "editionName": "Manifold Tunnel Server",
+      "editionName": "Manifold Relay",
       "intro": "Đầu máy khách của đường hầm chạy tại đây, nơi phục vụ tài khoản. Đầu máy chủ chạy trên relay mà người dùng kết nối tới, relay chuyển tiếp cổng về đây. Tạo đầu còn lại bằng mã ghép đôi, hoặc thêm relay để panel này tự thiết lập.",
       "introEdition": "Máy chủ này là relay: người dùng kết nối tới đây và cổng của họ được chuyển qua từng đường hầm tới panel phục vụ họ. Nhập đường hầm bằng mã ghép đôi panel đó hiển thị, hoặc cấp cho panel đó token API phạm vi tunnel từ Cài đặt để nó tự thiết lập.",
       "empty": "Chưa có đường hầm",
@@ -2900,7 +2900,12 @@
         "confirmDelete": "Delete this group? Its ports stop being forwarded.",
         "saveFailed": "Could not save the group",
         "deleteFailed": "Could not delete the group"
-      }
+      },
+      "relayVersion": "Version",
+      "relayVersionDiffers": "The relay runs {relay} and this panel {panel}. Update the relay with: manifold update",
+      "relayChecking": "Checking",
+      "relayAnswering": "Answering",
+      "relayNotAnswering": "Not answering"
     },
     "access": {
       "saved": "Saved",

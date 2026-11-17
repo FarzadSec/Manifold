@@ -15,6 +15,7 @@ import {
 import { keys } from '@/api/queryKeys';
 import type { PanelSummary } from '@/generated/types';
 import { HttpUtil, SizeFormatter } from '@/utils';
+import { isTunnelEdition } from '@/utils/edition';
 
 interface StatProps {
   icon: ReactNode;
@@ -130,8 +131,11 @@ export function BusinessTiles({ summary }: { summary: PanelSummary }) {
   );
 }
 
+// A relay has no users, sales or nodes to count.
 export default function BusinessStrip() {
+  const relay = isTunnelEdition();
   const summary = useQuery({
+    enabled: !relay,
     queryKey: keys.server.summary(),
     queryFn: async () => {
       const msg = await HttpUtil.get<PanelSummary>('/panel/api/server/summary', undefined, {
@@ -142,5 +146,5 @@ export default function BusinessStrip() {
     },
     refetchInterval: 15_000,
   });
-  return summary.data ? <BusinessTiles summary={summary.data} /> : null;
+  return summary.data && !relay ? <BusinessTiles summary={summary.data} /> : null;
 }

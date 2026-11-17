@@ -2002,10 +2002,12 @@ type TunnelGroup struct {
 
 // TunnelRelay is a relay this panel manages over its API with a tunnel-scoped token.
 type TunnelRelay struct {
-	Id        int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
-	Name      string `json:"name" gorm:"not null" example:"uk-relay"`
-	Url       string `json:"url" gorm:"not null" example:"https://relay.example.com:2053/secret/"`
-	Token     string `json:"-" gorm:"column:token"`
+	Id    int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Name  string `json:"name" gorm:"not null" example:"uk-relay"`
+	Url   string `json:"url" gorm:"not null" example:"https://relay.example.com:2053/secret/"`
+	Token string `json:"-" gorm:"column:token"`
+	// Version is the relay's product version as its last answer gave it; empty until it answers.
+	Version   string `json:"version" example:"0.14.0"`
 	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime:milli" example:"1763300000000"`
 }
 

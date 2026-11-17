@@ -2792,7 +2792,7 @@
     },
     "tunnels": {
       "title": "Túneis",
-      "editionName": "Manifold Tunnel Server",
+      "editionName": "Manifold Relay",
       "intro": "A ponta cliente do túnel roda aqui, onde as contas são atendidas. A ponta servidor roda no relay ao qual os usuários se conectam, que encaminha suas portas para cá. Crie a outra ponta com o código de pareamento, ou adicione o relay e deixe este painel configurá-lo.",
       "introEdition": "Este servidor é um relay: os usuários se conectam a ele e suas portas seguem por cada túnel até o painel que os atende. Importe um túnel com o código de pareamento desse painel, ou dê a ele um token de API com escopo tunnel em Configurações para que ele mesmo configure os túneis.",
       "empty": "Ainda não há túneis",
@@ -2900,7 +2900,12 @@
         "confirmDelete": "Delete this group? Its ports stop being forwarded.",
         "saveFailed": "Could not save the group",
         "deleteFailed": "Could not delete the group"
-      }
+      },
+      "relayVersion": "Version",
+      "relayVersionDiffers": "The relay runs {relay} and this panel {panel}. Update the relay with: manifold update",
+      "relayChecking": "Checking",
+      "relayAnswering": "Answering",
+      "relayNotAnswering": "Not answering"
     },
     "access": {
       "saved": "Saved",

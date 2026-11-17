@@ -91,3 +91,14 @@ test('groups the pages under section headings, and only separates them on the ra
   expect(rail.container.querySelectorAll('.sider-nav .ant-menu-item-group-title')).toHaveLength(0);
   expect(rail.container.querySelectorAll('.sider-nav .ant-menu-item-divider')).toHaveLength(4);
 });
+
+test('names Manifold Relay on a relay', async () => {
+  window.X_UI_EDITION = 'tunnel';
+  try {
+    const view = await renderSidebar();
+    fireEvent.mouseEnter(view.container.querySelector('.ant-sidebar')!);
+    expect(await screen.findByText('Manifold Relay')).toBeTruthy();
+  } finally {
+    delete window.X_UI_EDITION;
+  }
+});
