@@ -133,6 +133,19 @@ export default function SubscriptionGeneralTab({
               </SettingListItem>
               <SettingListItem
                 paddings="small"
+                title={t('pages.settings.subDomains')}
+                description={t('pages.settings.subDomainsDesc')}
+              >
+                <Input.TextArea
+                  aria-label={t('pages.settings.subDomains')}
+                  autoSize={{ minRows: 2, maxRows: 8 }}
+                  placeholder={'sub2.example.com\n*.sub.example.com'}
+                  value={allSetting.subDomains}
+                  onChange={(e) => updateSetting({ subDomains: e.target.value })}
+                />
+              </SettingListItem>
+              <SettingListItem
+                paddings="small"
                 title={t('pages.settings.subPort')}
                 badge={<DefaultSettingTag settingKey="subPort" value={allSetting.subPort} />}
                 description={t('pages.settings.subPortDesc')}

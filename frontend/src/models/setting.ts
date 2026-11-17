@@ -62,6 +62,7 @@ export class AllSetting {
   subClashEnable = false;
   subClashPath = '/clash/';
   subDomain = '';
+  subDomains = '';
   externalTrafficInformEnable = false;
   externalTrafficInformURI = '';
   restartXrayOnClientDisable = true;

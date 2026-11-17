@@ -2153,7 +2153,9 @@
       "subHostSortMode": "Subscription Node Ordering",
       "subHostSortInbound": "Inbound order (default)",
       "subHostSortHosts": "Hosts order",
-      "subHostSortModeDesc": "Hosts order follows the Hosts page across inbounds. This controls the order emitted by the server; client apps may apply their own sorting."
+      "subHostSortModeDesc": "Hosts order follows the Hosts page across inbounds. This controls the order emitted by the server; client apps may apply their own sorting.",
+      "subDomains": "Subscription domains",
+      "subDomainsDesc": "One host per line. New links use the first; every host keeps serving the links already handed out, so a blocked domain is replaced by adding a new one on top. *.sub.example.com gives every subscriber a host of its own, which needs a wildcard DNS record and certificate. A host here replaces the host of the subscription URI."
     },
     "xray": {
       "save": "Save",
@@ -2988,7 +2990,9 @@
       "where": "Where users are served",
       "zeroNever": "0 means never.",
       "zeroUnlimited": "0 means no limit.",
-      "about": "Description"
+      "about": "Description",
+      "subDomain": "Subscription domain",
+      "subDomainHint": "Links of this reseller's users are built on it; *.domain gives each user a host of its own. It needs a DNS record pointing here."
     },
     "usage": {
       "menu": "Usage",

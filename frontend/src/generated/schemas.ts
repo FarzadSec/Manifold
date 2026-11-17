@@ -507,6 +507,10 @@ export const SCHEMAS: Record<string, unknown> = {
       "subDomain": {
         "type": "string"
       },
+      "subDomains": {
+        "description": "SubDomains are the hosts subscription links are built on, the first for new links.",
+        "type": "string"
+      },
       "subEnable": {
         "type": "boolean"
       },
@@ -925,6 +929,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subClashURI",
       "subClashUserAgentRegex",
       "subDomain",
+      "subDomains",
       "subEnable",
       "subEnableRouting",
       "subEncrypt",
@@ -1296,6 +1301,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "string"
       },
       "subDomain": {
+        "type": "string"
+      },
+      "subDomains": {
+        "description": "SubDomains are the hosts subscription links are built on, the first for new links.",
         "type": "string"
       },
       "subEnable": {
@@ -1724,6 +1733,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subClashURI",
       "subClashUserAgentRegex",
       "subDomain",
+      "subDomains",
       "subEnable",
       "subEnableRouting",
       "subEncrypt",
@@ -2786,8 +2796,21 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": 0,
         "type": "integer"
       },
+      "subClashUrl": {
+        "example": "https://sub.example.com/clash/abcd1234",
+        "type": "string"
+      },
       "subId": {
         "example": "abcd1234",
+        "type": "string"
+      },
+      "subJsonUrl": {
+        "example": "https://sub.example.com/json/abcd1234",
+        "type": "string"
+      },
+      "subUrl": {
+        "description": "SubUrl and its JSON and Clash siblings are the user's own subscription addresses,\non its reseller's domain or its own host under a wildcard; \"\" when that format is off.",
+        "example": "https://sub.example.com/sub/abcd1234",
         "type": "string"
       },
       "totalGB": {

@@ -19,16 +19,26 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 )
 
-// SubscriptionURLs builds a user's subscription addresses the way the panel hands them out:
-// the configured URI, else the subscription domain, port and path; the JSON one is "" when off.
-func (s *SettingService) SubscriptionURLs(subID string) (string, string) {
+// SubURLBuilder builds subscription addresses from settings read once, so a list of
+// thousands of users costs no query per row.
+type SubURLBuilder struct {
+	sub, json, clash string
+	plan             SubHostPlan
+}
+
+// NewSubURLBuilder reads where subscription links point. A configured URI (the public
+// address behind a CDN or proxy) wins; else the subscription domain, port and path.
+func (s *SettingService) NewSubURLBuilder() SubURLBuilder {
 	subURI, _ := s.GetSubURI()
 	subJSONURI, _ := s.GetSubJsonURI()
+	subClashURI, _ := s.GetSubClashURI()
 	subDomain, _ := s.GetSubDomain()
 	subPort, _ := s.GetSubPort()
 	subPath, _ := s.GetSubPath()
 	subJSONPath, _ := s.GetSubJsonPath()
+	subClashPath, _ := s.GetSubClashPath()
 	jsonEnabled, _ := s.GetSubJsonEnable()
+	clashEnabled, _ := s.GetSubClashEnable()
 	keyFile, _ := s.GetSubKeyFile()
 	certFile, _ := s.GetSubCertFile()
 	tls := keyFile != "" && certFile != ""
@@ -49,20 +59,56 @@ func (s *SettingService) SubscriptionURLs(subID string) (string, string) {
 	if standardPort := (subPort == 443 && tls) || (subPort == 80 && !tls); !standardPort {
 		host = fmt.Sprintf("%s:%d", subDomain, subPort)
 	}
-	slashed := func(p string) string {
-		return "/" + strings.Trim(p, "/") + "/"
-	}
-	join := func(uri, path string) string {
+	base := func(uri, path string) string {
 		if uri != "" {
-			return strings.TrimSuffix(uri, "/") + "/" + subID
+			return strings.TrimSuffix(uri, "/") + "/"
 		}
-		return fmt.Sprintf("%s://%s%s%s", scheme, host, slashed(path), subID)
+		return fmt.Sprintf("%s://%s/%s/", scheme, host, strings.Trim(path, "/"))
 	}
-	jsonURL := ""
+	b := SubURLBuilder{sub: base(subURI, subPath), plan: LoadSubHostPlan()}
+	// A wildcard in the public address names each user too, so it needs the same key.
+	for _, uri := range []string{subURI, subJSONURI, subClashURI} {
+		if u, err := url.Parse(uri); err == nil && strings.HasPrefix(u.Hostname(), "*.") && b.plan.secret == nil {
+			b.plan.secret = subHostSecret()
+		}
+	}
 	if jsonEnabled {
-		jsonURL = join(subJSONURI, subJSONPath)
+		b.json = base(subJSONURI, subJSONPath)
 	}
-	return join(subURI, subPath), jsonURL
+	if clashEnabled {
+		b.clash = base(subClashURI, subClashPath)
+	}
+	return b
+}
+
+// For returns a user's subscription addresses, each "" when that format is off. The host is
+// its reseller's domain, else the first subscription domain, a wildcard naming it alone.
+func (b SubURLBuilder) For(recordID, ownerID int, subID string) (sub, json, clash string) {
+	if subID == "" {
+		return "", "", ""
+	}
+	host := b.plan.HostFor(recordID, ownerID)
+	build := func(base string) string {
+		if base == "" {
+			return ""
+		}
+		base = withHost(base, host)
+		if u, err := url.Parse(base); err == nil {
+			if h := u.Hostname(); strings.HasPrefix(h, "*.") {
+				base = withHost(base, b.plan.expand(h, recordID))
+			}
+		}
+		return base + subID
+	}
+	return build(b.sub), build(b.json), build(b.clash)
+}
+
+// SubscriptionURLs is For for the user holding subID, looked up by it.
+func (s *SettingService) SubscriptionURLs(subID string) (string, string) {
+	var rec model.ClientRecord
+	_ = database.GetDB().Select("id", "owner_id").Where("sub_id = ?", subID).First(&rec).Error
+	sub, json, _ := s.NewSubURLBuilder().For(rec.Id, rec.OwnerId, subID)
+	return sub, json
 }
 
 type exportRow struct {
@@ -130,7 +176,7 @@ func (s *ClientService) ExportCSV(emails []string, owner int, now time.Time) (st
 	if err != nil {
 		return "", err
 	}
-	settings := &SettingService{}
+	urls := (&SettingService{}).NewSubURLBuilder()
 	loc := usageLocation(now)
 	var b bytes.Buffer
 	b.WriteString("\uFEFF")
@@ -141,10 +187,7 @@ func (s *ClientService) ExportCSV(emails []string, owner int, now time.Time) (st
 		"telegram", "email", "phone", "bale", "soroush", "rubika",
 	})
 	for _, r := range rows {
-		subURL := ""
-		if r.SubID != "" {
-			subURL, _ = settings.SubscriptionURLs(r.SubID)
-		}
+		subURL, _, _ := urls.For(r.Id, r.OwnerId, r.SubID)
 		expiry := exportTime(r.ExpiryTime, loc)
 		if r.ExpiryTime < 0 {
 			expiry = fmt.Sprintf("%d days from first use", -r.ExpiryTime/int64(24*time.Hour/time.Millisecond))
@@ -239,7 +282,7 @@ func (s *ClientService) ConfigPack(inboundSvc *InboundService, host string, emai
 	if err != nil {
 		return nil, err
 	}
-	settings := &SettingService{}
+	urls := (&SettingService{}).NewSubURLBuilder()
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
 	write := func(name, body string) error {
@@ -253,7 +296,7 @@ func (s *ClientService) ConfigPack(inboundSvc *InboundService, host string, emai
 	for _, r := range rows {
 		dir := packName(r.Email) + "/"
 		if r.SubID != "" {
-			subURL, jsonURL := settings.SubscriptionURLs(r.SubID)
+			subURL, jsonURL, _ := urls.For(r.Id, r.OwnerId, r.SubID)
 			text := subURL + "\n"
 			if jsonURL != "" {
 				text += jsonURL + "\n"

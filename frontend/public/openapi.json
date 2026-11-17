@@ -533,6 +533,10 @@
           "subDomain": {
             "type": "string"
           },
+          "subDomains": {
+            "description": "SubDomains are the hosts subscription links are built on, the first for new links.",
+            "type": "string"
+          },
           "subEnable": {
             "type": "boolean"
           },
@@ -951,6 +955,7 @@
           "subClashURI",
           "subClashUserAgentRegex",
           "subDomain",
+          "subDomains",
           "subEnable",
           "subEnableRouting",
           "subEncrypt",
@@ -1322,6 +1327,10 @@
             "type": "string"
           },
           "subDomain": {
+            "type": "string"
+          },
+          "subDomains": {
+            "description": "SubDomains are the hosts subscription links are built on, the first for new links.",
             "type": "string"
           },
           "subEnable": {
@@ -1750,6 +1759,7 @@
           "subClashURI",
           "subClashUserAgentRegex",
           "subDomain",
+          "subDomains",
           "subEnable",
           "subEnableRouting",
           "subEncrypt",
@@ -2812,8 +2822,21 @@
             "example": 0,
             "type": "integer"
           },
+          "subClashUrl": {
+            "example": "https://sub.example.com/clash/abcd1234",
+            "type": "string"
+          },
           "subId": {
             "example": "abcd1234",
+            "type": "string"
+          },
+          "subJsonUrl": {
+            "example": "https://sub.example.com/json/abcd1234",
+            "type": "string"
+          },
+          "subUrl": {
+            "description": "SubUrl and its JSON and Clash siblings are the user's own subscription addresses,\non its reseller's domain or its own host under a wildcard; \"\" when that format is off.",
+            "example": "https://sub.example.com/sub/abcd1234",
             "type": "string"
           },
           "totalGB": {
@@ -10854,7 +10877,10 @@
                         "resetMax": 0,
                         "resetWeekday": 0,
                         "speedLimit": 0,
+                        "subClashUrl": "https://sub.example.com/clash/abcd1234",
                         "subId": "abcd1234",
+                        "subJsonUrl": "https://sub.example.com/json/abcd1234",
+                        "subUrl": "https://sub.example.com/sub/abcd1234",
                         "totalGB": 53687091200,
                         "traffic": null,
                         "updatedAt": 1735100000000

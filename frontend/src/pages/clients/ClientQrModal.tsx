@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { clientSubUrls } from '@/lib/clients/subscription-url';
 import { useNavigate } from 'react-router';
 import { Alert, Button, Collapse, Empty, Modal, Segmented, Spin, Tag, Typography } from 'antd';
 import { LockOutlined } from '@ant-design/icons';
@@ -224,8 +225,7 @@ const DEFAULT_SUB: SubSettings = {
 export default function ClientQrModal(props: ClientQrModalProps) {
   const subSettings = props.subSettings ?? DEFAULT_SUB;
   const subId = props.client?.subId ?? '';
-  const subLink =
-    subId && subSettings.enable && subSettings.subURI ? subSettings.subURI + subId : '';
+  const subLink = clientSubUrls(props.client, subSettings).sub;
   const happLinkEnabled = subSettings.happLinkEnable === true;
   // A gate or source change remounts this scope to clear Happ state and retire any in-flight response.
   const scopeKey = `${props.client?.id ?? ''}\0${subId}\0${subLink}\0${happLinkEnabled ? 1 : 0}`;
@@ -248,12 +248,7 @@ function ClientQrModalContent({
   const [loading, setLoading] = useState(false);
 
   const subId = client?.subId;
-  const subEnabled = !!subSettings?.enable;
-  const subLink = subId && subEnabled && subSettings?.subURI ? subSettings.subURI + subId : '';
-  const subJsonLink =
-    subId && subEnabled && subSettings?.subJsonEnable && subSettings?.subJsonURI
-      ? subSettings.subJsonURI + subId
-      : '';
+  const { sub: subLink, json: subJsonLink } = clientSubUrls(client, subSettings);
   const clientId = client?.id;
   const clientSubId = subId ?? '';
   const happLinkEnabled = subSettings.happLinkEnable === true;

@@ -174,6 +174,7 @@ var defaultValueMap = map[string]string{
 	"subPort":                     "2096",
 	"subPath":                     "/sub/",
 	"subDomain":                   "",
+	"subDomains":                  "",
 	"subCertFile":                 "",
 	"subKeyFile":                  "",
 	"externalSubUserAgent":        DefaultExternalSubUserAgent,
@@ -1196,6 +1197,11 @@ func (s *SettingService) GetSubPath() (string, error) {
 
 func (s *SettingService) GetSubJsonPath() (string, error) {
 	return s.getString("subJsonPath")
+}
+
+// GetSubDomains is the list of subscription domains, one per line, the first for new links.
+func (s *SettingService) GetSubDomains() (string, error) {
+	return s.getString("subDomains")
 }
 
 func (s *SettingService) GetSubDomain() (string, error) {

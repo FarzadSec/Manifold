@@ -317,6 +317,15 @@ export default function AdminFormModal({
                     <Input maxLength={200} />
                   </FormField>
                 </Col>
+                <Col xs={24} md={12}>
+                  <FormField
+                    name="subDomain"
+                    label={t('pages.access.subDomain')}
+                    tooltip={t('pages.access.subDomainHint')}
+                  >
+                    <Input placeholder="sub.reseller.com" />
+                  </FormField>
+                </Col>
               </Row>
             </>
           )}

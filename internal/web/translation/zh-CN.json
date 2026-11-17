@@ -2032,7 +2032,9 @@
       "subHostSortMode": "订阅节点排序",
       "subHostSortInbound": "入站顺序（默认）",
       "subHostSortHosts": "主机顺序",
-      "subHostSortModeDesc": "跨入站使用主机页面中的排序。此设置决定服务器输出顺序；客户端应用仍可能自行排序。"
+      "subHostSortModeDesc": "跨入站使用主机页面中的排序。此设置决定服务器输出顺序；客户端应用仍可能自行排序。",
+      "subDomains": "订阅域名",
+      "subDomainsDesc": "每行一个主机名。新链接使用第一个;所有主机继续为已发出的链接服务,因此被封锁的域名可通过在顶部添加新域名来替换。*.sub.example.com 为每个订阅者生成专属主机名,需要通配符 DNS 记录和证书。此处的主机会替换订阅地址中的主机。"
     },
     "xray": {
       "importRules": "导入规则",
@@ -2988,7 +2990,9 @@
       "where": "服务位置",
       "zeroNever": "0 表示从不。",
       "zeroUnlimited": "0 表示不限制。",
-      "about": "描述"
+      "about": "描述",
+      "subDomain": "订阅域名",
+      "subDomainHint": "此代理商用户的链接使用该域名;*.domain 为每个用户生成专属主机名。需要指向本服务器的 DNS 记录。"
     },
     "usage": {
       "menu": "用量",

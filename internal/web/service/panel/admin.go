@@ -11,6 +11,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/crypto"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/access"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
 
@@ -147,6 +148,10 @@ func (s *AdminService) validate(in *AdminInput, id int) error {
 	}
 	if in.VolumeBytes < 0 || in.MaxUsers < 0 || in.ExpiresAt < 0 {
 		return common.NewError("allowance values cannot be negative")
+	}
+	in.SubDomain = strings.ToLower(strings.TrimSpace(in.SubDomain))
+	if in.SubDomain != "" && !entity.ValidSubDomain(in.SubDomain) {
+		return common.NewError("a subscription domain is a host name, or *. and one, with no port or path")
 	}
 	if in.Tier != access.TierReseller {
 		in.VolumeBytes, in.ResetCycle, in.ExpiresAt, in.MaxUsers = 0, service.CycleNone, 0, 0

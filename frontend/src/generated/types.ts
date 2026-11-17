@@ -139,6 +139,7 @@ export interface AllSetting {
   subClashURI: string;
   subClashUserAgentRegex: string;
   subDomain: string;
+  subDomains: string;
   subEnable: boolean;
   subEnableRouting: boolean;
   subEncrypt: boolean;
@@ -330,6 +331,7 @@ export interface AllSettingView {
   subClashURI: string;
   subClashUserAgentRegex: string;
   subDomain: string;
+  subDomains: string;
   subEnable: boolean;
   subEnableRouting: boolean;
   subEncrypt: boolean;
@@ -653,7 +655,10 @@ export interface ClientSlim {
   resetMax: number;
   resetWeekday: number;
   speedLimit: number;
+  subClashUrl?: string;
   subId: string;
+  subJsonUrl?: string;
+  subUrl?: string;
   totalGB: number;
   traffic?: ClientTraffic | null;
   updatedAt: number;

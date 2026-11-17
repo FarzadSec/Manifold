@@ -38,6 +38,11 @@ type ClientSlim struct {
 	CreatedAt    int64               `json:"createdAt" example:"1735000000000"`
 	UpdatedAt    int64               `json:"updatedAt" example:"1735100000000"`
 	OwnerId      int                 `json:"ownerId" example:"0"`
+	// SubUrl and its JSON and Clash siblings are the user's own subscription addresses,
+	// on its reseller's domain or its own host under a wildcard; "" when that format is off.
+	SubUrl      string `json:"subUrl,omitempty" example:"https://sub.example.com/sub/abcd1234"`
+	SubJsonUrl  string `json:"subJsonUrl,omitempty" example:"https://sub.example.com/json/abcd1234"`
+	SubClashUrl string `json:"subClashUrl,omitempty" example:"https://sub.example.com/clash/abcd1234"`
 }
 
 // ClientPageParams are the query params accepted by /panel/api/clients/list/paged.
@@ -525,16 +530,19 @@ func (q clientQuery) pageRows(params ClientPageParams, onlines []string, offset,
 	}
 
 	items := make([]ClientSlim, 0, len(ids))
+	urls := (&SettingService{}).NewSubURLBuilder()
 	for _, id := range ids {
 		rec := byId[id]
 		if rec == nil {
 			continue
 		}
-		items = append(items, toClientSlim(ClientWithAttachments{
+		slim := toClientSlim(ClientWithAttachments{
 			ClientRecord: *rec,
 			InboundIds:   attachments[rec.Id],
 			Traffic:      trafficByEmail[rec.Email],
-		}))
+		})
+		slim.SubUrl, slim.SubJsonUrl, slim.SubClashUrl = urls.For(rec.Id, rec.OwnerId, rec.SubID)
+		items = append(items, slim)
 	}
 	return items, nil
 }

@@ -2032,7 +2032,9 @@
       "subHostSortMode": "Thứ tự nút đăng ký",
       "subHostSortInbound": "Thứ tự kết nối vào (mặc định)",
       "subHostSortHosts": "Thứ tự máy chủ",
-      "subHostSortModeDesc": "Theo thứ tự trên trang Máy chủ giữa các kết nối vào. Thiết lập này quyết định thứ tự do máy chủ xuất ra; ứng dụng khách có thể tự sắp xếp lại."
+      "subHostSortModeDesc": "Theo thứ tự trên trang Máy chủ giữa các kết nối vào. Thiết lập này quyết định thứ tự do máy chủ xuất ra; ứng dụng khách có thể tự sắp xếp lại.",
+      "subDomains": "Subscription domains",
+      "subDomainsDesc": "One host per line. New links use the first; every host keeps serving the links already handed out, so a blocked domain is replaced by adding a new one on top. *.sub.example.com gives every subscriber a host of its own, which needs a wildcard DNS record and certificate. A host here replaces the host of the subscription URI."
     },
     "xray": {
       "importRules": "Nhập quy tắc",
@@ -2988,7 +2990,9 @@
       "where": "Where users are served",
       "zeroNever": "0 means never.",
       "zeroUnlimited": "0 means no limit.",
-      "about": "Description"
+      "about": "Description",
+      "subDomain": "Subscription domain",
+      "subDomainHint": "Links of this reseller's users are built on it; *.domain gives each user a host of its own. It needs a DNS record pointing here."
     },
     "usage": {
       "menu": "Usage",

@@ -87,27 +87,29 @@ type AllSetting struct {
 	TwoFactorEnable bool   `json:"twoFactorEnable" form:"twoFactorEnable"`
 	TwoFactorToken  string `json:"twoFactorToken" form:"twoFactorToken"`
 
-	HappLinkEnable              bool   `json:"happLinkEnable" form:"happLinkEnable"`
-	SubEnable                   bool   `json:"subEnable" form:"subEnable"`
-	SubJsonEnable               bool   `json:"subJsonEnable" form:"subJsonEnable"`
-	SubJsonAutoDetect           bool   `json:"subJsonAutoDetect" form:"subJsonAutoDetect"`
-	SubJsonAlwaysArray          bool   `json:"subJsonAlwaysArray" form:"subJsonAlwaysArray"`
-	SubJsonUserAgentRegex       string `json:"subJsonUserAgentRegex" form:"subJsonUserAgentRegex"`
-	SubClashAutoDetect          bool   `json:"subClashAutoDetect" form:"subClashAutoDetect"`
-	SubClashUserAgentRegex      string `json:"subClashUserAgentRegex" form:"subClashUserAgentRegex"`
-	SubTitle                    string `json:"subTitle" form:"subTitle"`
-	SubSupportUrl               string `json:"subSupportUrl" form:"subSupportUrl"`
-	SubProfileMode              string `json:"subProfileMode" form:"subProfileMode"`
-	SubProfileUrl               string `json:"subProfileUrl" form:"subProfileUrl"`
-	SubAnnounce                 string `json:"subAnnounce" form:"subAnnounce"`
-	SubEnableRouting            bool   `json:"subEnableRouting" form:"subEnableRouting"`
-	SubRoutingRules             string `json:"subRoutingRules" form:"subRoutingRules"`
-	SubIncyEnableRouting        bool   `json:"subIncyEnableRouting" form:"subIncyEnableRouting"`
-	SubIncyRoutingRules         string `json:"subIncyRoutingRules" form:"subIncyRoutingRules"`
-	SubListen                   string `json:"subListen" form:"subListen"`
-	SubPort                     int    `json:"subPort" form:"subPort" validate:"gte=1,lte=65535"`
-	SubPath                     string `json:"subPath" form:"subPath"`
-	SubDomain                   string `json:"subDomain" form:"subDomain"`
+	HappLinkEnable         bool   `json:"happLinkEnable" form:"happLinkEnable"`
+	SubEnable              bool   `json:"subEnable" form:"subEnable"`
+	SubJsonEnable          bool   `json:"subJsonEnable" form:"subJsonEnable"`
+	SubJsonAutoDetect      bool   `json:"subJsonAutoDetect" form:"subJsonAutoDetect"`
+	SubJsonAlwaysArray     bool   `json:"subJsonAlwaysArray" form:"subJsonAlwaysArray"`
+	SubJsonUserAgentRegex  string `json:"subJsonUserAgentRegex" form:"subJsonUserAgentRegex"`
+	SubClashAutoDetect     bool   `json:"subClashAutoDetect" form:"subClashAutoDetect"`
+	SubClashUserAgentRegex string `json:"subClashUserAgentRegex" form:"subClashUserAgentRegex"`
+	SubTitle               string `json:"subTitle" form:"subTitle"`
+	SubSupportUrl          string `json:"subSupportUrl" form:"subSupportUrl"`
+	SubProfileMode         string `json:"subProfileMode" form:"subProfileMode"`
+	SubProfileUrl          string `json:"subProfileUrl" form:"subProfileUrl"`
+	SubAnnounce            string `json:"subAnnounce" form:"subAnnounce"`
+	SubEnableRouting       bool   `json:"subEnableRouting" form:"subEnableRouting"`
+	SubRoutingRules        string `json:"subRoutingRules" form:"subRoutingRules"`
+	SubIncyEnableRouting   bool   `json:"subIncyEnableRouting" form:"subIncyEnableRouting"`
+	SubIncyRoutingRules    string `json:"subIncyRoutingRules" form:"subIncyRoutingRules"`
+	SubListen              string `json:"subListen" form:"subListen"`
+	SubPort                int    `json:"subPort" form:"subPort" validate:"gte=1,lte=65535"`
+	SubPath                string `json:"subPath" form:"subPath"`
+	SubDomain              string `json:"subDomain" form:"subDomain"`
+	// SubDomains are the hosts subscription links are built on, the first for new links.
+	SubDomains                  string `json:"subDomains" form:"subDomains"`
 	SubCertFile                 string `json:"subCertFile" form:"subCertFile"`
 	SubKeyFile                  string `json:"subKeyFile" form:"subKeyFile"`
 	ExternalSubUserAgent        string `json:"externalSubUserAgent" form:"externalSubUserAgent"`
@@ -291,6 +293,12 @@ func (s *AllSetting) CheckValid() error {
 
 	if s.WebPort <= 0 || s.WebPort > math.MaxUint16 {
 		return common.NewError("web port is not a valid port:", s.WebPort)
+	}
+
+	for _, host := range ParseSubDomains(s.SubDomains) {
+		if !ValidSubDomain(host) {
+			return common.NewError("a subscription domain is a host name, or *. and one, with no port or path:", host)
+		}
 	}
 
 	if s.SubPort <= 0 || s.SubPort > math.MaxUint16 {

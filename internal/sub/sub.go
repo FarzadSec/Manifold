@@ -18,7 +18,6 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/locale"
-	"github.com/mhsanaei/3x-ui/v3/internal/web/middleware"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/network"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 
@@ -56,14 +55,15 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 
 	engine := gin.Default()
 
-	subDomain, err := s.settingService.GetSubDomain()
-	if err != nil {
-		return nil, err
-	}
-
-	if subDomain != "" {
-		engine.Use(middleware.DomainValidatorMiddleware(subDomain))
-	}
+	// The subscription domain, the list of domains, resellers' own domains and their
+	// wildcards are all served; a reseller's new domain works without a restart.
+	engine.Use(func(c *gin.Context) {
+		if !service.SubHostAccepted(c.Request.Host) {
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+		c.Next()
+	})
 
 	LinksPath, err := s.settingService.GetSubPath()
 	if err != nil {

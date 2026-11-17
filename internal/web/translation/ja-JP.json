@@ -2032,7 +2032,9 @@
       "subHostSortMode": "サブスクリプションのノード順序",
       "subHostSortInbound": "インバウンド順（既定）",
       "subHostSortHosts": "ホスト順",
-      "subHostSortModeDesc": "異なるインバウンド間でもホストページの順序に従います。サーバーが出力する順序を指定しますが、クライアントアプリが独自に並べ替える場合があります。"
+      "subHostSortModeDesc": "異なるインバウンド間でもホストページの順序に従います。サーバーが出力する順序を指定しますが、クライアントアプリが独自に並べ替える場合があります。",
+      "subDomains": "Subscription domains",
+      "subDomainsDesc": "One host per line. New links use the first; every host keeps serving the links already handed out, so a blocked domain is replaced by adding a new one on top. *.sub.example.com gives every subscriber a host of its own, which needs a wildcard DNS record and certificate. A host here replaces the host of the subscription URI."
     },
     "xray": {
       "importRules": "ルールをインポート",
@@ -2988,7 +2990,9 @@
       "where": "Where users are served",
       "zeroNever": "0 means never.",
       "zeroUnlimited": "0 means no limit.",
-      "about": "Description"
+      "about": "Description",
+      "subDomain": "Subscription domain",
+      "subDomainHint": "Links of this reseller's users are built on it; *.domain gives each user a host of its own. It needs a DNS record pointing here."
     },
     "usage": {
       "menu": "Usage",
