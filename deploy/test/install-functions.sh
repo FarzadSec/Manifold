@@ -239,5 +239,41 @@ first_setup <<<$'y\n8443' >/dev/null
 check "a first install without a terminal asks nothing" "$PANEL_PORT" "31337"
 unset -f port_in_use free_port
 
+# Which product a run installs: the flag, what an update finds, or the answer to a question.
+ENV_FILE="$work/default"
+: >"$ENV_FILE"
+pick() { EDITION="$1" INTERACTIVE="$2"; resolve_edition <<<"$3" >/dev/null; echo "$EDITION"; }
+check "--edition relay installs the relay" "$(pick relay 0 '')" "tunnel"
+check "a first install from a terminal asks, and 2 is the relay" "$(pick '' 1 2)" "tunnel"
+check "the first answer is the panel" "$(pick '' 1 '')" "full"
+check "a first install without a terminal is the panel" "$(pick '' 0 2)" "full"
+echo "MANIFOLD_EDITION=tunnel" >"$ENV_FILE"
+touch "$DATA_DIR/manifold.db"
+check "an update keeps the relay without asking" "$(pick '' 1 1)" "tunnel"
+rm -f "$DATA_DIR/manifold.db"
+: >"$ENV_FILE"
+
+EDITION=full
+check "the panel's package" "$(package_name amd64)" "manifold-linux-amd64.tar.gz"
+EDITION=tunnel
+check "the relay's package" "$(package_name arm64)" "manifold-relay-linux-arm64.tar.gz"
+
+# The relay package has no Xray; the panel cannot run on it, so it is refused before anything is replaced.
+mkdir -p "$work/pkg/bin"
+touch "$work/pkg/bin/backpack-linux-amd64"
+EDITION=full
+check "the panel refuses the relay's package" "$( (check_package "$work/pkg") 2>&1 || true)" \
+    "error: this is the Manifold Relay package; install it with --edition relay, or use the Manifold package"
+EDITION=tunnel
+check "the relay takes its package" "$( (check_package "$work/pkg") 2>&1 && echo ok)" "ok"
+
+# A panel turned into a relay drops what only the panel runs, and keeps the rest.
+mkdir -p "$work/bin"
+touch "$work/bin/xray-linux-amd64" "$work/bin/mtg-linux-amd64" "$work/bin/geoip_IR.dat" "$work/bin/backpack-linux-amd64"
+mkdir -p "$work/bin/tunnels"
+prune_panel_engines "$work/bin"
+check "a relay keeps BackPack and its tunnels" "$(cd "$work/bin" && printf '%s ' *)" "backpack-linux-amd64 tunnels "
+EDITION=""
+
 [ "$failures" -eq 0 ] || exit 1
 echo "all installer function tests passed"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Installs Manifold from a release package, or updates an existing install.
-# Run as root. See `install.sh --help`.
+# Installs Manifold or Manifold Relay from a release package, or updates an
+# existing install. Run as root. See `install.sh --help`.
 set -euo pipefail
 
 REPO="${MANIFOLD_REPO:-FarzadSec/Manifold}"
@@ -42,6 +42,11 @@ Usage: install.sh [options]
 Installs Manifold, or updates it in place when it is already installed.
 The database and settings in /etc/manifold are kept on update.
 
+Two products come from this installer: Manifold, the full panel, and Manifold
+Relay, a tunnel server only (no Xray, inbounds or subscriptions) that users
+connect to and that forwards their ports to a Manifold panel. A first install
+from a terminal asks which; --edition chooses without asking.
+
 Run from a terminal, a first install asks for the panel port (unless --port
 is given) and how to secure the panel: a Let's Encrypt certificate for a
 domain or for the server's IP address, certificate files of your own, or
@@ -56,8 +61,8 @@ get a certificate later with: manifold cert issue -domain NAME
   --password PASS    Panel password for a first install (default: random)
   --no-start         Install the files but do not start the service
   --no-deps          Do not install the system packages the VPN engines need
-  --edition NAME     full (the default) or tunnel: a relay with tunnels only,
-                     no Xray, inbounds or subscriptions. Kept on update.
+  --edition NAME     full (Manifold, the default) or relay (Manifold Relay;
+                     "tunnel" is the same). Kept on update.
   -h, --help         Show this help
 
 Environment:
@@ -200,8 +205,8 @@ parse_args() {
             --no-start) START_SERVICE=0; shift ;;
             --no-deps) INSTALL_DEPS=0; shift ;;
             --edition)
-                EDITION="${2:?--edition needs full or tunnel}"
-                case "$EDITION" in full | tunnel) ;; *) die "--edition must be full or tunnel" ;; esac
+                EDITION="${2:?--edition needs full or relay}"
+                case "$EDITION" in full | relay | tunnel) ;; *) die "--edition must be full or relay" ;; esac
                 shift 2
                 ;;
             -h | --help) usage; exit 0 ;;
@@ -243,10 +248,19 @@ download_with_token() {
     github_curl -H "Accept: application/octet-stream" -o "${dir}/${asset}.sha256" "$sum_url"
 }
 
+# package_name ARCH: the release file of the edition this run installs.
+package_name() {
+    if [ "$EDITION" = tunnel ]; then
+        echo "manifold-relay-linux-$1.tar.gz"
+    else
+        echo "manifold-linux-$1.tar.gz"
+    fi
+}
+
 # Downloads the package for $1 (arch) into $2 (directory) and verifies its checksum.
 download_package() {
     local arch="$1" dir="$2" asset
-    asset="manifold-linux-${arch}.tar.gz"
+    asset=$(package_name "$arch")
     info "Downloading ${asset}"
     if [ -n "${MANIFOLD_TOKEN:-}" ]; then
         download_with_token "$asset" "$dir"
@@ -260,11 +274,24 @@ download_package() {
     PACKAGE="${dir}/${asset}"
 }
 
+# check_package DIR: the unpacked package can run the edition this run installs.
+check_package() {
+    if [ "$EDITION" != tunnel ] && ! compgen -G "$1/bin/xray-linux-*" >/dev/null; then
+        die "this is the Manifold Relay package; install it with --edition relay, or use the Manifold package"
+    fi
+}
+
+# prune_panel_engines BIN_DIR: a panel turned into a relay drops what only the panel runs.
+prune_panel_engines() {
+    rm -f "$1"/xray-linux-* "$1"/mtg-linux-* "$1"/*.dat
+}
+
 install_files() {
     local work="$1" src
     tar -xzf "$PACKAGE" -C "$work"
     src="${work}/manifold"
     [ -x "${src}/manifold" ] || die "the package does not contain the manifold binary"
+    check_package "$src"
 
     if systemctl is-active --quiet manifold 2>/dev/null; then
         info "Stopping the running service"
@@ -279,6 +306,7 @@ install_files() {
     chmod 700 "$DATA_DIR"
     install -m 755 "${src}/manifold" "${INSTALL_DIR}/manifold"
     cp -f "${src}"/bin/* "${INSTALL_DIR}/bin/"
+    [ "$EDITION" != tunnel ] || prune_panel_engines "${INSTALL_DIR}/bin"
     chmod 755 "${INSTALL_DIR}"/bin/xray-linux-* "${INSTALL_DIR}"/bin/mtg-linux-* "${INSTALL_DIR}"/bin/backpack-linux-* 2>/dev/null || true
     install -m 755 "${src}/manifold.sh" "${INSTALL_DIR}/manifold.sh"
     install -m 755 "${src}/install.sh" "${INSTALL_DIR}/install.sh"
@@ -298,7 +326,32 @@ installed_edition() {
     fi
 }
 
-# set_edition records --edition in the env file; without it an update keeps the edition it finds.
+# choose_edition asks which product a first install is.
+choose_edition() {
+    local reply=""
+    echo "What should this server run?"
+    echo "  1. Manifold: the full panel (users, inbounds, every protocol, tunnels)"
+    echo "  2. Manifold Relay: a tunnel server only, in front of a Manifold panel"
+    read -rp "Choose [1]: " reply || true
+    case "$reply" in
+        2) EDITION=tunnel ;;
+        *) EDITION=full ;;
+    esac
+}
+
+# resolve_edition sets EDITION to what this run installs: --edition, the edition an
+# update finds, or on a first install from a terminal the answer to choose_edition.
+resolve_edition() {
+    [ "$EDITION" != relay ] || EDITION=tunnel
+    [ -z "$EDITION" ] || return 0
+    if [ -f "${DATA_DIR}/manifold.db" ] || [ "$INTERACTIVE" -eq 0 ]; then
+        EDITION=$(installed_edition)
+    else
+        choose_edition
+    fi
+}
+
+# set_edition records the edition in the env file the service reads.
 set_edition() {
     [ -n "$EDITION" ] || return 0
     sed -i '/^MANIFOLD_EDITION=/d' "$ENV_FILE"
@@ -337,7 +390,8 @@ first_setup() {
     # Another panel on the server usually holds the default subscription port,
     # and the subscription server could not start next to it.
     local sub_args=()
-    if port_in_use "$DEFAULT_SUB_PORT"; then
+    # A relay runs no subscription server.
+    if [ "$EDITION" != tunnel ] && port_in_use "$DEFAULT_SUB_PORT"; then
         SUB_PORT=$(free_port) || die "found no free port for the subscription server"
         sub_args=(-subPort "$SUB_PORT")
     fi
@@ -361,7 +415,7 @@ issue_panel_cert() {
         return 0
     fi
     warn "no certificate, so the panel answers over plain HTTP for now. HTTP-01 needs"
-    warn "port 80 free and open to the internet; try again later with: manifold → 18"
+    warn "port 80 free and open to the internet; try again later with: manifold cert issue -domain $1"
 }
 
 # setup_ssl asks how a new panel is reached: over HTTPS with a certificate, or plain HTTP.
@@ -409,9 +463,12 @@ setup_ssl() {
     esac
 }
 
-# mint_api_token: the token the summary shows, for a bot or script to drive the panel.
+# mint_api_token: the token the summary shows. A panel's drives it from a bot or script;
+# a relay's is tunnel-scoped, for the Manifold panel that manages its tunnels.
 mint_api_token() {
-    API_TOKEN=$("${INSTALL_DIR}/manifold" setting -getApiToken 2>/dev/null | sed -n 's/^apiToken: //p' || true)
+    local args=(setting -getApiToken)
+    [ "$EDITION" != tunnel ] || args+=(-tokenName main-panel -tokenScope tunnel)
+    API_TOKEN=$("${INSTALL_DIR}/manifold" "${args[@]}" 2>/dev/null | sed -n 's/^apiToken: //p' || true)
 }
 
 command_exists() { command -v "$1" >/dev/null 2>&1; }
@@ -579,29 +636,38 @@ print_summary() {
     local version line="═══════════════════════════════════════════════════════════════"
     version=$("${INSTALL_DIR}/manifold" -v 2>/dev/null || echo unknown)
     echo
+    local product=Manifold
+    [ "$(installed_edition)" != tunnel ] || product="Manifold Relay"
     if [ "$FIRST_INSTALL" -ne 1 ]; then
-        echo "Manifold ${version} is installed. The existing database and settings were kept."
+        echo "${product} ${version} is installed. The existing database and settings were kept."
         echo "Manage it with: manifold"
         return 0
     fi
     echo "$line"
-    if [ "$(installed_edition)" = tunnel ]; then
-        echo "  Manifold Tunnel Server ${version} is installed"
-    else
-        echo "  Manifold ${version} is installed"
-    fi
+    echo "  ${product} ${version} is installed"
     echo "$line"
     echo "  Username:     ${PANEL_USERNAME}"
     echo "  Password:     ${PANEL_PASSWORD}"
     echo "  Port:         ${PANEL_PORT}"
     echo "  WebBasePath:  ${PANEL_PATH}"
     echo "  Access URL:   $(access_line)"
-    [ -z "$API_TOKEN" ] || echo "  API token:    ${API_TOKEN}"
+    if [ -n "$API_TOKEN" ] && [ "$product" = "Manifold Relay" ]; then
+        echo "  Relay token:  ${API_TOKEN}"
+    elif [ -n "$API_TOKEN" ]; then
+        echo "  API token:    ${API_TOKEN}"
+    fi
     echo "$line"
     echo "This is shown once. Sign in, then change the login under Panel Settings."
     echo "Open port ${PANEL_PORT}/tcp in your firewall if the page does not load."
     if [ "$PANEL_SCHEME" = http ] && [ "$LISTEN_LOCAL" -eq 0 ]; then
-        echo "The panel is on plain HTTP. Get a certificate any time: manifold → 18"
+        echo "The panel is on plain HTTP. Get a certificate any time: manifold cert issue -domain NAME"
+    fi
+    if [ "$product" = "Manifold Relay" ]; then
+        echo
+        echo "Connect it to your Manifold panel, one of two ways:"
+        echo "  - On the panel: Tunnels → Relays → add this relay's Access URL and its relay token."
+        echo "    The panel then sets up and keeps this relay's end of every tunnel you give it."
+        echo "  - Or paste a tunnel's pairing code here: manifold tunnel import CODE"
     fi
     if [ -n "$SUB_PORT" ]; then
         echo "Subscriptions use port ${SUB_PORT}: port ${DEFAULT_SUB_PORT} is taken by another program on this server."
@@ -620,6 +686,10 @@ main() {
     arch=$(package_arch "$(uname -m)") || die "unsupported architecture: $(uname -m)"
     WORK_DIR=$(mktemp -d)
     trap cleanup EXIT
+    if [ -t 0 ]; then
+        INTERACTIVE=1
+    fi
+    resolve_edition
 
     if [ -z "$PACKAGE" ]; then
         command -v curl >/dev/null || die "curl is required to download a release"
@@ -630,9 +700,6 @@ main() {
 
     install_files "$WORK_DIR"
     install_dependencies
-    if [ -t 0 ]; then
-        INTERACTIVE=1
-    fi
     first_setup
     if [ "$FIRST_INSTALL" -eq 1 ]; then
         info "Finding this server's public address"
