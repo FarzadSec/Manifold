@@ -637,10 +637,11 @@ main() {
     if [ "$FIRST_INSTALL" -eq 1 ]; then
         info "Finding this server's public address"
         SERVER_IP=$(public_ip || true)
+        # A scripted install, such as a node the master sets up over SSH, gets no extra admin token.
         if [ "$INTERACTIVE" -eq 1 ]; then
             setup_ssl
+            mint_api_token
         fi
-        mint_api_token
     fi
     start_service
     print_summary
