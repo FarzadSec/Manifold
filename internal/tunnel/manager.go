@@ -62,6 +62,8 @@ type Manager struct {
 	binary  func() string
 	entries map[int]*entry
 	reaped  bool
+	// groups is what each group's ports were last pointed at.
+	groups map[int]string
 }
 
 var (

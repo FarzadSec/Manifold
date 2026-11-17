@@ -1691,6 +1691,33 @@ export interface TuicServerSettings {
   zero_rtt_handshake: boolean;
 }
 
+export interface TunnelGroup {
+  createdAt: number;
+  enable: boolean;
+  id: number;
+  members: number[];
+  mode: string;
+  name: string;
+}
+
+export interface TunnelGroupRequest {
+  enable: boolean;
+  forwards: PortForward[];
+  members: number[];
+  mode: string;
+  name: string;
+}
+
+export interface TunnelGroupView {
+  createdAt: number;
+  enable: boolean;
+  forwards: PortForward[];
+  id: number;
+  members: number[];
+  mode: string;
+  name: string;
+}
+
 export interface TunnelPairing {
   address: string;
   code: string;

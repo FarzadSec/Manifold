@@ -26,6 +26,7 @@ import (
 // tunnelEngine is what the service needs of the tunnel manager; tests substitute it.
 type tunnelEngine interface {
 	Reconcile(desired []tunnel.Tunnel)
+	ReconcileGroups(groups []tunnel.Group)
 	Statuses() []tunnel.TunnelStatus
 }
 
@@ -158,14 +159,22 @@ func (s *TunnelService) RequestReconcile() {
 	}
 }
 
-// ServeReconcileRequests applies the stored tunnels after each request until ctx ends.
+// groupCheckEvery is how soon a group moves off a tunnel that stopped answering.
+const groupCheckEvery = 10 * time.Second
+
+// ServeReconcileRequests applies the stored tunnels after each request until ctx ends,
+// and between requests keeps each group on the tunnels that answer.
 func (s *TunnelService) ServeReconcileRequests(ctx context.Context) {
+	ticker := time.NewTicker(groupCheckEvery)
+	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-tunnelReconcileRequests:
 			s.Reconcile()
+		case <-ticker.C:
+			s.reconcileGroups()
 		}
 	}
 }
@@ -180,6 +189,22 @@ func (s *TunnelService) Reconcile() {
 		return
 	}
 	tunnelManager().Reconcile(desired)
+	s.reconcileGroupsLocked()
+}
+
+func (s *TunnelService) reconcileGroups() {
+	reconcileMu.Lock()
+	defer reconcileMu.Unlock()
+	s.reconcileGroupsLocked()
+}
+
+func (s *TunnelService) reconcileGroupsLocked() {
+	groups, err := s.desiredGroups()
+	if err != nil {
+		logger.Warning("tunnel: reading tunnel groups failed: ", err)
+		return
+	}
+	tunnelManager().ReconcileGroups(groups)
 }
 
 func (s *TunnelService) normalizeRequest(id int, pairID string, req TunnelRequest) (tunnel.Tunnel, error) {
@@ -228,6 +253,17 @@ func (s *TunnelService) checkConflicts(t tunnel.Tunnel) error {
 		}
 		if p, err := netip.ParsePrefix(other.Settings.LocalIP); err == nil && ownPrefix.IsValid() && p.Overlaps(ownPrefix) {
 			return common.NewErrorf("tunnel addresses %s overlap those of tunnel %q (%s)", ownPrefix.Masked(), other.Name, p.Masked())
+		}
+	}
+	if t.ID >= 0 {
+		taken, err := groupPorts(0)
+		if err != nil {
+			return err
+		}
+		for port := range ports {
+			if name, ok := taken[port]; ok {
+				return common.NewErrorf("port %d is already used by group %q", port, name)
+			}
 		}
 	}
 	reserved := map[int]string{22: "SSH"}
@@ -312,6 +348,9 @@ func (s *TunnelService) Delete(id int) error {
 	row := &model.TunnelEnd{}
 	if err := database.GetDB().First(row, id).Error; err != nil {
 		return err
+	}
+	if groups := groupsUsing(row.Id); len(groups) > 0 {
+		return common.NewErrorf("tunnel %q is in group %q; take it out of the group first", row.Name, groups[0])
 	}
 	if err := database.GetDB().Delete(row).Error; err != nil {
 		return err

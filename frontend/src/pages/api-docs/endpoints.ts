@@ -2567,6 +2567,28 @@ export const sections: readonly Section[] = [
         responseSchema: 'TunnelView',
         responseSchemaArray: true,
       },
+      {
+        method: 'GET',
+        path: '/panel/api/tunnels/groups',
+        summary:
+          "This relay's tunnel groups: several relay ends to different origins sharing forwarded ports. failover sends everything to the first member that answers its probe, balance gives each new connection to the next member that answers; when none answers, all members are used.",
+        responseSchema: 'TunnelGroupView',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/tunnels/groups/save',
+        summary:
+          'Create (id 0) or replace a group of 2 to 16 relay ends with a tunnel address (kernel links or BackPack layer 3). Its ports are checked against tunnels, other groups, inbounds and the panel.',
+        body: '{\n  "id": 0,\n  "name": "origins",\n  "mode": "failover",\n  "members": [1, 2],\n  "forwards": [{ "listen": "443", "proto": "tcp" }],\n  "enable": true\n}',
+        responseSchema: 'TunnelGroupView',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/tunnels/groups/del/:id',
+        summary: 'Delete a group; its ports stop being forwarded.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Group ID.' }],
+      },
     ],
   },
 

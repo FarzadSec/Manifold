@@ -2,6 +2,8 @@ package egress
 
 import (
 	"net/netip"
+	"os"
+	"os/exec"
 	"strings"
 	"testing"
 )
@@ -73,5 +75,62 @@ func TestApplyForwardsRefusesWhatNftCouldNotTake(t *testing.T) {
 		if err == nil || !strings.Contains(err.Error(), tt.wantErr) {
 			t.Errorf("rule %+v: error %v, want %q", tt.rule, err, tt.wantErr)
 		}
+	}
+}
+
+func TestApplyBalancedForwardsSpreadsNewConnectionsOverTheTunnels(t *testing.T) {
+	f := &fakeSystem{commands: map[string]bool{"nft": true, "iptables": true}}
+	useFake(t, f)
+	targets := []Target{{"mft1", netip.MustParseAddr("10.80.0.2")}, {"mft2", netip.MustParseAddr("10.81.0.2")}}
+	rules := []PortForward{
+		{Proto: "tcp", Low: 443, High: 443, TargetLow: 443},
+		{Proto: "udp", Low: 2201, High: 2201, TargetLow: 22},
+		{Proto: "tcp", Low: 10000, High: 10009, TargetLow: 10000},
+	}
+	if err := ApplyBalancedForwards("tg7", targets, rules, true); err != nil {
+		t.Fatal(err)
+	}
+	want := "add table ip6 manifold_tg7\ndelete table ip6 manifold_tg7\n" +
+		"add table ip manifold_tg7\ndelete table ip manifold_tg7\ntable ip manifold_tg7 {\n" +
+		"\tchain prerouting {\n\t\ttype nat hook prerouting priority dstnat; policy accept;\n" +
+		"\t\tiifname != { \"mft1\", \"mft2\" } tcp dport 443 dnat to numgen inc mod 2 map { 0 : 10.80.0.2, 1 : 10.81.0.2 }\n" +
+		"\t\tiifname != { \"mft1\", \"mft2\" } udp dport 2201 dnat ip to numgen inc mod 2 map { 0 : 10.80.0.2 . 22, 1 : 10.81.0.2 . 22 }\n" +
+		"\t\tiifname != { \"mft1\", \"mft2\" } tcp dport 10000-10009 dnat to numgen inc mod 2 map { 0 : 10.80.0.2, 1 : 10.81.0.2 }\n\t}\n" +
+		"\tchain postrouting {\n\t\ttype nat hook postrouting priority srcnat; policy accept;\n\t\toifname { \"mft1\", \"mft2\" } masquerade\n\t}\n}\n"
+	if f.calls[0].stdin != want {
+		t.Fatalf("nft transaction:\n%s\nwant:\n%s", f.calls[0].stdin, want)
+	}
+	got := strings.Join(f.argvs(), "\n")
+	for _, dev := range []string{"mft1", "mft2"} {
+		if !strings.Contains(got, "-I FORWARD 1 -o "+dev+" -m comment --comment manifold:tg7 -j ACCEPT") {
+			t.Fatalf("no FORWARD accept for %s:\n%s", dev, got)
+		}
+	}
+	nftCheck(t, strings.TrimPrefix(want, "add table ip6 manifold_tg7\ndelete table ip6 manifold_tg7\nadd table ip manifold_tg7\ndelete table ip manifold_tg7\n"))
+
+	f.calls = nil
+	if err := ApplyBalancedForwards("tg7", targets[1:], rules[:1], true); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(f.calls[0].stdin, "iifname != \"mft2\" tcp dport 443 dnat to 10.81.0.2:443\n") {
+		t.Fatalf("one target left should be a plain forward:\n%s", f.calls[0].stdin)
+	}
+	if err := ApplyBalancedForwards("tg7", []Target{targets[0], {"mft3", netip.MustParseAddr("fd00::2")}}, rules, true); err == nil {
+		t.Fatal("targets of two families were taken")
+	}
+}
+
+// nftCheck has nft itself parse a ruleset where nft and the rights to run it are there.
+func nftCheck(t *testing.T, ruleset string) {
+	t.Helper()
+	path, err := exec.LookPath("nft")
+	if err != nil || os.Geteuid() != 0 {
+		t.Log("nft is not available to check the ruleset")
+		return
+	}
+	cmd := exec.CommandContext(t.Context(), path, "-c", "-f", "-")
+	cmd.Stdin = strings.NewReader(ruleset)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("nft refused the ruleset: %v\n%s\n%s", err, out, ruleset)
 	}
 }

@@ -185,3 +185,114 @@ func Tables(prefix string) []string {
 	}
 	return owners
 }
+
+// Target is one far end that balanced forwards can send to: a tunnel device and the
+// address of the other side inside it.
+type Target struct {
+	Device string
+	Addr   netip.Addr
+}
+
+func deviceSet(targets []Target) string {
+	if len(targets) == 1 {
+		return fmt.Sprintf("%q", targets[0].Device)
+	}
+	names := make([]string, 0, len(targets))
+	for _, t := range targets {
+		names = append(names, fmt.Sprintf("%q", t.Device))
+	}
+	return "{ " + strings.Join(names, ", ") + " }"
+}
+
+// balancedDestination spreads new connections over the targets in turn; nftables only
+// sees a connection's first packet here, so the rest of it stays on the same target.
+func balancedDestination(f PortForward, targets []Target) string {
+	if len(targets) == 1 {
+		return "to " + f.destination(targets[0].Addr)
+	}
+	port := 0
+	if f.Low == f.High && f.TargetLow != 0 && f.TargetLow != f.Low {
+		port = f.TargetLow
+	}
+	entries := make([]string, 0, len(targets))
+	for i, t := range targets {
+		if port != 0 {
+			entries = append(entries, fmt.Sprintf("%d : %s . %d", i, t.Addr, port))
+		} else {
+			entries = append(entries, fmt.Sprintf("%d : %s", i, t.Addr))
+		}
+	}
+	m := fmt.Sprintf("numgen inc mod %d map { %s }", len(targets), strings.Join(entries, ", "))
+	if port != 0 {
+		return family(targets[0].Addr) + " to " + m
+	}
+	return "to " + m
+}
+
+func balancedTransaction(owner string, targets []Target, rules []PortForward, masquerade bool) string {
+	table := tableName(owner)
+	fam := family(targets[0].Addr)
+	devices := deviceSet(targets)
+	var b strings.Builder
+	fmt.Fprintf(&b, "add table %[1]s %[2]s\ndelete table %[1]s %[2]s\ntable %[1]s %[2]s {\n", fam, table)
+	b.WriteString("\tchain prerouting {\n\t\ttype nat hook prerouting priority dstnat; policy accept;\n")
+	for _, f := range rules {
+		fmt.Fprintf(&b, "\t\tiifname != %s %s dnat %s\n", devices, f.match(), balancedDestination(f, targets))
+	}
+	b.WriteString("\t}\n")
+	if masquerade {
+		fmt.Fprintf(&b, "\tchain postrouting {\n\t\ttype nat hook postrouting priority srcnat; policy accept;\n\t\toifname %s masquerade\n\t}\n", devices)
+	}
+	b.WriteString("}\n")
+	return b.String()
+}
+
+// ApplyBalancedForwards installs ports that go to several tunnels, each new connection
+// to the next target in turn; with one target it is ApplyForwards. A later call for
+// the same owner replaces the set, which is how a failed target is taken out.
+func ApplyBalancedForwards(owner string, targets []Target, rules []PortForward, masquerade bool) error {
+	if !ownerPattern.MatchString(owner) {
+		return fmt.Errorf("egress: invalid owner %q", owner)
+	}
+	if len(targets) == 0 {
+		return fmt.Errorf("egress: no tunnel to forward to")
+	}
+	for _, t := range targets {
+		if !devicePattern.MatchString(t.Device) || !t.Addr.IsValid() {
+			return fmt.Errorf("egress: invalid target %q %s", t.Device, t.Addr)
+		}
+		if t.Addr.Is4() != targets[0].Addr.Is4() {
+			return fmt.Errorf("egress: the targets of one set must be of one address family")
+		}
+	}
+	for _, f := range rules {
+		if err := validForward(f); err != nil {
+			return err
+		}
+	}
+	if !host.has("nft") {
+		return ErrNoNftables
+	}
+	other := "ip6"
+	if targets[0].Addr.Is6() {
+		other = "ip"
+	}
+	table := tableName(owner)
+	tx := fmt.Sprintf("add table %[1]s %[2]s\ndelete table %[1]s %[2]s\n", other, table) +
+		balancedTransaction(owner, targets, rules, masquerade)
+	if out, err := host.run(tx, "nft", "-f", "-"); err != nil {
+		return fmt.Errorf("egress: forwarding ports over %d tunnels: %w (%s)", len(targets), err, out)
+	}
+	if err := host.enableIPv4Forwarding(); err != nil {
+		return fmt.Errorf("egress: enabling IPv4 forwarding: %w", err)
+	}
+	removeForwardRules(owner)
+	if targets[0].Addr.Is4() {
+		var matches [][]string
+		for _, t := range targets {
+			matches = append(matches, []string{"-o", t.Device}, []string{"-i", t.Device, "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED"})
+		}
+		addForwardRules(owner, matches)
+	}
+	return nil
+}

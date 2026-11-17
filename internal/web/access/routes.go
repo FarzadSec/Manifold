@@ -244,6 +244,9 @@ var routeRules = map[string]Rule{
 	key("POST", "/tunnels/relays/add"):        need(TunnelsWrite),
 	key("POST", "/tunnels/relays/update/:id"): need(TunnelsWrite),
 	key("POST", "/tunnels/relays/del/:id"):    need(TunnelsWrite),
+	key("GET", "/tunnels/groups"):             need(TunnelsRead),
+	key("POST", "/tunnels/groups/save"):       need(TunnelsWrite),
+	key("POST", "/tunnels/groups/del/:id"):    need(TunnelsWrite),
 
 	key("POST", "/setting/defaultSettings"):          any_(),
 	key("POST", "/setting/updateUser"):               any_(),

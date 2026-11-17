@@ -43,6 +43,7 @@ import { ClipboardManager, HttpUtil, SizeFormatter } from '@/utils';
 import { setMessageInstance } from '@/utils/messageBus';
 import { isTunnelEdition } from '@/utils/edition';
 import TunnelFormModal from './TunnelFormModal';
+import TunnelGroupsCard from './TunnelGroupsCard';
 import { STATE_COLORS, endpointOf, kindLabel, stateOf } from './tunnelInfo';
 
 interface RelayDraft {
@@ -287,58 +288,64 @@ export default function TunnelsPage() {
                   extra={<Button onClick={() => void tunnels.refetch()}>{t('refresh')}</Button>}
                 />
               ) : (
-                <Card
-                  size="small"
-                  title={t('pages.tunnels.title')}
-                  extra={
-                    <Space wrap>
-                      <Button
-                        type="primary"
-                        icon={<PlusOutlined aria-hidden />}
-                        onClick={() => {
-                          setEditing(null);
-                          setFormOpen(true);
-                        }}
-                      >
-                        {isMobile ? null : t('pages.tunnels.add')}
-                      </Button>
-                      <Button
-                        icon={<ImportOutlined aria-hidden />}
-                        onClick={() => setImportOpen(true)}
-                      >
-                        {isMobile ? null : t('pages.tunnels.importCode')}
-                      </Button>
-                      {!edition && (
-                        <Button
-                          icon={<ApiOutlined aria-hidden />}
-                          onClick={() => setRelaysOpen(true)}
-                        >
-                          {isMobile ? null : t('pages.tunnels.relays')}
-                        </Button>
-                      )}
-                      {!edition && (relays.data?.length ?? 0) > 0 && (
-                        <Tooltip title={t('pages.tunnels.resyncHint')}>
-                          <Button icon={<SyncOutlined aria-hidden />} onClick={() => void resync()}>
-                            {isMobile ? null : t('pages.tunnels.resync')}
-                          </Button>
-                        </Tooltip>
-                      )}
-                    </Space>
-                  }
-                >
-                  <Typography.Paragraph type="secondary">
-                    {edition ? t('pages.tunnels.introEdition') : t('pages.tunnels.intro')}
-                  </Typography.Paragraph>
-                  <Table
-                    rowKey="id"
+                <>
+                  <Card
                     size="small"
-                    columns={columns}
-                    dataSource={tunnels.data ?? []}
-                    pagination={false}
-                    scroll={{ x: 'max-content' }}
-                    locale={{ emptyText: t('pages.tunnels.empty') }}
-                  />
-                </Card>
+                    title={t('pages.tunnels.title')}
+                    extra={
+                      <Space wrap>
+                        <Button
+                          type="primary"
+                          icon={<PlusOutlined aria-hidden />}
+                          onClick={() => {
+                            setEditing(null);
+                            setFormOpen(true);
+                          }}
+                        >
+                          {isMobile ? null : t('pages.tunnels.add')}
+                        </Button>
+                        <Button
+                          icon={<ImportOutlined aria-hidden />}
+                          onClick={() => setImportOpen(true)}
+                        >
+                          {isMobile ? null : t('pages.tunnels.importCode')}
+                        </Button>
+                        {!edition && (
+                          <Button
+                            icon={<ApiOutlined aria-hidden />}
+                            onClick={() => setRelaysOpen(true)}
+                          >
+                            {isMobile ? null : t('pages.tunnels.relays')}
+                          </Button>
+                        )}
+                        {!edition && (relays.data?.length ?? 0) > 0 && (
+                          <Tooltip title={t('pages.tunnels.resyncHint')}>
+                            <Button
+                              icon={<SyncOutlined aria-hidden />}
+                              onClick={() => void resync()}
+                            >
+                              {isMobile ? null : t('pages.tunnels.resync')}
+                            </Button>
+                          </Tooltip>
+                        )}
+                      </Space>
+                    }
+                  >
+                    <Typography.Paragraph type="secondary">
+                      {edition ? t('pages.tunnels.introEdition') : t('pages.tunnels.intro')}
+                    </Typography.Paragraph>
+                    <Table
+                      rowKey="id"
+                      size="small"
+                      columns={columns}
+                      dataSource={tunnels.data ?? []}
+                      pagination={false}
+                      scroll={{ x: 'max-content' }}
+                      locale={{ emptyText: t('pages.tunnels.empty') }}
+                    />
+                  </Card>
+                  <TunnelGroupsCard tunnels={tunnels.data ?? []} />
+                </>
               )}
             </Spin>
           </Layout.Content>

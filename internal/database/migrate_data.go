@@ -74,6 +74,7 @@ func migrationModels() []any {
 		&model.WebhookDelivery{},
 		&model.Certificate{},
 		&model.SubAlias{},
+		&model.TunnelGroup{},
 		&model.LegacySubSecret{},
 	}
 }

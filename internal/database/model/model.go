@@ -1973,6 +1973,18 @@ type TunnelEnd struct {
 	UpdatedAt int64  `json:"updatedAt" gorm:"autoUpdateTime:milli" example:"1763300000000"`
 }
 
+// TunnelGroup is a set of this relay's tunnels to several origins that share forwarded
+// ports, in failover or balance; Settings holds the forwards as tunnel settings do.
+type TunnelGroup struct {
+	Id        int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Name      string `json:"name" gorm:"not null" example:"origins"`
+	Mode      string `json:"mode" gorm:"not null;default:failover" example:"failover"`
+	Members   []int  `json:"members" gorm:"serializer:json" example:"[1,2]"`
+	Forwards  string `json:"-" gorm:"type:text"`
+	Enable    bool   `json:"enable" example:"true"`
+	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime:milli" example:"1763300000000"`
+}
+
 // TunnelRelay is a relay this panel manages over its API with a tunnel-scoped token.
 type TunnelRelay struct {
 	Id        int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`

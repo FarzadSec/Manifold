@@ -2881,6 +2881,24 @@
         "connecting": "Bağlanıyor",
         "disabled": "Devre dışı",
         "error": "Hata"
+      },
+      "groups": {
+        "title": "Groups of origins",
+        "intro": "Join this relay's tunnels to several origin servers under shared ports. Failover sends everything to the first origin that answers and moves to the next within seconds when it stops; balance spreads new connections over every origin that answers.",
+        "empty": "No groups yet",
+        "add": "Add a group",
+        "edit": "Edit group",
+        "name": "Name",
+        "mode": "Mode",
+        "failover": "Failover",
+        "balance": "Balance",
+        "failoverHint": "The members are tried in the order listed; the first that answers its probe takes every connection.",
+        "balanceHint": "Each new connection goes to the next member that answers; a connection stays on its member until it ends.",
+        "members": "Tunnels",
+        "membersHint": "Relay ends of kernel or layer-3 tunnels, one to each origin. Green marks where the ports go now.",
+        "confirmDelete": "Delete this group? Its ports stop being forwarded.",
+        "saveFailed": "Could not save the group",
+        "deleteFailed": "Could not delete the group"
       }
     },
     "access": {

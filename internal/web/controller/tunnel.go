@@ -32,7 +32,36 @@ func NewTunnelController(g *gin.RouterGroup) *TunnelController {
 	g.POST("/relays/update/:id", a.updateRelay)
 	g.POST("/relays/del/:id", a.delRelay)
 	g.GET("/relays/:id/tunnels", a.relayTunnels)
+	g.GET("/groups", a.groups)
+	g.POST("/groups/save", a.saveGroup)
+	g.POST("/groups/del/:id", a.delGroup)
 	return a
+}
+
+func (a *TunnelController) groups(c *gin.Context) {
+	rows, err := a.tunnelService.ListGroups()
+	jsonObj(c, rows, err)
+}
+
+func (a *TunnelController) saveGroup(c *gin.Context) {
+	var in struct {
+		Id int `json:"id"`
+		service.TunnelGroupRequest
+	}
+	if err := c.ShouldBindJSON(&in); err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.tunnels.groups.saveFailed"), err)
+		return
+	}
+	view, err := a.tunnelService.SaveGroup(in.Id, in.TunnelGroupRequest)
+	jsonMsgObj(c, I18nWeb(c, "pages.tunnels.groups.saveFailed"), view, err)
+}
+
+func (a *TunnelController) delGroup(c *gin.Context) {
+	id, ok := pathID(c)
+	if !ok {
+		return
+	}
+	jsonMsg(c, I18nWeb(c, "pages.tunnels.groups.deleteFailed"), a.tunnelService.DeleteGroup(id))
 }
 
 func pathID(c *gin.Context) (int, bool) {

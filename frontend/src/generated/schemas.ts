@@ -7574,6 +7574,144 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "TunnelGroup": {
+    "description": "TunnelGroup is a set of this relay's tunnels to several origins that share forwarded\nports, in failover or balance; Settings holds the forwards as tunnel settings do.",
+    "properties": {
+      "createdAt": {
+        "example": 1763300000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "members": {
+        "example": [
+          1,
+          2
+        ],
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "mode": {
+        "example": "failover",
+        "type": "string"
+      },
+      "name": {
+        "example": "origins",
+        "type": "string"
+      }
+    },
+    "required": [
+      "createdAt",
+      "enable",
+      "id",
+      "members",
+      "mode",
+      "name"
+    ],
+    "type": "object"
+  },
+  "TunnelGroupRequest": {
+    "description": "TunnelGroupRequest saves a group.",
+    "properties": {
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "forwards": {
+        "items": {
+          "$ref": "#/components/schemas/PortForward"
+        },
+        "type": "array"
+      },
+      "members": {
+        "example": [
+          1,
+          2
+        ],
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "mode": {
+        "example": "failover",
+        "type": "string"
+      },
+      "name": {
+        "example": "origins",
+        "type": "string"
+      }
+    },
+    "required": [
+      "enable",
+      "forwards",
+      "members",
+      "mode",
+      "name"
+    ],
+    "type": "object"
+  },
+  "TunnelGroupView": {
+    "description": "TunnelGroupView is a group with the forwards it shares.",
+    "properties": {
+      "createdAt": {
+        "example": 1763300000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "forwards": {
+        "items": {
+          "$ref": "#/components/schemas/PortForward"
+        },
+        "type": "array"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "members": {
+        "example": [
+          1,
+          2
+        ],
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "mode": {
+        "example": "failover",
+        "type": "string"
+      },
+      "name": {
+        "example": "origins",
+        "type": "string"
+      }
+    },
+    "required": [
+      "createdAt",
+      "enable",
+      "forwards",
+      "id",
+      "members",
+      "mode",
+      "name"
+    ],
+    "type": "object"
+  },
   "TunnelPairing": {
     "description": "TunnelPairing is the code the other end of a tunnel imports.",
     "properties": {

@@ -1923,6 +1923,51 @@ export const EXAMPLES: Record<string, unknown> = {
     "udp_relay_mode": "",
     "zero_rtt_handshake": false
   },
+  "TunnelGroup": {
+    "createdAt": 1763300000000,
+    "enable": true,
+    "id": 1,
+    "members": [
+      1,
+      2
+    ],
+    "mode": "failover",
+    "name": "origins"
+  },
+  "TunnelGroupRequest": {
+    "enable": true,
+    "forwards": [
+      {
+        "listen": "443",
+        "proto": "tcp",
+        "target": "2096"
+      }
+    ],
+    "members": [
+      1,
+      2
+    ],
+    "mode": "failover",
+    "name": "origins"
+  },
+  "TunnelGroupView": {
+    "createdAt": 1763300000000,
+    "enable": true,
+    "forwards": [
+      {
+        "listen": "443",
+        "proto": "tcp",
+        "target": "2096"
+      }
+    ],
+    "id": 1,
+    "members": [
+      1,
+      2
+    ],
+    "mode": "failover",
+    "name": "origins"
+  },
   "TunnelPairing": {
     "address": "203.0.113.10",
     "code": "manifold-tunnel://eyJ2Ijox..."

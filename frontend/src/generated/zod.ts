@@ -1809,6 +1809,36 @@ export const TuicServerSettingsSchema = z.object({
 });
 export type TuicServerSettings = z.infer<typeof TuicServerSettingsSchema>;
 
+export const TunnelGroupSchema = z.object({
+  createdAt: z.number().int(),
+  enable: z.boolean(),
+  id: z.number().int(),
+  members: z.array(z.number().int()),
+  mode: z.string(),
+  name: z.string(),
+});
+export type TunnelGroup = z.infer<typeof TunnelGroupSchema>;
+
+export const TunnelGroupRequestSchema = z.object({
+  enable: z.boolean(),
+  forwards: z.array(z.lazy(() => PortForwardSchema)),
+  members: z.array(z.number().int()),
+  mode: z.string(),
+  name: z.string(),
+});
+export type TunnelGroupRequest = z.infer<typeof TunnelGroupRequestSchema>;
+
+export const TunnelGroupViewSchema = z.object({
+  createdAt: z.number().int(),
+  enable: z.boolean(),
+  forwards: z.array(z.lazy(() => PortForwardSchema)),
+  id: z.number().int(),
+  members: z.array(z.number().int()),
+  mode: z.string(),
+  name: z.string(),
+});
+export type TunnelGroupView = z.infer<typeof TunnelGroupViewSchema>;
+
 export const TunnelPairingSchema = z.object({
   address: z.string(),
   code: z.string(),

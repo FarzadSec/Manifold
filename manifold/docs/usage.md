@@ -212,6 +212,8 @@ BackPack tunnels run the BackPack program by Amin Mohammadi (AminMGMT), shipped 
 
 Open on the relay's firewall the forwarded ports and, for BackPack, the tunnel port.
 
+**Several origins behind one relay.** On the relay, make one tunnel to each origin server (kernel links or BackPack layer 3), without forwards of their own, then under **Groups of origins** join them and give the ports there. **Failover** sends every connection to the first origin in the list that answers its probe and moves to the next one within about ten seconds when it stops answering; **balance** gives each new connection to the next origin that answers, and an existing connection stays where it started. When no origin answers, the ports go to all of them rather than nowhere. Users then reach every origin through the same relay address. Groups live on the relay, so for a managed relay open the relay's own panel to make one.
+
 ## Moving from another panel
 
 **Import** (sidebar) brings users over from another panel:

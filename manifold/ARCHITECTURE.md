@@ -4,6 +4,8 @@ Version 0.13 · 2026-11-17 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnel
 
 Decision log:
 
+- 2026-11-17 — Several origins behind one relay are balanced in the relay's kernel (nftables `numgen` over DNAT targets), not in a proxy process: conntrack keeps each connection on the origin it started on, nothing is in the data path to crash, and failover is a table rewrite driven by the tunnel probes the panel already runs
+
 - 2026-11-17 — Old Marzban/PasarGuard links are verified, not looked up: their tokens carry the username and a signature with the old panel's secret, and a new one was minted every time a link was shown, so no list of tokens exists to import. The panel keeps the secret and checks each token as Marzban did, refusing tokens older than the user's revocation
 
 - 2026-11-17 — Certificates are issued by the panel itself on `golang.org/x/crypto/acme`, already in the module graph, instead of calling acme.sh: one process, errors the panel can show, and renewal that knows which inbounds and nodes read a certificate. The master issues (DNS-01 works from anywhere) and copies the pair to nodes, so a node needs neither a token nor a free port 80
@@ -236,6 +238,7 @@ This is the contract Mirza Bot will sync against.
 - State: an end with an interface is probed with ICMP through the tunnel every two seconds over a window of thirty echoes (down after three lost in a row, degraded above 20 % loss or 800 ms); a reverse end reports what BackPack's snapshot says of its control channel. Bytes come from the interface or the snapshot.
 - Pairing: `tunnel.Mirror` swaps the sides (role, tunnel addresses, the remote address), and a pairing code is that end as base64url JSON under `manifold-tunnel://`. A relay in `tunnel_relays` is a panel URL and a tunnel-scoped token, sealed like node tokens; the panel imports the mirrored end there on every save and withdraws it on delete, and `POST /tunnels/resync` sends every relayed tunnel again.
 - A save is refused when a port it listens on belongs to another tunnel, an enabled inbound, SSH or the panel, or when its tunnel subnet overlaps another tunnel's.
+- Groups (0.12.0): `tunnel_groups` joins 2 to 16 relay ends with an interface under shared forwards, in `manifold_tg<id>`. Balance writes `dnat to numgen inc mod N map { … }` over the members that answer; failover writes a plain DNAT to the first. `ReconcileGroups` runs after every reconcile and every ten seconds, and rewrites the table only when the chosen set changes; with no member answering it uses all of them, so a probe that cannot run never takes the ports away. A group's ports are checked against tunnels, other groups, inbounds and the panel, and a member cannot be deleted while a group lists it.
 
 ### 4.9 Tunnel edition (built, 0.5.0)
 
@@ -457,6 +460,12 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - SSH install downloads the installer from GitHub on the server; a server that cannot reach GitHub needs the package copied by hand (`install.sh --package`).
 - Node templates (one configuration applied to many nodes) are not built; a node's inbounds are created on it from the master as before.
 - Live connections per node are still not listed (see 8.7).
+
+### 8.13 Open items after tunnel groups (0.12.0)
+
+- An Xray-based tunnel kind (VLESS + REALITY between relay and origin, so the link looks like TLS to a real site) is not built; groups balance kernel and layer-3 tunnels.
+- Groups are made on the relay's own panel; a managed relay does not receive them from the panel that manages its tunnels.
+- Balance is round-robin per connection; weights and per-user stickiness are not offered.
 
 ### 8.12 Open items after the importers (0.11.0)
 

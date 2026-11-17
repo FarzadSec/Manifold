@@ -19,6 +19,7 @@ import (
 type quietEngine struct{}
 
 func (quietEngine) Reconcile([]tunnel.Tunnel)       {}
+func (quietEngine) ReconcileGroups([]tunnel.Group)  {}
 func (quietEngine) Statuses() []tunnel.TunnelStatus { return nil }
 
 func initTunnelDB(t *testing.T) *TunnelService {
@@ -36,6 +37,7 @@ type recordingEngine struct{ applied chan []tunnel.Tunnel }
 
 func (e recordingEngine) Reconcile(desired []tunnel.Tunnel) { e.applied <- desired }
 func (recordingEngine) Statuses() []tunnel.TunnelStatus     { return nil }
+func (recordingEngine) ReconcileGroups([]tunnel.Group)      {}
 
 // A save is applied by the server's request loop, and the loop ends with the
 // server's context, so no reconcile outlives a shutdown or the database.
