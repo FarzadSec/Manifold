@@ -113,6 +113,15 @@ jobs:
           tar -C package -czf "manifold-linux-$PLATFORM.tar.gz" manifold
           sha256sum "manifold-linux-$PLATFORM.tar.gz" > "manifold-linux-$PLATFORM.tar.gz.sha256"
           tar -tzf "manifold-linux-$PLATFORM.tar.gz"
+          # Manifold Relay: the same program, with BackPack and none of the panel's engines.
+          mkdir -p relay/manifold/bin
+          cp build/manifold relay/manifold/
+          cp build/bin/backpack-linux-* relay/manifold/bin/
+          cp install.sh manifold.sh manifold.service LICENSE NOTICE relay/manifold/
+          tar -C relay -czf "manifold-relay-linux-$PLATFORM.tar.gz" manifold
+          sha256sum "manifold-relay-linux-$PLATFORM.tar.gz" > "manifold-relay-linux-$PLATFORM.tar.gz.sha256"
+          tar -tzf "manifold-relay-linux-$PLATFORM.tar.gz"
+          ls -l ./*.tar.gz
 
       - uses: actions/upload-artifact@v7
         with:
@@ -120,6 +129,8 @@ jobs:
           path: |
             manifold-linux-${{ matrix.platform }}.tar.gz
             manifold-linux-${{ matrix.platform }}.tar.gz.sha256
+            manifold-relay-linux-${{ matrix.platform }}.tar.gz
+            manifold-relay-linux-${{ matrix.platform }}.tar.gz.sha256
           if-no-files-found: error
 
   # Installs the package the way a server owner does, on every Ubuntu LTS in
@@ -314,8 +325,76 @@ jobs:
           kill "$squatter"
           sudo manifold uninstall --purge
 
+  # Manifold Relay from its own package: the panel answers, Xray is not there, BackPack runs
+  # a tunnel under the unit, and a tunnel-scoped token reaches the tunnels and nothing else.
+  smoke-relay:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v7
+        with:
+          name: manifold-linux-amd64
+      - name: Install Manifold Relay and run a tunnel on it
+        run: |
+          set -euo pipefail
+          if sudo bash install.sh --package manifold-relay-linux-amd64.tar.gz --edition full 2>/tmp/refused.log; then
+            echo "the full panel was installed from the relay package" >&2
+            exit 1
+          fi
+          grep -q "this is the Manifold Relay package" /tmp/refused.log
+          sudo bash install.sh --package manifold-relay-linux-amd64.tar.gz --edition relay \
+            --port 20540 --path /relay/ --username relay --password relay-pass-123 | tee /tmp/install.log
+          grep -q "Manifold Relay" /tmp/install.log
+          systemctl is-active manifold
+          grep -qx MANIFOLD_EDITION=tunnel /etc/default/manifold
+          test -x /usr/local/manifold/bin/backpack-linux-amd64
+          if ls /usr/local/manifold/bin/xray-linux-* /usr/local/manifold/bin/*.dat 2>/dev/null; then
+            echo "the relay carries the panel's engines" >&2
+            exit 1
+          fi
+          base=http://127.0.0.1:20540/relay
+          for _ in $(seq 1 20); do
+            [ "$(curl -s -o /dev/null -w '%{http_code}' "$base/")" = 200 ] && break
+            sleep 1
+          done
+          jar=$(mktemp)
+          csrf() { curl -fsS -b "$jar" -c "$jar" "$base/csrf-token" | sed -E 's/.*"obj":"([^"]+)".*/\1/'; }
+          token=$(csrf)
+          curl -fsS -b "$jar" -c "$jar" -H "X-CSRF-Token: $token" -d 'username=relay&password=relay-pass-123' "$base/login" | grep -q '"success":true'
+          token=$(csrf)
+          suggest=$(curl -fsS -b "$jar" "$base/panel/api/tunnels/suggest")
+          body=$(python3 -c 'import json, sys; o = json.loads(sys.argv[1])["obj"]; print(json.dumps({"name": "smoke", "kind": "reverse", "role": "server", "enable": True, "settings": {"transport": "tcpmux", "port": o["port"], "token": o["token"], "forwards": [{"listen": "20542"}]}}))' "$suggest")
+          curl -fsS -b "$jar" -H "X-CSRF-Token: $token" -H 'Content-Type: application/json' -d "$body" "$base/panel/api/tunnels/add" | tee /tmp/add.json
+          grep -q '"success":true' /tmp/add.json
+          state=""
+          for _ in $(seq 1 20); do
+            state=$(sudo manifold tunnel list | awk '$2 == "smoke" { print $5 }')
+            [ "$state" = connecting ] && break
+            sleep 1
+          done
+          if [ "$state" != connecting ]; then
+            sudo manifold tunnel list
+            sudo journalctl -u manifold -n 60 --no-pager
+            echo "BackPack did not start the relay's end under the unit (state: ${state:-none})" >&2
+            exit 1
+          fi
+          if pgrep -f xray-linux; then
+            echo "Xray runs on a relay" >&2
+            exit 1
+          fi
+          relay_token=$(sudo manifold setting -getApiToken -tokenName main-panel -tokenScope tunnel | sed -n 's/^apiToken: //p')
+          curl -fsS -H "Authorization: Bearer $relay_token" "$base/panel/api/tunnels/list" | grep -q '"name":"smoke"'
+          code=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $relay_token" "$base/panel/api/server/status")
+          if [ "$code" = 200 ]; then
+            echo "the relay token reached the server status" >&2
+            exit 1
+          fi
+          sudo manifold uninstall --purge
+
   publish:
-    needs: [build, smoke]
+    needs: [build, smoke, smoke-relay]
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     outputs:
@@ -380,3 +459,22 @@ jobs:
             echo "the installed panel did not answer on port ${port} (last status $code)" >&2
             exit 1
           fi
+
+  # The relay as a server owner installs it: its own package, from the published release.
+  install-relay-from-release:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install the published Manifold Relay
+        env:
+          VERSION: ${{ needs.publish.outputs.version }}
+        run: |
+          set -euo pipefail
+          sudo bash install.sh --version "$VERSION" --edition relay | tee /tmp/install.log
+          grep -q "Manifold Relay" /tmp/install.log
+          systemctl is-active manifold
+          test "v$(sudo manifold version)" = "$VERSION"
+          test ! -e /usr/local/manifold/bin/xray-linux-amd64
+          sudo manifold tunnel list

@@ -882,7 +882,7 @@ doctor() {
         echo "${red}✗${plain} Less than 50 MB free on the disk of ${DATA_DIR}: the database cannot grow"
         problems=$((problems + 1))
     fi
-    if "$BIN" tunnel list >"${TMPDIR:-/tmp}/manifold-tunnels.$$" 2>&1; then
+    if run_tunnel list >"${TMPDIR:-/tmp}/manifold-tunnels.$$" 2>&1; then
         if grep -qE '[[:space:]](down|error)[[:space:]]' "${TMPDIR:-/tmp}/manifold-tunnels.$$"; then
             echo "${red}✗${plain} A tunnel is down:"
             sed 's/^/  /' "${TMPDIR:-/tmp}/manifold-tunnels.$$"
@@ -1012,9 +1012,18 @@ product_name() {
     if is_relay; then echo "Manifold Relay"; else echo "Manifold"; fi
 }
 
+# run_tunnel ARGS: the panel's tunnel command, from where the service runs, since it
+# finds BackPack's files under the relative bin folder as the service does.
+run_tunnel() {
+    (
+        cd "$INSTALL_DIR" 2>/dev/null || true
+        "$BIN" tunnel "$@"
+    )
+}
+
 tunnel_list() {
     need_root
-    "$BIN" tunnel list
+    run_tunnel list
 }
 
 tunnel_import() {
@@ -1022,7 +1031,7 @@ tunnel_import() {
     need_root
     read -rp "Pairing code (from the tunnel's share button on the other panel): " code || true
     [ -n "$code" ] || die "no code given"
-    "$BIN" tunnel import "$code"
+    run_tunnel import "$code"
 }
 
 # relay_token makes the tunnel-scoped token a Manifold panel manages this relay's tunnels with.
@@ -1260,7 +1269,8 @@ main() {
             "$BIN" cert "$@"
             restart_if_running
             ;;
-        setting | migrate-db | backup | migrate | tunnel) "$BIN" "$cmd" "$@" ;;
+        setting | migrate-db | backup | migrate) "$BIN" "$cmd" "$@" ;;
+        tunnel) run_tunnel "$@" ;;
         relay-token) relay_token ;;
         version) "$BIN" -v ;;
         iplimit) iplimit "$@" ;;
