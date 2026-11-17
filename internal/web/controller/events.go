@@ -3,7 +3,6 @@ package controller
 import (
 	"bytes"
 	"encoding/json"
-	"io"
 	"net/http"
 	"slices"
 	"strings"
@@ -53,12 +52,7 @@ func publishUserChanges(c *gin.Context) {
 		c.Next()
 		return
 	}
-	var raw []byte
-	if c.Request.Body != nil {
-		raw, _ = io.ReadAll(io.LimitReader(c.Request.Body, 1<<20))
-		c.Request.Body = io.NopCloser(bytes.NewReader(raw))
-	}
-	emails := changedEmails(c.Param("email"), raw)
+	emails := changedEmails(c.Param("email"), peekBody(c, 1<<20))
 	var gone eventbus.UserEventData
 	if action == "delete" && len(emails) == 1 {
 		gone, _ = service.UserEventData(emails[0])

@@ -1,9 +1,7 @@
 package controller
 
 import (
-	"bytes"
 	"encoding/json"
-	"io"
 	"net/http"
 	"strings"
 
@@ -80,11 +78,7 @@ func auditChanges(c *gin.Context) {
 		c.Next()
 		return
 	}
-	var raw []byte
-	if c.Request.Body != nil {
-		raw, _ = io.ReadAll(io.LimitReader(c.Request.Body, 1<<20))
-		c.Request.Body = io.NopCloser(bytes.NewReader(raw))
-	}
+	raw := peekBody(c, 1<<20)
 	c.Next()
 	entity, action := auditEntity(rel)
 	if entity == "" {
