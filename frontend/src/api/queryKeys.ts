@@ -57,6 +57,9 @@ export const keys = {
   appLocations: {
     list: () => ['app', 'locations'] as const,
   },
+  appNotices: {
+    list: () => ['app', 'notices'] as const,
+  },
   settings: {
     root: () => ['settings'] as const,
     all: () => ['settings', 'all'] as const,

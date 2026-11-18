@@ -277,6 +277,15 @@ The subscription server is on by default and listens on its own port (2096). Its
 - The app shows the account's usage, expiry and devices, and every configuration of the subscription by server: Xray protocols (VLESS, VMess, Trojan, Shadowsocks, Hysteria 2, WireGuard) come with the Xray outbound to run, OpenVPN with its profile and L2TP with its account.
 - **Locations** are the places the app offers, such as Germany: a name, a two-letter country code for the flag, a city and a timezone, which the app can give the device while it is connected. Link to a location every inbound that serves that place, on any protocol and any server; an inbound serves one location at most. **What serves where** lists every inbound with its location, and a location chosen there moves the inbound. An inbound in no location is still used by the app's quick connect. An upgrade turns each server that had a location into a location holding that server's inbounds.
 
+**Settings → App notices** publishes news, changes and important announcements to every signed-in app. Write the text (in Persian: the app always shows it right to left, in a Persian font, whatever language the customer uses), pick a level and press **Publish**:
+
+- **Info** goes to the app's bell only.
+- **Warning** also shows an amber banner at the top of the app, and **Critical** a red one, until the customer closes it with its ✕. A notice that arrives while the app sits in the tray also comes as a system notification.
+
+The app fetches its profile every 10 minutes and whenever the customer presses its refresh button, so a notice, a new location or a changed config reaches it within that time. **Delete** removes a notice; apps drop it on their next refresh. The app receives the 50 newest notices.
+
+The app always receives OpenVPN profiles with the login in them, even when the inbound's **Ask for the login** option leaves it out for other apps: the customer signed in to the app and never types an OpenVPN password.
+
 The API the app uses is under Subscription Server in the API documentation (`app/v1/login`, `profile`, `logout`).
 
 ## Several servers

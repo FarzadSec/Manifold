@@ -1,6 +1,6 @@
 # Manifold — Architecture and Roadmap
 
-Version 0.17 · 2026-11-17 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnels, full backups, the access model, limits and usage, subscriptions, nodes, shared ports, scheduled backups, webhooks, monitoring, the certificate store, importers, tunnel groups, the addon groundwork, the 3x-ui style installer and management menu, Manifold Relay and the app API delivered; see 8.1 to 8.17 for what they leave open
+Version 0.18 · 2026-11-18 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnels, full backups, the access model, limits and usage, subscriptions, nodes, shared ports, scheduled backups, webhooks, monitoring, the certificate store, importers, tunnel groups, the addon groundwork, the 3x-ui style installer and management menu, Manifold Relay and the app API delivered; see 8.1 to 8.17 for what they leave open
 
 Decision log:
 
@@ -303,6 +303,7 @@ This is the contract Mirza Bot will sync against.
 - `GET .../app/v1/profile` with `Authorization: Bearer` and `X-HWID` checks the token, the device, that the email still has that subId and that app access is on, and runs the HWID gate again, so a device trimmed off a lowered limit is refused. It answers the account (usage, expiry, device limit and count), the subscription's title, support link and announcement, the locations it uses, and one config per entry of `subLinks` rendered as for the subscription page (OpenVPN and L2TP included), each with its location and, when `link.ParseLink` can read it, the Xray outbound.
 - `locations` are the places the app offers (name, ISO country code, city, IANA timezone, sort order); `location_inbounds` links each inbound to at most one of them, on any protocol and server, and `deleteInboundRow` drops a deleted inbound's link. A config's `locationId` is its inbound's location, absent when the inbound serves none. The profile names the locations without the panel's inbound ids. 0.16.0 turned each node-keyed row of the old `app_locations` into a location holding that server's inbounds. Removing a device (`DeleteClientHwid`, `ClearClientHwids`, the sub id going away) deletes its sessions.
 - The routes hang under every subscription path group; `appEnable` (off by default) is read on every request, so switching it needs no restart.
+- 0.18.0: `app_notices` (text, level `info` / `warning` / `critical`, time) is managed under `/panel/api/app/notices` and the profile carries the 50 newest, newest first; the app shows warning and critical as banners. The profile renders OpenVPN with the login even when the inbound sets `promptCredentials`, since the app is signed in and has no password to ask for.
 
 ### 4.19 Addons (groundwork, 0.12.0)
 

@@ -20,6 +20,9 @@ func NewAppController(g *gin.RouterGroup) *AppController {
 	g.GET("/locations", a.locations)
 	g.POST("/locations", a.saveLocation)
 	g.POST("/locations/del/:id", a.deleteLocation)
+	g.GET("/notices", a.notices)
+	g.POST("/notices", a.publishNotice)
+	g.POST("/notices/del/:id", a.deleteNotice)
 	return a
 }
 
@@ -53,4 +56,36 @@ func (a *AppController) deleteLocation(c *gin.Context) {
 		return
 	}
 	jsonMsg(c, I18nWeb(c, "pages.settings.app.toasts.deleted"), a.appService.DeleteLocation(id))
+}
+
+func (a *AppController) notices(c *gin.Context) {
+	notices, err := a.appService.Notices()
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.settings.app.notices.toasts.load"), err)
+		return
+	}
+	jsonObj(c, notices, nil)
+}
+
+func (a *AppController) publishNotice(c *gin.Context) {
+	var notice model.AppNotice
+	if err := c.ShouldBindJSON(&notice); err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.settings.app.notices.toasts.publish"), err)
+		return
+	}
+	published, err := a.appService.PublishNotice(notice.Body, notice.Level)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.settings.app.notices.toasts.publish"), err)
+		return
+	}
+	jsonMsgObj(c, I18nWeb(c, "pages.settings.app.notices.toasts.published"), published, nil)
+}
+
+func (a *AppController) deleteNotice(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.settings.app.notices.toasts.delete"), err)
+		return
+	}
+	jsonMsg(c, I18nWeb(c, "pages.settings.app.notices.toasts.deleted"), a.appService.DeleteNotice(id))
 }

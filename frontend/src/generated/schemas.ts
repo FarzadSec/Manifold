@@ -2506,6 +2506,35 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "AppNotice": {
+    "description": "AppNotice is a message the panel publishes to every app; Level is how loudly the\napp shows it: info in its notices list, warning and critical also as a banner.",
+    "properties": {
+      "body": {
+        "example": "قطعی سرور هلند تا ساعت ۱۸",
+        "type": "string"
+      },
+      "createdAt": {
+        "example": 1767225600000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "id": {
+        "example": 4,
+        "type": "integer"
+      },
+      "level": {
+        "example": "critical",
+        "type": "string"
+      }
+    },
+    "required": [
+      "body",
+      "createdAt",
+      "id",
+      "level"
+    ],
+    "type": "object"
+  },
   "AppPlace": {
     "description": "AppPlace is a location as the app sees it, without the panel's inbound ids.",
     "properties": {
@@ -2540,7 +2569,7 @@ export const SCHEMAS: Record<string, unknown> = {
     "type": "object"
   },
   "AppProfile": {
-    "description": "AppProfile is what GET .../app/v1/profile answers a signed-in device.",
+    "description": "AppProfile is what GET .../app/v1/profile answers a signed-in device. Notices\nare the panel's published notices, newest first.",
     "properties": {
       "account": {
         "$ref": "#/components/schemas/AppAccount"
@@ -2561,6 +2590,12 @@ export const SCHEMAS: Record<string, unknown> = {
         },
         "type": "array"
       },
+      "notices": {
+        "items": {
+          "$ref": "#/components/schemas/AppNotice"
+        },
+        "type": "array"
+      },
       "supportUrl": {
         "example": "https://t.me/support",
         "type": "string"
@@ -2573,7 +2608,8 @@ export const SCHEMAS: Record<string, unknown> = {
     "required": [
       "account",
       "configs",
-      "locations"
+      "locations",
+      "notices"
     ],
     "type": "object"
   },

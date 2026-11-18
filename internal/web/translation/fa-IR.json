@@ -1945,7 +1945,34 @@
         "locationOf": "لوکیشن {name}",
         "mapping": "چه چیزی به کجا وصل است",
         "mappingDesc": "همهٔ اینباندها و لوکیشنی که به آن سرویس می‌دهند. برای جابه‌جا کردن یک اینباند، لوکیشن دیگری را همین‌جا انتخاب کنید.",
-        "deleteConfirm": "این لوکیشن حذف شود؟ اینباندهایش می‌مانند و در هیچ لوکیشنی نخواهند بود."
+        "deleteConfirm": "این لوکیشن حذف شود؟ اینباندهایش می‌مانند و در هیچ لوکیشنی نخواهند بود.",
+        "notices": {
+          "menu": "اعلان‌های اپ",
+          "desc": "اعلان ظرف ۱۰ دقیقه، یا همان لحظه که کاربر دکمه به‌روزرسانی را بزند، به همه اپ‌های واردشده می‌رسد. اپ همه اعلان‌ها را در زنگوله نگه می‌دارد و متن را همیشه راست‌به‌چپ و با فونت فارسی نشان می‌دهد، به هر زبانی که اپ باشد.",
+          "text": "متن اعلان",
+          "level": "سطح",
+          "levels": {
+            "info": "عادی",
+            "warning": "توجه",
+            "critical": "مهم"
+          },
+          "levelHint": {
+            "info": "فقط در زنگوله اپ نمایش داده می‌شود.",
+            "warning": "علاوه بر زنگوله، بنر نارنجی بالای اپ تا وقتی کاربر آن را ببندد.",
+            "critical": "علاوه بر زنگوله، بنر قرمز بالای اپ تا وقتی کاربر آن را ببندد."
+          },
+          "publish": "انتشار",
+          "publishedAt": "زمان انتشار",
+          "empty": "هنوز اعلانی منتشر نشده است",
+          "deleteConfirm": "این اعلان حذف شود؟ اپ‌ها در به‌روزرسانی بعدی آن را برمی‌دارند.",
+          "toasts": {
+            "load": "بارگذاری اعلان‌های اپ",
+            "publish": "انتشار اعلان",
+            "published": "اعلان منتشر شد",
+            "delete": "حذف اعلان",
+            "deleted": "اعلان حذف شد"
+          }
+        }
       },
       "subCalendarExpireInclusive": "Month-end subscription expiry display",
       "subCalendarExpireInclusiveDesc": "Default off. For clients renewing on day 1 with a midnight cutoff in the panel timezone, report the previous month's last second in subscription expiry headers. Actual cutoff and renewals are unchanged. Clients use their own timezone and may consider the subscription expired one second early.",

@@ -69,3 +69,33 @@ func TestAppLocationsSaveListAndDelete(t *testing.T) {
 		t.Fatalf("after delete: %v", left)
 	}
 }
+
+// The panel publishes a notice at a level, lists it for the admin and removes it.
+func TestAppNoticesPublishListAndDelete(t *testing.T) {
+	t.Setenv("XUI_DB_FOLDER", t.TempDir())
+	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	NewAppController(router.Group("/panel/api/app"))
+
+	published := appLocationsCall(t, router, http.MethodPost, "/panel/api/app/notices", `{"body":"قطعی برنامه‌ریزی‌شده سرور هلند","level":"critical"}`)
+	obj, _ := published["obj"].(map[string]any)
+	if published["success"] != true || obj["level"] != "critical" || obj["body"] != "قطعی برنامه‌ریزی‌شده سرور هلند" {
+		t.Fatalf("publish = %v", published)
+	}
+	if refused := appLocationsCall(t, router, http.MethodPost, "/panel/api/app/notices", `{"body":"x","level":"urgent"}`); refused["success"] != false {
+		t.Fatalf("an unknown level was published: %v", refused)
+	}
+
+	list, _ := appLocationsCall(t, router, http.MethodGet, "/panel/api/app/notices", "")["obj"].([]any)
+	if len(list) != 1 {
+		t.Fatalf("notices = %v", list)
+	}
+	id := strconv.Itoa(int(obj["id"].(float64)))
+	if deleted := appLocationsCall(t, router, http.MethodPost, "/panel/api/app/notices/del/"+id, ""); deleted["success"] != true {
+		t.Fatalf("delete = %v", deleted)
+	}
+	if left, _ := appLocationsCall(t, router, http.MethodGet, "/panel/api/app/notices", "")["obj"].([]any); len(left) != 0 {
+		t.Fatalf("after delete: %v", left)
+	}
+}

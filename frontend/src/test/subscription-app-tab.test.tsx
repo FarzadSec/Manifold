@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 
+import AppNoticesTab from '@/pages/settings/AppNoticesTab';
 import SubscriptionAppTab from '@/pages/settings/SubscriptionAppTab';
 import { AllSetting } from '@/models/setting';
 import { HttpUtil, Msg } from '@/utils';
@@ -91,5 +92,53 @@ describe('SubscriptionAppTab', () => {
     renderTab(updateSetting);
     fireEvent.click(screen.getByRole('switch', { name: 'App access' }));
     expect(updateSetting).toHaveBeenCalledWith({ appEnable: true });
+  });
+});
+
+const NOTICES = [
+  { id: 4, body: 'قطعی سرور هلند تا ساعت ۱۸', level: 'critical', createdAt: 1767225600000 },
+  { id: 3, body: 'سرور آلمان اضافه شد', level: 'info', createdAt: 1767139200000 },
+];
+
+function mockNotices() {
+  vi.spyOn(HttpUtil, 'get').mockImplementation(async (url: string) => {
+    if (url === '/panel/api/app/notices') return new Msg(true, '', NOTICES);
+    if (url === '/panel/api/app/locations') return new Msg(true, '', LOCATIONS);
+    if (url === '/panel/api/inbounds/options') return new Msg(true, '', INBOUNDS);
+    if (url === '/panel/api/nodes/list') return new Msg(true, '', []);
+    return new Msg(false, 'unexpected ' + url, null);
+  });
+  return vi.spyOn(HttpUtil, 'post').mockResolvedValue(new Msg(true, '', NOTICES[0]));
+}
+
+function renderNotices() {
+  renderWithProviders(<AppNoticesTab />, { queryClient: makeTestQueryClient() });
+}
+
+describe('App notices', () => {
+  it('publishes the text at the level chosen', async () => {
+    const post = mockNotices();
+    renderNotices();
+    const text = await screen.findByLabelText('Notice text');
+    expect(text.getAttribute('dir')).toBe('rtl');
+    fireEvent.change(text, { target: { value: '  به‌روزرسانی سرورها امشب  ' } });
+    fireEvent.click(screen.getByRole('radio', { name: 'Critical' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
+
+    await waitFor(() => expect(post).toHaveBeenCalled());
+    expect(post.mock.calls[0][0]).toBe('/panel/api/app/notices');
+    expect(post.mock.calls[0][1]).toEqual({ body: 'به‌روزرسانی سرورها امشب', level: 'critical' });
+  });
+
+  it('lists what was published, right to left, and deletes one after confirming', async () => {
+    const post = mockNotices();
+    renderNotices();
+    const row = (await screen.findByText('قطعی سرور هلند تا ساعت ۱۸')).closest('tr') as HTMLElement;
+    expect(within(row).getByText('Critical')).toBeTruthy();
+    expect(within(row).getByText('قطعی سرور هلند تا ساعت ۱۸').closest('[dir="rtl"]')).toBeTruthy();
+
+    fireEvent.click(within(row).getByRole('button', { name: 'Delete' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'OK' }));
+    await waitFor(() => expect(post).toHaveBeenCalledWith('/panel/api/app/notices/del/4'));
   });
 });

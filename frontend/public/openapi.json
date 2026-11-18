@@ -2532,6 +2532,35 @@
         ],
         "type": "object"
       },
+      "AppNotice": {
+        "description": "AppNotice is a message the panel publishes to every app; Level is how loudly the\napp shows it: info in its notices list, warning and critical also as a banner.",
+        "properties": {
+          "body": {
+            "example": "قطعی سرور هلند تا ساعت ۱۸",
+            "type": "string"
+          },
+          "createdAt": {
+            "example": 1767225600000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "example": 4,
+            "type": "integer"
+          },
+          "level": {
+            "example": "critical",
+            "type": "string"
+          }
+        },
+        "required": [
+          "body",
+          "createdAt",
+          "id",
+          "level"
+        ],
+        "type": "object"
+      },
       "AppPlace": {
         "description": "AppPlace is a location as the app sees it, without the panel's inbound ids.",
         "properties": {
@@ -2566,7 +2595,7 @@
         "type": "object"
       },
       "AppProfile": {
-        "description": "AppProfile is what GET .../app/v1/profile answers a signed-in device.",
+        "description": "AppProfile is what GET .../app/v1/profile answers a signed-in device. Notices\nare the panel's published notices, newest first.",
         "properties": {
           "account": {
             "$ref": "#/components/schemas/AppAccount"
@@ -2587,6 +2616,12 @@
             },
             "type": "array"
           },
+          "notices": {
+            "items": {
+              "$ref": "#/components/schemas/AppNotice"
+            },
+            "type": "array"
+          },
           "supportUrl": {
             "example": "https://t.me/support",
             "type": "string"
@@ -2599,7 +2634,8 @@
         "required": [
           "account",
           "configs",
-          "locations"
+          "locations",
+          "notices"
         ],
         "type": "object"
       },
@@ -9507,7 +9543,7 @@
     },
     {
       "name": "App",
-      "description": "The locations the app offers. A location (Germany, say) gathers the inbounds that serve it, on any protocol and any server; an inbound serves one location at most, and one in none is still used by the app's quick connect. The app itself signs in on the subscription server (see Subscription Server → app/v1); app access is switched on with the appEnable setting."
+      "description": "The locations the app offers and the notices it shows. A location (Germany, say) gathers the inbounds that serve it, on any protocol and any server; an inbound serves one location at most, and one in none is still used by the app's quick connect. The app itself signs in on the subscription server (see Subscription Server → app/v1); app access is switched on with the appEnable setting."
     },
     {
       "name": "Subscription Server",
@@ -26419,6 +26455,146 @@
         }
       }
     },
+    "/panel/api/app/notices": {
+      "get": {
+        "tags": [
+          "App"
+        ],
+        "summary": "List the notices published to the app, newest first.",
+        "operationId": "get_panel_api_app_notices",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AppNotice"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "body": "قطعی سرور هلند تا ساعت ۱۸",
+                      "createdAt": 1767225600000,
+                      "id": 4,
+                      "level": "critical"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "App"
+        ],
+        "summary": "Publish a notice to every signed-in app, which receives it on its next profile refresh (every 10 minutes, or when the user refreshes). Level info shows in the app's notices list only; warning and critical also show as an amber or a red banner. Refused when the text is empty, over 1000 characters or the level is unknown.",
+        "operationId": "post_panel_api_app_notices",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "body": "قطعی سرور هلند تا ساعت ۱۸",
+                "level": "critical"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/AppNotice"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "body": "قطعی سرور هلند تا ساعت ۱۸",
+                    "createdAt": 1767225600000,
+                    "id": 4,
+                    "level": "critical"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/app/notices/del/{id}": {
+      "post": {
+        "tags": [
+          "App"
+        ],
+        "summary": "Delete a notice. Apps drop it on their next profile refresh.",
+        "operationId": "post_panel_api_app_notices_del_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Notice id.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/{subPath}{subid}": {
       "get": {
         "tags": [
@@ -26665,7 +26841,7 @@
         "tags": [
           "Subscription Server"
         ],
-        "summary": "Return the signed-in account, its locations and every entry of its subscription, with the Xray outbound of each entry Xray can run. Needs <code>Authorization: Bearer token</code> and <code>X-HWID: deviceId</code>.",
+        "summary": "Return the signed-in account, its locations, every entry of its subscription, with the Xray outbound of each entry Xray can run, and the 50 newest notices. OpenVPN profiles carry the login even when the server asks other apps to prompt for it. Needs <code>Authorization: Bearer token</code> and <code>X-HWID: deviceId</code>.",
         "operationId": "get_subPath_subid_app_v1_profile",
         "description": "A session ends when the device is removed from the client's devices, the link is rotated, the account is renamed or app access is switched off; the call then answers 401 <code>bad_session</code> or 403 <code>app_disabled</code>, and 403 <code>device_limit</code> when the device lost its slot.",
         "parameters": [
@@ -26721,6 +26897,14 @@
                       "id": 1,
                       "name": "Germany",
                       "timezone": "Europe/Berlin"
+                    }
+                  ],
+                  "notices": [
+                    {
+                      "body": "قطعی سرور هلند تا ساعت ۱۸",
+                      "createdAt": 1767225600000,
+                      "id": 4,
+                      "level": "critical"
                     }
                   ],
                   "supportUrl": "https://t.me/support",

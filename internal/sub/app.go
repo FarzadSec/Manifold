@@ -50,14 +50,16 @@ type AppPlace struct {
 	Timezone    string `json:"timezone" example:"Europe/Berlin"`
 }
 
-// AppProfile is what GET .../app/v1/profile answers a signed-in device.
+// AppProfile is what GET .../app/v1/profile answers a signed-in device. Notices
+// are the panel's published notices, newest first.
 type AppProfile struct {
-	Account    AppAccount  `json:"account"`
-	Title      string      `json:"title,omitempty" example:"DataCraft"`
-	SupportURL string      `json:"supportUrl,omitempty" example:"https://t.me/support"`
-	Announce   string      `json:"announce,omitempty" example:"Maintenance on Friday"`
-	Locations  []AppPlace  `json:"locations"`
-	Configs    []AppConfig `json:"configs"`
+	Account    AppAccount        `json:"account"`
+	Title      string            `json:"title,omitempty" example:"DataCraft"`
+	SupportURL string            `json:"supportUrl,omitempty" example:"https://t.me/support"`
+	Announce   string            `json:"announce,omitempty" example:"Maintenance on Friday"`
+	Locations  []AppPlace        `json:"locations"`
+	Configs    []AppConfig       `json:"configs"`
+	Notices    []model.AppNotice `json:"notices"`
 }
 
 type appLoginRequest struct {
@@ -70,6 +72,9 @@ type appLoginRequest struct {
 }
 
 const appRequestBodyLimit = 4 << 10
+
+// The newest notices only: the panel keeps every notice until an admin deletes it.
+const maxAppProfileNotices = 50
 
 func newAppLoginLimiter() *loginlimit.Limiter {
 	return loginlimit.New(5, 5*time.Minute, 15*time.Minute)
@@ -160,6 +165,7 @@ func (a *SUBController) appProfile(c *gin.Context) {
 	_, host, _, _ := a.subService.ResolveRequest(c)
 	subReq := a.subService.ForRequest(host)
 	subReq.subscriptionBody = false
+	subReq.signedInApp = true
 	links, _, _, _, traffic, err := subReq.subLinks(subID)
 	if err != nil {
 		appServiceError(c, err)
@@ -189,6 +195,12 @@ func (a *SUBController) appProfile(c *gin.Context) {
 		appServiceError(c, err)
 		return
 	}
+	notices, err := a.appService.Notices()
+	if err != nil {
+		appServiceError(c, err)
+		return
+	}
+	notices = notices[:min(len(notices), maxAppProfileNotices)]
 	metadata := a.metadataForSubRequest(func() *SubService { return subReq }, subID, "")
 	c.JSON(http.StatusOK, AppProfile{
 		Account: AppAccount{
@@ -206,6 +218,7 @@ func (a *SUBController) appProfile(c *gin.Context) {
 		Announce:   metadata.Announce,
 		Locations:  locations,
 		Configs:    configs,
+		Notices:    notices,
 	})
 	if err := a.subService.RecordSubscriptionFetch(subID); err != nil {
 		logger.Warning("Failed to record subscription fetch:", err)

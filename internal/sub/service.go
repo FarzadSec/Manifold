@@ -46,6 +46,9 @@ type SubService struct {
 	// other context — the sub info page, the panel's link/QR displays — renders
 	// the name-only template, like Remnawave.
 	subscriptionBody bool
+	// signedInApp renders for the app API: the app has no password to prompt for,
+	// so OpenVPN profiles carry the login even when the server asks apps to prompt.
+	signedInApp bool
 	// omitServerDescription drops the ?serverDescription= tail, which only Happ
 	// and INCY read; other clients show it in the node name (#7105).
 	omitServerDescription bool

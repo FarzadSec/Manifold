@@ -3802,7 +3802,7 @@ export const sections: readonly Section[] = [
     id: 'app',
     title: 'App',
     description:
-      "The locations the app offers. A location (Germany, say) gathers the inbounds that serve it, on any protocol and any server; an inbound serves one location at most, and one in none is still used by the app's quick connect. The app itself signs in on the subscription server (see Subscription Server → app/v1); app access is switched on with the appEnable setting.",
+      "The locations the app offers and the notices it shows. A location (Germany, say) gathers the inbounds that serve it, on any protocol and any server; an inbound serves one location at most, and one in none is still used by the app's quick connect. The app itself signs in on the subscription server (see Subscription Server → app/v1); app access is switched on with the appEnable setting.",
     endpoints: [
       {
         method: 'GET',
@@ -3824,6 +3824,27 @@ export const sections: readonly Section[] = [
         path: '/panel/api/app/locations/del/:id',
         summary: 'Delete a location. Its inbounds stay, serving no location.',
         params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Location id.' }],
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/app/notices',
+        summary: 'List the notices published to the app, newest first.',
+        responseSchema: 'AppNotice',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/app/notices',
+        summary:
+          "Publish a notice to every signed-in app, which receives it on its next profile refresh (every 10 minutes, or when the user refreshes). Level info shows in the app's notices list only; warning and critical also show as an amber or a red banner. Refused when the text is empty, over 1000 characters or the level is unknown.",
+        body: '{\n  "body": "قطعی سرور هلند تا ساعت ۱۸",\n  "level": "critical"\n}',
+        responseSchema: 'AppNotice',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/app/notices/del/:id',
+        summary: 'Delete a notice. Apps drop it on their next profile refresh.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Notice id.' }],
       },
     ],
   },
@@ -3922,7 +3943,7 @@ export const sections: readonly Section[] = [
         method: 'GET',
         path: '/{subPath}:subid/app/v1/profile',
         summary:
-          'Return the signed-in account, its locations and every entry of its subscription, with the Xray outbound of each entry Xray can run. Needs <code>Authorization: Bearer token</code> and <code>X-HWID: deviceId</code>.',
+          'Return the signed-in account, its locations, every entry of its subscription, with the Xray outbound of each entry Xray can run, and the 50 newest notices. OpenVPN profiles carry the login even when the server asks other apps to prompt for it. Needs <code>Authorization: Bearer token</code> and <code>X-HWID: deviceId</code>.',
         description:
           "A session ends when the device is removed from the client's devices, the link is rotated, the account is renamed or app access is switched off; the call then answers 401 <code>bad_session</code> or 403 <code>app_disabled</code>, and 403 <code>device_limit</code> when the device lost its slot.",
         params: [{ name: 'subid', in: 'path', type: 'string', desc: 'Client subscription ID.' }],

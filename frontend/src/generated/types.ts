@@ -592,6 +592,13 @@ export interface AppLocation {
   timezone: string;
 }
 
+export interface AppNotice {
+  body: string;
+  createdAt: number;
+  id: number;
+  level: string;
+}
+
 export interface AppPlace {
   city: string;
   countryCode: string;
@@ -605,6 +612,7 @@ export interface AppProfile {
   announce?: string;
   configs: AppConfig[];
   locations: AppPlace[];
+  notices: AppNotice[];
   supportUrl?: string;
   title?: string;
 }

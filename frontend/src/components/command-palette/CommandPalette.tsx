@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ConfigProvider, Tag, Tooltip, message } from 'antd';
 import {
   ApartmentOutlined,
+  BellOutlined,
   CheckCircleFilled,
   ClockCircleOutlined,
   CloseCircleFilled,
@@ -476,6 +477,13 @@ export default function CommandPalette() {
         subtitle: t('pages.settings.app.menu'),
         keywords: ['app', 'dt client', 'locations', 'devices', 'windows'],
         icon: <MobileOutlined aria-hidden />,
+      },
+      {
+        path: '/settings#app-notices',
+        title: `${t('menu.settings')} · ${t('pages.settings.app.notices.menu')}`,
+        subtitle: t('pages.settings.app.notices.menu'),
+        keywords: ['notices', 'announcements', 'news', 'banner', 'bell', 'dt client'],
+        icon: <BellOutlined aria-hidden />,
       },
       {
         path: '/xray#basic',

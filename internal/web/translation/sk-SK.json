@@ -2066,7 +2066,34 @@
         "locationOf": "Lokalita {name}",
         "mapping": "Čo slúži kde",
         "mappingDesc": "Každý vstup a lokalita, ktorú obsluhuje. Vyberte tu inú lokalitu na presun vstupu.",
-        "deleteConfirm": "Odstrániť túto lokalitu? Jej vstupy zostanú bez lokality."
+        "deleteConfirm": "Odstrániť túto lokalitu? Jej vstupy zostanú bez lokality.",
+        "notices": {
+          "menu": "App notices",
+          "desc": "A notice reaches every signed-in app within 10 minutes, or at once when the user refreshes. The app keeps every notice in its bell and always shows the text right to left in a Persian font, whatever language the app is in.",
+          "text": "Notice text",
+          "level": "Level",
+          "levels": {
+            "info": "Info",
+            "warning": "Warning",
+            "critical": "Critical"
+          },
+          "levelHint": {
+            "info": "Shown in the app's bell only.",
+            "warning": "Also an amber banner at the top of the app until the user closes it.",
+            "critical": "Also a red banner at the top of the app until the user closes it."
+          },
+          "publish": "Publish",
+          "publishedAt": "Published",
+          "empty": "No notices yet",
+          "deleteConfirm": "Delete this notice? Apps drop it on their next refresh.",
+          "toasts": {
+            "load": "Loading app notices",
+            "publish": "Publishing the notice",
+            "published": "Notice published",
+            "delete": "Deleting the notice",
+            "deleted": "Notice deleted"
+          }
+        }
       },
       "subCalendarExpireInclusive": "Zobrazenie konca mesačnej platnosti v odbere",
       "subCalendarExpireInclusiveDesc": "Predvolene vypnuté. Pri obnove v 1. deň mesiaca o polnoci v pásme panelu hlási hlavička odberu ako koniec platnosti poslednú sekundu predchádzajúceho mesiaca. Skutočné ukončenie a obnovovanie sa nemení. Klienti používajú vlastné časové pásmo a môžu odber považovať za neplatný o sekundu skôr.",

@@ -2,6 +2,7 @@ package sub
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -295,4 +296,75 @@ func TestAppLoginPastTheDeviceLimit(t *testing.T) {
 	if code != http.StatusForbidden || out["error"] != "device_limit" {
 		t.Fatalf("login past the device limit = %d %v, want 403 device_limit", code, out)
 	}
+}
+
+func appProfile(t *testing.T) map[string]any {
+	t.Helper()
+	router := newAppTestRouter()
+	token := loginApp(t, router, "/sub/")
+	code, profile := callApp(t, router, appCall{method: http.MethodGet, path: "/sub/" + appSubID + "/app/v1/profile", token: token, hwid: appDevice})
+	if code != http.StatusOK {
+		t.Fatalf("profile = %d %v", code, profile)
+	}
+	return profile
+}
+
+func TestAppProfileCarriesThePanelsNoticesNewestFirst(t *testing.T) {
+	seedAppAccount(t, true)
+	appSvc := &service.AppService{}
+	older, err := appSvc.PublishNotice("سرور آلمان امشب ساعت ۲ به‌روزرسانی می‌شود", service.AppNoticeInfo)
+	if err != nil {
+		t.Fatalf("publish: %v", err)
+	}
+	newer, err := appSvc.PublishNotice("قطعی سرور هلند تا ساعت ۱۸", service.AppNoticeCritical)
+	if err != nil {
+		t.Fatalf("publish: %v", err)
+	}
+
+	notices, _ := appProfile(t)["notices"].([]any)
+	if len(notices) != 2 {
+		t.Fatalf("notices = %v, want both", notices)
+	}
+	first, _ := notices[0].(map[string]any)
+	second, _ := notices[1].(map[string]any)
+	if first["id"] != float64(newer.Id) || first["level"] != "critical" || first["body"] != newer.Body || first["createdAt"] != float64(newer.CreatedAt) {
+		t.Fatalf("first notice = %v, want the critical one", first)
+	}
+	if second["id"] != float64(older.Id) || second["level"] != "info" {
+		t.Fatalf("second notice = %v", second)
+	}
+}
+
+// The app signs in with the account, so it never has a password to prompt for.
+func TestAppProfileGivesOpenVPNTheLoginEvenWhenTheServerPromptsForIt(t *testing.T) {
+	seedAppAccount(t, true)
+	db := database.GetDB()
+	var ib model.Inbound
+	if err := db.Where("tag = ?", "ovpn").First(&ib).Error; err != nil {
+		t.Fatalf("ovpn inbound: %v", err)
+	}
+	var settings map[string]any
+	if err := json.Unmarshal([]byte(ib.Settings), &settings); err != nil {
+		t.Fatalf("ovpn settings: %v", err)
+	}
+	settings["server"].(map[string]any)["promptCredentials"] = true
+	if err := db.Model(&ib).Update("settings", mustJSON(t, settings)).Error; err != nil {
+		t.Fatalf("turn promptCredentials on: %v", err)
+	}
+
+	for _, raw := range appProfile(t)["configs"].([]any) {
+		cfg := raw.(map[string]any)
+		if cfg["protocol"] != "openvpn" {
+			continue
+		}
+		profile, err := base64.RawURLEncoding.DecodeString(strings.TrimPrefix(cfg["link"].(string), openvpn.ShareLinkScheme))
+		if err != nil {
+			t.Fatalf("decode profile: %v", err)
+		}
+		if !strings.Contains(string(profile), "<auth-user-pass>\n"+appUser+"\ndana-pass-1\n</auth-user-pass>") {
+			t.Fatalf("the app's OpenVPN profile has no login:\n%s", profile)
+		}
+		return
+	}
+	t.Fatal("no openvpn config in the profile")
 }

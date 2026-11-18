@@ -50,6 +50,7 @@ func run(root, outDir string) error {
 				"Host",
 				"SubBalancer",
 				"AppLocation",
+				"AppNotice",
 				"Role",
 				"Plan",
 				"AuditEntry",

@@ -22,6 +22,10 @@ func (s *SubService) genOpenVPNLink(inbound *model.Inbound, email string) string
 	if !ok || client.Password == "" {
 		return ""
 	}
+	settings := *server
+	if s.signedInApp {
+		settings.PromptCredentials = false
+	}
 	endpoints := s.advertisedEndpoints(inbound)
 	links := make([]string, 0, len(endpoints))
 	for _, e := range endpoints {
@@ -29,7 +33,7 @@ func (s *SubService) genOpenVPNLink(inbound *model.Inbound, email string) string
 			Remark:   s.endpointRemark(inbound, email, e.ep, ""),
 			Host:     e.Address,
 			Port:     e.Port,
-			Server:   *server,
+			Server:   settings,
 			Username: client.Email,
 			Password: client.Password,
 		}

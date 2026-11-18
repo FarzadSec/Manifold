@@ -645,6 +645,12 @@ export const EXAMPLES: Record<string, unknown> = {
     "sortOrder": 0,
     "timezone": "Europe/Berlin"
   },
+  "AppNotice": {
+    "body": "قطعی سرور هلند تا ساعت ۱۸",
+    "createdAt": 1767225600000,
+    "id": 4,
+    "level": "critical"
+  },
   "AppPlace": {
     "city": "Frankfurt",
     "countryCode": "DE",
@@ -680,6 +686,14 @@ export const EXAMPLES: Record<string, unknown> = {
         "id": 1,
         "name": "Germany",
         "timezone": "Europe/Berlin"
+      }
+    ],
+    "notices": [
+      {
+        "body": "قطعی سرور هلند تا ساعت ۱۸",
+        "createdAt": 1767225600000,
+        "id": 4,
+        "level": "critical"
       }
     ],
     "supportUrl": "https://t.me/support",

@@ -6,6 +6,7 @@ import { Drawer, Layout, Menu, Tooltip } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   ApartmentOutlined,
+  BellOutlined,
   CloseOutlined,
   CloudServerOutlined,
   ClusterOutlined,
@@ -213,6 +214,11 @@ export default function AppSidebar() {
       key: '/settings#subscription-app',
       icon: <MobileOutlined aria-hidden />,
       label: t('pages.settings.app.menu'),
+    });
+    children.push({
+      key: '/settings#app-notices',
+      icon: <BellOutlined aria-hidden />,
+      label: t('pages.settings.app.notices.menu'),
     });
     return children;
   }, [t, showSubFormats, showSubBalancers]);

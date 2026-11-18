@@ -1361,6 +1361,17 @@ type AppLocation struct {
 
 func (AppLocation) TableName() string { return "locations" }
 
+// AppNotice is a message the panel publishes to every app; Level is how loudly the
+// app shows it: info in its notices list, warning and critical also as a banner.
+type AppNotice struct {
+	Id        int    `json:"id" gorm:"primaryKey;autoIncrement" example:"4"`
+	Body      string `json:"body" gorm:"not null" example:"قطعی سرور هلند تا ساعت ۱۸"`
+	Level     string `json:"level" gorm:"not null;default:info" example:"critical"`
+	CreatedAt int64  `json:"createdAt" gorm:"column:created_at;not null" example:"1767225600000"`
+}
+
+func (AppNotice) TableName() string { return "app_notices" }
+
 // AppLocationInbound links an inbound to the one location it serves.
 type AppLocationInbound struct {
 	InboundID  int `gorm:"column:inbound_id;primaryKey;autoIncrement:false"`

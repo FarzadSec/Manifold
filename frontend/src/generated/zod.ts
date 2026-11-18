@@ -642,6 +642,14 @@ export const AppLocationSchema = z.object({
 });
 export type AppLocation = z.infer<typeof AppLocationSchema>;
 
+export const AppNoticeSchema = z.object({
+  body: z.string(),
+  createdAt: z.number().int(),
+  id: z.number().int(),
+  level: z.string(),
+});
+export type AppNotice = z.infer<typeof AppNoticeSchema>;
+
 export const AppPlaceSchema = z.object({
   city: z.string(),
   countryCode: z.string(),
@@ -656,6 +664,7 @@ export const AppProfileSchema = z.object({
   announce: z.string().optional(),
   configs: z.array(z.lazy(() => AppConfigSchema)),
   locations: z.array(z.lazy(() => AppPlaceSchema)),
+  notices: z.array(z.lazy(() => AppNoticeSchema)),
   supportUrl: z.string().optional(),
   title: z.string().optional(),
 });
