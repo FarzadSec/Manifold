@@ -333,17 +333,17 @@ func filePageLang(c *gin.Context) string {
 
 var filePageTexts = map[string]map[string]string{
 	"fa": {
-		"openvpnTitle":   "فایل‌های OpenVPN",
-		"wireguardTitle": "فایل‌های WireGuard",
-		"openvpnHelp":    "فایل لوکیشن دلخواه را دانلود کنید و در برنامه‌ی OpenVPN Connect باز کنید.",
-		"wireguardHelp":  "فایل لوکیشن دلخواه را دانلود کنید یا QR آن را در برنامه‌ی WireGuard اسکن کنید.",
+		"openvpnTitle":   "فایل\u200cهای OpenVPN",
+		"wireguardTitle": "فایل\u200cهای WireGuard",
+		"openvpnHelp":    "فایل لوکیشن دلخواه را دانلود کنید و در برنامه\u200cی OpenVPN Connect باز کنید.",
+		"wireguardHelp":  "فایل لوکیشن دلخواه را دانلود کنید یا QR آن را در برنامه\u200cی WireGuard اسکن کنید.",
 		"username":       "نام کاربری",
 		"password":       "رمز عبور",
 		"copy":           "کپی",
 		"copied":         "کپی شد",
 		"download":       "دانلود",
 		"downloadAll":    "دانلود همه (ZIP)",
-		"allHelp":        "برنامه‌ی WireGuard فایل ZIP را یک‌جا وارد می‌کند.",
+		"allHelp":        "برنامه\u200cی WireGuard فایل ZIP را یک\u200cجا وارد می\u200cکند.",
 		"empty":          "این اشتراک فایلی از این نوع ندارد.",
 	},
 	"en": {

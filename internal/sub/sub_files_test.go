@@ -174,7 +174,7 @@ func TestOpenVPNPageListsLocationsInOrderWithOneLoginAndServesEachProfile(t *tes
 		t.Fatalf("page = %d %q", rec.Code, rec.Header().Get("Content-Type"))
 	}
 	nl, de, backup := strings.Index(page, "Netherlands"), strings.Index(page, "Germany"), strings.Index(page, "Backup")
-	if nl < 0 || de < 0 || backup < 0 || !(nl < de && de < backup) {
+	if nl < 0 || de < 0 || backup < 0 || nl >= de || de >= backup {
 		t.Fatalf("locations out of order (Netherlands %d, Germany %d, no location %d)", nl, de, backup)
 	}
 	if strings.Count(page, filesPass) != 1 || !strings.Contains(page, filesUser) || !strings.Contains(page, `dir="rtl"`) {
