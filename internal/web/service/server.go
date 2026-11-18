@@ -1880,7 +1880,7 @@ func (s *ServerService) importDBKeeping(file multipart.File, keep []string) erro
 	switch kind {
 	case importKindSQLiteDB, importKindSQLiteDump:
 	case importKindPgDump:
-		return common.NewError("This file is a PostgreSQL backup; it can only be restored on a panel running PostgreSQL")
+		return common.NewError("This file is a PostgreSQL backup and this panel runs on SQLite; switch the panel to PostgreSQL first (on the server: manifold db postgres), then import it again")
 	default:
 		return common.NewError("Invalid file: expected a SQLite database (.db) from Back Up or a SQLite migration dump (.dump)")
 	}
@@ -2084,7 +2084,7 @@ func pgRestoreReadFailureError(probeOutput, localVersion string) error {
 		localVersion = "unknown"
 	}
 	if major, known := pgArchiveVersionIntroducedIn[m[1]]; known {
-		return common.NewErrorf("This backup was created by pg_dump from PostgreSQL %d or newer, but the server's pg_restore is version %s and cannot read it; run 'x-ui pgclient %d' on the server (or upgrade the postgresql-client package to version %d or newer), then retry the import", major, localVersion, major, major)
+		return common.NewErrorf("This backup was created by pg_dump from PostgreSQL %d or newer, but the server's pg_restore is version %s and cannot read it; run 'manifold db client %d' on the server (or upgrade the postgresql-client package to version %d or newer), then retry the import", major, localVersion, major, major)
 	}
 	return common.NewErrorf("This backup was created by a newer pg_dump than the server's pg_restore (version %s) can read; upgrade the postgresql-client package and retry the import", localVersion)
 }

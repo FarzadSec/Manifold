@@ -237,6 +237,38 @@ INTERACTIVE=0
 free_port() { echo 31337; }
 first_setup <<<$'y\n8443' >/dev/null
 check "a first install without a terminal asks nothing" "$PANEL_PORT" "31337"
+
+# A panel on PostgreSQL has no SQLite file; an update must still find it, or the
+# installer would make it a new panel and replace its login.
+COMMAND="$INSTALL_DIR/manifold"
+ENV_FILE="$work/default"
+printf 'XUI_DB_TYPE=postgres\n' >"$ENV_FILE"
+: >"$FAKE_LOG"
+PANEL_PORT="" INTERACTIVE=0
+first_setup >/dev/null
+check "an update of a panel on PostgreSQL is not a first install" "${FIRST_INSTALL}$(calls)" "0"
+: >"$ENV_FILE"
+
+# A first install on PostgreSQL has it set up before the panel's database is made in it.
+first_calls() { calls | sed -E 's/\[setting [^]]*\]/[setting]/'; }
+INTERACTIVE=1 EDITION=full DB_TYPE="" DB_DSN="" PANEL_PORT=""
+first_setup <<<$'2\n1\nn' >/dev/null
+check "the answer PostgreSQL installs it here, before the panel database" "$(first_calls)" "[db postgres --yes --no-start][setting]"
+DB_TYPE="" DB_DSN="" PANEL_PORT=""
+first_setup <<<$'2\n2\npostgres://u:p@db:5432/m\nn' >/dev/null
+check "or uses the server whose DSN is given" "$(first_calls)" "[db postgres postgres://u:p@db:5432/m --yes --no-start][setting]"
+DB_TYPE="" PANEL_PORT=""
+first_setup <<<$'\nn' >/dev/null
+check "the first answer is SQLite: nothing to set up" "$(first_calls)" "[setting]"
+INTERACTIVE=0 DB_TYPE=postgres DB_DSN="" PANEL_PORT=""
+first_setup >/dev/null
+check "--db postgres without a terminal" "$(first_calls)" "[db postgres --yes --no-start][setting]"
+INTERACTIVE=1 EDITION=tunnel DB_TYPE="" PANEL_PORT=""
+first_setup <<<$'2\nn' >/dev/null
+check "a relay is not asked: it keeps little data" "$(first_calls)" "[setting]"
+EDITION="" DB_TYPE="" INTERACTIVE=0
+check "--db-dsn means PostgreSQL" "$(parse_args --db-dsn postgres://u:p@db/m; echo "$DB_TYPE")" "postgres"
+check "--db takes only the two it supports" "$( (parse_args --db mysql) 2>&1 || true)" "error: --db must be sqlite or postgres"
 unset -f port_in_use free_port
 
 # Which product a run installs: the flag, what an update finds, or the answer to a question.

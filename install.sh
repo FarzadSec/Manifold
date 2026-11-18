@@ -30,6 +30,8 @@ PANEL_SCHEME=http
 PANEL_HOST=""
 LISTEN_LOCAL=0
 API_TOKEN=""
+DB_TYPE="${MANIFOLD_DB_TYPE:-}"
+DB_DSN="${MANIFOLD_DB_DSN:-}"
 
 IP4_SOURCES=(https://api4.ipify.org https://ipv4.icanhazip.com https://v4.api.ipinfo.io/ip
     https://ipv4.myexternalip.com/raw https://4.ident.me https://check-host.net/ip)
@@ -63,11 +65,19 @@ get a certificate later with: manifold cert issue -domain NAME
   --no-deps          Do not install the system packages the VPN engines need
   --edition NAME     full (Manifold, the default) or relay (Manifold Relay;
                      "tunnel" is the same). Kept on update.
+  --db NAME          Database of a first install: sqlite (the default) or
+                     postgres (a PostgreSQL server installed on this machine).
+                     A first install from a terminal asks. Kept on update;
+                     switch an installed panel with: manifold db
+  --db-dsn DSN       Database of a first install: the PostgreSQL server DSN
+                     names (postgres://user:pass@host:5432/db?sslmode=disable)
   -h, --help         Show this help
 
 Environment:
   MANIFOLD_REPO      owner/name of the repository (default: FarzadSec/Manifold)
   MANIFOLD_TOKEN     GitHub token, only for a private copy of the repository
+  MANIFOLD_DB_TYPE   Same as --db
+  MANIFOLD_DB_DSN    Same as --db-dsn
 USAGE
 }
 
@@ -204,6 +214,8 @@ parse_args() {
             --password) PANEL_PASSWORD="${2:?--password needs a value}"; shift 2 ;;
             --no-start) START_SERVICE=0; shift ;;
             --no-deps) INSTALL_DEPS=0; shift ;;
+            --db) DB_TYPE="${2:?--db needs sqlite or postgres}"; shift 2 ;;
+            --db-dsn) DB_DSN="${2:?--db-dsn needs a DSN}"; DB_TYPE=postgres; shift 2 ;;
             --edition)
                 EDITION="${2:?--edition needs full or relay}"
                 case "$EDITION" in full | relay | tunnel) ;; *) die "--edition must be full or relay" ;; esac
@@ -213,6 +225,12 @@ parse_args() {
             *) die "unknown option: $1 (see --help)" ;;
         esac
     done
+    case "$DB_TYPE" in
+        "" | sqlite) ;;
+        postgres | postgresql | pg) DB_TYPE=postgres ;;
+        *) die "--db must be sqlite or postgres" ;;
+    esac
+    [ -z "$DB_DSN" ] || DB_TYPE=postgres
 }
 
 github_curl() {
@@ -317,6 +335,16 @@ install_files() {
     systemctl daemon-reload
 }
 
+# panel_on_postgres: the env file points the panel at PostgreSQL, under either name.
+panel_on_postgres() {
+    [ -f "$ENV_FILE" ] && grep -qE '^(MANIFOLD|XUI)_DB_TYPE="?(postgres|postgresql|pg)"?$' "$ENV_FILE"
+}
+
+# panel_installed: a panel database exists, as a SQLite file or in PostgreSQL.
+panel_installed() {
+    [ -f "${DATA_DIR}/manifold.db" ] || panel_on_postgres
+}
+
 # installed_edition prints the edition the env file records: tunnel, or full.
 installed_edition() {
     if [ -f "$ENV_FILE" ] && grep -q '^MANIFOLD_EDITION=tunnel$' "$ENV_FILE"; then
@@ -344,7 +372,7 @@ choose_edition() {
 resolve_edition() {
     [ "$EDITION" != relay ] || EDITION=tunnel
     [ -z "$EDITION" ] || return 0
-    if [ -f "${DATA_DIR}/manifold.db" ] || [ "$INTERACTIVE" -eq 0 ]; then
+    if panel_installed || [ "$INTERACTIVE" -eq 0 ]; then
         EDITION=$(installed_edition)
     else
         choose_edition
@@ -378,11 +406,44 @@ choose_port() {
     done
 }
 
-# Chooses the login, port and path of a new panel. An existing database is left alone.
+# choose_database asks a first install of the panel which database it runs on.
+choose_database() {
+    local reply=""
+    echo "Which database should the panel run on?"
+    echo "  1. SQLite: one file on this server, nothing to set up (up to a few hundred users)"
+    echo "  2. PostgreSQL: for many users and nodes"
+    read -rp "Choose [1]: " reply || true
+    [ "$reply" = 2 ] || return 0
+    DB_TYPE=postgres
+    echo "  1. Install PostgreSQL on this server (recommended)"
+    echo "  2. Use a PostgreSQL server you already have"
+    read -rp "Choose [1]: " reply || true
+    [ "$reply" = 2 ] || return 0
+    while [ -z "$DB_DSN" ]; do
+        read -rp "Its DSN (postgres://user:password@host:5432/database?sslmode=disable): " DB_DSN || die "no DSN given"
+    done
+}
+
+# setup_database points a new panel at PostgreSQL before its database is created;
+# the management command installs the server, makes the database and its client tools.
+setup_database() {
+    [ "$DB_TYPE" = postgres ] || return 0
+    info "Setting up PostgreSQL for the panel"
+    "$COMMAND" db postgres ${DB_DSN:+"$DB_DSN"} --yes --no-start || die "the panel's PostgreSQL database could not be set up"
+}
+
+# Chooses the database, login, port and path of a new panel. An existing one is left alone.
 first_setup() {
     FIRST_INSTALL=0
-    [ -f "${DATA_DIR}/manifold.db" ] && return 0
+    if panel_installed; then
+        [ -z "$DB_TYPE" ] || warn "--db is for a first install; switch this panel's database with: manifold db"
+        return 0
+    fi
     FIRST_INSTALL=1
+    if [ -z "$DB_TYPE" ] && [ "$INTERACTIVE" -eq 1 ] && [ "$EDITION" != tunnel ]; then
+        choose_database
+    fi
+    setup_database
     if [ -z "$PANEL_PORT" ] && [ "$INTERACTIVE" -eq 1 ]; then
         choose_port
     fi
@@ -585,6 +646,13 @@ install_dependencies() {
     prepare_l2tp_services "${installed[*]}"
 }
 
+# ensure_pg_client: a panel on PostgreSQL backs up and restores with pg_dump, pg_restore and psql.
+ensure_pg_client() {
+    [ "$INSTALL_DEPS" -eq 1 ] && panel_on_postgres || return 0
+    command_exists pg_dump && command_exists pg_restore && command_exists psql && return 0
+    "$COMMAND" db client || warn "the PostgreSQL client tools could not be installed; backups in the panel need them: manifold db client"
+}
+
 # port_from_settings reads the panel port out of "manifold setting -show".
 port_from_settings() {
     awk -F': *' '$1 == "port" { print $2; exit }'
@@ -650,6 +718,11 @@ print_summary() {
     echo "  Password:     ${PANEL_PASSWORD}"
     echo "  Port:         ${PANEL_PORT}"
     echo "  WebBasePath:  ${PANEL_PATH}"
+    if panel_on_postgres; then
+        echo "  Database:     PostgreSQL"
+    else
+        echo "  Database:     SQLite (${DATA_DIR}/manifold.db)"
+    fi
     echo "  Access URL:   $(access_line)"
     if [ -n "$API_TOKEN" ] && [ "$product" = "Manifold Relay" ]; then
         echo "  Relay token:  ${API_TOKEN}"
@@ -701,6 +774,7 @@ main() {
     install_files "$WORK_DIR"
     install_dependencies
     first_setup
+    ensure_pg_client
     if [ "$FIRST_INSTALL" -eq 1 ]; then
         info "Finding this server's public address"
         SERVER_IP=$(public_ip || true)

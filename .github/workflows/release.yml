@@ -295,6 +295,50 @@ jobs:
           login
           test "$(count)" = "$before"
 
+      # PostgreSQL 18 from the PostgreSQL project's repository, set up by the
+      # management command under the real unit, as on a server.
+      - name: The installed panel moves onto PostgreSQL, restores its own backup there, and moves back
+        run: |
+          set -euo pipefail
+          base=http://127.0.0.1:20530/smoke
+          jar=$(mktemp)
+          login() {
+            local t
+            t=$(curl -fsS -c "$jar" -b "$jar" "$base/csrf-token" | sed -E 's/.*"obj":"([^"]+)".*/\1/')
+            curl -fsS -b "$jar" -c "$jar" -H "X-CSRF-Token: $t" -d 'username=smoke&password=smoke-pass-123' "$base/login" | grep -q '"success":true'
+            token=$(curl -fsS -b "$jar" -c "$jar" "$base/csrf-token" | sed -E 's/.*"obj":"([^"]+)".*/\1/')
+          }
+          count() { curl -fsS -b "$jar" "$base/panel/api/inbounds/list" | python3 -c 'import json, sys; print(len(json.load(sys.stdin)["obj"]))'; }
+          up() {
+            for _ in $(seq 1 30); do
+              [ "$(curl -s -o /dev/null -w '%{http_code}' "$base/")" = 200 ] && return 0
+              sleep 1
+            done
+            sudo journalctl -u manifold -n 80 --no-pager
+            return 1
+          }
+          login
+          before=$(count)
+          sudo manifold db postgres --yes
+          sudo manifold db | tee /tmp/db.txt
+          grep -q '^Database: PostgreSQL' /tmp/db.txt
+          grep -q '^Server: reachable' /tmp/db.txt
+          up
+          login
+          test "$(count)" = "$before"
+          curl -fsS -b "$jar" -o /tmp/panel.dump "$base/panel/api/server/getDb"
+          test "$(head -c 5 /tmp/panel.dump)" = PGDMP
+          curl -fsS -b "$jar" -H "X-CSRF-Token: $token" -F db=@/tmp/panel.dump "$base/panel/api/server/importDB" | tee /tmp/import.json
+          grep -q '"success":true' /tmp/import.json
+          up
+          login
+          test "$(count)" = "$before"
+          sudo manifold db sqlite --yes
+          sudo manifold db | grep -q '^Database: SQLite'
+          up
+          login
+          test "$(count)" = "$before"
+
       - name: Update in place, then uninstall
         run: |
           set -euo pipefail

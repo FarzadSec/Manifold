@@ -13,6 +13,11 @@ GEO_DIR="${INSTALL_DIR}/bin"
 SYSCTL_DIR=/etc/sysctl.d
 JAIL=manifold-ipl
 MENU_DONE=100
+DB_FILE="${DATA_DIR}/manifold.db"
+# A new local PostgreSQL server is this major from the PostgreSQL project's own repository.
+PG_MAJOR=18
+PG_NAME=manifold
+UNIT_DROPIN=/etc/systemd/system/manifold.service.d/postgresql.conf
 
 if [ -t 1 ]; then
     red=$'\033[0;31m' green=$'\033[0;32m' yellow=$'\033[0;33m' plain=$'\033[0m'
@@ -54,6 +59,13 @@ Panel
   setting ...                Pass options to the panel's own `setting` command
   migrate-db ...             Pass options to the panel's `migrate-db` command
   version                    Show the installed version
+
+Database
+  db                         Which database the panel runs on, and its state
+  db postgres [DSN]          Move the panel onto PostgreSQL: a server installed here,
+                             or the one DSN names (postgres://user:pass@host:5432/db)
+  db sqlite                  Move the panel back onto SQLite
+  db client [MAJOR]          Install the PostgreSQL client tools the panel's backups use
 
 IP limit
   iplimit install            Install Fail2ban and the jail that enforces client IP limits
@@ -231,6 +243,7 @@ show_status() {
     if [ -f "$ENV_FILE" ] && grep -q '^MANIFOLD_EDITION=tunnel$' "$ENV_FILE"; then
         edition=tunnel
     fi
+    echo "Database: $(db_label)"
     if [ "$edition" = tunnel ]; then
         echo "Edition: ${green}Manifold Relay${plain} (tunnels only)"
     elif xray_running; then
@@ -885,6 +898,15 @@ doctor() {
         echo "  Open it: ufw allow ${port}/tcp"
         problems=$((problems + 1))
     fi
+    if [ "$(db_kind)" = postgres ] && command -v psql >/dev/null 2>&1; then
+        if pg_server_major "$(db_env DSN)" >/dev/null; then
+            echo "${green}✓${plain} The panel's PostgreSQL server answers"
+        else
+            echo "${red}✗${plain} The panel's PostgreSQL server cannot be reached: $(dsn_label "$(db_env DSN)")"
+            echo "  On this server, start it: systemctl start $(pg_service || echo postgresql); then: manifold restart"
+            problems=$((problems + 1))
+        fi
+    fi
     free=$(df -Pk "$DATA_DIR" 2>/dev/null | awk 'NR == 2 { print $4 }')
     if [ -n "$free" ] && [ "$free" -lt 51200 ]; then
         echo "${red}✗${plain} Less than 50 MB free on the disk of ${DATA_DIR}: the database cannot grow"
@@ -988,13 +1010,21 @@ uninstall() {
     need_root
     systemctl disable --now manifold 2>/dev/null || true
     rm -f /etc/systemd/system/manifold.service /usr/bin/manifold
+    rm -rf "$(dirname "$UNIT_DROPIN")"
     systemctl daemon-reload
     rm -rf "$INSTALL_DIR"
     remove_engine_files /etc/wireguard /etc/swanctl/conf.d/manifold-l2tp.conf
     remove_tunnels /sys/class/net
     if [ "${1:-}" = "--purge" ]; then
+        local db
+        db=$(db_kind)
+        [ "$db" != postgres ] || db=$(dsn_label "$(db_env DSN)")
         rm -rf "$DATA_DIR" /var/log/manifold "$ENV_FILE"
         echo "Manifold and its data are removed."
+        if [ "$db" != sqlite ]; then
+            echo "Its PostgreSQL database is not: ${db}"
+            echo "On this server, drop it with: runuser -u postgres -- dropdb ${PG_NAME}"
+        fi
     else
         echo "Manifold is removed. Its data is kept in ${DATA_DIR}."
     fi
@@ -1008,6 +1038,447 @@ uninstall_menu() {
         uninstall
     fi
     return "$MENU_DONE"
+}
+
+# --- the database ---
+
+# db_env NAME: a database setting from the env file. MANIFOLD_ wins over XUI_, as in the panel.
+db_env() {
+    local value=""
+    [ -r "$ENV_FILE" ] || return 0
+    value=$(sed -n "s/^MANIFOLD_DB_$1=//p" "$ENV_FILE" | tail -n 1)
+    [ -n "$value" ] || value=$(sed -n "s/^XUI_DB_$1=//p" "$ENV_FILE" | tail -n 1)
+    value="${value%\"}"
+    echo "${value#\"}"
+}
+
+db_kind() {
+    case "$(db_env TYPE)" in
+        postgres | postgresql | pg) echo postgres ;;
+        *) echo sqlite ;;
+    esac
+}
+
+# dsn_label DSN: the DSN without its password, fit to show.
+dsn_label() {
+    echo "$1" | sed -E 's#^(postgres(ql)?://[^:@/]+):[^@]*@#\1@#'
+}
+
+db_label() {
+    if [ "$(db_kind)" = postgres ]; then
+        echo "PostgreSQL ($(dsn_label "$(db_env DSN)"))"
+    else
+        echo "SQLite (${DB_FILE})"
+    fi
+}
+
+# write_db_env sqlite | postgres DSN: the database the panel opens on its next start.
+write_db_env() {
+    [ -f "$ENV_FILE" ] || install -m 600 /dev/null "$ENV_FILE"
+    sed -i -E '/^(MANIFOLD|XUI)_DB_(TYPE|DSN)=/d' "$ENV_FILE"
+    if [ "$1" = postgres ]; then
+        printf 'MANIFOLD_DB_TYPE=postgres\nMANIFOLD_DB_DSN=%s\n' "$2" >>"$ENV_FILE"
+    fi
+    chmod 600 "$ENV_FILE"
+}
+
+# pg_with_dsn DSN COMMAND...: run a PostgreSQL client on DSN with the password in
+# the environment, not on the command line every user can read.
+pg_with_dsn() {
+    local dsn="$1" pass
+    shift
+    pass=$(echo "$dsn" | sed -nE 's#^postgres(ql)?://[^:@/]+:([^@]*)@.*#\2#p')
+    pass=$(printf '%b' "${pass//%/\\x}")
+    PGPASSWORD="$pass" "$@" "$(dsn_label "$dsn")"
+}
+
+# pg_server_major DSN: the major version of the server DSN names.
+pg_server_major() {
+    local num
+    num=$(pg_with_dsn "$1" psql -XtAq -c 'SHOW server_version_num' -d 2>/dev/null) || return 1
+    [[ "$num" =~ ^[0-9]+$ ]] || return 1
+    echo $((num / 10000))
+}
+
+pg_tool_major() {
+    "$1" --version 2>/dev/null | grep -oE '[0-9]+' | head -n 1
+}
+
+pkg_manager() {
+    local manager
+    for manager in apt-get dnf yum zypper pacman; do
+        if command -v "$manager" >/dev/null 2>&1; then
+            echo "$manager"
+            return 0
+        fi
+    done
+    return 1
+}
+
+# pgdg_repo MANAGER: the PostgreSQL project's repository, which has every major version.
+pgdg_repo() {
+    local elver
+    case "$1" in
+        apt-get)
+            ls /etc/apt/sources.list.d/pgdg.* >/dev/null 2>&1 && return 0
+            apt-get install -y -qq postgresql-common ca-certificates gnupg >/dev/null 2>&1 &&
+                /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y >/dev/null 2>&1
+            ;;
+        dnf | yum)
+            ls /etc/yum.repos.d/pgdg-redhat-all.repo >/dev/null 2>&1 && return 0
+            elver=$(rpm -E '%{rhel}' 2>/dev/null)
+            [[ "$elver" =~ ^[0-9]+$ ]] || return 1
+            "$1" install -y -q "https://download.postgresql.org/pub/repos/yum/reporpms/EL-${elver}-$(uname -m)/pgdg-redhat-repo-latest.noarch.rpm" >/dev/null 2>&1 || return 1
+            "$1" -qy module disable postgresql >/dev/null 2>&1 || true
+            ;;
+        *) return 1 ;;
+    esac
+}
+
+# pg_install_client [MAJOR]: pg_dump, pg_restore and psql, which the panel backs up and restores with.
+pg_install_client() {
+    need_root
+    local major="${1:-}" manager
+    if [ -z "$major" ] && [ "$(db_kind)" = postgres ]; then
+        major=$(pg_server_major "$(db_env DSN)" || true)
+    fi
+    [ -n "$major" ] || major="$PG_MAJOR"
+    [[ "$major" =~ ^[0-9]+$ ]] || die "not a PostgreSQL major version: ${major}"
+    manager=$(pkg_manager) || die "found no package manager to install the PostgreSQL client with"
+    info "Installing the PostgreSQL ${major} client tools (pg_dump, pg_restore, psql)"
+    case "$manager" in
+        apt-get)
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update -qq >/dev/null 2>&1 || true
+            if ! { pgdg_repo apt-get && apt-get install -y -qq "postgresql-client-${major}" >/dev/null 2>&1; }; then
+                apt-get install -y -qq postgresql-client >/dev/null 2>&1 || die "could not install postgresql-client"
+            fi
+            ;;
+        dnf | yum)
+            if ! { pgdg_repo "$manager" && "$manager" install -y -q "postgresql${major}" >/dev/null 2>&1; }; then
+                "$manager" install -y -q postgresql >/dev/null 2>&1 || die "could not install the postgresql package"
+            fi
+            ;;
+        zypper) zypper --non-interactive --quiet install postgresql >/dev/null 2>&1 || die "could not install postgresql" ;;
+        pacman) pacman -Sy --noconfirm --needed postgresql >/dev/null 2>&1 || die "could not install postgresql" ;;
+    esac
+    if [ "$(pg_tool_major pg_dump)" -lt "$major" ] 2>/dev/null; then
+        warn "pg_dump is $(pg_tool_major pg_dump) here, older than the server's ${major}: backups of the panel will fail until it is ${major} or newer"
+    fi
+}
+
+# pg_service: the systemd unit of the PostgreSQL server on this machine.
+pg_service() {
+    local unit
+    for unit in postgresql.service $(systemctl list-unit-files --no-legend 'postgresql-*.service' 2>/dev/null | awk '{ print $1 }'); do
+        if systemctl cat "$unit" >/dev/null 2>&1; then
+            echo "${unit%.service}"
+            return 0
+        fi
+    done
+    return 1
+}
+
+# pg_sql SQL: one statement as the server's superuser, answered unaligned.
+pg_sql() {
+    (cd / && runuser -u postgres -- psql -XtAq -v ON_ERROR_STOP=1 -c "$1")
+}
+
+pg_local_ready() {
+    command -v psql >/dev/null 2>&1 && pg_sql 'SELECT 1' >/dev/null 2>&1
+}
+
+# pg_install_server: PostgreSQL on this machine, running and started at boot.
+pg_install_server() {
+    local manager service=postgresql
+    manager=$(pkg_manager) || die "found no package manager to install PostgreSQL with"
+    info "Installing PostgreSQL"
+    case "$manager" in
+        apt-get)
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update -qq >/dev/null 2>&1 || true
+            if ! { pgdg_repo apt-get && apt-get install -y -qq "postgresql-${PG_MAJOR}" >/dev/null 2>&1; }; then
+                warn "PostgreSQL ${PG_MAJOR} is not available here; installing the distribution's PostgreSQL"
+                apt-get install -y -qq postgresql >/dev/null 2>&1 || die "could not install PostgreSQL"
+            fi
+            ;;
+        dnf | yum)
+            if pgdg_repo "$manager" && "$manager" install -y -q "postgresql${PG_MAJOR}-server" >/dev/null 2>&1; then
+                service="postgresql-${PG_MAJOR}"
+                [ -f "/var/lib/pgsql/${PG_MAJOR}/data/PG_VERSION" ] ||
+                    "/usr/pgsql-${PG_MAJOR}/bin/postgresql-${PG_MAJOR}-setup" initdb >/dev/null || die "could not create the PostgreSQL cluster"
+            else
+                "$manager" install -y -q postgresql-server >/dev/null 2>&1 || die "could not install PostgreSQL"
+                [ -f /var/lib/pgsql/data/PG_VERSION ] || postgresql-setup --initdb >/dev/null || die "could not create the PostgreSQL cluster"
+            fi
+            ;;
+        zypper) zypper --non-interactive --quiet install postgresql-server >/dev/null 2>&1 || die "could not install PostgreSQL" ;;
+        pacman)
+            pacman -Sy --noconfirm --needed postgresql >/dev/null 2>&1 || die "could not install PostgreSQL"
+            [ -f /var/lib/postgres/data/PG_VERSION ] ||
+                (cd / && runuser -u postgres -- initdb -D /var/lib/postgres/data >/dev/null) || die "could not create the PostgreSQL cluster"
+            ;;
+    esac
+    systemctl enable --now "$service" >/dev/null 2>&1 || die "PostgreSQL did not start; see: journalctl -u ${service}"
+    for _ in $(seq 1 30); do
+        pg_local_ready && return 0
+        sleep 1
+    done
+    die "PostgreSQL does not answer; see: journalctl -u ${service}"
+}
+
+# pg_allow_password_login: some distributions only let local system users in
+# (ident); the panel signs in with its password.
+pg_allow_password_login() {
+    local hba
+    hba=$(pg_sql 'SHOW hba_file')
+    [ -f "$hba" ] || return 0
+    grep -qE "^host[[:space:]]+${PG_NAME}[[:space:]]+${PG_NAME}[[:space:]]" "$hba" && return 0
+    {
+        echo "# Added by Manifold: the panel signs in to its database with a password."
+        echo "host    ${PG_NAME}    ${PG_NAME}    127.0.0.1/32    md5"
+        echo "host    ${PG_NAME}    ${PG_NAME}    ::1/128         md5"
+        cat "$hba"
+    } >"${hba}.manifold"
+    cat "${hba}.manifold" >"$hba"
+    rm -f "${hba}.manifold"
+    pg_sql 'SELECT pg_reload_conf()' >/dev/null
+}
+
+# pg_create_database: the panel's own role and database on the local server, with
+# a new password; prints the DSN.
+pg_create_database() {
+    local pass owner port
+    pass=$(openssl rand -hex 16 2>/dev/null || random_string 32)
+    owner=$(pg_sql "SELECT pg_catalog.pg_get_userbyid(datdba) FROM pg_database WHERE datname = '${PG_NAME}'")
+    if [ -n "$owner" ] && [ "$owner" != "$PG_NAME" ]; then
+        die "a database named ${PG_NAME} already exists and belongs to ${owner}"
+    fi
+    if [ -n "$(pg_sql "SELECT 1 FROM pg_roles WHERE rolname = '${PG_NAME}'")" ]; then
+        pg_sql "ALTER ROLE ${PG_NAME} WITH LOGIN PASSWORD '${pass}'" >/dev/null
+    else
+        pg_sql "CREATE ROLE ${PG_NAME} WITH LOGIN PASSWORD '${pass}'" >/dev/null
+    fi
+    [ -n "$owner" ] || pg_sql "CREATE DATABASE ${PG_NAME} OWNER ${PG_NAME}" >/dev/null
+    pg_allow_password_login
+    port=$(pg_sql 'SHOW port')
+    echo "postgres://${PG_NAME}:${pass}@127.0.0.1:${port}/${PG_NAME}?sslmode=disable"
+}
+
+# pg_ensure_client DSN: client tools at least as new as the server, which pg_dump requires.
+pg_ensure_client() {
+    local major
+    command -v psql >/dev/null 2>&1 || pg_install_client
+    major=$(pg_server_major "$1") || die "cannot connect to $(dsn_label "$1")"
+    if ! command -v pg_dump >/dev/null 2>&1 || ! command -v pg_restore >/dev/null 2>&1 ||
+        [ "$(pg_tool_major pg_dump)" -lt "$major" ]; then
+        pg_install_client "$major"
+    fi
+}
+
+# order_after_local_server: at boot the panel starts after the PostgreSQL server
+# it runs on, instead of failing until that server is up.
+order_after_local_server() {
+    local unit
+    unit=$(pg_service) || return 0
+    mkdir -p "$(dirname "$UNIT_DROPIN")"
+    printf '[Unit]\nAfter=%s.service\nWants=%s.service\n' "$unit" "$unit" >"$UNIT_DROPIN"
+    systemctl daemon-reload
+}
+
+drop_server_order() {
+    [ -e "$UNIT_DROPIN" ] || return 0
+    rm -f "$UNIT_DROPIN"
+    rmdir "$(dirname "$UNIT_DROPIN")" 2>/dev/null || true
+    systemctl daemon-reload
+}
+
+# panel_start_checked: start the panel and see it stay up.
+panel_start_checked() {
+    systemctl start manifold || return 1
+    sleep 3
+    systemctl is-active --quiet manifold
+}
+
+# db_to_postgres [DSN] [--yes] [--no-start]: the panel moves onto PostgreSQL, a
+# server set up here unless DSN names one. A panel without a database just gets the setting.
+db_to_postgres() {
+    need_root
+    local dsn="" ask=1 start=1 choice="" was_running=0
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --yes) ask=0 ;;
+            --no-start) start=0 ;;
+            *) dsn="$1" ;;
+        esac
+        shift
+    done
+    [ -t 0 ] || ask=0
+    [ "$(db_kind)" != postgres ] || die "the panel already runs on PostgreSQL: $(db_label)"
+    if [ -z "$dsn" ] && [ "$ask" -eq 1 ]; then
+        echo "  1. Install PostgreSQL on this server (recommended)"
+        echo "  2. Use a PostgreSQL server you already have"
+        read -rp "Choose [1]: " choice || true
+        if [ "$choice" = 2 ]; then
+            read -rp "Its DSN (postgres://user:password@host:5432/database?sslmode=disable): " dsn || true
+            [ -n "$dsn" ] || die "no DSN given"
+        fi
+    fi
+    if [ -n "$dsn" ]; then
+        [[ "$dsn" =~ ^postgres(ql)?://[^/]+/[^/?]+ ]] || die "not a PostgreSQL DSN: postgres://user:password@host:5432/database?sslmode=disable"
+    fi
+    if [ "$ask" -eq 1 ]; then
+        echo "The panel stops while its data is copied into PostgreSQL, and starts again on it."
+        echo "Its SQLite database is kept in ${DB_FILE}; panel tables already in the PostgreSQL database are replaced."
+        confirm "Continue?" || return 0
+    fi
+    if [ -z "$dsn" ]; then
+        pg_local_ready || pg_install_server
+        dsn=$(pg_create_database)
+        order_after_local_server
+    fi
+    pg_ensure_client "$dsn"
+    if systemctl is-active --quiet manifold 2>/dev/null; then
+        was_running=1
+        systemctl stop manifold
+    fi
+    if [ -f "$DB_FILE" ] && ! "$BIN" migrate-db --dsn "$dsn"; then
+        [ "$was_running" -eq 0 ] || systemctl start manifold
+        die "the copy into PostgreSQL failed; the panel still runs on SQLite"
+    fi
+    write_db_env postgres "$dsn"
+    [ "$start" -eq 1 ] || return 0
+    if ! panel_start_checked; then
+        write_db_env sqlite
+        drop_server_order
+        systemctl restart manifold || true
+        die "the panel did not start on PostgreSQL, so it is back on SQLite; see: journalctl -u manifold -n 50"
+    fi
+    info "The panel runs on PostgreSQL: $(db_label)"
+}
+
+# db_to_sqlite [--yes]: the panel's PostgreSQL data copied into a new SQLite file,
+# and the panel on it. The SQLite file it had before is kept beside it.
+db_to_sqlite() {
+    need_root
+    local ask=1 dsn copy="${DB_FILE}.from-postgres" old="" ext was_running=0
+    [ "${1:-}" != --yes ] || ask=0
+    [ -t 0 ] || ask=0
+    [ "$(db_kind)" = postgres ] || die "the panel already runs on SQLite: $(db_label)"
+    dsn=$(db_env DSN)
+    if [ "$ask" -eq 1 ]; then
+        echo "The panel stops while its data is copied out of PostgreSQL, and starts again on SQLite."
+        echo "The PostgreSQL database is left as it is."
+        confirm "Continue?" || return 0
+    fi
+    rm -f "$copy"
+    if systemctl is-active --quiet manifold 2>/dev/null; then
+        was_running=1
+        systemctl stop manifold
+    fi
+    if ! "$BIN" migrate-db --to-sqlite "$copy"; then
+        rm -f "$copy"
+        [ "$was_running" -eq 0 ] || systemctl start manifold
+        die "the copy out of PostgreSQL failed; the panel still runs on it"
+    fi
+    if [ -e "$DB_FILE" ]; then
+        old="${DB_FILE}.before-$(date +%Y%m%d-%H%M%S)"
+        for ext in "" -wal -shm; do
+            [ ! -e "${DB_FILE}${ext}" ] || mv "${DB_FILE}${ext}" "${old}${ext}"
+        done
+    fi
+    mv "$copy" "$DB_FILE"
+    chmod 600 "$DB_FILE"
+    write_db_env sqlite
+    drop_server_order
+    if ! panel_start_checked; then
+        systemctl stop manifold || true
+        for ext in "" -wal -shm; do
+            [ ! -e "${DB_FILE}${ext}" ] || mv "${DB_FILE}${ext}" "${copy}${ext}"
+            [ -z "$old" ] || [ ! -e "${old}${ext}" ] || mv "${old}${ext}" "${DB_FILE}${ext}"
+        done
+        write_db_env postgres "$dsn"
+        systemctl restart manifold || true
+        die "the panel did not start on SQLite, so it is back on PostgreSQL; see: journalctl -u manifold -n 50"
+    fi
+    info "The panel runs on SQLite: ${DB_FILE}"
+    [ -z "$old" ] || echo "The SQLite database it had before is kept as ${old}."
+    echo "The PostgreSQL database is unchanged: $(dsn_label "$dsn")"
+}
+
+db_status() {
+    local dsn tool unit major
+    echo "Database: $(db_label)"
+    if [ "$(db_kind)" = postgres ]; then
+        dsn=$(db_env DSN)
+        if ! command -v psql >/dev/null 2>&1; then
+            echo "${yellow}psql is not installed, so the server cannot be checked: manifold db client${plain}"
+        elif major=$(pg_server_major "$dsn"); then
+            echo "Server: ${green}reachable${plain}, PostgreSQL ${major}"
+        else
+            echo "Server: ${red}cannot be reached${plain}"
+        fi
+    fi
+    for tool in pg_dump pg_restore psql; do
+        if command -v "$tool" >/dev/null 2>&1; then
+            echo "${tool}: $(pg_tool_major "$tool")"
+        elif [ "$(db_kind)" = postgres ]; then
+            echo "${tool}: ${red}not installed${plain} (the panel's backups and restores need it: manifold db client)"
+        fi
+    done
+    if unit=$(pg_service); then
+        echo "Local PostgreSQL server: $(systemctl is-active "$unit" 2>/dev/null || true) (${unit})"
+    fi
+}
+
+pg_restart() {
+    need_root
+    local unit
+    unit=$(pg_service) || die "no PostgreSQL server is installed on this machine"
+    systemctl restart "$unit"
+    info "PostgreSQL (${unit}) restarted."
+}
+
+pg_log() {
+    local unit
+    unit=$(pg_service) || die "no PostgreSQL server is installed on this machine"
+    journalctl -u "$unit" --no-pager -n 100
+}
+
+db_menu() {
+    local choice="" kind
+    kind=$(db_kind)
+    echo "  Database: $(db_label)"
+    if [ "$kind" = postgres ]; then
+        echo "  1. Switch to SQLite"
+    else
+        echo "  1. Switch to PostgreSQL"
+    fi
+    echo "  2. Status"
+    echo "  3. Install or update the PostgreSQL client tools"
+    echo "  4. Restart the local PostgreSQL server"
+    echo "  5. Local PostgreSQL log"
+    echo "  0. Back"
+    read -rp "Choose: " choice || true
+    case "$choice" in
+        1) if [ "$kind" = postgres ]; then db_to_sqlite; else db_to_postgres; fi ;;
+        2) db_status ;;
+        3) pg_install_client ;;
+        4) pg_restart ;;
+        5) pg_log ;;
+    esac
+}
+
+db_command() {
+    local sub="${1:-status}"
+    [ $# -eq 0 ] || shift
+    case "$sub" in
+        status) db_status ;;
+        postgres) db_to_postgres "$@" ;;
+        sqlite) db_to_sqlite "$@" ;;
+        client) pg_install_client "$@" ;;
+        *) die "usage: manifold db [status | postgres [DSN] | sqlite | client [MAJOR]]" ;;
+    esac
 }
 
 # --- the relay ---
@@ -1091,6 +1562,7 @@ Backup & Restore|backup_menu
 BBR|bbr_menu
 Update Geo Files|geo_menu
 Tunnels: state of each end|tunnel_list
+Database: SQLite or PostgreSQL|db_menu
 MENU
 }
 
@@ -1126,6 +1598,7 @@ SSH Port Forwarding|ssh_forwarding
 Recovery (2FA, certificate, listen)|recovery_menu
 Backup & Restore|backup_menu
 BBR|bbr_menu
+Database: SQLite or PostgreSQL|db_menu
 MENU
 }
 
@@ -1280,6 +1753,7 @@ main() {
         setting | migrate-db | backup | migrate) "$BIN" "$cmd" "$@" ;;
         tunnel) run_tunnel "$@" ;;
         relay-token) relay_token ;;
+        db) db_command "$@" ;;
         version) "$BIN" -v ;;
         iplimit) iplimit "$@" ;;
         bbr) bbr "$@" ;;

@@ -643,6 +643,8 @@ func main() {
 	migrateDbCmd.StringVar(&migrateDump, "dump", "", "Write a portable SQL text dump of --src to this file (.db -> .dump)")
 	migrateDbCmd.StringVar(&migrateRestore, "restore", "", "Rebuild a SQLite database from this SQL text dump (.dump -> .db); requires --out")
 	migrateDbCmd.StringVar(&migrateOut, "out", "", "Destination SQLite file for --restore (must not already exist)")
+	var migrateToSQLite string
+	migrateDbCmd.StringVar(&migrateToSQLite, "to-sqlite", "", "Copy the panel's PostgreSQL database into this new SQLite file (must not already exist)")
 
 	settingCmd := flag.NewFlagSet("setting", flag.ExitOnError)
 	var port int
@@ -740,13 +742,19 @@ func main() {
 				os.Exit(1)
 			}
 			fmt.Printf("Restored %s -> %s\n", migrateRestore, migrateOut)
+		case migrateToSQLite != "":
+			if err := copyPostgresToSQLite(migrateToSQLite); err != nil {
+				fmt.Println("copy failed:", err)
+				os.Exit(1)
+			}
+			fmt.Printf("Copied the PostgreSQL database -> %s\n", migrateToSQLite)
 		case migrateDsn != "":
 			if err := database.MigrateData(src, migrateDsn); err != nil {
 				fmt.Println("migration failed:", err)
 				os.Exit(1)
 			}
 		default:
-			fmt.Println("nothing to do: pass --dump <file>, --restore <file> --out <db>, or --dsn <postgres-dsn>")
+			fmt.Println("nothing to do: pass --dump <file>, --restore <file> --out <db>, --dsn <postgres-dsn> or --to-sqlite <db>")
 		}
 	case "setting":
 		err := settingCmd.Parse(os.Args[2:])

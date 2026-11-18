@@ -193,13 +193,13 @@ systemctl() { echo "[systemctl $*]" >>"$FAKE_LOG"; }
 printf '12\n\n0\n' | show_menu >/dev/null 2>&1
 check "relay menu 12 is the status, not an Xray restart" "$(calls)" "[systemctl status manifold --no-pager]"
 unset -f systemctl
-check "the relay menu ends at its last entry" "$(menu_count)" "25"
+check "the relay menu ends at its last entry" "$(menu_count)" "26"
 check "the relay menu offers no Xray, IP limit or geo files" \
     "$(menu_entries | grep -ciE 'xray|ip limit|geo')" "0"
 : >"$ENV_FILE"
-check "the panel menu keeps its numbers and adds the tunnels at 26" \
-    "$(menu_entries | grep -v '^-$' | sed -n '12p;17p;25p;26p' | cut -d'|' -f2 | tr '\n' ' ')" \
-    "restart_xray doctor geo_menu tunnel_list "
+check "the panel menu keeps its numbers and adds the tunnels at 26, the database at 27" \
+    "$(menu_entries | grep -v '^-$' | sed -n '12p;17p;25p;26p;27p' | cut -d'|' -f2 | tr '\n' ' ')" \
+    "restart_xray doctor geo_menu tunnel_list db_menu "
 
 # The panel starts Xray as bin/xray-linux-* from its own folder, so the command
 # line never holds the absolute path; the status read "Not running" while it ran.
@@ -218,6 +218,108 @@ kill "$fake_xray"
 wait "$fake_xray" 2>/dev/null || true
 check "a stopped Xray is not running" \
     "$(INSTALL_DIR="$work/install" xray_running && echo yes || echo no)" "no"
+
+# The database the panel opens: the env file, where MANIFOLD_ wins over XUI_ as in the panel.
+DATA_DIR="$work/data" DB_FILE="$work/data/manifold.db" ENV_FILE="$work/default"
+UNIT_DROPIN="$work/systemd/manifold.service.d/postgresql.conf"
+mkdir -p "$DATA_DIR"
+printf 'XUI_DB_TYPE=postgres\nXUI_DB_DSN=postgres://manifold:s3cret@127.0.0.1:5432/manifold?sslmode=disable\n' >"$ENV_FILE"
+check "a panel switched by hand with XUI_ names counts as PostgreSQL" "$(db_kind)" "postgres"
+check "its DSN is shown without the password" "$(db_label)" \
+    "PostgreSQL (postgres://manifold@127.0.0.1:5432/manifold?sslmode=disable)"
+printf 'MANIFOLD_EDITION=tunnel\nXUI_DB_TYPE=postgres\nMANIFOLD_DB_TYPE=sqlite\n' >"$ENV_FILE"
+check "MANIFOLD_DB_TYPE wins over XUI_DB_TYPE" "$(db_kind)" "sqlite"
+write_db_env postgres "postgres://u:p@db:5432/m?sslmode=disable"
+check "a switch replaces both spellings and keeps the other settings" "$(tr '\n' ' ' <"$ENV_FILE")" \
+    "MANIFOLD_EDITION=tunnel MANIFOLD_DB_TYPE=postgres MANIFOLD_DB_DSN=postgres://u:p@db:5432/m?sslmode=disable "
+check "the env file holding the password is root's only" "$(stat -c %a "$ENV_FILE")" "600"
+write_db_env sqlite
+check "back to SQLite leaves no database line" "$(tr '\n' ' ' <"$ENV_FILE")" "MANIFOLD_EDITION=tunnel "
+
+# The password goes to the client in its environment: a command line is readable by every user.
+# shellcheck disable=SC2329 # pg_with_dsn calls it
+show_args() { echo "env=${PGPASSWORD} args=$*"; }
+check "pg_with_dsn keeps the password off the command line" \
+    "$(pg_with_dsn 'postgres://manifold:p%40ss@db:5432/m?sslmode=disable' show_args -d)" \
+    "env=p@ss args=-d postgres://manifold@db:5432/m?sslmode=disable"
+unset -f show_args
+
+# Moving between the two: the copy, the env file and the files of the SQLite database.
+cat >"$work/bin/manifold" <<'FAKE'
+#!/usr/bin/env bash
+echo "[$*]" >>"$FAKE_LOG"
+case "$1 $2" in
+    "migrate-db --to-sqlite") echo "copied" >"$3" ;;
+    "migrate-db --dsn") exit "${FAKE_MIGRATE_EXIT:-0}" ;;
+esac
+FAKE
+# shellcheck disable=SC2329 # the database moves call them
+systemctl() { echo "[systemctl $*]" >>"$FAKE_LOG"; [ "$1" != is-active ] || [ "${FAKE_ACTIVE:-1}" = 1 ]; }
+panel_start_checked() { [ "${FAKE_START:-0}" = 0 ]; }
+pg_ensure_client() { :; }
+DSN="postgres://manifold:pw@127.0.0.1:5432/manifold?sslmode=disable"
+
+: >"$ENV_FILE"
+echo "old" >"$DB_FILE"
+: >"$FAKE_LOG"
+db_to_postgres "$DSN" </dev/null >/dev/null
+check "to PostgreSQL: the panel stops, its SQLite data is copied, then it runs on the DSN" "$(calls)" \
+    "[systemctl is-active --quiet manifold][systemctl stop manifold][migrate-db --dsn ${DSN}]"
+check "to PostgreSQL: the env file names it" "$(db_env DSN)" "$DSN"
+check "to PostgreSQL: the SQLite database is kept" "$(cat "$DB_FILE")" "old"
+
+: >"$ENV_FILE"
+FAKE_MIGRATE_EXIT=1 bash -c 'source "$1"; BIN="$2" DB_FILE="$3" ENV_FILE="$4"; need_root() { :; }; pg_ensure_client() { :; }
+    systemctl() { [ "$1" != is-active ]; }; db_to_postgres "$5"' _ "$(dirname "$0")/../../manifold.sh" "$BIN" "$DB_FILE" "$ENV_FILE" "$DSN" \
+    </dev/null >/dev/null 2>&1 || true
+check "a failed copy leaves the panel on SQLite" "$(db_kind)" "sqlite"
+
+: >"$ENV_FILE"
+FAKE_START=1 bash -c 'source "$1"; BIN="$2" DB_FILE="$3" ENV_FILE="$4"; need_root() { :; }; pg_ensure_client() { :; }
+    systemctl() { [ "$1" != is-active ]; }; panel_start_checked() { false; }; db_to_postgres "$5"' _ "$(dirname "$0")/../../manifold.sh" "$BIN" "$DB_FILE" "$ENV_FILE" "$DSN" \
+    </dev/null >/dev/null 2>&1 || true
+check "a panel that does not start on PostgreSQL is put back on SQLite" "$(db_kind)" "sqlite"
+
+rm -f "$DB_FILE"
+: >"$ENV_FILE"
+: >"$FAKE_LOG"
+FAKE_ACTIVE=0 db_to_postgres "$DSN" --no-start </dev/null >/dev/null
+check "a new panel has nothing to copy: it only gets the setting" "$(calls)" "[systemctl is-active --quiet manifold]"
+check "a new panel on PostgreSQL" "$(db_kind)" "postgres"
+
+echo "old" >"$DB_FILE"
+echo "old wal" >"${DB_FILE}-wal"
+write_db_env postgres "$DSN"
+db_to_sqlite </dev/null >/dev/null
+check "to SQLite: the copy is the database" "$(cat "$DB_FILE")" "copied"
+check "to SQLite: the database it had before is kept, its WAL with it" \
+    "$(cat "$DATA_DIR"/manifold.db.before-*-wal 2>/dev/null)/$(cat "$DATA_DIR"/manifold.db.before-[0-9]*[0-9] 2>/dev/null)" "old wal/old"
+check "to SQLite: no WAL of the old database is left beside the new one" "$([ -e "${DB_FILE}-wal" ] && echo left || echo none)" "none"
+check "to SQLite: the env file names no database" "$(db_kind)" "sqlite"
+
+rm -f "$DATA_DIR"/manifold.db*
+echo "old" >"$DB_FILE"
+write_db_env postgres "$DSN"
+FAKE_START=1 bash -c 'source "$1"; BIN="$2" DATA_DIR="$3" DB_FILE="$3/manifold.db" ENV_FILE="$4"; need_root() { :; }
+    systemctl() { [ "$1" != is-active ]; }; panel_start_checked() { echo "x" >"${DB_FILE}-wal"; false; }; db_to_sqlite' \
+    _ "$(dirname "$0")/../../manifold.sh" "$BIN" "$DATA_DIR" "$ENV_FILE" </dev/null >/dev/null 2>&1 || true
+check "a panel that does not start on SQLite is put back on PostgreSQL" "$(db_env DSN)" "$DSN"
+check "and its old SQLite database is back in place, with no WAL of the copy" \
+    "$(cat "$DB_FILE")/$([ -e "${DB_FILE}-wal" ] && echo wal || echo none)" "old/none"
+
+# A server set up here: at boot the panel waits for it, and a move back to SQLite drops that.
+rm -f "$DATA_DIR"/manifold.db*
+: >"$ENV_FILE"
+pg_local_ready() { true; }
+pg_create_database() { echo "$DSN"; }
+# shellcheck disable=SC2329 # db_to_postgres calls it
+pg_service() { echo postgresql-18; }
+db_to_postgres --yes </dev/null >/dev/null
+check "the panel starts after the local PostgreSQL server" "$(tr '\n' ' ' <"$UNIT_DROPIN")" \
+    "[Unit] After=postgresql-18.service Wants=postgresql-18.service "
+db_to_sqlite --yes </dev/null >/dev/null
+check "on SQLite it no longer waits for it" "$([ -e "$UNIT_DROPIN" ] && echo kept || echo gone)" "gone"
+unset -f systemctl panel_start_checked pg_ensure_client pg_local_ready pg_create_database pg_service
 
 [ "$failures" -eq 0 ] || exit 1
 echo "all management command function tests passed"

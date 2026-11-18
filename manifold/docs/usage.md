@@ -332,7 +332,12 @@ The `manifold` command manages the service and the panel settings, and works whi
 | `manifold doctor` | Check what keeps the panel from being reached |
 | `manifold backup create [-out DIR] [-passphrase P]` | Write a full backup; `manifold backup restore -in FILE` puts one back with the panel stopped |
 | `manifold setting -getApiToken` | Print a fresh API token and invalidate the previous one. `-tokenName` and `-tokenScope` (`admin`, `monitor`, `node-sync`, `node-admin`, `tunnel`) choose which |
-| `manifold migrate-db --dsn DSN` | Copy the SQLite database into PostgreSQL |
+| `manifold db` | Which database the panel runs on, whether its PostgreSQL server answers, and the client tools ([SQLite or PostgreSQL](installation.md#sqlite-or-postgresql)) |
+| `manifold db postgres [DSN]` | Move the panel onto PostgreSQL: one installed here, or the server DSN names |
+| `manifold db sqlite` | Move the panel back onto SQLite |
+| `manifold db client [MAJOR]` | Install the PostgreSQL client tools the panel's backups and restores use |
+| `manifold migrate-db --dsn DSN` | Copy the SQLite database into PostgreSQL, without switching the panel |
+| `manifold migrate-db --to-sqlite FILE` | Copy the panel's PostgreSQL database into a new SQLite file, without switching the panel |
 | `manifold migrate-db --dump FILE` | Write the SQLite database as a portable text dump |
 
 `login`, `port`, `path` and `cert` restart the panel themselves. After `manifold setting ...`, run `manifold restart`.

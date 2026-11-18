@@ -26,9 +26,10 @@ Run from a terminal, the installer first asks what the server runs: **Manifold**
 1. downloads the latest release for the server's architecture and verifies its checksum,
 2. installs the program, the `manifold` command and the `manifold` service,
 3. installs the system packages the VPN engines need, if they are missing,
-4. asks whether you want to choose the panel port (a random free one otherwise), and picks a random URL path, username and password,
-5. asks how the panel should be reached (below),
-6. starts the service, waits until the panel holds its port, and prints the address, the login and an API token in a box.
+4. asks which database the panel runs on: SQLite, or PostgreSQL installed on this server or one you already have ([SQLite or PostgreSQL](#sqlite-or-postgresql)),
+5. asks whether you want to choose the panel port (a random free one otherwise), and picks a random URL path, username and password,
+6. asks how the panel should be reached (below),
+7. starts the service, waits until the panel holds its port, and prints the address, the login and an API token in a box.
 
 How the panel is reached:
 
@@ -92,6 +93,8 @@ bash <(curl -Ls https://raw.githubusercontent.com/FarzadSec/Manifold/main/instal
 | `--no-start` | Install without starting the service |
 | `--no-deps` | Do not install system packages; OpenVPN and WireGuard inbounds then need `openvpn`, `wireguard-tools` and `nftables` installed by hand |
 | `--edition full` or `--edition relay` | Manifold or Manifold Relay, without the question; kept on update |
+| `--db sqlite` or `--db postgres` | The database, without the question; `postgres` installs PostgreSQL on the server |
+| `--db-dsn DSN` | Run on the PostgreSQL server DSN names: `postgres://user:pass@host:5432/db?sslmode=disable` |
 
 These first-install options are ignored when a database already exists.
 
@@ -109,7 +112,7 @@ bash manifold/install.sh --package manifold-linux-amd64.tar.gz
 | Path | Holds |
 |---|---|
 | `/usr/local/manifold/` | The program, the proxy core and its data files |
-| `/etc/manifold/` | The database (`manifold.db`) and keys |
+| `/etc/manifold/` | The database (`manifold.db`, when the panel runs on SQLite) and keys |
 | `/var/log/manifold/` | Log files |
 | `/etc/default/manifold` | Environment variables for the service |
 | `/usr/bin/manifold` | The management command |
@@ -136,6 +139,7 @@ Manifold shares no file, service name or command with other panels, so it can be
 | 23 | Backups: write a full backup to `/root`, sealed with a passphrase if you give one; restore one |
 | 24–25 | BBR on or off; update Xray's geo files (Loyalsoldier, chocolate4u, runetfreedom) |
 | 26 | Tunnels: the state of each end, checked on the spot |
+| 27 | Database: which one the panel runs on; move it between SQLite and PostgreSQL; install the PostgreSQL client tools; restart the local PostgreSQL server or read its log |
 
 On Manifold Relay the menu has its own numbers, without Xray, IP limit or geo files and with the tunnels' state, importing a pairing code and a new relay token.
 
@@ -156,6 +160,7 @@ manifold cert issue -domain panel.example.com   # or the server's IP address
 manifold cert -reset     # serve the panel over plain HTTP
 manifold backup create -out /root -passphrase P
 manifold geo all         # update the geo files
+manifold db              # the database the panel runs on; `manifold db postgres` and `manifold db sqlite` move it
 manifold bbr enable
 manifold help            # everything else
 ```
@@ -180,6 +185,32 @@ The database and settings are kept. Without GitHub access, use `manifold update 
 
 The panel has no update button: it never downloads or runs an updater itself.
 
+## SQLite or PostgreSQL
+
+By default the panel keeps its data in SQLite: one file, `/etc/manifold/manifold.db`, with nothing to run beside it. PostgreSQL suits a panel with many users, nodes and resellers, where many writes come at once.
+
+A first install from a terminal asks which. `--db postgres` chooses PostgreSQL without asking and installs it on the server; `--db-dsn DSN` runs the panel on a server you already have.
+
+An installed panel moves between the two from `manifold` → 27, or with:
+
+```bash
+manifold db            # which database, whether its server answers, the client tools
+manifold db postgres   # install PostgreSQL here and move the panel onto it
+manifold db postgres 'postgres://user:pass@host:5432/db?sslmode=disable'   # or onto a server you have
+manifold db sqlite     # move the panel back onto SQLite
+```
+
+A move stops the panel, copies every table into the other database, and starts the panel on it. If the panel does not come up there, the move is undone and the panel starts where it was. What a move leaves:
+
+- Onto PostgreSQL: the SQLite file stays in `/etc/manifold/`. Panel tables already in the PostgreSQL database are replaced.
+- Onto SQLite: the PostgreSQL database is left as it was, and the SQLite file the panel had before is kept as `manifold.db.before-<date>`.
+
+`manifold db postgres` with no DSN installs PostgreSQL 18 from the PostgreSQL project's repository (the distribution's own version where that repository has none), or uses the server already running here. It creates a `manifold` role with a random password and a `manifold` database, lets that role sign in with its password from 127.0.0.1, and has the panel start after the server at boot. The DSN, password included, goes in `/etc/default/manifold` (readable by root only) as `MANIFOLD_DB_TYPE` and `MANIFOLD_DB_DSN`. A panel switched by hand with the `XUI_DB_TYPE` and `XUI_DB_DSN` names is read the same way.
+
+On PostgreSQL, the panel's database backup (Overview → Backup) is made with `pg_dump` and restored with `pg_restore` and `psql`, which `manifold db postgres` installs at least as new as the server. `manifold db client` installs them again; `manifold db client 18` installs a given major version, for a backup from a newer server. A restore runs as one transaction: one that fails leaves the database as it was. A PostgreSQL backup restores only on a panel running PostgreSQL. To carry the data to a panel on SQLite, use the full backup (Overview → Backup → Full backup for a move): it holds the database as SQLite on both.
+
+A backup can hold the same device of one subscription twice, when the unique index of the server it was made on was damaged. Such a backup restores with those rows merged into one: the earliest first sighting, and the newest row for the rest.
+
 ## Settings through environment variables
 
 Variables go in `/etc/default/manifold`, one `NAME=value` per line, followed by `manifold restart`.
@@ -187,7 +218,7 @@ Variables go in `/etc/default/manifold`, one `NAME=value` per line, followed by 
 | Variable | Effect |
 |---|---|
 | `MANIFOLD_PORT` | Panel port, overriding the stored setting |
-| `MANIFOLD_DB_TYPE`, `MANIFOLD_DB_DSN` | Use PostgreSQL instead of SQLite |
+| `MANIFOLD_DB_TYPE`, `MANIFOLD_DB_DSN` | Use PostgreSQL instead of SQLite; `manifold db` sets both and moves the data |
 | `MANIFOLD_LOG_LEVEL` | `debug`, `info`, `notice`, `warning` or `error` |
 
 `.env.example` in the repository lists every variable.
@@ -198,6 +229,8 @@ Variables go in `/etc/default/manifold`, one `NAME=value` per line, followed by 
 manifold uninstall           # keeps /etc/manifold
 manifold uninstall --purge   # deletes the data as well
 ```
+
+`--purge` does not drop a PostgreSQL database; it prints which one the panel used. On this server: `runuser -u postgres -- dropdb manifold`.
 
 Both also remove the WireGuard configs and the IPsec connection the panel wrote; they are rebuilt from the data if the panel is installed again. The system packages stay, and so do the `*.before-manifold` originals of WireGuard interfaces the panel took over.
 
