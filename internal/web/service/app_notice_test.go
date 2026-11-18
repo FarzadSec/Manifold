@@ -13,7 +13,7 @@ func TestAppNoticePublishRefusesWhatTheAppCannotShow(t *testing.T) {
 		want              error
 	}{
 		{"blank text", "  \n ", AppNoticeInfo, ErrAppNoticeEmpty},
-		{"unknown level", "سرور آلمان امشب به‌روزرسانی می‌شود", "loud", ErrAppNoticeLevel},
+		{"unknown level", "سرور آلمان امشب به\u200cروزرسانی می\u200cشود", "loud", ErrAppNoticeLevel},
 		{"over the length cap in runes", strings.Repeat("ب", maxAppNoticeLength+1), AppNoticeInfo, ErrAppNoticeTooLong},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -32,7 +32,7 @@ func TestAppNoticePublishRefusesWhatTheAppCannotShow(t *testing.T) {
 
 func TestAppNoticesListNewestFirstAndDelete(t *testing.T) {
 	svc := initAppTestDB(t, true)
-	older, err := svc.PublishNotice("  سرور آلمان امشب ساعت ۲ به‌روزرسانی می‌شود  ", AppNoticeInfo)
+	older, err := svc.PublishNotice("  سرور آلمان امشب ساعت ۲ به\u200cروزرسانی می\u200cشود  ", AppNoticeInfo)
 	if err != nil {
 		t.Fatalf("publish: %v", err)
 	}
@@ -40,7 +40,7 @@ func TestAppNoticesListNewestFirstAndDelete(t *testing.T) {
 	if err != nil {
 		t.Fatalf("publish: %v", err)
 	}
-	if older.Body != "سرور آلمان امشب ساعت ۲ به‌روزرسانی می‌شود" || older.CreatedAt == 0 {
+	if older.Body != "سرور آلمان امشب ساعت ۲ به\u200cروزرسانی می\u200cشود" || older.CreatedAt == 0 {
 		t.Fatalf("stored notice = %+v, want the trimmed text and its time", older)
 	}
 

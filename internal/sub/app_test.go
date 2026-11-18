@@ -312,7 +312,7 @@ func appProfile(t *testing.T) map[string]any {
 func TestAppProfileCarriesThePanelsNoticesNewestFirst(t *testing.T) {
 	seedAppAccount(t, true)
 	appSvc := &service.AppService{}
-	older, err := appSvc.PublishNotice("سرور آلمان امشب ساعت ۲ به‌روزرسانی می‌شود", service.AppNoticeInfo)
+	older, err := appSvc.PublishNotice("سرور آلمان امشب ساعت ۲ به\u200cروزرسانی می\u200cشود", service.AppNoticeInfo)
 	if err != nil {
 		t.Fatalf("publish: %v", err)
 	}

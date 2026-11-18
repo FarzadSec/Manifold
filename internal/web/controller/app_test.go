@@ -78,9 +78,9 @@ func TestAppNoticesPublishListAndDelete(t *testing.T) {
 	router := gin.New()
 	NewAppController(router.Group("/panel/api/app"))
 
-	published := appLocationsCall(t, router, http.MethodPost, "/panel/api/app/notices", `{"body":"قطعی برنامه‌ریزی‌شده سرور هلند","level":"critical"}`)
+	published := appLocationsCall(t, router, http.MethodPost, "/panel/api/app/notices", `{"body":"قطعی برنامه\u200cریزی\u200cشده سرور هلند","level":"critical"}`)
 	obj, _ := published["obj"].(map[string]any)
-	if published["success"] != true || obj["level"] != "critical" || obj["body"] != "قطعی برنامه‌ریزی‌شده سرور هلند" {
+	if published["success"] != true || obj["level"] != "critical" || obj["body"] != "قطعی برنامه\u200cریزی\u200cشده سرور هلند" {
 		t.Fatalf("publish = %v", published)
 	}
 	if refused := appLocationsCall(t, router, http.MethodPost, "/panel/api/app/notices", `{"body":"x","level":"urgent"}`); refused["success"] != false {
