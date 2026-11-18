@@ -334,7 +334,8 @@ jobs:
           login
           test "$(count)" = "$before"
           sudo manifold db sqlite --yes
-          sudo manifold db | grep -q '^Database: SQLite'
+          sudo manifold db > /tmp/db.txt
+          grep -q '^Database: SQLite' /tmp/db.txt
           up
           login
           test "$(count)" = "$before"

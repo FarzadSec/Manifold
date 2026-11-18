@@ -505,7 +505,7 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 ### 8.20 Changes in 0.20.0
 
 - The installer asks for the database on a first install (`--db`, `--db-dsn`); `manifold` → 27 and `manifold db` show it and move the panel between SQLite and PostgreSQL. `migrate-db --to-sqlite` copies a PostgreSQL panel into SQLite. The status lines name the database, and `doctor` checks that its PostgreSQL server answers.
-- A PostgreSQL backup restores through psql in one transaction and merges duplicate device rows; the restore now needs `psql` beside `pg_restore`. Messages that named 3x-ui's `x-ui` command name Manifold's.
+- A PostgreSQL backup restores through psql in one transaction and merges duplicate device rows; the restore now needs `psql` beside `pg_restore`. The panel runs the newest installed version of `pg_dump`, `pg_restore` and `psql` itself: Debian's wrapper chose the newest `pg_dump` but the local cluster's `pg_restore`, which could not read the panel's own backups, on Ubuntu 22.04 and 24.04 with their distribution's server beside PostgreSQL 18. The script leaves out settings an older server lacks, as `pg_restore` does when it talks to the server itself. Messages that named 3x-ui's `x-ui` command name Manifold's.
 - Open: a local PostgreSQL server is set up on Debian, Ubuntu and the RHEL family from the PostgreSQL project's repository and checked in the release job on Ubuntu only; openSUSE and Arch get their distribution's server untested.
 
 ### 8.19 Changes in 0.17.0

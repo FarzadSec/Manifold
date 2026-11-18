@@ -2033,7 +2033,7 @@ func pgConnEnv(dsn string) (env []string, dbname string, err error) {
 }
 
 func (s *ServerService) exportPostgresDB() ([]byte, error) {
-	bin, err := exec.LookPath("pg_dump")
+	bin, err := pgClientTool("pg_dump")
 	if err != nil {
 		return nil, common.NewError("pg_dump not found on the server; install the postgresql-client package to back up a PostgreSQL database")
 	}
@@ -2154,11 +2154,11 @@ func (s *ServerService) importPostgresDB(file multipart.File, keep []string) err
 }
 
 func (s *ServerService) restorePostgresDump(file multipart.File, keep []string) error {
-	bin, err := exec.LookPath("pg_restore")
+	bin, err := pgClientTool("pg_restore")
 	if err != nil {
 		return common.NewError("pg_restore not found on the server; install the postgresql-client package to restore a PostgreSQL database")
 	}
-	psql, err := exec.LookPath("psql")
+	psql, err := pgClientTool("psql")
 	if err != nil {
 		return common.NewError("psql not found on the server; install the postgresql-client package to restore a PostgreSQL database")
 	}
@@ -2180,7 +2180,11 @@ func (s *ServerService) restorePostgresDump(file multipart.File, keep []string) 
 	if err := checkPgRestoreCanRead(bin, tempPath); err != nil {
 		return err
 	}
-	scriptPath, err := writeRestoreScript(bin, tempPath, workDir)
+	known, err := serverSettings(psql, env, dbname)
+	if err != nil {
+		return err
+	}
+	scriptPath, err := writeRestoreScript(bin, tempPath, workDir, known)
 	if err != nil {
 		return err
 	}

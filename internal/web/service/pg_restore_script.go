@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
@@ -39,6 +40,47 @@ END
 $merge$;
 `
 
+var settingLine = regexp.MustCompile(`^SET ([a-z_]+) = .*;$`)
+
+// serverSettings lists the parameters the server has, for dropSettingsTheServerLacks.
+func serverSettings(psql string, env []string, dbname string) (map[string]bool, error) {
+	cmd := exec.CommandContext(context.Background(), psql, "--no-psqlrc", "--tuples-only", "--no-align",
+		"--dbname", dbname, "--command", "SELECT name FROM pg_catalog.pg_settings")
+	cmd.Env = env
+	var out, stderr bytes.Buffer
+	cmd.Stdout, cmd.Stderr = &out, &stderr
+	if err := cmd.Run(); err != nil {
+		return nil, common.NewErrorf("Cannot read the PostgreSQL server's settings: %v: %s", err, strings.TrimSpace(stderr.String()))
+	}
+	known := make(map[string]bool)
+	for name := range strings.FieldsSeq(out.String()) {
+		known[name] = true
+	}
+	return known, nil
+}
+
+// dropSettingsTheServerLacks comments out the script's SET lines for parameters the
+// server lacks, as pg_restore does when it talks to a server itself; COPY data stays.
+func dropSettingsTheServerLacks(script []byte, known map[string]bool) []byte {
+	var out bytes.Buffer
+	inCopy := false
+	for line := range bytes.Lines(script) {
+		text := string(bytes.TrimSuffix(line, []byte("\n")))
+		switch {
+		case inCopy:
+			inCopy = text != `\.`
+		case strings.HasPrefix(text, "COPY ") && strings.HasSuffix(text, " FROM stdin;"):
+			inCopy = true
+		default:
+			if m := settingLine.FindStringSubmatch(text); m != nil && !known[m[1]] {
+				out.WriteString("-- ")
+			}
+		}
+		out.Write(line)
+	}
+	return out.Bytes()
+}
+
 // splitRestoreList separates the device index entry from the rest of a
 // "pg_restore --list" table of contents.
 func splitRestoreList(toc string) (rest, deferred string) {
@@ -67,7 +109,7 @@ func runPgRestore(bin string, args ...string) ([]byte, error) {
 
 // writeRestoreScript turns a custom-format dump into one SQL script for psql: the
 // dump without the device index, the device merge, then the device index.
-func writeRestoreScript(pgRestore, dumpPath, dir string) (string, error) {
+func writeRestoreScript(pgRestore, dumpPath, dir string, known map[string]bool) (string, error) {
 	toc, err := runPgRestore(pgRestore, "--list", dumpPath)
 	if err != nil {
 		return "", err
@@ -83,7 +125,7 @@ func writeRestoreScript(pgRestore, dumpPath, dir string) (string, error) {
 		return "", err
 	}
 	var script bytes.Buffer
-	script.Write(restSQL)
+	script.Write(dropSettingsTheServerLacks(restSQL, known))
 	script.WriteString(mergeDuplicateDevicesSQL)
 	if deferred != "" {
 		if err := os.WriteFile(deferredList, []byte(deferred), 0o600); err != nil {
@@ -93,7 +135,7 @@ func writeRestoreScript(pgRestore, dumpPath, dir string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		script.Write(indexSQL)
+		script.Write(dropSettingsTheServerLacks(indexSQL, known))
 	}
 	scriptPath := filepath.Join(dir, "restore.sql")
 	if err := os.WriteFile(scriptPath, script.Bytes(), 0o600); err != nil {
