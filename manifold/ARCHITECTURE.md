@@ -502,6 +502,12 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - Node templates (one configuration applied to many nodes) are not built; a node's inbounds are created on it from the master as before.
 - Live connections per node are still not listed (see 8.7).
 
+### 8.21 Changes in 0.21.0
+
+- The subscription path serves `<link>/openvpn` and `<link>/wireguard`: one block per app location in the locations' order (inbounds in no location last), the OpenVPN login once, a QR code per WireGuard config and a ZIP of all of them. Files are named after the location and fetched as `/openvpn/<n>`, `/wireguard/<n>` and `/wireguard/all.zip`; the pages answer exactly when the subscription does (subscriptionBody off, as on the info page). For customers without the app, iOS ones included.
+- `GET /panel/api/clients/subEntries/:subId` is `subLinks` with each link's inbound and app location, so a sales bot sends one location's file and links the pages for the rest.
+- Open: the pages are not themed by the subscription page theme; they carry their own small style.
+
 ### 8.20 Changes in 0.20.0
 
 - The installer asks for the database on a first install (`--db`, `--db-dsn`); `manifold` → 27 and `manifold db` show it and move the panel between SQLite and PostgreSQL. `migrate-db --to-sqlite` copies a PostgreSQL panel into SQLite. The status lines name the database, and `doctor` checks that its PostgreSQL server answers.

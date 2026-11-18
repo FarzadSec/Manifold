@@ -8076,6 +8076,54 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "SubEntry": {
+    "description": "SubEntry is one subscription link with the inbound and app location it comes from.",
+    "properties": {
+      "city": {
+        "example": "Frankfurt",
+        "type": "string"
+      },
+      "countryCode": {
+        "example": "DE",
+        "type": "string"
+      },
+      "inboundId": {
+        "example": 3,
+        "type": "integer"
+      },
+      "link": {
+        "example": "openvpn://IyBERS1PVlBO...",
+        "type": "string"
+      },
+      "location": {
+        "example": "Germany",
+        "type": "string"
+      },
+      "locationId": {
+        "example": 1,
+        "type": "integer"
+      },
+      "protocol": {
+        "example": "openvpn",
+        "type": "string"
+      },
+      "sortOrder": {
+        "example": 0,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "city",
+      "countryCode",
+      "inboundId",
+      "link",
+      "location",
+      "locationId",
+      "protocol",
+      "sortOrder"
+    ],
+    "type": "object"
+  },
   "TgBotCapabilities": {
     "description": "TgBotCapabilities is the browser-safe shape of the bot's own capabilities.",
     "properties": {

@@ -8102,6 +8102,54 @@
         ],
         "type": "object"
       },
+      "SubEntry": {
+        "description": "SubEntry is one subscription link with the inbound and app location it comes from.",
+        "properties": {
+          "city": {
+            "example": "Frankfurt",
+            "type": "string"
+          },
+          "countryCode": {
+            "example": "DE",
+            "type": "string"
+          },
+          "inboundId": {
+            "example": 3,
+            "type": "integer"
+          },
+          "link": {
+            "example": "openvpn://IyBERS1PVlBO...",
+            "type": "string"
+          },
+          "location": {
+            "example": "Germany",
+            "type": "string"
+          },
+          "locationId": {
+            "example": 1,
+            "type": "integer"
+          },
+          "protocol": {
+            "example": "openvpn",
+            "type": "string"
+          },
+          "sortOrder": {
+            "example": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "city",
+          "countryCode",
+          "inboundId",
+          "link",
+          "location",
+          "locationId",
+          "protocol",
+          "sortOrder"
+        ],
+        "type": "object"
+      },
       "TgBotCapabilities": {
         "description": "TgBotCapabilities is the browser-safe shape of the bot's own capabilities.",
         "properties": {
@@ -16710,6 +16758,67 @@
                   "obj": [
                     "vless://uuid@host:443?security=reality&...#user1",
                     "vmess://eyJ2IjoyLC..."
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/clients/subEntries/{subId}": {
+      "get": {
+        "tags": [
+          "Clients"
+        ],
+        "summary": "The same links as subLinks, in the same order, each with the inbound it comes from (inboundId, protocol) and that inbound's app location (locationId, location, countryCode, city, sortOrder). locationId is 0 for an inbound in no location; inboundId is 0 for a client external link. Lets a bot hand out one file per location and name it after the location.",
+        "operationId": "get_panel_api_clients_subEntries_subId",
+        "parameters": [
+          {
+            "name": "subId",
+            "in": "path",
+            "required": true,
+            "description": "Subscription ID, taken from the client's subId field.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SubEntry"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "city": "Frankfurt",
+                      "countryCode": "DE",
+                      "inboundId": 3,
+                      "link": "openvpn://IyBERS1PVlBO...",
+                      "location": "Germany",
+                      "locationId": 1,
+                      "protocol": "openvpn",
+                      "sortOrder": 0
+                    }
                   ]
                 }
               }

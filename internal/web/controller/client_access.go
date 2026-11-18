@@ -52,6 +52,7 @@ var resellerClientRoutes = map[string]resellerTarget{
 	"POST /clients/hwids/:email":         targetEmailRead,
 	"GET /clients/get/subId/:subId":      targetSubID,
 	"GET /clients/subLinks/:subId":       targetSubID,
+	"GET /clients/subEntries/:subId":     targetSubID,
 	"POST /clients/happLink/:id":         targetRecordID,
 	"POST /clients/update":               targetEmailWrite,
 	"POST /clients/update/:email":        targetEmailWrite,

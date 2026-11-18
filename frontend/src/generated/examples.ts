@@ -2109,6 +2109,16 @@ export const EXAMPLES: Record<string, unknown> = {
     "strategy": "random",
     "updatedAt": 1710000000000
   },
+  "SubEntry": {
+    "city": "Frankfurt",
+    "countryCode": "DE",
+    "inboundId": 3,
+    "link": "openvpn://IyBERS1PVlBO...",
+    "location": "Germany",
+    "locationId": 1,
+    "protocol": "openvpn",
+    "sortOrder": 0
+  },
   "TgBotCapabilities": {
     "groupPrivacy": false,
     "inlineEnabled": true,

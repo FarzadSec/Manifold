@@ -1955,6 +1955,22 @@ export const sections: readonly Section[] = [
           '{\n  "success": true,\n  "obj": [\n    "vless://uuid@host:443?security=reality&...#user1",\n    "vmess://eyJ2IjoyLC..."\n  ]\n}',
       },
       {
+        method: 'GET',
+        path: '/panel/api/clients/subEntries/:subId',
+        summary:
+          "The same links as subLinks, in the same order, each with the inbound it comes from (inboundId, protocol) and that inbound's app location (locationId, location, countryCode, city, sortOrder). locationId is 0 for an inbound in no location; inboundId is 0 for a client external link. Lets a bot hand out one file per location and name it after the location.",
+        params: [
+          {
+            name: 'subId',
+            in: 'path',
+            type: 'string',
+            desc: "Subscription ID, taken from the client's subId field.",
+          },
+        ],
+        responseSchema: 'SubEntry',
+        responseSchemaArray: true,
+      },
+      {
         method: 'POST',
         path: '/panel/api/clients/happLink/:id',
         summary:

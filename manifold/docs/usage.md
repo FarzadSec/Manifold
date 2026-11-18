@@ -266,6 +266,8 @@ Every account keeps its keys, UUIDs, passwords and certificates, so **what decid
 
 **Page theme** decides what a user sees when the subscription link is opened in a browser. **Aurora** (dark) and **Paper** (light) are built in; **Catalogue** lists more themes from the Manifold repository, installed with one click and updated when a newer version appears. Where GitHub is blocked, **Catalogue address** can point at a mirror of `sub-themes/catalog.json`. Every theme shows usage, expiry, the subscription QR code, buttons that add the subscription to Happ, v2rayNG, Hiddify, Streisand, sing-box and Clash, and each configuration with its own QR code, in English, Persian (right to left), Russian or Chinese, from `?lang=` or the browser. **Custom theme folder** still takes a folder of your own and overrides the picked theme; writing one is described in `sub-themes/README.md`.
 
+**File pages.** Customers who use OpenVPN Connect or the WireGuard app instead of a VPN app get every location's file from two pages under their own subscription link: `<subscription link>/openvpn` and `<subscription link>/wireguard`, such as `https://sub.example.com:2096/sub/k4m2xr8qv/openvpn`. Each page lists one block per app location, in the locations' order and with the country's flag, then the inbounds that serve no location under their remark, each with a download button. The OpenVPN page shows the login once at the top with copy buttons; the WireGuard page adds each config's QR code for the phone app and a **Download all (ZIP)** button, which the WireGuard apps import in one go. Files are named after their location (`Germany.ovpn`, `Germany-2.ovpn` for a second server there, `Netherlands.conf`) and can be fetched directly: `/openvpn/<n>`, `/wireguard/<n>` (n counts from 1 in page order) and `/wireguard/all.zip`. The pages are in Persian, right to left, by default and in English for a browser that asks for it or with `?lang=en`; they answer exactly when the subscription link does.
+
 The subscription server is on by default and listens on its own port (2096). Its address, path and the extra formats (JSON and Clash, both off by default) are set under Panel Settings. Open that port in the firewall before handing out subscription links.
 
 ## App
@@ -345,6 +347,8 @@ The `manifold` command manages the service and the panel settings, and works whi
 ## API
 
 Everything the interface does goes through the HTTP API. The API Docs page lists every endpoint, and the OpenAPI description is served at `/panel/api/openapi.json`. Requests authenticate with a bearer token; give each integration its own token with the narrowest scope that works.
+
+For a sales bot, `GET /panel/api/clients/subEntries/:subId` returns the same links as `subLinks/:subId`, in the same order, each with the inbound it comes from and that inbound's app location: `{"link", "inboundId", "protocol", "locationId", "location", "countryCode", "city", "sortOrder"}`. `locationId` is 0 for an inbound in no location and `inboundId` 0 for a client's external link. A bot can then send one location's OpenVPN or WireGuard file and point to the file pages above for the rest.
 
 ## Certificates
 

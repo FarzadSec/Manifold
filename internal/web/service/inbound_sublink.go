@@ -7,8 +7,21 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 )
 
+// SubEntry is one subscription link with the inbound and app location it comes from.
+type SubEntry struct {
+	Link        string `json:"link" example:"openvpn://IyBERS1PVlBO..."`
+	InboundId   int    `json:"inboundId" example:"3"`
+	Protocol    string `json:"protocol" example:"openvpn"`
+	LocationId  int    `json:"locationId" example:"1"`
+	Location    string `json:"location" example:"Germany"`
+	CountryCode string `json:"countryCode" example:"DE"`
+	City        string `json:"city" example:"Frankfurt"`
+	SortOrder   int    `json:"sortOrder" example:"0"`
+}
+
 type SubLinkProvider interface {
 	SubLinksForSubId(host, subId string) ([]string, error)
+	SubEntriesForSubId(host, subId string) ([]SubEntry, error)
 	LinksForClient(host string, inbound *model.Inbound, email string) []string
 	LinksForInbounds(host string, inbounds []*model.Inbound) []string
 }
@@ -37,6 +50,14 @@ func (s *InboundService) GetSubLinks(host, subId string) ([]string, error) {
 		return nil, common.NewError("sub link provider not registered")
 	}
 	return provider.SubLinksForSubId(host, subId)
+}
+
+func (s *InboundService) GetSubEntries(host, subId string) ([]SubEntry, error) {
+	provider := subLinkProvider()
+	if provider == nil {
+		return nil, common.NewError("sub link provider not registered")
+	}
+	return provider.SubEntriesForSubId(host, subId)
 }
 
 func (s *InboundService) GetAllInboundLinks(host string, userId int) ([]string, error) {

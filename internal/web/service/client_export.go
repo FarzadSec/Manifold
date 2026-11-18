@@ -228,7 +228,8 @@ func (s *ClientService) ExportCSV(emails []string, owner int, now time.Time) (st
 
 var unsafeFileChars = regexp.MustCompile(`[^A-Za-z0-9._@-]+`)
 
-func packName(s string) string {
+// PackName is a file name safe on every system, from a user or location name.
+func PackName(s string) string {
 	s = strings.Trim(unsafeFileChars.ReplaceAllString(s, "_"), "_.")
 	if s == "" {
 		return "config"
@@ -250,20 +251,33 @@ func clientAppFiles(links []string) map[string]string {
 	for _, link := range links {
 		switch {
 		case strings.HasPrefix(link, openvpn.ShareLinkScheme):
-			raw, err := base64.RawURLEncoding.DecodeString(strings.TrimPrefix(link, openvpn.ShareLinkScheme))
-			if err == nil {
-				add("openvpn", ".ovpn", string(raw))
+			if profile, ok := OpenVPNProfileFromLink(link); ok {
+				add("openvpn", ".ovpn", profile)
 			}
 		case strings.HasPrefix(link, "wireguard://"):
-			if conf, remark, ok := wireguardConf(link); ok {
-				add(packName(remark), ".conf", conf)
+			if conf, remark, ok := WireguardConfFromLink(link); ok {
+				add(PackName(remark), ".conf", conf)
 			}
 		}
 	}
 	return files
 }
 
-func wireguardConf(link string) (string, string, bool) {
+// OpenVPNProfileFromLink is the .ovpn file an openvpn:// share link carries.
+func OpenVPNProfileFromLink(link string) (string, bool) {
+	payload, ok := strings.CutPrefix(link, openvpn.ShareLinkScheme)
+	if !ok {
+		return "", false
+	}
+	raw, err := base64.RawURLEncoding.DecodeString(payload)
+	if err != nil {
+		return "", false
+	}
+	return string(raw), true
+}
+
+// WireguardConfFromLink renders a wireguard:// share link as the wg-quick config and its remark.
+func WireguardConfFromLink(link string) (string, string, bool) {
 	u, err := url.Parse(link)
 	if err != nil || u.User == nil || u.Host == "" {
 		return "", "", false
@@ -313,7 +327,7 @@ func (s *ClientService) ConfigPack(inboundSvc *InboundService, host string, emai
 		return err
 	}
 	for _, r := range rows {
-		dir := packName(r.Email) + "/"
+		dir := PackName(r.Email) + "/"
 		if r.SubID != "" {
 			subURL, jsonURL, _ := urls.For(r.Id, r.OwnerId, r.SubID)
 			text := subURL + "\n"

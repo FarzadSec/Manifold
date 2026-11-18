@@ -370,6 +370,10 @@ func (a *SUBController) initRouter(g *gin.RouterGroup) {
 	gLink.GET(":subid/hwid-status", a.hwidStatus)
 	gLink.HEAD(":subid/hwid-status", a.hwidStatus)
 	gLink.GET(":subid/theme/*file", a.themeAsset)
+	gLink.GET(":subid/openvpn", a.openvpnPage)
+	gLink.GET(":subid/openvpn/:n", a.openvpnFile)
+	gLink.GET(":subid/wireguard", a.wireguardPage)
+	gLink.GET(":subid/wireguard/:n", a.wireguardFile)
 	gLink.GET(":subid/:key", a.legacyTwoPart)
 	a.registerAppRoutes(gLink)
 	if a.jsonEnabled {

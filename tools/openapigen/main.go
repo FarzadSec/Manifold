@@ -111,6 +111,7 @@ func run(root, outDir string) error {
 				"InboundOption",
 				"InboundDeployResult",
 				"HappLinkResult",
+				"SubEntry",
 				"ClientSlim",
 				"ClientRenewalPreviewRequest",
 				"ClientRenewalPreview",

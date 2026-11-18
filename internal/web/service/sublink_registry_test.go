@@ -15,6 +15,10 @@ func (f fakeSubLinkProvider) SubLinksForSubId(host, subId string) ([]string, err
 	return f.links, nil
 }
 
+func (f fakeSubLinkProvider) SubEntriesForSubId(host, subId string) ([]SubEntry, error) {
+	return nil, nil
+}
+
 func (f fakeSubLinkProvider) LinksForClient(host string, inbound *model.Inbound, email string) []string {
 	return f.links
 }

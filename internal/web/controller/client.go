@@ -64,6 +64,7 @@ func (a *ClientController) initRouter(g *gin.RouterGroup) {
 	g.GET("/traffic/:email", a.getTrafficByEmail)
 	g.GET("/usage/:email", a.getUsage)
 	g.GET("/subLinks/:subId", a.getSubLinks)
+	g.GET("/subEntries/:subId", a.getSubEntries)
 	g.GET("/links/:email", a.getClientLinks)
 	g.POST("/happLink/:id", a.generateHappLink)
 
@@ -869,6 +870,15 @@ func (a *ClientController) getSubLinks(c *gin.Context) {
 		return
 	}
 	jsonObj(c, links, nil)
+}
+
+func (a *ClientController) getSubEntries(c *gin.Context) {
+	entries, err := a.inboundService.GetSubEntries(resolveHost(c), c.Param("subId"))
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
+		return
+	}
+	jsonObj(c, entries, nil)
 }
 
 func (a *ClientController) getClientLinks(c *gin.Context) {

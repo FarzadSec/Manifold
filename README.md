@@ -25,7 +25,7 @@ One control panel for several VPN protocols. A customer has one account with one
 - Manifold Relay for the server users connect to: tunnels only, its own small package, chosen at install
 - A full backup that moves a panel to another server, with a check of what the move does to every address users' configs carry
 - One client attached to several inbounds, and client groups
-- Subscription server: share links, JSON and Clash output
+- Subscription server: share links, JSON and Clash output, and pages with every location's OpenVPN and WireGuard file (`<link>/openvpn`, `<link>/wireguard`)
 - Several servers managed from one panel (nodes over mutual TLS)
 - Per-client IP limit enforced with Fail2ban
 - Two-factor login (TOTP), API tokens with scopes, and an OpenAPI description of the API

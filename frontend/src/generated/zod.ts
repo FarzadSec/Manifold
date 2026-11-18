@@ -1935,6 +1935,18 @@ export const SubBalancerSchema = z.object({
 });
 export type SubBalancer = z.infer<typeof SubBalancerSchema>;
 
+export const SubEntrySchema = z.object({
+  city: z.string(),
+  countryCode: z.string(),
+  inboundId: z.number().int(),
+  link: z.string(),
+  location: z.string(),
+  locationId: z.number().int(),
+  protocol: z.string(),
+  sortOrder: z.number().int(),
+});
+export type SubEntry = z.infer<typeof SubEntrySchema>;
+
 export const TgBotCapabilitiesSchema = z.object({
   groupPrivacy: z.boolean(),
   inlineEnabled: z.boolean(),

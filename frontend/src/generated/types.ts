@@ -1795,6 +1795,17 @@ export interface SubBalancer {
   updatedAt: number;
 }
 
+export interface SubEntry {
+  city: string;
+  countryCode: string;
+  inboundId: number;
+  link: string;
+  location: string;
+  locationId: number;
+  protocol: string;
+  sortOrder: number;
+}
+
 export interface TgBotCapabilities {
   groupPrivacy: boolean;
   inlineEnabled: boolean;
