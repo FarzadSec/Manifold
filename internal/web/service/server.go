@@ -2158,26 +2158,30 @@ func (s *ServerService) restorePostgresDump(file multipart.File, keep []string) 
 	if err != nil {
 		return common.NewError("pg_restore not found on the server; install the postgresql-client package to restore a PostgreSQL database")
 	}
+	psql, err := exec.LookPath("psql")
+	if err != nil {
+		return common.NewError("psql not found on the server; install the postgresql-client package to restore a PostgreSQL database")
+	}
 	env, dbname, err := pgConnEnv(config.GetDBDSN())
 	if err != nil {
 		return common.NewErrorf("invalid PostgreSQL DSN: %v", err)
 	}
 
-	tempFile, err := os.CreateTemp("", "x-ui-pg-restore-*.dump")
+	workDir, err := os.MkdirTemp("", "manifold-pg-restore-*")
 	if err != nil {
-		return common.NewErrorf("Error creating temporary dump file: %v", err)
+		return common.NewErrorf("Error creating temporary folder: %v", err)
 	}
-	tempPath := tempFile.Name()
-	defer os.Remove(tempPath)
-	if _, err := io.Copy(tempFile, file); err != nil {
-		tempFile.Close()
+	defer os.RemoveAll(workDir)
+	tempPath := filepath.Join(workDir, "upload.dump")
+	if err := saveUploadedFile(file, tempPath); err != nil {
 		return common.NewErrorf("Error saving dump: %v", err)
-	}
-	if err := tempFile.Close(); err != nil {
-		return common.NewErrorf("Error closing temporary dump file: %v", err)
 	}
 
 	if err := checkPgRestoreCanRead(bin, tempPath); err != nil {
+		return err
+	}
+	scriptPath, err := writeRestoreScript(bin, tempPath, workDir)
+	if err != nil {
 		return err
 	}
 
@@ -2199,14 +2203,17 @@ func (s *ServerService) restorePostgresDump(file multipart.File, keep []string) 
 		logger.Warningf("Failed to close existing DB before restore: %v", errClose)
 	}
 
-	cmd := exec.CommandContext(context.Background(), bin,
-		"--clean", "--if-exists", "--no-owner", "--no-privileges",
-		"--single-transaction", "--dbname", dbname, tempPath,
-	)
+	cmd := exec.CommandContext(context.Background(), psql, "--no-psqlrc", "--quiet",
+		"--set=ON_ERROR_STOP=1", "--single-transaction", "--dbname", dbname, "--file", scriptPath)
 	cmd.Env = env
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	runErr := cmd.Run()
+	for line := range strings.SplitSeq(stderr.String(), "\n") {
+		if _, notice, ok := strings.Cut(line, "NOTICE:"); ok && runErr == nil {
+			logger.Infof("Restore: %s", strings.TrimSpace(notice))
+		}
+	}
 
 	if errInit := database.InitDB(config.GetDBPath()); errInit != nil {
 		return common.NewErrorf("Restore finished but reopening the database failed: %v", errInit)
@@ -2216,7 +2223,7 @@ func (s *ServerService) restorePostgresDump(file multipart.File, keep []string) 
 	s.inboundService.MigrateDB()
 
 	if runErr != nil {
-		return common.NewErrorf("pg_restore failed (database left unchanged): %v: %s", runErr, strings.TrimSpace(stderr.String()))
+		return common.NewErrorf("Restore failed (database left unchanged): %v: %s", runErr, strings.TrimSpace(stderr.String()))
 	}
 
 	xrayStopped = false

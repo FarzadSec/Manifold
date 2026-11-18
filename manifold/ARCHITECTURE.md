@@ -1,8 +1,12 @@
 # Manifold — Architecture and Roadmap
 
-Version 0.18 · 2026-11-18 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnels, full backups, the access model, limits and usage, subscriptions, nodes, shared ports, scheduled backups, webhooks, monitoring, the certificate store, importers, tunnel groups, the addon groundwork, the 3x-ui style installer and management menu, Manifold Relay and the app API delivered; see 8.1 to 8.17 for what they leave open
+Version 0.19 · 2026-11-18 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnels, full backups, the access model, limits and usage, subscriptions, nodes, shared ports, scheduled backups, webhooks, monitoring, the certificate store, importers, tunnel groups, the addon groundwork, the 3x-ui style installer and management menu, Manifold Relay and the app API delivered; see 8.1 to 8.17 for what they leave open
 
 Decision log:
+
+- 2026-11-18 — The database is chosen at install and switched from the `manifold` command in both directions, SQLite and PostgreSQL, as 3x-ui offers. The installer hands PostgreSQL to `manifold db postgres`, so one function sets up the server, the role and its password login, client tools as new as the server, and the panel's boot order after it. A move copies every table with the panel stopped and is undone when the panel does not come up on the other side. A panel on PostgreSQL has no `manifold.db`, so the installer recognises an installed panel by the env file too; before, an update would have treated it as a first install and replaced its login
+
+- 2026-11-18 — A PostgreSQL backup is restored through psql as one transaction, built from pg_restore's own SQL: everything but the device index, then the merge of duplicate device rows, then that index. pg_dump writes a unique index only when it is valid, yet a source whose index was damaged still hands over rows that break it; refusing the whole backup over device records, which merge cleanly, left the owner unable to restore it. Duplicates in any other unique key still refuse the restore and change nothing
 
 - 2026-11-17 — The VPN app signs in on the subscription server with the subscription link and a username, not with an account of its own: every customer who has a link can use it, whatever the plan, and nothing new is sold or stored about them. A device signed in to the app takes a slot of the link's HWID limit, the same table every other subscription app fills, so app devices and iOS devices count against one limit and cannot be used to get round it. The username only guards the app's sign-in; the link alone still serves its configurations to other apps, as it always did
 
@@ -497,6 +501,12 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - SSH install downloads the installer from GitHub on the server; a server that cannot reach GitHub needs the package copied by hand (`install.sh --package`).
 - Node templates (one configuration applied to many nodes) are not built; a node's inbounds are created on it from the master as before.
 - Live connections per node are still not listed (see 8.7).
+
+### 8.20 Changes in 0.20.0
+
+- The installer asks for the database on a first install (`--db`, `--db-dsn`); `manifold` → 27 and `manifold db` show it and move the panel between SQLite and PostgreSQL. `migrate-db --to-sqlite` copies a PostgreSQL panel into SQLite. The status lines name the database, and `doctor` checks that its PostgreSQL server answers.
+- A PostgreSQL backup restores through psql in one transaction and merges duplicate device rows; the restore now needs `psql` beside `pg_restore`. Messages that named 3x-ui's `x-ui` command name Manifold's.
+- Open: a local PostgreSQL server is set up on Debian, Ubuntu and the RHEL family from the PostgreSQL project's repository and checked in the release job on Ubuntu only; openSUSE and Arch get their distribution's server untested.
 
 ### 8.19 Changes in 0.17.0
 

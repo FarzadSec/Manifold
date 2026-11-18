@@ -209,6 +209,18 @@ jobs:
             echo "expected at least 4 passing PostgreSQL migration tests, got $passed" >&2
             exit 1
           fi
+      - name: PostgreSQL client tools (pg_dump, pg_restore, psql)
+        run: command -v pg_dump && command -v psql || { sudo apt-get update && sudo apt-get install -y postgresql-client; }
+      - name: PostgreSQL backup restore and switch back to SQLite
+        run: |
+          set -o pipefail
+          go test ./internal/web/service -run '^TestRestorePostgresDump(MergesDuplicateDevices|WithDuplicateAccountsChangesNothing)$' -count=1 -v | tee /tmp/postgres-restore.log
+          go test . -run '^TestCopyPostgresToSQLiteCarriesThePanel$' -count=1 -v | tee -a /tmp/postgres-restore.log
+          passed=$(grep -cE -- '^--- PASS: Test(RestorePostgresDump|CopyPostgresToSQLite)' /tmp/postgres-restore.log || true)
+          if [ "$passed" -ne 3 ]; then
+            echo "expected the 3 PostgreSQL restore and copy tests to pass, got $passed" >&2
+            exit 1
+          fi
       - name: SQLite import host settings
         run: |
           set -o pipefail
