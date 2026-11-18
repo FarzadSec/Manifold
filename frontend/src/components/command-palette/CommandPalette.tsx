@@ -475,14 +475,14 @@ export default function CommandPalette() {
         path: '/settings#subscription-app',
         title: `${t('menu.settings')} · ${t('pages.settings.app.menu')}`,
         subtitle: t('pages.settings.app.menu'),
-        keywords: ['app', 'dt client', 'locations', 'devices', 'windows'],
+        keywords: ['app', 'dt connect', 'locations', 'devices', 'windows', 'android'],
         icon: <MobileOutlined aria-hidden />,
       },
       {
         path: '/settings#app-notices',
         title: `${t('menu.settings')} · ${t('pages.settings.app.notices.menu')}`,
         subtitle: t('pages.settings.app.notices.menu'),
-        keywords: ['notices', 'announcements', 'news', 'banner', 'bell', 'dt client'],
+        keywords: ['notices', 'announcements', 'news', 'banner', 'bell', 'dt connect'],
         icon: <BellOutlined aria-hidden />,
       },
       {

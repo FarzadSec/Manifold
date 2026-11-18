@@ -2046,6 +2046,7 @@ func (s *SettingService) GetDefaultSettings(host string) (any, error) {
 		"tgBotEnable":      func() (any, error) { return s.GetTgbotEnabled() },
 		"subThemeDir":      func() (any, error) { return s.GetSubThemeDir() },
 		"happLinkEnable":   func() (any, error) { return s.GetHappLinkEnable() },
+		"appEnable":        func() (any, error) { return s.GetAppEnable() },
 		"subEnable":        func() (any, error) { return s.GetSubEnable() },
 		"subJsonEnable":    func() (any, error) { return s.GetSubJsonEnable() },
 		"subClashEnable":   func() (any, error) { return s.GetSubClashEnable() },

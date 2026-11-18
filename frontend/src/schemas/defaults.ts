@@ -6,6 +6,7 @@ export const DefaultsPayloadSchema = z
     trafficDiff: z.number().optional(),
     tgBotEnable: z.boolean().optional(),
     happLinkEnable: z.boolean().optional(),
+    appEnable: z.boolean().optional(),
     subEnable: z.boolean().optional(),
     subTitle: z.string().optional(),
     subURI: z.string().optional(),

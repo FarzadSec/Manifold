@@ -52,6 +52,7 @@ const JSON_HEADERS = { headers: { 'Content-Type': 'application/json' } } as cons
 interface SubSettings {
   enable: boolean;
   happLinkEnable: boolean;
+  appEnable: boolean;
   subURI: string;
   subJsonURI: string;
   subJsonEnable: boolean;
@@ -281,6 +282,7 @@ export function useClients(options: UseClientsOptions = {}) {
     () => ({
       enable: !!defaults.subEnable,
       happLinkEnable: defaults.happLinkEnable === true,
+      appEnable: defaults.appEnable === true,
       subURI: (defaults.subURI as string) || '',
       subJsonURI: (defaults.subJsonURI as string) || '',
       subJsonEnable: !!defaults.subJsonEnable,
@@ -291,6 +293,7 @@ export function useClients(options: UseClientsOptions = {}) {
     [
       defaults.subEnable,
       defaults.happLinkEnable,
+      defaults.appEnable,
       defaults.subURI,
       defaults.subJsonURI,
       defaults.subJsonEnable,

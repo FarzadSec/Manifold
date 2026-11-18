@@ -33,6 +33,7 @@ const SUB_SETTINGS = {
 
 type TestSubSettings = Omit<typeof SUB_SETTINGS, 'happLinkEnable'> & {
   happLinkEnable?: boolean;
+  appEnable?: boolean;
 };
 
 interface SubjectProps {
@@ -653,5 +654,30 @@ describe('ClientQrModal Happ presentation', () => {
     await screen.findByText('Retry');
     expect(actionButton('Retry').disabled).toBe(false);
     expect(screen.queryByTestId('qr-panel-value')).toBeNull();
+  });
+});
+
+describe('ClientQrModal DT Connect sign-in', () => {
+  const SIGN_IN =
+    'dtconnect://login?sub=https%3A%2F%2Fpanel.example%2Fsub%2Falpha&user=alice%40example.com';
+
+  beforeEach(() => {
+    vi.mocked(HttpUtil.post).mockReset();
+  });
+
+  it('offers the app sign-in QR code of the link and username while app access is on', async () => {
+    renderSubject({ subSettings: { ...SUB_SETTINGS, appEnable: true } });
+    await settleSubLinks();
+
+    fireEvent.click(screen.getByText('DT Connect sign-in'));
+    const values = screen.getAllByTestId('qr-panel-value').map((node) => node.textContent);
+    expect(values).toContain(SIGN_IN);
+  });
+
+  it('leaves the sign-in QR code out while app access is off', async () => {
+    renderSubject({ subSettings: { ...SUB_SETTINGS, appEnable: false } });
+    await settleSubLinks();
+
+    expect(screen.queryByText('DT Connect sign-in')).toBeNull();
   });
 });

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appSignInLink } from '@/lib/clients/app-signin';
 import { clientSubUrls } from '@/lib/clients/subscription-url';
 import { useNavigate } from 'react-router';
 import { Alert, Button, Collapse, Empty, Modal, Segmented, Spin, Tag, Typography } from 'antd';
@@ -36,6 +37,7 @@ import type { HostRecord } from '@/schemas/api/host';
 interface SubSettings {
   enable: boolean;
   happLinkEnable?: boolean;
+  appEnable?: boolean;
   subURI: string;
   subJsonURI: string;
   subJsonEnable: boolean;
@@ -253,6 +255,7 @@ function ClientQrModalContent({
   const clientId = client?.id;
   const clientSubId = subId ?? '';
   const happLinkEnabled = subSettings.happLinkEnable === true;
+  const appSignInEnabled = subSettings.appEnable === true;
   const [variant, setVariant] = useState<QrVariant>('standard');
   const [happAttempt, setHappAttempt] = useState(0);
   const [happLink, setHappLink] = useState('');
@@ -445,6 +448,25 @@ function ClientQrModalContent({
         ),
       });
     }
+    // The account signs in to DT Connect with this one code: the link and the username together.
+    const signInName = client?.email;
+    if (appSignInEnabled && subLink && signInName) {
+      out.push({
+        key: 'appSignIn',
+        label: t('pages.clients.appSignIn'),
+        children: (
+          <>
+            <Typography.Paragraph type="secondary" style={{ fontSize: 12 }}>
+              {t('pages.clients.appSignInHint')}
+            </Typography.Paragraph>
+            <QrPanel
+              value={appSignInLink(subLink, signInName)}
+              remark={`${signInName} — DT Connect`}
+            />
+          </>
+        ),
+      });
+    }
     if (subSingboxLink) {
       out.push({
         key: 'subSingbox',
@@ -600,6 +622,7 @@ function ClientQrModalContent({
     happLoading,
     happError,
     happLinkEnabled,
+    appSignInEnabled,
     wgConfigs,
     awgConfigs,
     links,

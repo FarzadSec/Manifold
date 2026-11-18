@@ -1186,6 +1186,8 @@
       "tunnelKeepAliveHint": "Ako často klient posiela paket na udržanie spojenia. Bežná hodnota 25 udrží mapovanie NAT a po výpadku vrátane reštartu panelu znova pripojí nečinný peer. Hodnota 0 funkciu vypne; nečinný klient zostane odpojený, kým neodošle dáta.",
       "amneziaWgConfig": "Konfigurácia AmneziaWG",
       "openvpnProfile": "Profil OpenVPN",
+      "appSignIn": "Prihlásenie do DT Connect",
+      "appSignInHint": "Naskenujte ho v DT Connect (Naskenovať prihlasovací QR kód) alebo pošlite zákazníkovi tento obrázok: prihlási sa odkazom na predplatné a menom tohto účtu.",
       "tuicConfig": "Konfigurácia TUIC (Clash)",
       "mtprotoSecret": "Tajný kľúč MTProto",
       "mtprotoSecretHint": "Tajný kľúč FakeTLS tohto klienta. Novým vygenerovaním ho zmeníte.",

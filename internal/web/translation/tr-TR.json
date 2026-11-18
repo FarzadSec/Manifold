@@ -1186,6 +1186,8 @@
       "tunnelKeepAliveHint": "How often the client sends a keepalive packet. 25 is the usual value: it holds the NAT mapping open and brings an idle peer back on its own after any drop, including a panel restart. 0 disables it — an idle client then stays disconnected until it sends traffic.",
       "amneziaWgConfig": "AmneziaWG Yapılandırması",
       "openvpnProfile": "OpenVPN profili",
+      "appSignIn": "DT Connect girişi",
+      "appSignInHint": "DT Connect'te (Giriş QR kodunu tara) okutun veya bu resmi müşteriye gönderin: abonelik bağlantısı ve bu hesabın kullanıcı adıyla giriş yapar.",
       "tuicConfig": "TUIC Yapılandırması (Clash)",
       "mtprotoSecret": "MTProto sırrı",
       "mtprotoSecretHint": "İstemcinin FakeTLS sırrı. Değiştirmek için yeniden oluşturun.",
