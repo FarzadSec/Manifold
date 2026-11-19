@@ -2977,7 +2977,13 @@
         "membersHint": "Relay ends of kernel or layer-3 tunnels, one to each origin. Green marks where the ports go now.",
         "confirmDelete": "Delete this group? Its ports stop being forwarded.",
         "saveFailed": "Could not save the group",
-        "deleteFailed": "Could not delete the group"
+        "deleteFailed": "Could not delete the group",
+        "backups": "Yedekler",
+        "backupsHint": "Grubun portlarını yalnızca hiçbir üye yanıt vermezken taşır; yük devretmede yanıt veren ilk yedek.",
+        "backup": "yedek",
+        "sticky": "Her istemciyi tek tünelde tut",
+        "stickyHint": "Her istemci adresini sırayla dağıtmak yerine hep aynı tünele gönderir. L2TP/IPsec için gerekir: UDP 500 ve 4500 aynı sunucuya ulaşmalıdır.",
+        "stickyTag": "sabit"
       },
       "relayVersion": "Version",
       "relayVersionDiffers": "The relay runs {relay} and this panel {panel}. Update the relay with: manifold update",
@@ -3100,7 +3106,9 @@
           "standard": "Screens every tunnel, measures the best five in full and tunes the MTU of the best two.",
           "thorough": "Longer phases and more streams: the best eight in full and the MTU of the best three."
         }
-      }
+      },
+      "l2tpPreset": "L2TP/IPsec portlarını ekle",
+      "l2tpPresetHint": "UDP 500, UDP 4500 ve ESP. L2TP inbound IPsec zorunlu tutmuyorsa UDP 1701'i de ekleyin. Birden çok kullanıcının aynı anda bağlanabilmesi için istemci adresini koruyun (NAT: koru); röle arkasındaki sunucu için Windows'ta AssumeUDPEncapsulationContextOnSendRule = 2 gerekir."
     },
     "access": {
       "saved": "Saved",

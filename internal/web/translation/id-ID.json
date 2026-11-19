@@ -2977,7 +2977,13 @@
         "membersHint": "Relay ends of kernel or layer-3 tunnels, one to each origin. Green marks where the ports go now.",
         "confirmDelete": "Delete this group? Its ports stop being forwarded.",
         "saveFailed": "Could not save the group",
-        "deleteFailed": "Could not delete the group"
+        "deleteFailed": "Could not delete the group",
+        "backups": "Cadangan",
+        "backupsHint": "Membawa port grup hanya selama tidak ada anggota yang menjawab; pada failover, cadangan pertama yang menjawab.",
+        "backup": "cadangan",
+        "sticky": "Tetapkan tiap klien pada satu tunnel",
+        "stickyHint": "Mengirim tiap alamat klien ke tunnel yang sama alih-alih bergiliran. L2TP/IPsec membutuhkannya: UDP 500 dan 4500 harus sampai ke server yang sama.",
+        "stickyTag": "tetap"
       },
       "relayVersion": "Version",
       "relayVersionDiffers": "The relay runs {relay} and this panel {panel}. Update the relay with: manifold update",
@@ -3100,7 +3106,9 @@
           "standard": "Screens every tunnel, measures the best five in full and tunes the MTU of the best two.",
           "thorough": "Longer phases and more streams: the best eight in full and the MTU of the best three."
         }
-      }
+      },
+      "l2tpPreset": "Tambah port L2TP/IPsec",
+      "l2tpPresetHint": "UDP 500, UDP 4500, dan ESP. Tambahkan juga UDP 1701 bila inbound L2TP tidak mewajibkan IPsec. Pertahankan alamat klien (NAT: pertahankan) agar beberapa pengguna bisa terhubung bersamaan; Windows memerlukan AssumeUDPEncapsulationContextOnSendRule = 2 untuk server di balik relay."
     },
     "access": {
       "saved": "Saved",

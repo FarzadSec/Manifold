@@ -24,13 +24,15 @@ import { keys } from '@/api/queryKeys';
 import { selectTagRender } from '@/components/form';
 import type { PortForward, TunnelGroupView, TunnelView } from '@/generated/types';
 import { HttpUtil } from '@/utils';
-import { activeMembers, groupCandidates } from './groupMembers';
+import { L2TP_FORWARDS, activeMembers, groupCandidates, keptForwards } from './groupMembers';
 
 interface GroupForm {
   id: number;
   name: string;
   mode: 'failover' | 'balance';
   members: number[];
+  backups: number[];
+  sticky: boolean;
   forwards: PortForward[];
   enable: boolean;
 }
@@ -40,6 +42,8 @@ const EMPTY: GroupForm = {
   name: '',
   mode: 'failover',
   members: [],
+  backups: [],
+  sticky: false,
   forwards: [{ listen: '', target: '', proto: 'tcp' }],
   enable: true,
 };
@@ -69,7 +73,7 @@ export default function TunnelGroupsCard({ tunnels }: { tunnels: TunnelView[] })
     try {
       const msg = await HttpUtil.post<TunnelGroupView>(
         '/panel/api/tunnels/groups/save',
-        { ...form, forwards: form.forwards.filter((f) => f.listen.trim() !== '') },
+        { ...form, forwards: keptForwards(form.forwards) },
         { headers: { 'Content-Type': 'application/json' } },
       );
       if (msg?.success) {
@@ -130,7 +134,8 @@ export default function TunnelGroupsCard({ tunnels }: { tunnels: TunnelView[] })
             title: t('pages.tunnels.groups.members'),
             key: 'members',
             render: (_v, g) => {
-              const active = activeMembers(g.mode, g.members, tunnels);
+              const backups = g.backups ?? [];
+              const active = activeMembers(g.mode, g.members, backups, tunnels);
               return (
                 <Space size={[4, 4]} wrap>
                   {g.members.map((id) => (
@@ -138,6 +143,12 @@ export default function TunnelGroupsCard({ tunnels }: { tunnels: TunnelView[] })
                       {nameOf(id)}
                     </Tag>
                   ))}
+                  {backups.map((id) => (
+                    <Tag key={id} color={active.includes(id) ? 'green' : undefined}>
+                      {nameOf(id)} · {t('pages.tunnels.groups.backup')}
+                    </Tag>
+                  ))}
+                  {g.sticky && <Tag color="purple">{t('pages.tunnels.groups.stickyTag')}</Tag>}
                 </Space>
               );
             },
@@ -164,6 +175,8 @@ export default function TunnelGroupsCard({ tunnels }: { tunnels: TunnelView[] })
                       name: g.name,
                       mode: g.mode === 'balance' ? 'balance' : 'failover',
                       members: g.members,
+                      backups: g.backups ?? [],
+                      sticky: g.sticky ?? false,
                       forwards: g.forwards.length ? g.forwards : [...EMPTY.forwards],
                       enable: g.enable,
                     })
@@ -244,13 +257,51 @@ export default function TunnelGroupsCard({ tunnels }: { tunnels: TunnelView[] })
                 mode="multiple"
                 tagRender={selectTagRender}
                 value={form.members}
-                onChange={(members) => setForm({ ...form, members })}
+                onChange={(members) =>
+                  setForm({
+                    ...form,
+                    members,
+                    backups: form.backups.filter((id) => !members.includes(id)),
+                  })
+                }
                 options={candidates.map((c) => ({
                   value: c.id,
                   label: `${c.name} · ${c.settings.remoteAddr || c.kind}`,
                 }))}
               />
             </Form.Item>
+            <Form.Item
+              label={t('pages.tunnels.groups.backups')}
+              htmlFor="tg-backups"
+              tooltip={t('pages.tunnels.groups.backupsHint')}
+            >
+              <Select
+                id="tg-backups"
+                mode="multiple"
+                tagRender={selectTagRender}
+                value={form.backups}
+                onChange={(backups) => setForm({ ...form, backups })}
+                options={candidates
+                  .filter((c) => !form.members.includes(c.id))
+                  .map((c) => ({
+                    value: c.id,
+                    label: `${c.name} · ${c.settings.remoteAddr || c.kind}`,
+                  }))}
+              />
+            </Form.Item>
+            {form.mode === 'balance' && (
+              <Form.Item
+                label={t('pages.tunnels.groups.sticky')}
+                htmlFor="tg-sticky"
+                tooltip={t('pages.tunnels.groups.stickyHint')}
+              >
+                <Switch
+                  id="tg-sticky"
+                  checked={form.sticky}
+                  onChange={(sticky) => setForm({ ...form, sticky })}
+                />
+              </Form.Item>
+            )}
             <Typography.Text strong>{t('pages.tunnels.forwards')}</Typography.Text>
             {form.forwards.map((f, i) => (
               <Row gutter={8} key={i} align="middle" style={{ marginTop: 8 }}>
@@ -258,6 +309,7 @@ export default function TunnelGroupsCard({ tunnels }: { tunnels: TunnelView[] })
                   <Input
                     aria-label={t('pages.tunnels.forwardListen')}
                     placeholder="443"
+                    disabled={f.proto === 'esp'}
                     value={f.listen}
                     onChange={(e) => setForward(i, { listen: e.target.value })}
                   />
@@ -266,6 +318,7 @@ export default function TunnelGroupsCard({ tunnels }: { tunnels: TunnelView[] })
                   <Input
                     aria-label={t('pages.tunnels.forwardTarget')}
                     placeholder={t('pages.tunnels.forwardSame')}
+                    disabled={f.proto === 'esp'}
                     value={f.target ?? ''}
                     onChange={(e) => setForward(i, { target: e.target.value })}
                   />
@@ -275,11 +328,14 @@ export default function TunnelGroupsCard({ tunnels }: { tunnels: TunnelView[] })
                     aria-label={t('pages.tunnels.forwardProto')}
                     style={{ width: '100%' }}
                     value={f.proto || 'tcp'}
-                    onChange={(proto) => setForward(i, { proto })}
+                    onChange={(proto) =>
+                      setForward(i, proto === 'esp' ? { proto, listen: '', target: '' } : { proto })
+                    }
                     options={[
                       { label: 'TCP', value: 'tcp' },
                       { label: 'UDP', value: 'udp' },
                       { label: 'TCP + UDP', value: 'both' },
+                      { label: 'ESP (IPsec)', value: 'esp' },
                     ]}
                   />
                 </Col>
@@ -308,6 +364,27 @@ export default function TunnelGroupsCard({ tunnels }: { tunnels: TunnelView[] })
             >
               {t('pages.tunnels.addForward')}
             </Button>
+            <Button
+              style={{ marginTop: 8, marginInlineStart: 8 }}
+              onClick={() =>
+                setForm({
+                  ...form,
+                  sticky: form.mode === 'balance' ? true : form.sticky,
+                  forwards: [
+                    ...keptForwards(form.forwards),
+                    ...L2TP_FORWARDS.filter(
+                      (p) =>
+                        !form.forwards.some((f) => f.proto === p.proto && f.listen === p.listen),
+                    ),
+                  ],
+                })
+              }
+            >
+              {t('pages.tunnels.l2tpPreset')}
+            </Button>
+            <Typography.Paragraph type="secondary" style={{ marginTop: 8 }}>
+              {t('pages.tunnels.l2tpPresetHint')}
+            </Typography.Paragraph>
           </Form>
         )}
       </Modal>

@@ -2013,23 +2013,28 @@ export interface TunnelBenchState {
 }
 
 export interface TunnelGroup {
+  backups: number[];
   createdAt: number;
   enable: boolean;
   id: number;
   members: number[];
   mode: string;
   name: string;
+  sticky: boolean;
 }
 
 export interface TunnelGroupRequest {
+  backups: number[];
   enable: boolean;
   forwards: PortForward[];
   members: number[];
   mode: string;
   name: string;
+  sticky: boolean;
 }
 
 export interface TunnelGroupView {
+  backups: number[];
   createdAt: number;
   enable: boolean;
   forwards: PortForward[];
@@ -2037,6 +2042,7 @@ export interface TunnelGroupView {
   members: number[];
   mode: string;
   name: string;
+  sticky: boolean;
 }
 
 export interface TunnelPairing {

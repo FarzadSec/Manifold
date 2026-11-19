@@ -296,6 +296,11 @@ func (s *TunnelService) checkConflicts(t tunnel.Tunnel) error {
 	if port, err := s.settingService.GetSubPort(); err == nil {
 		reserved[port] = "the subscription server"
 	}
+	var l2tpHere int64
+	if err := database.GetDB().Model(&model.Inbound{}).Where("protocol = ? AND enable = ? AND node_id IS NULL", model.L2TP, true).Count(&l2tpHere).Error; err == nil && l2tpHere > 0 {
+		// strongSwan takes IKE and NAT traversal for the inbound's IPsec.
+		reserved[500], reserved[4500] = "this server's L2TP inbound (IPsec)", "this server's L2TP inbound (IPsec)"
+	}
 	for port := range ports {
 		if what, ok := reserved[port]; ok {
 			return common.NewErrorf("port %d belongs to %s and cannot be forwarded or listened on", port, what)

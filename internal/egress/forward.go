@@ -8,6 +8,9 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 )
 
+// ProtoESP is IPsec's ESP, IP protocol 50: it has no ports, so its forward names none.
+const ProtoESP = "esp"
+
 // PortForward sends Low..High of one protocol to TargetLow.. on the far end of a tunnel.
 type PortForward struct {
 	Proto     string
@@ -16,6 +19,9 @@ type PortForward struct {
 }
 
 func (f PortForward) match() string {
+	if f.Proto == ProtoESP {
+		return "meta l4proto esp"
+	}
 	if f.Low == f.High {
 		return fmt.Sprintf("%s dport %d", f.Proto, f.Low)
 	}
@@ -28,6 +34,8 @@ func (f PortForward) destination(target netip.Addr) string {
 		host = "[" + host + "]"
 	}
 	switch {
+	case f.Proto == ProtoESP:
+		return target.String()
 	case f.Low != f.High:
 		return host
 	case f.TargetLow == 0 || f.TargetLow == f.Low:
@@ -45,8 +53,11 @@ func family(addr netip.Addr) string {
 }
 
 func validForward(f PortForward) error {
+	if f.Proto == ProtoESP {
+		return nil
+	}
 	if f.Proto != "tcp" && f.Proto != "udp" {
-		return fmt.Errorf("egress: protocol %q is not tcp or udp", f.Proto)
+		return fmt.Errorf("egress: protocol %q is not tcp, udp or esp", f.Proto)
 	}
 	if f.Low < 1 || f.High > 65535 || f.High < f.Low {
 		return fmt.Errorf("egress: %d-%d is not a port range", f.Low, f.High)
@@ -204,14 +215,14 @@ func deviceSet(targets []Target) string {
 	return "{ " + strings.Join(names, ", ") + " }"
 }
 
-// balancedDestination spreads new connections over the targets in turn; nftables only
-// sees a connection's first packet here, so the rest of it stays on the same target.
-func balancedDestination(f PortForward, targets []Target) string {
+// balancedDestination spreads new connections over the targets in turn, or by the client's
+// address when sticky; nftables sees only a connection's first packet here, so the rest follows.
+func balancedDestination(f PortForward, targets []Target, sticky bool) string {
 	if len(targets) == 1 {
 		return "to " + f.destination(targets[0].Addr)
 	}
 	port := 0
-	if f.Low == f.High && f.TargetLow != 0 && f.TargetLow != f.Low {
+	if f.Proto != ProtoESP && f.Low == f.High && f.TargetLow != 0 && f.TargetLow != f.Low {
 		port = f.TargetLow
 	}
 	entries := make([]string, 0, len(targets))
@@ -222,14 +233,18 @@ func balancedDestination(f PortForward, targets []Target) string {
 			entries = append(entries, fmt.Sprintf("%d : %s", i, t.Addr))
 		}
 	}
-	m := fmt.Sprintf("numgen inc mod %d map { %s }", len(targets), strings.Join(entries, ", "))
+	pick := "numgen inc"
+	if sticky {
+		pick = "jhash " + family(targets[0].Addr) + " saddr"
+	}
+	m := fmt.Sprintf("%s mod %d map { %s }", pick, len(targets), strings.Join(entries, ", "))
 	if port != 0 {
 		return family(targets[0].Addr) + " to " + m
 	}
 	return "to " + m
 }
 
-func balancedTransaction(owner string, targets []Target, rules []PortForward, masquerade bool) string {
+func balancedTransaction(owner string, targets []Target, rules []PortForward, masquerade, sticky bool) string {
 	table := tableName(owner)
 	fam := family(targets[0].Addr)
 	devices := deviceSet(targets)
@@ -237,7 +252,7 @@ func balancedTransaction(owner string, targets []Target, rules []PortForward, ma
 	fmt.Fprintf(&b, "add table %[1]s %[2]s\ndelete table %[1]s %[2]s\ntable %[1]s %[2]s {\n", fam, table)
 	b.WriteString("\tchain prerouting {\n\t\ttype nat hook prerouting priority dstnat; policy accept;\n")
 	for _, f := range rules {
-		fmt.Fprintf(&b, "\t\tiifname != %s %s dnat %s\n", devices, f.match(), balancedDestination(f, targets))
+		fmt.Fprintf(&b, "\t\tiifname != %s %s dnat %s\n", devices, f.match(), balancedDestination(f, targets, sticky))
 	}
 	b.WriteString("\t}\n")
 	if masquerade {
@@ -247,10 +262,10 @@ func balancedTransaction(owner string, targets []Target, rules []PortForward, ma
 	return b.String()
 }
 
-// ApplyBalancedForwards installs ports that go to several tunnels, each new connection
-// to the next target in turn; with one target it is ApplyForwards. A later call for
-// the same owner replaces the set, which is how a failed target is taken out.
-func ApplyBalancedForwards(owner string, targets []Target, rules []PortForward, masquerade bool) error {
+// ApplyBalancedForwards installs ports that go to several tunnels, each new connection to the
+// next target in turn, or by the client's address when sticky. A later call for the same owner
+// replaces the set, which is how a failed target is taken out.
+func ApplyBalancedForwards(owner string, targets []Target, rules []PortForward, masquerade, sticky bool) error {
 	if !ownerPattern.MatchString(owner) {
 		return fmt.Errorf("egress: invalid owner %q", owner)
 	}
@@ -279,7 +294,7 @@ func ApplyBalancedForwards(owner string, targets []Target, rules []PortForward, 
 	}
 	table := tableName(owner)
 	tx := fmt.Sprintf("add table %[1]s %[2]s\ndelete table %[1]s %[2]s\n", other, table) +
-		balancedTransaction(owner, targets, rules, masquerade)
+		balancedTransaction(owner, targets, rules, masquerade, sticky)
 	if out, err := host.run(tx, "nft", "-f", "-"); err != nil {
 		return fmt.Errorf("egress: forwarding ports over %d tunnels: %w (%s)", len(targets), err, out)
 	}

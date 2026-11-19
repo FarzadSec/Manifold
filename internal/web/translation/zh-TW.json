@@ -2977,7 +2977,13 @@
         "membersHint": "Relay ends of kernel or layer-3 tunnels, one to each origin. Green marks where the ports go now.",
         "confirmDelete": "Delete this group? Its ports stop being forwarded.",
         "saveFailed": "Could not save the group",
-        "deleteFailed": "Could not delete the group"
+        "deleteFailed": "Could not delete the group",
+        "backups": "備援",
+        "backupsHint": "僅在所有成員都無回應時承載群組埠；故障轉移模式下使用第一個有回應的備援。",
+        "backup": "備援",
+        "sticky": "讓每個用戶端固定走一條通道",
+        "stickyHint": "不輪流分配，而是把每個用戶端位址一律送往同一條通道。L2TP/IPsec 需要它：其 UDP 500 與 4500 必須抵達同一台伺服器。",
+        "stickyTag": "固定"
       },
       "relayVersion": "Version",
       "relayVersionDiffers": "The relay runs {relay} and this panel {panel}. Update the relay with: manifold update",
@@ -3100,7 +3106,9 @@
           "standard": "Screens every tunnel, measures the best five in full and tunes the MTU of the best two.",
           "thorough": "Longer phases and more streams: the best eight in full and the MTU of the best three."
         }
-      }
+      },
+      "l2tpPreset": "加入 L2TP/IPsec 連接埠",
+      "l2tpPresetHint": "UDP 500、UDP 4500 與 ESP。若 L2TP 入站不強制 IPsec，再加入 UDP 1701。保留用戶端位址（NAT：保留）以便多位使用者同時連線；中繼後的伺服器在 Windows 上需要 AssumeUDPEncapsulationContextOnSendRule = 2。"
     },
     "access": {
       "saved": "Saved",

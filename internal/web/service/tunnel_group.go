@@ -22,6 +22,8 @@ type TunnelGroupRequest struct {
 	Name     string               `json:"name" example:"origins"`
 	Mode     string               `json:"mode" example:"failover"`
 	Members  []int                `json:"members" example:"[1,2]"`
+	Backups  []int                `json:"backups" example:"[3]"`
+	Sticky   bool                 `json:"sticky" example:"false"`
 	Forwards []tunnel.PortForward `json:"forwards"`
 	Enable   bool                 `json:"enable" example:"true"`
 }
@@ -29,13 +31,16 @@ type TunnelGroupRequest struct {
 func groupFromRow(row *model.TunnelGroup) tunnel.Group {
 	var forwards []tunnel.PortForward
 	_ = json.Unmarshal([]byte(row.Forwards), &forwards)
-	return tunnel.Group{ID: row.Id, Name: row.Name, Mode: row.Mode, Members: row.Members, Forwards: forwards, Enabled: row.Enable}
+	return tunnel.Group{ID: row.Id, Name: row.Name, Mode: row.Mode, Members: row.Members, Backups: row.Backups, Sticky: row.Sticky, Forwards: forwards, Enabled: row.Enable}
 }
 
 func groupView(row model.TunnelGroup) TunnelGroupView {
 	g := groupFromRow(&row)
 	if row.Members == nil {
 		row.Members = []int{}
+	}
+	if row.Backups == nil {
+		row.Backups = []int{}
 	}
 	if g.Forwards == nil {
 		g.Forwards = []tunnel.PortForward{}
@@ -84,7 +89,7 @@ func groupPorts(except int) (map[int]string, error) {
 
 func (s *TunnelService) checkGroup(id int, g tunnel.Group) error {
 	family := -1
-	for _, member := range g.Members {
+	for _, member := range slices.Concat(g.Members, g.Backups) {
 		var row model.TunnelEnd
 		if err := database.GetDB().First(&row, member).Error; err != nil {
 			return common.NewErrorf("tunnel %d does not exist", member)
@@ -125,7 +130,7 @@ func (s *TunnelService) checkGroup(id int, g tunnel.Group) error {
 
 // SaveGroup creates (id 0) or replaces a group and applies it.
 func (s *TunnelService) SaveGroup(id int, req TunnelGroupRequest) (*TunnelGroupView, error) {
-	g, err := tunnel.NormalizeGroup(tunnel.Group{ID: id, Name: req.Name, Mode: req.Mode, Members: req.Members, Forwards: req.Forwards, Enabled: req.Enable})
+	g, err := tunnel.NormalizeGroup(tunnel.Group{ID: id, Name: req.Name, Mode: req.Mode, Members: req.Members, Backups: req.Backups, Sticky: req.Sticky, Forwards: req.Forwards, Enabled: req.Enable})
 	if err != nil {
 		return nil, common.NewError(err.Error())
 	}
@@ -139,7 +144,7 @@ func (s *TunnelService) SaveGroup(id int, req TunnelGroupRequest) (*TunnelGroupV
 		}
 	}
 	forwards, _ := json.Marshal(g.Forwards)
-	row.Name, row.Mode, row.Members, row.Forwards, row.Enable = g.Name, g.Mode, g.Members, string(forwards), g.Enabled
+	row.Name, row.Mode, row.Members, row.Backups, row.Sticky, row.Forwards, row.Enable = g.Name, g.Mode, g.Members, g.Backups, g.Sticky, string(forwards), g.Enabled
 	if err := database.GetDB().Save(&row).Error; err != nil {
 		return nil, err
 	}
@@ -163,7 +168,7 @@ func groupsUsing(tunnelID int) []string {
 	database.GetDB().Find(&rows)
 	var out []string
 	for _, r := range rows {
-		if slices.Contains(r.Members, tunnelID) {
+		if slices.Contains(r.Members, tunnelID) || slices.Contains(r.Backups, tunnelID) {
 			out = append(out, r.Name)
 		}
 	}

@@ -2977,7 +2977,13 @@
         "membersHint": "Relay ends of kernel or layer-3 tunnels, one to each origin. Green marks where the ports go now.",
         "confirmDelete": "Delete this group? Its ports stop being forwarded.",
         "saveFailed": "Could not save the group",
-        "deleteFailed": "Could not delete the group"
+        "deleteFailed": "Could not delete the group",
+        "backups": "Резервні",
+        "backupsHint": "Несуть порти групи, лише поки не відповідає жоден учасник; при перемиканні — перший, що відповів.",
+        "backup": "резерв",
+        "sticky": "Тримати кожного клієнта на одному тунелі",
+        "stickyHint": "Надсилає кожну адресу клієнта завжди в той самий тунель замість черги. Потрібно для L2TP/IPsec: його UDP 500 і 4500 мають потрапити на той самий сервер.",
+        "stickyTag": "закріплено"
       },
       "relayVersion": "Version",
       "relayVersionDiffers": "The relay runs {relay} and this panel {panel}. Update the relay with: manifold update",
@@ -3100,7 +3106,9 @@
           "standard": "Screens every tunnel, measures the best five in full and tunes the MTU of the best two.",
           "thorough": "Longer phases and more streams: the best eight in full and the MTU of the best three."
         }
-      }
+      },
+      "l2tpPreset": "Додати порти L2TP/IPsec",
+      "l2tpPresetHint": "UDP 500, UDP 4500 і ESP. Додайте й UDP 1701, якщо L2TP-інбаунд не вимагає IPsec. Зберігайте адресу клієнта (NAT: зберігати), щоб кілька користувачів підключалися одночасно; Windows потрібен AssumeUDPEncapsulationContextOnSendRule = 2 для сервера за ретранслятором."
     },
     "access": {
       "saved": "Saved",

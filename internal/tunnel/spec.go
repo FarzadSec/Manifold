@@ -45,6 +45,8 @@ const (
 	ProtoTCP  = "tcp"
 	ProtoUDP  = "udp"
 	ProtoBoth = "both"
+	// ProtoESP is IPsec's IP protocol 50: no port, and only a kernel link carries it.
+	ProtoESP = "esp"
 )
 
 var (
@@ -353,7 +355,19 @@ func normalizeForwards(kind string, in []PortForward) ([]PortForward, error) {
 		proto string
 	}
 	var seen []taken
+	esp := false
 	for _, f := range in {
+		if strings.EqualFold(strings.TrimSpace(f.Proto), ProtoESP) {
+			if !IsKernel(kind) {
+				return nil, errors.New("tunnel: ESP needs a kernel link (GRE, IPIP, SIT…); BackPack carries TCP and UDP only")
+			}
+			if esp {
+				return nil, errors.New("tunnel: ESP is forwarded twice")
+			}
+			esp = true
+			out = append(out, PortForward{Proto: ProtoESP})
+			continue
+		}
 		listen, err := parsePorts(f.Listen)
 		if err != nil {
 			return nil, err
@@ -417,7 +431,7 @@ func (t Tunnel) ListenPorts() map[int]string {
 	}
 	for _, f := range s.Forwards {
 		r, err := parsePorts(f.Listen)
-		if err != nil {
+		if err != nil || f.Proto == ProtoESP {
 			continue
 		}
 		for p := r.low; p <= r.high; p++ {

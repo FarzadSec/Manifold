@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -248,5 +249,48 @@ func TestARelayedTunnelIsSetUpAndRemovedOnTheRelay(t *testing.T) {
 	want := "POST /secret/panel/api/tunnels/withdraw " + v.PairId
 	if last := relay.calls[len(relay.calls)-1]; last != want {
 		t.Fatalf("last relay call = %q, want %q", last, want)
+	}
+}
+
+// strongSwan on this server holds UDP 500 and 4500 for its L2TP inbound; a relay forward there
+// would take IPsec away from that inbound's users.
+func TestTunnelCannotForwardIPsecPortsOfThisServersL2TP(t *testing.T) {
+	s := initTunnelDB(t)
+	ipsec := relayEnd(8446, tunnel.PortForward{Listen: "500", Proto: tunnel.ProtoBoth})
+	if _, err := s.Add(ipsec); err != nil {
+		t.Fatalf("UDP 500 with no L2TP inbound here: %v", err)
+	}
+	if err := database.GetDB().Create(&model.Inbound{Port: 1701, Enable: true, Protocol: model.L2TP, Tag: "l2tp"}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Add(relayEnd(8447, tunnel.PortForward{Listen: "4500", Proto: tunnel.ProtoBoth})); err == nil || !strings.Contains(err.Error(), "port 4500 belongs to this server's L2TP inbound") {
+		t.Fatalf("error = %v", err)
+	}
+}
+
+func TestGroupKeepsItsBackupsAndStickiness(t *testing.T) {
+	s := initTunnelDB(t)
+	var ids []int
+	for i := range 3 {
+		v, err := s.Add(TunnelRequest{
+			Name: fmt.Sprintf("gre%d", i), Kind: tunnel.KindGRE, Role: tunnel.RoleServer, Enable: true,
+			Settings: tunnel.TunnelSettings{RemoteAddr: fmt.Sprintf("198.51.100.%d", 10+i), LocalIP: fmt.Sprintf("10.8%d.0.1/30", i), PeerIP: fmt.Sprintf("10.8%d.0.2", i)},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		ids = append(ids, v.Id)
+	}
+	saved, err := s.SaveGroup(0, TunnelGroupRequest{Name: "ipsec", Mode: tunnel.ModeBalance, Members: ids[:2], Backups: ids[2:], Sticky: true, Enable: true,
+		Forwards: []tunnel.PortForward{{Listen: "500", Proto: tunnel.ProtoUDP}, {Listen: "4500", Proto: tunnel.ProtoUDP}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	groups, err := s.ListGroups()
+	if err != nil || len(groups) != 1 || !groups[0].Sticky || len(groups[0].Backups) != 1 || groups[0].Backups[0] != ids[2] || groups[0].Id != saved.Id {
+		t.Fatalf("groups = %+v (%v)", groups, err)
+	}
+	if err := s.Delete(ids[2]); err == nil || !strings.Contains(err.Error(), "ipsec") {
+		t.Fatalf("deleting a backup the group lists: %v", err)
 	}
 }

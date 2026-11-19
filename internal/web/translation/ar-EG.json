@@ -2977,7 +2977,13 @@
         "membersHint": "Relay ends of kernel or layer-3 tunnels, one to each origin. Green marks where the ports go now.",
         "confirmDelete": "Delete this group? Its ports stop being forwarded.",
         "saveFailed": "Could not save the group",
-        "deleteFailed": "Could not delete the group"
+        "deleteFailed": "Could not delete the group",
+        "backups": "احتياطية",
+        "backupsHint": "تحمل منافذ المجموعة فقط عندما لا يجيب أي عضو؛ وفي وضع التبديل أول احتياطي يجيب.",
+        "backup": "احتياطي",
+        "sticky": "إبقاء كل عميل على نفق واحد",
+        "stickyHint": "يرسل كل عنوان عميل إلى النفق نفسه بدل التناوب. يحتاجه L2TP/IPsec: يجب أن يصل UDP 500 و 4500 إلى الخادم نفسه.",
+        "stickyTag": "ثابت"
       },
       "relayVersion": "Version",
       "relayVersionDiffers": "The relay runs {relay} and this panel {panel}. Update the relay with: manifold update",
@@ -3100,7 +3106,9 @@
           "standard": "Screens every tunnel, measures the best five in full and tunes the MTU of the best two.",
           "thorough": "Longer phases and more streams: the best eight in full and the MTU of the best three."
         }
-      }
+      },
+      "l2tpPreset": "إضافة منافذ L2TP/IPsec",
+      "l2tpPresetHint": "UDP 500 و UDP 4500 و ESP. أضف UDP 1701 أيضًا إذا كان وارد L2TP لا يشترط IPsec. احتفظ بعنوان العميل (NAT: الإبقاء) ليتصل عدة مستخدمين معًا؛ يحتاج Windows إلى AssumeUDPEncapsulationContextOnSendRule = 2 لخادم خلف مرحّل."
     },
     "access": {
       "saved": "Saved",

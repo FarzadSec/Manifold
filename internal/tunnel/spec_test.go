@@ -161,3 +161,33 @@ func TestListenPortsCoverTheRelaysPorts(t *testing.T) {
 		t.Fatalf("a reverse client listens on %v", got)
 	}
 }
+
+// L2TP/IPsec through a kernel link may need ESP, IP protocol 50, which no port names.
+func TestKernelLinkForwardsESPButBackPackCannot(t *testing.T) {
+	tun := greClient()
+	tun.Settings.Forwards = []PortForward{{Listen: "500", Proto: ProtoUDP}, {Listen: "4500", Proto: ProtoUDP}, {Proto: " ESP "}}
+	got, err := Normalize(tun)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if esp := got.Settings.Forwards[2]; esp != (PortForward{Proto: ProtoESP}) {
+		t.Fatalf("ESP forward = %+v, want the protocol alone", esp)
+	}
+	server := Tunnel{Role: RoleServer, Kind: KindGRE, Settings: got.Settings}
+	if ports := server.ListenPorts(); len(ports) != 2 || ports[500] != ProtoUDP || ports[4500] != ProtoUDP {
+		t.Fatalf("listen ports = %v, want only the two UDP ports", ports)
+	}
+	rules := portForwards(server)
+	if len(rules) != 3 || rules[2].Proto != "esp" {
+		t.Fatalf("relay rules = %+v, want ESP last", rules)
+	}
+	if _, err := Normalize(Tunnel{Name: "r", Kind: KindReverse, Role: RoleClient, Enabled: true, Settings: TunnelSettings{
+		Transport: "tcp", Port: 443, RemoteAddr: "r.example", Forwards: []PortForward{{Listen: "500", Proto: ProtoBoth}, {Proto: ProtoESP}},
+	}}); err == nil || !strings.Contains(err.Error(), "ESP needs a kernel link") {
+		t.Fatalf("BackPack took ESP: %v", err)
+	}
+	tun.Settings.Forwards = []PortForward{{Proto: ProtoESP}, {Proto: ProtoESP}}
+	if _, err := Normalize(tun); err == nil || !strings.Contains(err.Error(), "ESP is forwarded twice") {
+		t.Fatalf("ESP twice: %v", err)
+	}
+}

@@ -2977,7 +2977,13 @@
         "membersHint": "内核或三层隧道的中转端，每个指向一个源站。绿色表示端口当前的去向。",
         "confirmDelete": "删除此组？其端口将不再转发。",
         "saveFailed": "无法保存组",
-        "deleteFailed": "无法删除组"
+        "deleteFailed": "无法删除组",
+        "backups": "备用",
+        "backupsHint": "仅在所有成员都无响应时承载该组端口；故障转移模式下使用第一个有响应的备用。",
+        "backup": "备用",
+        "sticky": "让每个客户端固定走一条隧道",
+        "stickyHint": "不轮流分配，而是把每个客户端地址始终发往同一条隧道。L2TP/IPsec 需要它：其 UDP 500 和 4500 必须到达同一台服务器。",
+        "stickyTag": "固定"
       },
       "relayVersion": "版本",
       "relayVersionDiffers": "中继运行 {relay}，本面板运行 {panel}。请在中继上执行 manifold update 更新",
@@ -3100,7 +3106,9 @@
           "standard": "Screens every tunnel, measures the best five in full and tunes the MTU of the best two.",
           "thorough": "Longer phases and more streams: the best eight in full and the MTU of the best three."
         }
-      }
+      },
+      "l2tpPreset": "添加 L2TP/IPsec 端口",
+      "l2tpPresetHint": "UDP 500、UDP 4500 和 ESP。若 L2TP 入站不强制 IPsec，再添加 UDP 1701。保留客户端地址（NAT：保留）以便多个用户同时连接；中继后的服务器在 Windows 上需要 AssumeUDPEncapsulationContextOnSendRule = 2。"
     },
     "access": {
       "saved": "已保存",

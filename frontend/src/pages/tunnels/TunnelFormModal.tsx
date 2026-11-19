@@ -23,6 +23,7 @@ import type { TunnelRelay, TunnelRequest, TunnelSuggestion, TunnelView } from '@
 import { HttpUtil } from '@/utils';
 import { isTunnelEdition } from '@/utils/edition';
 import { KERNEL_KINDS, L3_CARRIERS, REVERSE_TRANSPORTS, isKernel, kindLabel } from './tunnelInfo';
+import { L2TP_FORWARDS } from './groupMembers';
 
 interface TunnelFormModalProps {
   open: boolean;
@@ -76,6 +77,7 @@ export default function TunnelFormModal({
   const kind = useWatch({ control, name: 'kind' });
   const role = useWatch({ control, name: 'role' });
   const dialer = useWatch({ control, name: 'settings.dialer' });
+  const forwardRows = useWatch({ control, name: 'settings.forwards' }) ?? [];
   const [saving, setSaving] = useState(false);
   const kernel = isKernel(kind);
 
@@ -442,9 +444,9 @@ export default function TunnelFormModal({
                     <FormField
                       name={`settings.forwards.${i}.listen`}
                       label={i === 0 ? t('pages.tunnels.forwardListen') : undefined}
-                      rules={{ required: true }}
+                      rules={{ required: forwardRows[i]?.proto !== 'esp' }}
                     >
-                      <Input placeholder="443" />
+                      <Input placeholder="443" disabled={forwardRows[i]?.proto === 'esp'} />
                     </FormField>
                   </Col>
                   <Col span={8}>
@@ -452,7 +454,10 @@ export default function TunnelFormModal({
                       name={`settings.forwards.${i}.target`}
                       label={i === 0 ? t('pages.tunnels.forwardTarget') : undefined}
                     >
-                      <Input placeholder={t('pages.tunnels.forwardSame')} />
+                      <Input
+                        placeholder={t('pages.tunnels.forwardSame')}
+                        disabled={forwardRows[i]?.proto === 'esp'}
+                      />
                     </FormField>
                   </Col>
                   <Col span={6}>
@@ -465,6 +470,7 @@ export default function TunnelFormModal({
                           { label: 'TCP', value: 'tcp' },
                           ...(kernel ? [{ label: 'UDP', value: 'udp' }] : []),
                           { label: 'TCP + UDP', value: 'both' },
+                          ...(kernel ? [{ label: 'ESP (IPsec)', value: 'esp' }] : []),
                         ]}
                       />
                     </FormField>
@@ -486,6 +492,27 @@ export default function TunnelFormModal({
               >
                 {t('pages.tunnels.addForward')}
               </Button>
+              {kernel && (
+                <>
+                  <Button
+                    style={{ marginInlineStart: 8 }}
+                    onClick={() => {
+                      for (const p of L2TP_FORWARDS) {
+                        if (
+                          !forwardRows.some((f) => f.proto === p.proto && f.listen === p.listen)
+                        ) {
+                          forwards.append(p);
+                        }
+                      }
+                    }}
+                  >
+                    {t('pages.tunnels.l2tpPreset')}
+                  </Button>
+                  <Typography.Paragraph type="secondary" style={{ marginTop: 8 }}>
+                    {t('pages.tunnels.l2tpPresetHint')}
+                  </Typography.Paragraph>
+                </>
+              )}
             </>
           )}
 

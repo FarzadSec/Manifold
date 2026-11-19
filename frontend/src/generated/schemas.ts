@@ -9049,6 +9049,15 @@ export const SCHEMAS: Record<string, unknown> = {
   "TunnelGroup": {
     "description": "TunnelGroup is a set of this relay's tunnels to several origins that share forwarded\nports, in failover or balance; Settings holds the forwards as tunnel settings do.",
     "properties": {
+      "backups": {
+        "example": [
+          3
+        ],
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
       "createdAt": {
         "example": 1763300000000,
         "format": "int64",
@@ -9079,21 +9088,36 @@ export const SCHEMAS: Record<string, unknown> = {
       "name": {
         "example": "origins",
         "type": "string"
+      },
+      "sticky": {
+        "example": false,
+        "type": "boolean"
       }
     },
     "required": [
+      "backups",
       "createdAt",
       "enable",
       "id",
       "members",
       "mode",
-      "name"
+      "name",
+      "sticky"
     ],
     "type": "object"
   },
   "TunnelGroupRequest": {
     "description": "TunnelGroupRequest saves a group.",
     "properties": {
+      "backups": {
+        "example": [
+          3
+        ],
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
       "enable": {
         "example": true,
         "type": "boolean"
@@ -9121,20 +9145,35 @@ export const SCHEMAS: Record<string, unknown> = {
       "name": {
         "example": "origins",
         "type": "string"
+      },
+      "sticky": {
+        "example": false,
+        "type": "boolean"
       }
     },
     "required": [
+      "backups",
       "enable",
       "forwards",
       "members",
       "mode",
-      "name"
+      "name",
+      "sticky"
     ],
     "type": "object"
   },
   "TunnelGroupView": {
     "description": "TunnelGroupView is a group with the forwards it shares.",
     "properties": {
+      "backups": {
+        "example": [
+          3
+        ],
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
       "createdAt": {
         "example": 1763300000000,
         "format": "int64",
@@ -9171,16 +9210,22 @@ export const SCHEMAS: Record<string, unknown> = {
       "name": {
         "example": "origins",
         "type": "string"
+      },
+      "sticky": {
+        "example": false,
+        "type": "boolean"
       }
     },
     "required": [
+      "backups",
       "createdAt",
       "enable",
       "forwards",
       "id",
       "members",
       "mode",
-      "name"
+      "name",
+      "sticky"
     ],
     "type": "object"
   },
