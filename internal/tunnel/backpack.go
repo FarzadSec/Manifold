@@ -242,6 +242,14 @@ func (c *child) stop() {
 
 // reapOrphans stops backpack processes a killed panel left running on its configs.
 func reapOrphans(binary, dir string) {
+	// /proc names programs and the configurations they were given by absolute paths.
+	binary, err := filepath.Abs(binary)
+	if err != nil {
+		return
+	}
+	if dir, err = filepath.Abs(dir); err != nil {
+		return
+	}
 	entries, err := os.ReadDir("/proc")
 	if err != nil {
 		return

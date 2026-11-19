@@ -1,7 +1,9 @@
 package tunnel
 
 import (
+	"context"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -113,5 +115,54 @@ func TestBackPackStartsFromTheRelativeBinFolderTheServiceUses(t *testing.T) {
 	t.Chdir(t.TempDir())
 	if childRunningFor("bin/tunnels/t1.toml") {
 		t.Fatal("another install's BackPack was taken for this one's")
+	}
+}
+
+// TestReapOrphansHelper stands in for a BackPack process a previous run left behind.
+func TestReapOrphansHelper(t *testing.T) {
+	if os.Getenv("XUI_REAP_HELPER") == "" {
+		t.Skip("started by TestReapOrphansFindsAProcessByARelativeBinFolder")
+	}
+	time.Sleep(30 * time.Second)
+}
+
+// The service's bin folder is relative to its working directory, while /proc names the
+// running program by its absolute path.
+func TestReapOrphansFindsAProcessByARelativeBinFolder(t *testing.T) {
+	self, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(self)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	binary := filepath.Join(dir, "backpack-linux-test")
+	if err := os.WriteFile(binary, raw, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	tunnels := filepath.Join(dir, "tunnels")
+	cmd := exec.CommandContext(context.Background(), binary, "-test.run=^TestReapOrphansHelper$", "--", "-c", filepath.Join(tunnels, "t1.toml"))
+	cmd.Env = append(os.Environ(), "XUI_REAP_HELPER=1")
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+	exited := make(chan struct{})
+	go func() { _ = cmd.Wait(); close(exited) }()
+	t.Cleanup(func() { _ = cmd.Process.Kill() })
+
+	cwd, _ := os.Getwd()
+	relBinary, err := filepath.Rel(cwd, binary)
+	if err != nil {
+		t.Fatal(err)
+	}
+	relTunnels, _ := filepath.Rel(cwd, tunnels)
+	time.Sleep(200 * time.Millisecond)
+	reapOrphans(relBinary, relTunnels)
+	select {
+	case <-exited:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the leftover process was not stopped")
 	}
 }
