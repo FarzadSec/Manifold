@@ -670,6 +670,23 @@ export const AppProfileSchema = z.object({
 });
 export type AppProfile = z.infer<typeof AppProfileSchema>;
 
+export const AppReportSchema = z.object({
+  appVersion: z.string(),
+  createdAt: z.number().int(),
+  deviceName: z.string(),
+  deviceOs: z.string(),
+  email: z.string(),
+  id: z.number().int(),
+  log: z.string().optional(),
+  logSize: z.number().int(),
+  message: z.string(),
+  osVersion: z.string(),
+  seen: z.boolean(),
+  subId: z.string(),
+  tgId: z.number().int(),
+});
+export type AppReport = z.infer<typeof AppReportSchema>;
+
 export const AuditEntrySchema = z.object({
   action: z.string(),
   at: z.number().int(),

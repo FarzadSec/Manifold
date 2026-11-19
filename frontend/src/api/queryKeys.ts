@@ -60,6 +60,12 @@ export const keys = {
   appNotices: {
     list: () => ['app', 'notices'] as const,
   },
+  appReports: {
+    root: () => ['app', 'reports'] as const,
+    list: () => ['app', 'reports', 'list'] as const,
+    unseen: () => ['app', 'reports', 'unseen'] as const,
+    detail: (id: number) => ['app', 'reports', 'detail', id] as const,
+  },
   settings: {
     root: () => ['settings'] as const,
     all: () => ['settings', 'all'] as const,

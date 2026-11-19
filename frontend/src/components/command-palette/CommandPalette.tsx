@@ -6,6 +6,7 @@ import { ConfigProvider, Tag, Tooltip, message } from 'antd';
 import {
   ApartmentOutlined,
   BellOutlined,
+  BugOutlined,
   CheckCircleFilled,
   ClockCircleOutlined,
   CloseCircleFilled,
@@ -484,6 +485,13 @@ export default function CommandPalette() {
         subtitle: t('pages.settings.app.notices.menu'),
         keywords: ['notices', 'announcements', 'news', 'banner', 'bell', 'dt connect'],
         icon: <BellOutlined aria-hidden />,
+      },
+      {
+        path: '/settings#app-reports',
+        title: `${t('menu.settings')} · ${t('pages.settings.app.reports.menu')}`,
+        subtitle: t('pages.settings.app.reports.menu'),
+        keywords: ['reports', 'report a problem', 'logs', 'support', 'bugs', 'dt connect'],
+        icon: <BugOutlined aria-hidden />,
       },
       {
         path: '/xray#basic',

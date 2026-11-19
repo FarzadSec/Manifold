@@ -1372,6 +1372,27 @@ type AppNotice struct {
 
 func (AppNotice) TableName() string { return "app_notices" }
 
+// AppReport is a support report a signed-in app sent: the user's words and its log, filed under
+// the session's account and that account's Telegram id as they were at the time.
+type AppReport struct {
+	Id         int    `json:"id" gorm:"primaryKey;autoIncrement" example:"12"`
+	CreatedAt  int64  `json:"createdAt" gorm:"column:created_at;not null;index" example:"1767225600000"`
+	SubID      string `json:"subId" gorm:"column:sub_id;not null" example:"k3x9q2m7"`
+	Email      string `json:"email" gorm:"not null;index" example:"dana@example.com"`
+	TgID       int64  `json:"tgId" gorm:"column:tg_id" example:"987654321"`
+	HwidHash   string `json:"-" gorm:"column:hwid_hash;size:64;not null;index"`
+	DeviceName string `json:"deviceName" gorm:"column:device_name" example:"Pixel 8"`
+	DeviceOS   string `json:"deviceOs" gorm:"column:device_os" example:"android"`
+	OsVersion  string `json:"osVersion" gorm:"column:os_version" example:"15"`
+	AppVersion string `json:"appVersion" gorm:"column:app_version" example:"1.1.0"`
+	Message    string `json:"message" example:"به هیچ لوکیشنی وصل نمی‌شود"`
+	Log        string `json:"log,omitempty" example:"=== app ===\n2026-11-19 01:02:03.456 [vpn] trying vless"`
+	LogSize    int    `json:"logSize" gorm:"column:log_size" example:"48213"`
+	Seen       bool   `json:"seen" gorm:"not null;default:false" example:"false"`
+}
+
+func (AppReport) TableName() string { return "app_reports" }
+
 // AppLocationInbound links an inbound to the one location it serves.
 type AppLocationInbound struct {
 	InboundID  int `gorm:"column:inbound_id;primaryKey;autoIncrement:false"`

@@ -319,3 +319,9 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
 .sider-nav .ant-menu-item-divider {
   margin: 6px 14px;
 }
+
+.menu-label-with-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}

@@ -2,11 +2,12 @@ import { useCallback, useMemo, useState } from 'react';
 import type { ComponentType, CSSProperties } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { Drawer, Layout, Menu, Tooltip } from 'antd';
+import { Badge, Drawer, Layout, Menu, Tooltip } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   ApartmentOutlined,
   BellOutlined,
+  BugOutlined,
   CloseOutlined,
   CloudServerOutlined,
   ClusterOutlined,
@@ -38,6 +39,7 @@ import { useAllSettings } from '@/api/queries/useAllSettings';
 import { useCommandPalette } from '@/components/command-palette/useCommandPalette';
 import { ROUTE_SECTIONS, navigableRoutes, type RouteSection } from '@/routes/panelRoutes';
 import { useAccess } from '@/api/queries/useAccess';
+import { useUnseenAppReports } from '@/api/queries/useAppReports';
 import AccountModal from './AccountModal';
 import './AppSidebar.css';
 
@@ -120,6 +122,7 @@ export default function AppSidebar() {
   const { allSetting } = useAllSettings(access.can('settings:read'));
   const showSubFormats = !!(allSetting.subJsonEnable || allSetting.subClashEnable);
   const showSubBalancers = !!allSetting.subJsonEnable;
+  const unseenReports = useUnseenAppReports(access.can('settings:read') && !access.isReseller);
 
   const [railCollapsed, setRailCollapsed] = useState(readSidebarCollapsed);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -220,8 +223,18 @@ export default function AppSidebar() {
       icon: <BellOutlined aria-hidden />,
       label: t('pages.settings.app.notices.menu'),
     });
+    children.push({
+      key: '/settings#app-reports',
+      icon: <BugOutlined aria-hidden />,
+      label: (
+        <span className="menu-label-with-badge">
+          {t('pages.settings.app.reports.menu')}
+          <Badge count={unseenReports} size="small" overflowCount={99} />
+        </span>
+      ),
+    });
     return children;
-  }, [t, showSubFormats, showSubBalancers]);
+  }, [t, showSubFormats, showSubBalancers, unseenReports]);
 
   const xrayChildren = useMemo<NonNullable<MenuProps['items']>>(
     () => [
