@@ -702,3 +702,21 @@ func TestParseLinkRejectsDeeplyNestedJSON(t *testing.T) {
 		t.Fatalf("a real download stream with a finalmask was refused: %v", err)
 	}
 }
+
+// genWireguardLink QueryEscapes the private key into the userinfo, which url.Parse already
+// decodes: decoding it again turned every '+' into a space and Xray refused the key.
+func TestParseWireguard_KeepsThePrivateKeyTheLinkCarries(t *testing.T) {
+	const key = "cOFJbW0HSNNXo+dpvVBiNMGbWXfzKaw8tc+B+WWRjX0="
+	for name, userinfo := range map[string]string{"escaped": url.QueryEscape(key), "raw": key} {
+		t.Run(name, func(t *testing.T) {
+			res, err := ParseLink("wireguard://" + userinfo + "@wg.example.com:51820?publickey=" + url.QueryEscape("Sa1M9+7tF7y2jNcvHDb2EhHH9dsZdFWkU6P3RuPXamY=") + "&address=10.0.0.2%2F32#wg")
+			if err != nil {
+				t.Fatalf("parse: %v", err)
+			}
+			settings := res.Outbound["settings"].(map[string]any)
+			if got := settings["secretKey"]; got != key {
+				t.Fatalf("secretKey = %q, want %q", got, key)
+			}
+		})
+	}
+}
