@@ -4052,6 +4052,15 @@ export const sections: readonly Section[] = [
         params: [{ name: 'subid', in: 'path', type: 'string', desc: 'Client subscription ID.' }],
       },
       {
+        method: 'POST',
+        path: '/{subPath}:subid/app/v1/disconnected',
+        summary:
+          "The device left a connection, so its user-limit seat is freed at once. WireGuard: the account's seat at that location, on whichever server holds it. OpenVPN: the session with that tunnel address. L2TP and Xray protocols need nothing and are answered the same. Needs the bearer token and X-HWID.",
+        params: [{ name: 'subid', in: 'path', type: 'string', desc: 'Client subscription ID.' }],
+        body: '{\n  "protocol": "wireguard",\n  "locationId": 3,\n  "address": "10.8.0.6"\n}',
+        response: '{\n  "ok": true\n}',
+      },
+      {
         method: 'GET',
         path: '/{jsonPath}:subid',
         summary:

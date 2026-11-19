@@ -12,6 +12,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/seats"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/link"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/loginlimit"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/clientip"
@@ -84,6 +85,7 @@ func (a *SUBController) registerAppRoutes(g *gin.RouterGroup) {
 	g.POST(":subid/app/v1/login", a.appLogin)
 	g.GET(":subid/app/v1/profile", a.appProfile)
 	g.POST(":subid/app/v1/logout", a.appLogout)
+	g.POST(":subid/app/v1/disconnected", a.appDisconnected)
 }
 
 func appError(c *gin.Context, status int, code string) {
@@ -231,6 +233,34 @@ func (a *SUBController) appLogout(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{})
+}
+
+// appDisconnected takes a device's word that it left a connection, so its seat is free at once:
+// WireGuard says nothing itself, and OpenVPN's goodbye takes the server five seconds.
+func (a *SUBController) appDisconnected(c *gin.Context) {
+	session, ok := a.appSession(c)
+	if !ok {
+		return
+	}
+	var in struct {
+		Protocol   string `json:"protocol"`
+		LocationID int    `json:"locationId"`
+		Address    string `json:"address"`
+	}
+	if err := c.ShouldBindJSON(&in); err != nil {
+		appError(c, http.StatusBadRequest, "bad_request")
+		return
+	}
+	// L2TP hangs up by itself and Xray holds no seat; an OpenVPN session is named by its address only.
+	if in.Protocol == string(model.WireGuard) || (in.Protocol == string(model.OpenVPN) && in.Address != "") {
+		servers, err := a.appService.ServersOfLocation(in.LocationID, model.Protocol(in.Protocol))
+		if err != nil {
+			appServiceError(c, err)
+			return
+		}
+		seats.Local().Depart(seats.Departure{Account: session.Email, Protocol: in.Protocol, Address: in.Address, Servers: servers})
+	}
+	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
 // appConfigs splits the subscription's entries into one config per line, an

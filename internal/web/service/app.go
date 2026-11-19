@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -229,6 +230,46 @@ func (s *AppService) LocationOfInbounds() (map[int]int, error) {
 	for _, l := range links {
 		out[l.InboundID] = l.LocationID
 	}
+	return out, nil
+}
+
+// ServersOfLocation names the servers holding a location's inbounds of protocol: "" for this
+// panel, "node:N" for a node. An unknown location names this panel and every enabled node.
+func (s *AppService) ServersOfLocation(locationID int, protocol model.Protocol) ([]string, error) {
+	db := database.GetDB()
+	var inbounds []model.Inbound
+	if locationID > 0 {
+		err := db.Model(&model.Inbound{}).
+			Joins("JOIN location_inbounds ON location_inbounds.inbound_id = inbounds.id").
+			Where("location_inbounds.location_id = ? AND inbounds.protocol = ?", locationID, protocol).
+			Find(&inbounds).Error
+		if err != nil {
+			return nil, err
+		}
+	}
+	servers := map[string]bool{}
+	for _, ib := range inbounds {
+		if ib.NodeID == nil {
+			servers[""] = true
+		} else {
+			servers["node:"+strconv.Itoa(*ib.NodeID)] = true
+		}
+	}
+	if len(servers) == 0 {
+		servers[""] = true
+		var nodes []model.Node
+		if err := db.Where("enable = ?", true).Find(&nodes).Error; err != nil {
+			return nil, err
+		}
+		for _, n := range nodes {
+			servers["node:"+strconv.Itoa(n.Id)] = true
+		}
+	}
+	out := make([]string, 0, len(servers))
+	for server := range servers {
+		out = append(out, server)
+	}
+	slices.Sort(out)
 	return out, nil
 }
 
