@@ -198,7 +198,17 @@ func newBenchPair(t *testing.T) (relay, origin *benchState, relayEngine, originE
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() { stopBench(relay) })
 	return relay, origin, relayEngine, originEngine, link
+}
+
+// stopBench ends a link the test left open and waits out its watcher, which would otherwise
+// save its report into a later test's database a minute on.
+func stopBench(b *benchState) {
+	b.mu.Lock()
+	b.closeHostLocked(BenchCancelled, "the test ended")
+	b.mu.Unlock()
+	b.watching.Wait()
 }
 
 func waitBench(t *testing.T, b *benchState) TunnelBenchReport {
@@ -338,7 +348,10 @@ func TestTunnelBenchLinkKeepsItsPortsOffBusyRanges(t *testing.T) {
 			engine := newFakeBenchEngine()
 			engine.ephemeral = c.ephemeral
 			b := &benchState{engine: engine, self: benchSelfOf, addrs: addrsAt("198.51.100.7"), now: time.Now, idle: time.Minute}
-			t.Cleanup(func() { _ = b.cancel() })
+			t.Cleanup(func() {
+				_ = b.cancel()
+				b.watching.Wait()
+			})
 			for range 50 {
 				link, err := b.makeLink(TunnelBenchLinkRequest{Role: tunnel.RoleServer, Url: "https://relay.example.com:2053/"})
 				if err != nil {

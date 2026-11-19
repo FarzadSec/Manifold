@@ -300,6 +300,8 @@ type benchState struct {
 	// pollEvery is how often the driver asks the relay how its measurement goes.
 	pollEvery time.Duration
 	cleaned   bool
+	// watching counts the watchers of links, so whoever ends this state can wait them out.
+	watching sync.WaitGroup
 }
 
 var defaultBench = &benchState{
@@ -444,7 +446,11 @@ func (b *benchState) makeLink(req TunnelBenchLinkRequest) (*TunnelBenchLink, err
 			Warnings: []string{}, StartedAt: b.now().UnixMilli(),
 		},
 	}
-	go b.watch(b.host)
+	b.watching.Add(1)
+	go func(h *benchHost) {
+		defer b.watching.Done()
+		b.watch(h)
+	}(b.host)
 	code, err := inv.Code()
 	if err != nil {
 		return nil, err
