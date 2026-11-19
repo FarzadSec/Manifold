@@ -524,6 +524,14 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - Node templates (one configuration applied to many nodes) are not built; a node's inbounds are created on it from the master as before.
 - Live connections per node are still not listed (see 8.7).
 
+### 8.23 Open items after the user limit (0.23.0)
+
+- No end-to-end run holds a single-user account across OpenVPN, L2TP and WireGuard on a master and a node. Each engine's own tests, the seat sync job's test and the node contract cell cover the parts; `make node-e2e` does not start the VPN engines.
+- The client window has no list of an account's seats with a button to free one, and no webhook says a connection was refused for a full account.
+- One WireGuard key per account means one device per location's WireGuard at a time; a plan for two people who both use WireGuard at one location needs two accounts.
+- A node on an older version has no `POST /seats/sync`: it counts its own seats alone and the master's plan never reaches it. A relay needs 0.23.0 to forward ESP.
+- DT Connect's quick close was not tried on a Windows client with OpenVPN 2.5 and without DCO.
+
 ### 8.22 Open items after the tunnel test (0.22.0)
 
 - No test has crossed a real filtered path: the end-to-end script runs two panels in network namespaces on one host. BackPack's `pck` and `sni` carriers choose the interface of the default route and cannot run there.
