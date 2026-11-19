@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
@@ -237,9 +238,10 @@ func osBenchSelf() benchSelf {
 	return self
 }
 
-// localIPv6 is the global IPv6 address this server sends from, found without sending.
+// localIPv6 is the global IPv6 address this server sends from: connecting a UDP socket
+// picks the route's source address and sends nothing.
 func localIPv6() string {
-	c, err := net.Dial("udp6", "[2001:4860:4860::8888]:53") //nolint:noctx // connecting a UDP socket sends nothing
+	c, err := (&net.Dialer{}).DialContext(context.Background(), "udp6", "[2001:4860:4860::8888]:53")
 	if err != nil {
 		return ""
 	}

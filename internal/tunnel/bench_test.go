@@ -280,8 +280,8 @@ func TestBuildBenchPairJoinsTheRelayToTheOriginsTestPort(t *testing.T) {
 				}
 				dial, echo := BenchTarget(relay, slot.BenchPort)
 				host, port, _ := net.SplitHostPort(dial)
-				switch {
-				case c.Kind == KindReverse:
+				switch c.Kind {
+				case KindReverse:
 					if dial != net.JoinHostPort("127.0.0.1", strconv.Itoa(slot.ForwardPort)) || echo != "" {
 						t.Fatalf("relay dials %s and pings %q", dial, echo)
 					}

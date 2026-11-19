@@ -504,7 +504,7 @@ func benchWaitUp(ctx context.Context, p BenchPlan) (time.Duration, error) {
 			last = err
 		}
 		if time.Since(start) >= p.Setup {
-			return 0, fmt.Errorf("the tunnel carried no connection within %s: %v", p.Setup.Round(time.Second), last)
+			return 0, fmt.Errorf("the tunnel carried no connection within %s: %w", p.Setup.Round(time.Second), last)
 		}
 		select {
 		case <-ctx.Done():
