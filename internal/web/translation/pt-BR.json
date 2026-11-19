@@ -2977,7 +2977,13 @@
         "membersHint": "Relay ends of kernel or layer-3 tunnels, one to each origin. Green marks where the ports go now.",
         "confirmDelete": "Delete this group? Its ports stop being forwarded.",
         "saveFailed": "Could not save the group",
-        "deleteFailed": "Could not delete the group"
+        "deleteFailed": "Could not delete the group",
+        "backups": "Reservas",
+        "backupsHint": "Levam as portas do grupo só enquanto nenhum membro responde; em failover, a primeira que responde.",
+        "backup": "reserva",
+        "sticky": "Manter cada cliente em um túnel",
+        "stickyHint": "Envia cada endereço de cliente sempre ao mesmo túnel em vez de revezar. O L2TP/IPsec precisa: suas UDP 500 e 4500 devem chegar ao mesmo servidor.",
+        "stickyTag": "fixo"
       },
       "relayVersion": "Version",
       "relayVersionDiffers": "The relay runs {relay} and this panel {panel}. Update the relay with: manifold update",
@@ -3100,7 +3106,9 @@
           "standard": "Screens every tunnel, measures the best five in full and tunes the MTU of the best two.",
           "thorough": "Longer phases and more streams: the best eight in full and the MTU of the best three."
         }
-      }
+      },
+      "l2tpPreset": "Adicionar portas L2TP/IPsec",
+      "l2tpPresetHint": "UDP 500, UDP 4500 e ESP. Adicione também UDP 1701 se o inbound L2TP não exige IPsec. Mantenha o endereço do cliente (NAT: manter) para vários usuários conectarem ao mesmo tempo; o Windows precisa de AssumeUDPEncapsulationContextOnSendRule = 2 para um servidor atrás de um relay."
     },
     "access": {
       "saved": "Saved",

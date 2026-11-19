@@ -21,10 +21,13 @@ const (
 
 // Group is a set of this relay's tunnels to several origins that share forwarded ports.
 type Group struct {
-	ID       int
-	Name     string
-	Mode     string
-	Members  []int
+	ID      int
+	Name    string
+	Mode    string
+	Members []int
+	// Backups carry the ports only while no member answers; Sticky keeps each client on one tunnel.
+	Backups  []int
+	Sticky   bool
 	Forwards []PortForward
 	Enabled  bool
 }
@@ -47,11 +50,18 @@ func NormalizeGroup(g Group) (Group, error) {
 			members = append(members, id)
 		}
 	}
-	if len(members) < 2 || len(members) > 16 {
-		return g, errors.New("tunnel: a group joins 2 to 16 tunnels")
+	backups := make([]int, 0, len(g.Backups))
+	for _, id := range g.Backups {
+		if id > 0 && !slices.Contains(members, id) && !slices.Contains(backups, id) {
+			backups = append(backups, id)
+		}
 	}
-	g.Members = members
-	forwards, err := normalizeForwards(KindL3, g.Forwards)
+	if len(members) == 0 || len(members)+len(backups) < 2 || len(members)+len(backups) > 16 {
+		return g, errors.New("tunnel: a group joins 2 to 16 tunnels, at least one of them not a backup")
+	}
+	g.Members, g.Backups = members, backups
+	// A group's ports are DNAT rules to its tunnels' addresses, as a kernel link's are.
+	forwards, err := normalizeForwards(KindGRE, g.Forwards)
 	if err != nil {
 		return g, err
 	}
@@ -75,15 +85,12 @@ func CanJoinGroup(t Tunnel) bool {
 
 func groupOwner(id int) string { return fmt.Sprintf("tg%d", id) }
 
-// chooseTargets is what a group forwards to now: in failover the first member that
-// answers, in balance every member that answers; when none answers, all of them, so a
-// probe that cannot run never takes the ports away.
-func chooseTargets(mode string, members []egress.Target, healthy []bool) []egress.Target {
-	var live []egress.Target
-	for i, m := range members {
-		if healthy[i] {
-			live = append(live, m)
-		}
+// chooseTargets is what a group forwards to now: the members that answer, else the backups that
+// do, else every member, so a probe that cannot run never takes the ports away; failover takes the first.
+func chooseTargets(mode string, members, backups []egress.Target, healthy, backupHealthy []bool) []egress.Target {
+	live := answering(members, healthy)
+	if len(live) == 0 {
+		live = answering(backups, backupHealthy)
 	}
 	if len(live) == 0 {
 		live = slices.Clone(members)
@@ -94,14 +101,44 @@ func chooseTargets(mode string, members []egress.Target, healthy []bool) []egres
 	return live
 }
 
+func answering(targets []egress.Target, healthy []bool) []egress.Target {
+	var live []egress.Target
+	for i, t := range targets {
+		if healthy[i] {
+			live = append(live, t)
+		}
+	}
+	return live
+}
+
+// groupTargetsLocked lists the tunnels of ids that can carry a group, and whether each answers.
+func (m *Manager) groupTargetsLocked(ids []int) ([]egress.Target, []bool) {
+	var targets []egress.Target
+	var healthy []bool
+	for _, id := range ids {
+		e := m.entries[id]
+		if e == nil || e.disabled || e.err != nil || !CanJoinGroup(e.t) {
+			continue
+		}
+		peer, err := netip.ParseAddr(e.t.Settings.PeerIP)
+		if err != nil {
+			continue
+		}
+		targets = append(targets, egress.Target{Device: e.t.Device(), Addr: peer})
+		state := m.statusLocked(e).State
+		healthy = append(healthy, state == StateUp || state == StateDegraded)
+	}
+	return targets, healthy
+}
+
 // applyGroupForwards and removeGroupForwards change the relay's rules; tests replace them.
 var (
 	applyGroupForwards  = egress.ApplyBalancedForwards
 	removeGroupForwards = egress.RemoveTables
 )
 
-func targetsKey(targets []egress.Target, rules []egress.PortForward) string {
-	return fmt.Sprint(targets, rules)
+func targetsKey(targets []egress.Target, rules []egress.PortForward, sticky bool) string {
+	return fmt.Sprint(targets, rules, sticky)
 }
 
 // ReconcileGroups points each group's ports at the members that answer now; it is run
@@ -117,32 +154,22 @@ func (m *Manager) ReconcileGroups(groups []Group) {
 		if !g.Enabled {
 			continue
 		}
-		var members []egress.Target
-		var healthy []bool
-		for _, id := range g.Members {
-			e := m.entries[id]
-			if e == nil || e.disabled || e.err != nil || !CanJoinGroup(e.t) {
-				continue
-			}
-			peer, err := netip.ParseAddr(e.t.Settings.PeerIP)
-			if err != nil {
-				continue
-			}
-			members = append(members, egress.Target{Device: e.t.Device(), Addr: peer})
-			state := m.statusLocked(e).State
-			healthy = append(healthy, state == StateUp || state == StateDegraded)
+		members, healthy := m.groupTargetsLocked(g.Members)
+		backups, backupHealthy := m.groupTargetsLocked(g.Backups)
+		if len(members) == 0 {
+			members, healthy, backups, backupHealthy = backups, backupHealthy, nil, nil
 		}
 		if len(members) == 0 {
 			continue
 		}
 		wanted[g.ID] = true
-		targets := chooseTargets(g.Mode, members, healthy)
+		targets := chooseTargets(g.Mode, members, backups, healthy, backupHealthy)
 		rules := portForwards(Tunnel{Settings: TunnelSettings{Forwards: g.Forwards}})
-		key := targetsKey(targets, rules)
+		key := targetsKey(targets, rules, g.Sticky)
 		if m.groups[g.ID] == key {
 			continue
 		}
-		if err := applyGroupForwards(groupOwner(g.ID), targets, rules, true); err != nil {
+		if err := applyGroupForwards(groupOwner(g.ID), targets, rules, true, g.Sticky); err != nil {
 			logger.Warning("tunnel group ", g.ID, " (", g.Name, "): ", err)
 			delete(m.groups, g.ID)
 			continue

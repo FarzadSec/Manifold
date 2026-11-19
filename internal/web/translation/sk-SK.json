@@ -2977,7 +2977,13 @@
         "membersHint": "Relay ends of kernel or layer-3 tunnels, one to each origin. Green marks where the ports go now.",
         "confirmDelete": "Delete this group? Its ports stop being forwarded.",
         "saveFailed": "Could not save the group",
-        "deleteFailed": "Could not delete the group"
+        "deleteFailed": "Could not delete the group",
+        "backups": "Záložné",
+        "backupsHint": "Nesú porty skupiny, len kým neodpovedá žiadny člen; pri prepnutí prvý, ktorý odpovedá.",
+        "backup": "záloha",
+        "sticky": "Držať každého klienta na jednom tuneli",
+        "stickyHint": "Posiela každú adresu klienta vždy do toho istého tunela namiesto striedania. L2TP/IPsec to potrebuje: jeho UDP 500 a 4500 musia dôjsť na ten istý server.",
+        "stickyTag": "pevné"
       },
       "relayVersion": "Version",
       "relayVersionDiffers": "The relay runs {relay} and this panel {panel}. Update the relay with: manifold update",
@@ -3100,7 +3106,9 @@
           "standard": "Screens every tunnel, measures the best five in full and tunes the MTU of the best two.",
           "thorough": "Longer phases and more streams: the best eight in full and the MTU of the best three."
         }
-      }
+      },
+      "l2tpPreset": "Pridať porty L2TP/IPsec",
+      "l2tpPresetHint": "UDP 500, UDP 4500 a ESP. Ak inbound L2TP nevyžaduje IPsec, pridajte aj UDP 1701. Zachovajte adresu klienta (NAT: zachovať), aby sa mohlo pripojiť viac používateľov naraz; Windows potrebuje AssumeUDPEncapsulationContextOnSendRule = 2 pre server za relé."
     },
     "access": {
       "saved": "Saved",

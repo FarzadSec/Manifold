@@ -2977,7 +2977,13 @@
         "membersHint": "Relay ends of kernel or layer-3 tunnels, one to each origin. Green marks where the ports go now.",
         "confirmDelete": "Delete this group? Its ports stop being forwarded.",
         "saveFailed": "Could not save the group",
-        "deleteFailed": "Could not delete the group"
+        "deleteFailed": "Could not delete the group",
+        "backups": "Dự phòng",
+        "backupsHint": "Chỉ mang các cổng của nhóm khi không thành viên nào trả lời; ở chế độ chuyển đổi, dự phòng đầu tiên trả lời.",
+        "backup": "dự phòng",
+        "sticky": "Giữ mỗi máy khách trên một tunnel",
+        "stickyHint": "Gửi mỗi địa chỉ máy khách luôn tới cùng một tunnel thay vì luân phiên. L2TP/IPsec cần điều này: UDP 500 và 4500 phải tới cùng một máy chủ.",
+        "stickyTag": "cố định"
       },
       "relayVersion": "Version",
       "relayVersionDiffers": "The relay runs {relay} and this panel {panel}. Update the relay with: manifold update",
@@ -3100,7 +3106,9 @@
           "standard": "Screens every tunnel, measures the best five in full and tunes the MTU of the best two.",
           "thorough": "Longer phases and more streams: the best eight in full and the MTU of the best three."
         }
-      }
+      },
+      "l2tpPreset": "Thêm cổng L2TP/IPsec",
+      "l2tpPresetHint": "UDP 500, UDP 4500 và ESP. Thêm cả UDP 1701 nếu inbound L2TP không bắt buộc IPsec. Giữ địa chỉ máy khách (NAT: giữ) để nhiều người dùng kết nối cùng lúc; Windows cần AssumeUDPEncapsulationContextOnSendRule = 2 cho máy chủ sau relay."
     },
     "access": {
       "saved": "Saved",

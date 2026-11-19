@@ -87,7 +87,7 @@ func TestApplyBalancedForwardsSpreadsNewConnectionsOverTheTunnels(t *testing.T) 
 		{Proto: "udp", Low: 2201, High: 2201, TargetLow: 22},
 		{Proto: "tcp", Low: 10000, High: 10009, TargetLow: 10000},
 	}
-	if err := ApplyBalancedForwards("tg7", targets, rules, true); err != nil {
+	if err := ApplyBalancedForwards("tg7", targets, rules, true, false); err != nil {
 		t.Fatal(err)
 	}
 	want := "add table ip6 manifold_tg7\ndelete table ip6 manifold_tg7\n" +
@@ -109,13 +109,13 @@ func TestApplyBalancedForwardsSpreadsNewConnectionsOverTheTunnels(t *testing.T) 
 	nftCheck(t, strings.TrimPrefix(want, "add table ip6 manifold_tg7\ndelete table ip6 manifold_tg7\nadd table ip manifold_tg7\ndelete table ip manifold_tg7\n"))
 
 	f.calls = nil
-	if err := ApplyBalancedForwards("tg7", targets[1:], rules[:1], true); err != nil {
+	if err := ApplyBalancedForwards("tg7", targets[1:], rules[:1], true, false); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(f.calls[0].stdin, "iifname != \"mft2\" tcp dport 443 dnat to 10.81.0.2:443\n") {
 		t.Fatalf("one target left should be a plain forward:\n%s", f.calls[0].stdin)
 	}
-	if err := ApplyBalancedForwards("tg7", []Target{targets[0], {"mft3", netip.MustParseAddr("fd00::2")}}, rules, true); err == nil {
+	if err := ApplyBalancedForwards("tg7", []Target{targets[0], {"mft3", netip.MustParseAddr("fd00::2")}}, rules, true, false); err == nil {
 		t.Fatal("targets of two families were taken")
 	}
 }
@@ -133,4 +133,41 @@ func nftCheck(t *testing.T, ruleset string) {
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("nft refused the ruleset: %v\n%s\n%s", err, out, ruleset)
 	}
+}
+
+// L2TP/IPsec without NAT traversal sends ESP, IP protocol 50, which has no port.
+func TestApplyForwardsCarriesESPThroughTheTunnel(t *testing.T) {
+	f := &fakeSystem{commands: map[string]bool{"nft": true, "iptables": true}}
+	useFake(t, f)
+	rules := []PortForward{{Proto: "udp", Low: 500, High: 500}, {Proto: "udp", Low: 4500, High: 4500}, {Proto: "esp"}}
+	if err := ApplyForwards("tf3", "mft3", netip.MustParseAddr("10.80.0.2"), rules, false); err != nil {
+		t.Fatal(err)
+	}
+	ruleset := f.calls[0].stdin
+	if !strings.Contains(ruleset, "\t\tiifname != \"mft3\" meta l4proto esp dnat to 10.80.0.2\n") {
+		t.Fatalf("no ESP forward:\n%s", ruleset)
+	}
+	nftCheck(t, ruleset[strings.Index(ruleset, "add table ip manifold_tf3"):])
+}
+
+// IKE on UDP 500 and NAT traversal on UDP 4500 must reach the same origin, so a sticky group
+// sends each client address to one tunnel instead of taking turns.
+func TestStickyGroupKeepsEachClientOnOneTunnel(t *testing.T) {
+	f := &fakeSystem{commands: map[string]bool{"nft": true, "iptables": true}}
+	useFake(t, f)
+	targets := []Target{{"mft1", netip.MustParseAddr("10.80.0.2")}, {"mft2", netip.MustParseAddr("10.81.0.2")}}
+	rules := []PortForward{{Proto: "udp", Low: 500, High: 500, TargetLow: 500}, {Proto: "udp", Low: 4501, High: 4501, TargetLow: 4500}}
+	if err := ApplyBalancedForwards("tg7", targets, rules, true, true); err != nil {
+		t.Fatal(err)
+	}
+	ruleset := f.calls[0].stdin
+	for _, want := range []string{
+		"udp dport 500 dnat to jhash ip saddr mod 2 map { 0 : 10.80.0.2, 1 : 10.81.0.2 }\n",
+		"udp dport 4501 dnat ip to jhash ip saddr mod 2 map { 0 : 10.80.0.2 . 4500, 1 : 10.81.0.2 . 4500 }\n",
+	} {
+		if !strings.Contains(ruleset, want) {
+			t.Fatalf("sticky ruleset lacks %q:\n%s", want, ruleset)
+		}
+	}
+	nftCheck(t, ruleset[strings.Index(ruleset, "add table ip manifold_tg7"):])
 }

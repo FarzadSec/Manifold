@@ -2977,7 +2977,13 @@
         "membersHint": "Relay ends of kernel or layer-3 tunnels, one to each origin. Green marks where the ports go now.",
         "confirmDelete": "Delete this group? Its ports stop being forwarded.",
         "saveFailed": "Could not save the group",
-        "deleteFailed": "Could not delete the group"
+        "deleteFailed": "Could not delete the group",
+        "backups": "バックアップ",
+        "backupsHint": "メンバーがどれも応答しないときだけグループのポートを運びます。フェイルオーバーでは最初に応答したもの。",
+        "backup": "バックアップ",
+        "sticky": "クライアントごとに同じトンネルを使う",
+        "stickyHint": "交互に振り分けず、各クライアントのアドレスを常に同じトンネルへ送ります。L2TP/IPsec には必要です（UDP 500 と 4500 が同じサーバーに届く必要があります）。",
+        "stickyTag": "固定"
       },
       "relayVersion": "Version",
       "relayVersionDiffers": "The relay runs {relay} and this panel {panel}. Update the relay with: manifold update",
@@ -3100,7 +3106,9 @@
           "standard": "Screens every tunnel, measures the best five in full and tunes the MTU of the best two.",
           "thorough": "Longer phases and more streams: the best eight in full and the MTU of the best three."
         }
-      }
+      },
+      "l2tpPreset": "L2TP/IPsec のポートを追加",
+      "l2tpPresetHint": "UDP 500、UDP 4500、ESP。L2TP インバウンドが IPsec を必須にしていない場合は UDP 1701 も追加。複数ユーザーが同時に接続できるようクライアントのアドレスを保持（NAT: 保持）。リレー越しのサーバーには Windows で AssumeUDPEncapsulationContextOnSendRule = 2 が必要です。"
     },
     "access": {
       "saved": "Saved",

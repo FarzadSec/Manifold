@@ -2408,6 +2408,9 @@ export const EXAMPLES: Record<string, unknown> = {
     ]
   },
   "TunnelGroup": {
+    "backups": [
+      3
+    ],
     "createdAt": 1763300000000,
     "enable": true,
     "id": 1,
@@ -2416,9 +2419,13 @@ export const EXAMPLES: Record<string, unknown> = {
       2
     ],
     "mode": "failover",
-    "name": "origins"
+    "name": "origins",
+    "sticky": false
   },
   "TunnelGroupRequest": {
+    "backups": [
+      3
+    ],
     "enable": true,
     "forwards": [
       {
@@ -2432,9 +2439,13 @@ export const EXAMPLES: Record<string, unknown> = {
       2
     ],
     "mode": "failover",
-    "name": "origins"
+    "name": "origins",
+    "sticky": false
   },
   "TunnelGroupView": {
+    "backups": [
+      3
+    ],
     "createdAt": 1763300000000,
     "enable": true,
     "forwards": [
@@ -2450,7 +2461,8 @@ export const EXAMPLES: Record<string, unknown> = {
       2
     ],
     "mode": "failover",
-    "name": "origins"
+    "name": "origins",
+    "sticky": false
   },
   "TunnelPairing": {
     "address": "203.0.113.10",

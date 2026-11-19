@@ -183,6 +183,10 @@ func replyPref(id int) int    { return 10000 + id%20000 }
 func portForwards(t Tunnel) []egress.PortForward {
 	var rules []egress.PortForward
 	for _, f := range t.Settings.Forwards {
+		if f.Proto == ProtoESP {
+			rules = append(rules, egress.PortForward{Proto: egress.ProtoESP})
+			continue
+		}
 		listen, _ := parsePorts(f.Listen)
 		target := listen.low
 		if f.Target != "" {

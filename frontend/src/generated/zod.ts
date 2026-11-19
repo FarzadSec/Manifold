@@ -2170,25 +2170,30 @@ export const TunnelBenchStateSchema = z.object({
 export type TunnelBenchState = z.infer<typeof TunnelBenchStateSchema>;
 
 export const TunnelGroupSchema = z.object({
+  backups: z.array(z.number().int()),
   createdAt: z.number().int(),
   enable: z.boolean(),
   id: z.number().int(),
   members: z.array(z.number().int()),
   mode: z.string(),
   name: z.string(),
+  sticky: z.boolean(),
 });
 export type TunnelGroup = z.infer<typeof TunnelGroupSchema>;
 
 export const TunnelGroupRequestSchema = z.object({
+  backups: z.array(z.number().int()),
   enable: z.boolean(),
   forwards: z.array(z.lazy(() => PortForwardSchema)),
   members: z.array(z.number().int()),
   mode: z.string(),
   name: z.string(),
+  sticky: z.boolean(),
 });
 export type TunnelGroupRequest = z.infer<typeof TunnelGroupRequestSchema>;
 
 export const TunnelGroupViewSchema = z.object({
+  backups: z.array(z.number().int()),
   createdAt: z.number().int(),
   enable: z.boolean(),
   forwards: z.array(z.lazy(() => PortForwardSchema)),
@@ -2196,6 +2201,7 @@ export const TunnelGroupViewSchema = z.object({
   members: z.array(z.number().int()),
   mode: z.string(),
   name: z.string(),
+  sticky: z.boolean(),
 });
 export type TunnelGroupView = z.infer<typeof TunnelGroupViewSchema>;
 

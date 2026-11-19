@@ -2111,6 +2111,8 @@ type TunnelGroup struct {
 	Name      string `json:"name" gorm:"not null" example:"origins"`
 	Mode      string `json:"mode" gorm:"not null;default:failover" example:"failover"`
 	Members   []int  `json:"members" gorm:"serializer:json" example:"[1,2]"`
+	Backups   []int  `json:"backups" gorm:"serializer:json" example:"[3]"`
+	Sticky    bool   `json:"sticky" gorm:"not null;default:false" example:"false"`
 	Forwards  string `json:"-" gorm:"type:text"`
 	Enable    bool   `json:"enable" example:"true"`
 	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime:milli" example:"1763300000000"`

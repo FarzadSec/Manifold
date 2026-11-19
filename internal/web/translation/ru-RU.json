@@ -2977,7 +2977,13 @@
         "membersHint": "Концы релея туннелей ядра или уровня 3, по одному к каждому источнику. Зелёным отмечено, куда идут порты сейчас.",
         "confirmDelete": "Удалить группу? Её порты перестанут пробрасываться.",
         "saveFailed": "Не удалось сохранить группу",
-        "deleteFailed": "Не удалось удалить группу"
+        "deleteFailed": "Не удалось удалить группу",
+        "backups": "Резервные",
+        "backupsHint": "Несут порты группы, только пока не отвечает ни один участник; при переключении — первый ответивший.",
+        "backup": "резерв",
+        "sticky": "Держать каждого клиента на одном туннеле",
+        "stickyHint": "Отправляет каждый адрес клиента всегда в один и тот же туннель вместо очереди. Нужно для L2TP/IPsec: его UDP 500 и 4500 должны попасть на один сервер.",
+        "stickyTag": "закреплено"
       },
       "relayVersion": "Версия",
       "relayVersionDiffers": "На relay версия {relay}, на этой панели {panel}. Обновите relay: manifold update",
@@ -3100,7 +3106,9 @@
           "standard": "Screens every tunnel, measures the best five in full and tunes the MTU of the best two.",
           "thorough": "Longer phases and more streams: the best eight in full and the MTU of the best three."
         }
-      }
+      },
+      "l2tpPreset": "Добавить порты L2TP/IPsec",
+      "l2tpPresetHint": "UDP 500, UDP 4500 и ESP. Добавьте и UDP 1701, если L2TP-инбаунд не требует IPsec. Сохраняйте адрес клиента (NAT: сохранять), чтобы несколько пользователей подключались одновременно; Windows нужен AssumeUDPEncapsulationContextOnSendRule = 2 для сервера за релеем."
     },
     "access": {
       "saved": "Сохранено",
