@@ -317,6 +317,7 @@ const (
 	cadenceOpenVPN       = "@every 10s"
 	cadenceWireGuard     = "@every 10s"
 	cadenceWireGuardSeat = "@every 2s"
+	cadenceSeatSync      = "@every 2s"
 	cadenceL2TP          = "@every 10s"
 	cadenceTunnels       = "@every 15s"
 	cadenceResellers     = "@every 1m"
@@ -385,6 +386,7 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	go wireguardJob.Run()
 	// WireGuard has no login to refuse, so a full account's peers are held off between handshakes.
 	_, _ = s.cron.AddFunc(cadenceWireGuardSeat, wgquick.GetManager().WatchSeats)
+	_, _ = s.cron.AddJob(cadenceSeatSync, job.NewSeatSyncJob())
 
 	l2tpJob := job.NewL2TPJob()
 	_, _ = s.cron.AddJob(cadenceL2TP, l2tpJob)

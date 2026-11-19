@@ -181,6 +181,7 @@ var nodeSyncScopeAllow = map[string]map[string]struct{}{
 	"/server/descendants":          {http.MethodGet: {}},
 	"/server/logs/:count":          {http.MethodPost: {}},
 	"/certs/put":                   {http.MethodPost: {}},
+	"/seats/sync":                  {http.MethodPost: {}},
 	"/clients/resetTraffic/:email": {http.MethodPost: {}},
 	"/clients/bulkResetTraffic":    {http.MethodPost: {}},
 	"/inbounds/resetAllTraffics":   {http.MethodPost: {}},
@@ -325,6 +326,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	NewWebhookController(api.Group("/webhooks"))
 	NewMetricsController(api, &a.serverController.serverService)
 	NewCertificateController(api.Group("/certs"))
+	NewSeatController(api.Group("/seats"))
 	NewPanelImportController(api.Group("/import"))
 	NewAddonController(api.Group("/addons"))
 	NewAccessController(api.Group("/access"))

@@ -242,3 +242,52 @@ func TestOthersCountsTheAccountsSeatsBesidesOne(t *testing.T) {
 		t.Fatalf("others of an account without seats = %d", got)
 	}
 }
+
+func TestSeatsHeldOnOtherServersCountUntilTheyGoStale(t *testing.T) {
+	l, c := newTestLedger()
+	l.SetElsewhere(map[string]int{"alice": 1}, c.now().Add(30*time.Second))
+	if l.Take(Hold{ID: "l2tp/9#1/s1", Account: "alice"}, 1, 0) {
+		t.Fatal("let in while the account is connected on another server")
+	}
+	if !l.Take(Hold{ID: "l2tp/9#1/s2", Account: "bob"}, 1, 0) {
+		t.Fatal("another account was refused")
+	}
+	if got := l.Others("alice", ""); got != 1 {
+		t.Fatalf("others = %d, want the seat on the other server", got)
+	}
+	// The master has gone quiet: this server counts its own seats only.
+	c.add(31 * time.Second)
+	if !l.Take(Hold{ID: "l2tp/9#1/s1", Account: "alice"}, 1, 0) {
+		t.Fatal("refused on a count the master stopped confirming")
+	}
+	if got := l.Seats("alice"); len(got) != 1 {
+		t.Fatalf("seats = %+v: the other server's are not listed here", got)
+	}
+}
+
+func TestCutDropsSeatsAndCutsTheirConnections(t *testing.T) {
+	l, _ := newTestLedger()
+	k := &kicks{}
+	l.Take(k.hold("openvpn/1#1/7", "alice", "openvpn"), 2, 0)
+	l.Take(Hold{ID: "wireguard/3#2/key", Account: "alice", Protocol: "wireguard"}, 2, 0)
+	l.Cut([]string{"openvpn/1#1/7", "wireguard/3#2/key", "gone"})
+	if got := k.cut(); !reflect.DeepEqual(got, []string{"openvpn/1#1/7"}) {
+		t.Fatalf("cut %v", got)
+	}
+	if got := l.Seats("alice"); len(got) != 0 {
+		t.Fatalf("seats = %+v after the cut", got)
+	}
+}
+
+func TestAllListsEverySeatWithItsLimit(t *testing.T) {
+	l, c := newTestLedger()
+	l.Take(Hold{ID: "b", Account: "bob", Protocol: "l2tp"}, 2, 0)
+	c.add(time.Second)
+	l.Take(Hold{ID: "a", Account: "alice", Protocol: "openvpn"}, 1, 0)
+	l.Take(Hold{ID: "lapsed", Account: "carol"}, 1, time.Second)
+	c.add(2 * time.Second)
+	got := l.All()
+	if len(got) != 2 || got[0].ID != "b" || got[0].Limit != 2 || got[1].ID != "a" || got[1].Limit != 1 {
+		t.Fatalf("all = %+v, want bob's then alice's live seats, oldest first, with their limits", got)
+	}
+}

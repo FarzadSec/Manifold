@@ -18989,6 +18989,68 @@
         }
       }
     },
+    "/panel/api/seats/sync": {
+      "post": {
+        "tags": [
+          "Nodes"
+        ],
+        "summary": "A master's plan for this node's user-limit seats (node-sync tokens may call it): the seats each account holds on the master's other servers, counted against its limit here for 30 s, and the seats to cut because an account got in on two servers at once. Returns the seats this server holds after it, oldest first.",
+        "operationId": "post_panel_api_seats_sync",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "elsewhere": {
+                  "alice": 1
+                },
+                "cut": [
+                  "l2tp/9#2/s4101"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "id": "openvpn/1#1/7",
+                      "account": "bob",
+                      "protocol": "openvpn",
+                      "inbound": 1,
+                      "address": "10.8.0.6",
+                      "since": "2026-11-19T18:00:00Z",
+                      "limit": 2
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/addons/list": {
       "get": {
         "tags": [

@@ -19,6 +19,7 @@ type Seat struct {
 	Inbound  int       `json:"inbound"`
 	Address  string    `json:"address,omitempty"`
 	Since    time.Time `json:"since"`
+	Limit    int       `json:"limit,omitempty"`
 	// Pending is a login still on its way to a session; it lapses unless confirmed.
 	Pending bool `json:"pending,omitempty"`
 }
@@ -45,6 +46,9 @@ type Ledger struct {
 	now       func() time.Time
 	byID      map[string]*entry
 	byAccount map[string]map[string]*entry
+	// elsewhere is each account's seats on the master's other servers, trusted until elsewhereUntil.
+	elsewhere      map[string]int
+	elsewhereUntil time.Time
 }
 
 func New(now func() time.Time) *Ledger {
@@ -99,13 +103,25 @@ func (l *Ledger) liveLocked(account string) []*entry {
 		}
 		out = append(out, e)
 	}
-	slices.SortFunc(out, func(a, b *entry) int {
-		if c := a.seat.Since.Compare(b.seat.Since); c != 0 {
-			return c
-		}
-		return strings.Compare(a.seat.ID, b.seat.ID)
-	})
+	slices.SortFunc(out, compareEntries)
 	return out
+}
+
+func compareEntries(a, b *entry) int { return Compare(a.seat, b.seat) }
+
+// Compare orders seats oldest first, the order the limit keeps them in.
+func Compare(a, b Seat) int {
+	if c := a.Since.Compare(b.Since); c != 0 {
+		return c
+	}
+	return strings.Compare(a.ID, b.ID)
+}
+
+func (l *Ledger) elsewhereLocked(account string) int {
+	if !l.now().Before(l.elsewhereUntil) {
+		return 0
+	}
+	return l.elsewhere[account]
 }
 
 // Take gives h a seat unless the account's other seats already fill limit; 0 is no limit.
@@ -116,7 +132,7 @@ func (l *Ledger) Take(h Hold, limit int, pending time.Duration) bool {
 	if e := l.byID[h.ID]; e != nil && e.seat.Account != h.Account {
 		l.dropLocked(h.ID)
 	}
-	others := 0
+	others := l.elsewhereLocked(h.Account)
 	for _, e := range l.liveLocked(h.Account) {
 		if e.seat.ID == h.ID {
 			return true
@@ -126,7 +142,7 @@ func (l *Ledger) Take(h Hold, limit int, pending time.Duration) bool {
 	if limit > 0 && others >= limit {
 		return false
 	}
-	e := &entry{seat: Seat{ID: h.ID, Account: h.Account, Protocol: h.Protocol, Inbound: h.Inbound, Since: l.now()}, kick: h.Kick}
+	e := &entry{seat: Seat{ID: h.ID, Account: h.Account, Protocol: h.Protocol, Inbound: h.Inbound, Since: l.now(), Limit: max(limit, 0)}, kick: h.Kick}
 	if pending > 0 {
 		e.lapse = e.seat.Since.Add(pending)
 		e.seat.Pending = true
@@ -214,7 +230,7 @@ func (l *Ledger) Seats(account string) []Seat {
 func (l *Ledger) Others(account, except string) int {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	n := 0
+	n := l.elsewhereLocked(account)
 	for _, e := range l.liveLocked(account) {
 		if e.seat.ID != except {
 			n++
@@ -229,4 +245,99 @@ func (l *Ledger) Holds(id string) bool {
 	defer l.mu.Unlock()
 	e := l.byID[id]
 	return e != nil && !e.lapsed(l.now())
+}
+
+// All returns every live seat on this server, oldest first.
+func (l *Ledger) All() []Seat {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	var out []Seat
+	for account := range l.byAccount {
+		for _, e := range l.liveLocked(account) {
+			out = append(out, e.seat)
+		}
+	}
+	slices.SortFunc(out, Compare)
+	return out
+}
+
+// SetElsewhere replaces what the master says each account holds on its other servers.
+// Past until it no longer counts, so a server cut off from its master counts its own seats.
+func (l *Ledger) SetElsewhere(counts map[string]int, until time.Time) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.elsewhere, l.elsewhereUntil = counts, until
+}
+
+// Cut drops seats the master found over their account's limit and cuts their connections.
+func (l *Ledger) Cut(ids []string) {
+	l.mu.Lock()
+	var kicks []func()
+	for _, id := range ids {
+		if e := l.dropLocked(id); e != nil && e.kick != nil {
+			kicks = append(kicks, e.kick)
+		}
+	}
+	l.mu.Unlock()
+	for _, kick := range kicks {
+		kick()
+	}
+}
+
+// Plan is what the master tells one server: its accounts' seats on the other servers, and its own seats to cut.
+type Plan struct {
+	Elsewhere map[string]int `json:"elsewhere"`
+	Cut       []string       `json:"cut,omitempty"`
+}
+
+// Coordinate works out every server's plan from the seats each holds, keyed by server.
+// An account over its lowest limit keeps its oldest seats wherever they are; the newer are cut.
+func Coordinate(servers map[string][]Seat) map[string]Plan {
+	type held struct {
+		server string
+		seat   Seat
+	}
+	byAccount := map[string][]held{}
+	for server, list := range servers {
+		for _, s := range list {
+			byAccount[s.Account] = append(byAccount[s.Account], held{server, s})
+		}
+	}
+	plans := make(map[string]Plan, len(servers))
+	for server := range servers {
+		plans[server] = Plan{Elsewhere: map[string]int{}}
+	}
+	for account, all := range byAccount {
+		limit := 0
+		for _, h := range all {
+			if h.seat.Limit > 0 && (limit == 0 || h.seat.Limit < limit) {
+				limit = h.seat.Limit
+			}
+		}
+		if limit == 0 {
+			continue
+		}
+		slices.SortFunc(all, func(a, b held) int { return Compare(a.seat, b.seat) })
+		kept := map[string]int{}
+		for i, h := range all {
+			if i < limit {
+				kept[h.server]++
+				continue
+			}
+			p := plans[h.server]
+			p.Cut = append(p.Cut, h.seat.ID)
+			plans[h.server] = p
+		}
+		total := min(len(all), limit)
+		for server := range servers {
+			if n := total - kept[server]; n > 0 {
+				plans[server].Elsewhere[account] = n
+			}
+		}
+	}
+	for server, p := range plans {
+		slices.Sort(p.Cut)
+		plans[server] = p
+	}
+	return plans
 }

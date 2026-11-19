@@ -2203,6 +2203,15 @@ export const sections: readonly Section[] = [
         params: [{ name: 'id', in: 'path', type: 'string', desc: 'Job id from the install call.' }],
         responseSchema: 'NodeInstallJob',
       },
+      {
+        method: 'POST',
+        path: '/panel/api/seats/sync',
+        summary:
+          "A master's plan for this node's user-limit seats (node-sync tokens may call it): the seats each account holds on the master's other servers, counted against its limit here for 30 s, and the seats to cut because an account got in on two servers at once. Returns the seats this server holds after it, oldest first.",
+        body: '{\n  "elsewhere": { "alice": 1 },\n  "cut": ["l2tp/9#2/s4101"]\n}',
+        response:
+          '{\n  "success": true,\n  "obj": [\n    { "id": "openvpn/1#1/7", "account": "bob", "protocol": "openvpn", "inbound": 1, "address": "10.8.0.6", "since": "2026-11-19T18:00:00Z", "limit": 2 }\n  ]\n}',
+      },
     ],
   },
 
