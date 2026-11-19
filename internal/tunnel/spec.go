@@ -97,6 +97,8 @@ type Tunnel struct {
 	Role     string
 	Enabled  bool
 	Settings TunnelSettings
+	// DevName replaces the interface name the id gives, for the tunnel test's ends.
+	DevName string
 }
 
 // IsKernel reports whether the kind is a kernel link.
@@ -109,6 +111,9 @@ func (t Tunnel) HasInterface() bool { return IsKernel(t.Kind) || t.Kind == KindL
 
 // Device is the interface of this end; Linux allows 15 bytes.
 func (t Tunnel) Device() string {
+	if t.DevName != "" {
+		return t.DevName
+	}
 	if t.Kind == KindL3 {
 		return fmt.Sprintf("mfbp%d", t.ID)
 	}

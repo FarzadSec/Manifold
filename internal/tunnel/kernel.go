@@ -77,7 +77,9 @@ func (t Tunnel) mtu() int {
 }
 
 // linkCommands is the plan for one kernel link, in the order it is run.
-func linkCommands(t Tunnel) [][]string {
+func linkCommands(t Tunnel) [][]string { return linkPlan(t, aliasPrefix+linkFingerprint(t)) }
+
+func linkPlan(t Tunnel, alias string) [][]string {
 	s := t.Settings
 	dev := t.Device()
 	add := []string{"link", "add", dev, "type", t.Kind, "remote", s.RemoteAddr}
@@ -92,7 +94,7 @@ func linkCommands(t Tunnel) [][]string {
 		add,
 		{"link", "set", "dev", dev, "mtu", strconv.Itoa(t.mtu())},
 		{"addr", "add", s.LocalIP, "dev", dev},
-		{"link", "set", "dev", dev, "alias", aliasPrefix + linkFingerprint(t)},
+		{"link", "set", "dev", dev, "alias", alias},
 		{"link", "set", "dev", dev, "up"},
 	}
 }

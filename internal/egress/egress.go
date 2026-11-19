@@ -172,13 +172,15 @@ func addForwardRules(owner string, matches [][]string) {
 
 // removeForwardRules deletes every FORWARD rule carrying the owner's comment,
 // whatever subnet it was written for.
-func removeForwardRules(owner string) {
-	if !host.has("iptables") {
+func removeForwardRules(owner string) { removeTagged("iptables", "FORWARD", owner) }
+
+func removeTagged(tool, chain, owner string) {
+	if !host.has(tool) {
 		return
 	}
-	listing, err := host.run("", "iptables", "-w", "5", "-S", "FORWARD")
+	listing, err := host.run("", tool, "-w", "5", "-S", chain)
 	if err != nil {
-		logger.Warning("egress: listing FORWARD rules: ", err, " ", listing)
+		logger.Warning("egress: listing ", chain, " rules: ", err, " ", listing)
 		return
 	}
 	tag := forwardTag(owner)
@@ -195,8 +197,8 @@ func removeForwardRules(owner string) {
 			continue
 		}
 		fields[0] = "-D"
-		if out, err := host.run("", "iptables", append([]string{"-w", "5"}, fields...)...); err != nil {
-			logger.Warning("egress: removing FORWARD accept for ", owner, ": ", err, " ", out)
+		if out, err := host.run("", tool, append([]string{"-w", "5"}, fields...)...); err != nil {
+			logger.Warning("egress: removing ", chain, " accept for ", owner, ": ", err, " ", out)
 		}
 	}
 }
