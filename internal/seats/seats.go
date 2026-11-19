@@ -209,3 +209,24 @@ func (l *Ledger) Seats(account string) []Seat {
 	}
 	return out
 }
+
+// Others counts the account's live seats other than except.
+func (l *Ledger) Others(account, except string) int {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	n := 0
+	for _, e := range l.liveLocked(account) {
+		if e.seat.ID != except {
+			n++
+		}
+	}
+	return n
+}
+
+// Holds reports whether the seat is held and has not lapsed.
+func (l *Ledger) Holds(id string) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	e := l.byID[id]
+	return e != nil && !e.lapsed(l.now())
+}

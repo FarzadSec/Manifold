@@ -30,6 +30,8 @@ type Peer struct {
 	PublicKey    string
 	PresharedKey string
 	AllowedIPs   []netip.Prefix
+	// Limit is the account's user limit, counted with its other connections; 0 is none.
+	Limit int
 }
 
 // Hooks are the commands wg-quick runs around bringing the interface up and down.
@@ -234,6 +236,7 @@ func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 			PublicKey:    c.PublicKey,
 			PresharedKey: c.PreSharedKey,
 			AllowedIPs:   allowed,
+			Limit:        max(c.UserLimit, 0),
 		})
 	}
 	return inst, true

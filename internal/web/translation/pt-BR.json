@@ -1039,7 +1039,7 @@
       "limitIp": "Limite de IP",
       "limitIpDesc": "Máximo de IPs simultâneos nas entradas do Xray. 0 = ilimitado.",
       "userLimit": "Limite de usuários",
-      "userLimitDesc": "Conexões simultâneas que uma conta pode manter no OpenVPN e no L2TP. 0 = ilimitado.",
+      "userLimitDesc": "Dispositivos que uma conta pode ter conectados ao mesmo tempo por OpenVPN, L2TP e WireGuard, contados juntos em todos os locais. 0 = ilimitado.",
       "limitHwid": "Limite de HWID",
       "limitHwidDesc": "Máximo de dispositivos registrados para solicitações de assinatura. 0 = ilimitado.",
       "hwidLog": "Dispositivos HWID",

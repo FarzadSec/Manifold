@@ -25,6 +25,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/random"
+	wgutil "github.com/mhsanaei/3x-ui/v3/internal/util/wireguard"
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 
 	"gorm.io/gorm"
@@ -337,6 +338,12 @@ func (s *ClientService) Create(inboundSvc *InboundService, payload *ClientCreate
 		}
 		if err := s.fillProtocolDefaults(&client, inbound); err != nil {
 			return false, fmt.Errorf("inbound %d: %w", ibId, err)
+		}
+		if inbound.Protocol == model.WireGuard && client.PrivateKey == "" && client.PublicKey == "" {
+			// One key for every location, as the panel's form makes it; each inbound still gives its own address.
+			if client.PrivateKey, client.PublicKey, err = wgutil.GenerateWireguardKeypair(); err != nil {
+				return false, fmt.Errorf("inbound %d: %w", ibId, err)
+			}
 		}
 		clientForInbound := client
 		if ips, ok := client.AllowedIPsByInbound[ibId]; ok {

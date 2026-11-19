@@ -1039,7 +1039,7 @@
       "limitIp": "IP 制限",
       "limitIpDesc": "Xray インバウンドでの同時接続 IP の最大数。0 = 無制限。",
       "userLimit": "ユーザー上限",
-      "userLimitDesc": "OpenVPN と L2TP で 1 アカウントが同時に持てる接続数。0 = 無制限。",
+      "userLimitDesc": "OpenVPN・L2TP・WireGuard で 1 アカウントが同時に接続できる端末数。全ロケーション合計で数えます。0 = 無制限。",
       "limitHwid": "HWID 制限",
       "limitHwidDesc": "サブスクリプション要求で登録できる最大デバイス数。0 = 無制限。",
       "hwidLog": "HWID デバイス",

@@ -223,3 +223,22 @@ func TestOwnersNeverRepeat(t *testing.T) {
 		t.Fatalf("two servers of one inbound share the prefix %q", a)
 	}
 }
+
+func TestOthersCountsTheAccountsSeatsBesidesOne(t *testing.T) {
+	l, c := newTestLedger()
+	l.Take(Hold{ID: "wireguard/3#1/key", Account: "alice"}, 0, 0)
+	l.Take(Hold{ID: "openvpn/1#2/7", Account: "alice"}, 0, 30*time.Second)
+	if got := l.Others("alice", "wireguard/3#1/key"); got != 1 {
+		t.Fatalf("others = %d, want the OpenVPN login", got)
+	}
+	if !l.Holds("wireguard/3#1/key") || l.Holds("wireguard/4#3/key") {
+		t.Fatal("Holds does not tell held seats from others")
+	}
+	c.add(time.Minute)
+	if got := l.Others("alice", "wireguard/3#1/key"); got != 0 {
+		t.Fatalf("others = %d after the login lapsed", got)
+	}
+	if got := l.Others("nobody", ""); got != 0 {
+		t.Fatalf("others of an account without seats = %d", got)
+	}
+}

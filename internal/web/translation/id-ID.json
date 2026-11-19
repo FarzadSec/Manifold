@@ -1039,7 +1039,7 @@
       "limitIp": "Batas IP",
       "limitIpDesc": "Jumlah maksimum IP bersamaan pada inbound Xray. 0 = tidak terbatas.",
       "userLimit": "Batas pengguna",
-      "userLimitDesc": "Jumlah koneksi bersamaan satu akun di OpenVPN dan L2TP. 0 = tidak terbatas.",
+      "userLimitDesc": "Jumlah perangkat yang boleh terhubung bersamaan untuk satu akun lewat OpenVPN, L2TP, dan WireGuard, dihitung bersama di semua lokasi. 0 = tidak terbatas.",
       "limitHwid": "Batas HWID",
       "limitHwidDesc": "Jumlah maksimum perangkat terdaftar untuk permintaan langganan. 0 = tidak terbatas.",
       "hwidLog": "Perangkat HWID",

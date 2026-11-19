@@ -135,7 +135,7 @@ The panel writes `/etc/wireguard/<name>.conf`, brings the interface up and gives
 
 **Add clients** on the Clients page as for any other inbound. Each gets its own key pair and tunnel address. The client's information and QR windows show the `.conf` and the QR code that the WireGuard apps import.
 
-**Limits.** A client that is disabled, expired or out of quota is taken off the interface within seconds and put back when it is renewed. Usage is read from the interface's own counters. One WireGuard key connects from one place at a time, so "IP limit" adds nothing here.
+**Limits.** A client that is disabled, expired or out of quota is taken off the interface within seconds and put back when it is renewed. Usage is read from the interface's own counters. One WireGuard key connects from one place at a time, so "IP limit" adds nothing here. "User limit" counts a connected peer with the account's OpenVPN and L2TP connections: while the account is full, its peers are kept off every interface it is not connected on, so another device cannot even complete a handshake, and they come back within two seconds of a connection ending. WireGuard sends no goodbye, so a peer gives its seat back after a minute without traffic, at once when DT Connect says it left; configs of a limited account carry `PersistentKeepalive = 25` unless the client sets its own, so an idle device keeps its seat.
 
 **While the panel is stopped its WireGuard interfaces are down**, because nothing would count traffic or enforce a limit. They come back when the panel starts.
 

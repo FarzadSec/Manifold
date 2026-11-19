@@ -16,6 +16,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/egress"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/seats"
 )
 
 var (
@@ -31,6 +32,8 @@ const (
 
 	// A connected peer renews its handshake about every two minutes.
 	onlineWindow = 3 * time.Minute
+	// A peer silent this long gives its seat back; clients of limited accounts send a keepalive every 25 s.
+	seatIdle = time.Minute
 )
 
 // Traffic is what one account used on one inbound since the previous collection.
@@ -64,6 +67,12 @@ type managed struct {
 	last         map[string]counters
 	unbilled     map[string]usage
 	online       []string
+
+	// owner prefixes this interface's seats; parked peers are kept off it while their account is full.
+	owner     string
+	parked    map[string]Peer
+	heard     map[string]time.Time
+	handshake map[string]time.Time
 }
 
 // Manager owns the WireGuard interfaces of this panel, keyed by inbound id.
@@ -75,6 +84,7 @@ type Manager struct {
 	now          func() time.Time
 	applyEgress  func(owner, device string) error
 	removeEgress func(owner string)
+	seats        *seats.Ledger
 }
 
 var (
@@ -96,6 +106,7 @@ func newManager(dir string, sys system) *Manager {
 		now:          time.Now,
 		applyEgress:  egress.ApplyDevice,
 		removeEgress: egress.Remove,
+		seats:        seats.Local(),
 	}
 }
 
@@ -137,10 +148,15 @@ func (m *Manager) ensureLocked(inst Instance) error {
 
 func (m *Manager) startLocked(cur *managed, inst Instance, structuralFP string) error {
 	path := configPath(m.dir, inst.Interface)
-	next := &managed{inst: inst, structuralFP: structuralFP, last: map[string]counters{}, unbilled: map[string]usage{}}
+	next := &managed{
+		inst: inst, structuralFP: structuralFP, last: map[string]counters{}, unbilled: map[string]usage{},
+		owner: seats.NewOwner("wireguard", inst.Id), parked: map[string]Peer{}, heard: map[string]time.Time{}, handshake: map[string]time.Time{},
+	}
 	if cur != nil {
 		m.billLocked(cur)
 		next.unbilled = cur.unbilled
+		// Its peers reconnect to the new interface and take their seats there.
+		m.seats.ReleaseAll(cur.owner)
 	}
 	// wg-quick reads the config it is given, so the old one must still be there to go down.
 	if m.sys.linkExists(inst.Interface) {
@@ -173,6 +189,21 @@ func (m *Manager) startLocked(cur *managed, inst Instance, structuralFP string) 
 
 func (m *Manager) applyPeersLocked(cur *managed, inst Instance) error {
 	want := inst.peersByKey()
+	for key := range cur.parked {
+		if next, wanted := want[key]; wanted {
+			cur.parked[key] = next
+			delete(want, key)
+		} else {
+			delete(cur.parked, key)
+		}
+	}
+	// A changed limit needs no wg command, only the peer kept as the seat watch reads it.
+	for key, next := range want {
+		if applied, ok := cur.peers[key]; ok {
+			applied.Limit = next.Limit
+			cur.peers[key] = applied
+		}
+	}
 	var gone, changed []string
 	for _, key := range sortedKeys(cur.peers) {
 		if next, kept := want[key]; !kept {
@@ -201,6 +232,9 @@ func (m *Manager) applyPeersLocked(cur *managed, inst Instance) error {
 	}
 	for _, key := range append(gone, changed...) {
 		m.removePeerLocked(cur, key)
+	}
+	for _, key := range gone {
+		m.seats.Release(cur.owner + key)
 	}
 	var firstErr error
 	for _, key := range append(changed, added...) {
@@ -284,10 +318,16 @@ func (m *Manager) billLocked(cur *managed) {
 		if handshake > 0 && m.now().Sub(time.Unix(handshake, 0)) <= onlineWindow {
 			cur.online = append(cur.online, p.Name)
 		}
+		if handshake > 0 {
+			cur.handshake[p.PublicKey] = time.Unix(handshake, 0)
+		}
 		last := cur.last[p.PublicKey]
 		// Counters that went backwards belong to a peer that was set anew.
 		if rx < last.rx || tx < last.tx {
 			last = counters{}
+		}
+		if rx > last.rx {
+			cur.heard[p.PublicKey] = m.now()
 		}
 		cur.last[p.PublicKey] = counters{rx: rx, tx: tx}
 		if up, down := rx-last.rx, tx-last.tx; up > 0 || down > 0 {
@@ -306,6 +346,8 @@ func (m *Manager) stopLocked(id int) {
 	}
 	m.billLocked(cur)
 	m.downLocked(id, cur.inst.Interface)
+	m.seats.ReleaseAll(cur.owner)
+	cur.parked = map[string]Peer{}
 	// What was just billed is still owed to the accounts; keep it for the next collection.
 	if len(cur.unbilled) > 0 {
 		cur.peers = map[string]Peer{}
@@ -472,4 +514,83 @@ func (osSystem) rename(from, to string) error { return os.Rename(from, to) }
 func (osSystem) configs(dir string) []string {
 	paths, _ := filepath.Glob(filepath.Join(dir, "*.conf"))
 	return paths
+}
+
+// WatchSeats gives connected peers their accounts' seats and keeps the peers of a full
+// account off every interface but the ones it is connected on, so a handshake never gets in.
+func (m *Manager) WatchSeats() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	ids := make([]int, 0, len(m.ifaces))
+	for id, cur := range m.ifaces {
+		if m.running(cur) {
+			ids = append(ids, id)
+		}
+	}
+	slices.Sort(ids)
+	limits := map[string]int{}
+	for _, id := range ids {
+		cur := m.ifaces[id]
+		m.billLocked(cur)
+		m.claimSeatsLocked(cur, limits)
+	}
+	// A lowered limit cuts the account's newest seats; a WireGuard one is then held off below.
+	for _, account := range sortedAccounts(limits) {
+		m.seats.Limit(account, limits[account])
+	}
+	for _, id := range ids {
+		m.gateLocked(m.ifaces[id])
+	}
+}
+
+func (m *Manager) claimSeatsLocked(cur *managed, limits map[string]int) {
+	now := m.now()
+	for _, key := range sortedKeys(cur.peers) {
+		p := cur.peers[key]
+		if p.Limit > 0 {
+			limits[p.Name] = p.Limit
+		}
+		id := cur.owner + key
+		heard, handshake := cur.heard[key], cur.handshake[key]
+		if !heard.IsZero() && now.Sub(heard) < seatIdle && now.Sub(handshake) <= onlineWindow {
+			hold := seats.Hold{ID: id, Account: p.Name, Protocol: "wireguard", Inbound: cur.inst.Id}
+			if m.seats.Take(hold, p.Limit, 0) && len(p.AllowedIPs) > 0 {
+				m.seats.Confirm(id, p.AllowedIPs[0].Addr().String())
+			}
+			continue
+		}
+		m.seats.Release(id)
+	}
+}
+
+func (m *Manager) gateLocked(cur *managed) {
+	for _, key := range sortedKeys(cur.peers) {
+		p, id := cur.peers[key], cur.owner+key
+		if p.Limit > 0 && !m.seats.Holds(id) && m.seats.Others(p.Name, id) >= p.Limit {
+			m.removePeerLocked(cur, key)
+			delete(cur.heard, key)
+			delete(cur.handshake, key)
+			cur.parked[key] = p
+		}
+	}
+	for _, key := range sortedKeys(cur.parked) {
+		p := cur.parked[key]
+		if p.Limit > 0 && m.seats.Others(p.Name, cur.owner+key) >= p.Limit {
+			continue
+		}
+		if err := m.addPeerLocked(cur, p); err != nil {
+			logger.Warningf("wireguard: %v", err)
+			continue
+		}
+		delete(cur.parked, key)
+	}
+}
+
+func sortedAccounts(limits map[string]int) []string {
+	out := make([]string, 0, len(limits))
+	for account := range limits {
+		out = append(out, account)
+	}
+	slices.Sort(out)
+	return out
 }

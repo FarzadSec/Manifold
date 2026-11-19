@@ -1039,7 +1039,7 @@
       "limitIp": "IP 限制",
       "limitIpDesc": "Xray 入站上的最大同時連線 IP 數。0 = 不限制。",
       "userLimit": "使用者數限制",
-      "userLimitDesc": "一個帳戶在 OpenVPN 與 L2TP 上可同時保持的連線數。0 = 不限制。",
+      "userLimitDesc": "一個帳戶可同時透過 OpenVPN、L2TP 與 WireGuard 連線的裝置數，所有地點合併計算。0 = 不限制。",
       "limitHwid": "HWID 限制",
       "limitHwidDesc": "訂閱請求最多可註冊的裝置數。0 = 不限制。",
       "hwidLog": "HWID 裝置",

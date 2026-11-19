@@ -1039,7 +1039,7 @@
       "limitIp": "IP Limit",
       "limitIpDesc": "Maximum simultaneous IPs on Xray inbounds. 0 = unlimited.",
       "userLimit": "User limit",
-      "userLimitDesc": "Connections an account may hold at once on OpenVPN and L2TP. 0 = unlimited.",
+      "userLimitDesc": "Devices an account may have connected at once over OpenVPN, L2TP and WireGuard, counted together on every location. 0 = unlimited.",
       "limitHwid": "HWID Limit",
       "limitHwidDesc": "Maximum registered devices for subscription requests. 0 = unlimited.",
       "hwidLog": "HWID Devices",

@@ -1168,7 +1168,7 @@ func (s *SubService) genWireguardLink(inbound *model.Inbound, email string) stri
 	if client.PreSharedKey != "" {
 		params["presharedkey"] = client.PreSharedKey
 	}
-	if ka := client.KeepAliveSeconds(); ka > 0 {
+	if ka := client.ExportKeepAliveSeconds(); ka > 0 {
 		params["keepalive"] = strconv.Itoa(ka)
 	}
 	endpoints := s.advertisedEndpoints(inbound)
