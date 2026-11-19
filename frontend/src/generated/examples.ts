@@ -708,7 +708,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "id": 12,
     "log": "=== app ===\n2026-11-19 01:02:03.456 [vpn] trying vless",
     "logSize": 48213,
-    "message": "به هیچ لوکیشنی وصل نمی‌شود",
+    "message": "به هیچ لوکیشنی وصل نشد",
     "osVersion": "15",
     "seen": false,
     "subId": "k3x9q2m7",

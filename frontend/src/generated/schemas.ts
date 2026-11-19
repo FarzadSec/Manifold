@@ -2650,7 +2650,7 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "integer"
       },
       "message": {
-        "example": "به هیچ لوکیشنی وصل نمی‌شود",
+        "example": "به هیچ لوکیشنی وصل نشد",
         "type": "string"
       },
       "osVersion": {

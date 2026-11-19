@@ -2676,7 +2676,7 @@
             "type": "integer"
           },
           "message": {
-            "example": "به هیچ لوکیشنی وصل نمی‌شود",
+            "example": "به هیچ لوکیشنی وصل نشد",
             "type": "string"
           },
           "osVersion": {
@@ -26819,7 +26819,7 @@
                       "id": 12,
                       "log": "=== app ===\n2026-11-19 01:02:03.456 [vpn] trying vless",
                       "logSize": 48213,
-                      "message": "به هیچ لوکیشنی وصل نمی‌شود",
+                      "message": "به هیچ لوکیشنی وصل نشد",
                       "osVersion": "15",
                       "seen": false,
                       "subId": "k3x9q2m7",
@@ -26911,7 +26911,7 @@
                     "id": 12,
                     "log": "=== app ===\n2026-11-19 01:02:03.456 [vpn] trying vless",
                     "logSize": 48213,
-                    "message": "به هیچ لوکیشنی وصل نمی‌شود",
+                    "message": "به هیچ لوکیشنی وصل نشد",
                     "osVersion": "15",
                     "seen": false,
                     "subId": "k3x9q2m7",

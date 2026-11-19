@@ -1385,7 +1385,7 @@ type AppReport struct {
 	DeviceOS   string `json:"deviceOs" gorm:"column:device_os" example:"android"`
 	OsVersion  string `json:"osVersion" gorm:"column:os_version" example:"15"`
 	AppVersion string `json:"appVersion" gorm:"column:app_version" example:"1.1.0"`
-	Message    string `json:"message" example:"به هیچ لوکیشنی وصل نمی‌شود"`
+	Message    string `json:"message" example:"به هیچ لوکیشنی وصل نشد"`
 	Log        string `json:"log,omitempty" example:"=== app ===\n2026-11-19 01:02:03.456 [vpn] trying vless"`
 	LogSize    int    `json:"logSize" gorm:"column:log_size" example:"48213"`
 	Seen       bool   `json:"seen" gorm:"not null;default:false" example:"false"`
