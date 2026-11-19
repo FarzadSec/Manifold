@@ -8,6 +8,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"fmt"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -27,6 +28,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/dbtest"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/seats"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/crypto"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/global"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/runtime"
@@ -337,6 +339,28 @@ func TestMasterNodeContract(t *testing.T) {
 					certFile, _ := certstore.Paths(service.CertRoot(), "contract.example.com")
 					if raw, err := os.ReadFile(certFile); err != nil || string(raw) != c.CertPEM {
 						t.Fatalf("node certificate file: %v", err)
+					}
+				}},
+				{"SyncSeats applies the master's plan and returns the node's seats", []string{"SyncSeats"}, func() error {
+					ledger := seats.Local()
+					ledger.Take(seats.Hold{ID: "openvpn/1#contract/1", Account: "contract-seat", Protocol: "openvpn"}, 2, 0)
+					t.Cleanup(func() {
+						ledger.Release("openvpn/1#contract/1")
+						ledger.SetElsewhere(nil, time.Time{})
+					})
+					held, err := master.SyncSeats(ctx, seats.Plan{Elsewhere: map[string]int{"contract-seat": 1}})
+					if err != nil {
+						return err
+					}
+					for _, s := range held {
+						if s.ID == "openvpn/1#contract/1" && s.Limit == 2 {
+							return nil
+						}
+					}
+					return fmt.Errorf("node answered seats %+v without its own", held)
+				}, func(t *testing.T) {
+					if got := seats.Local().Others("contract-seat", ""); got != 2 {
+						t.Fatalf("node counts %d seats, want its own and the one elsewhere", got)
 					}
 				}},
 				{"RestartXray is accepted by the node", []string{"RestartXray"}, func() error {

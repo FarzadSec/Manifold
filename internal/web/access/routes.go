@@ -191,6 +191,7 @@ var routeRules = map[string]Rule{
 	key("POST", "/certs/issue/:id"):                  staff(SettingsWrite),
 	key("POST", "/certs/del/:id"):                    staff(SettingsWrite),
 	key("POST", "/certs/put"):                        staff(SettingsWrite),
+	key("POST", "/seats/sync"):                       staff(NodesWrite),
 	key("GET", "/metrics"):                           staff(StatsRead),
 	key("GET", "/server/summary"):                    staff(StatsRead),
 	key("GET", "/webhooks/list"):                     need(UsersRead),

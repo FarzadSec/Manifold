@@ -22,6 +22,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/crypto/nodetoken"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/seats"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/json_util"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/netsafe"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/wirecodec"
@@ -796,6 +797,19 @@ func (r *Remote) PutCertificate(ctx context.Context, name string, certPEM, keyPE
 		"name": name, "cert": string(certPEM), "key": string(keyPEM),
 	})
 	return err
+}
+
+// SyncSeats gives the node the master's plan for its user-limit seats and returns the seats it then holds.
+func (r *Remote) SyncSeats(ctx context.Context, plan seats.Plan) ([]seats.Seat, error) {
+	env, err := r.do(ctx, http.MethodPost, "panel/api/seats/sync", plan)
+	if err != nil {
+		return nil, err
+	}
+	var held []seats.Seat
+	if err := json.Unmarshal(env.Obj, &held); err != nil {
+		return nil, fmt.Errorf("decode node seats: %w", err)
+	}
+	return held, nil
 }
 
 // WebCertFiles holds a node's own web TLS certificate and key file paths.
