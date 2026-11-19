@@ -2244,7 +2244,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "addr6": "",
     "code": "manifold-tunnel-test://eyJ2Ijox...",
     "expires": 1763301800000,
-    "port": 41000,
+    "port": 62140,
     "role": "server",
     "url": "https://relay.example.com:2053/path/"
   },

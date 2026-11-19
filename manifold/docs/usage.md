@@ -256,7 +256,7 @@ A tunnel the servers cannot run is skipped with the reason, such as a kernel wit
 
 Each comes with the settings the test found best: the transport or carrier, which server dials, and an MTU when a smaller one carried clearly more. On the panel that serves the accounts, **Create this tunnel** opens the tunnel form filled with them. Add the ports to forward, save, and set up the relay's end as usual. The full table lists every tunnel with its TCP and UDP rates, latency, loss and score, and the reason behind every skip or failure. **History** keeps each test on both servers.
 
-While a test runs it uses 80 ports on both servers, TCP and UDP, from the first one the link names, and GRE, IPIP and SIT. It opens them in the firewall (also behind ufw) for the other server's address only, and takes everything down when the test ends, is cancelled, or the other server stops answering for 90 seconds. The link's credential reaches nothing on the server but the test, and stops working when the test ends.
+While a test runs it uses 80 ports on both servers, TCP and UDP, from the first one the link names, and GRE, IPIP and SIT. The link draws them above 61000 where it can, clear of the ports outgoing connections and new inbounds take; if the other server already uses one of them, make a new link. It opens them in the firewall (also behind ufw) for the other server's address only, and takes everything down when the test ends, is cancelled, or the other server stops answering for 90 seconds. The link's credential reaches nothing on the server but the test, and stops working when the test ends.
 
 
 ## Moving from another panel

@@ -33,6 +33,8 @@ type fakeBenchEngine struct {
 	serving  bool
 	metrics  func(t tunnel.Tunnel) tunnel.BenchMetrics
 	block    string
+	// ephemeral is the kernel's range for outgoing connections' ports; Linux's when unset.
+	ephemeral [2]int
 }
 
 func newFakeBenchEngine() *fakeBenchEngine {
@@ -114,6 +116,13 @@ func (e *fakeBenchEngine) closeFirewall() {
 func (*fakeBenchEngine) portsFree(int) error { return nil }
 func (*fakeBenchEngine) hasBackPack() bool   { return true }
 func (*fakeBenchEngine) cleanup()            {}
+
+func (e *fakeBenchEngine) ephemeralPorts() [2]int {
+	if e.ephemeral == ([2]int{}) {
+		return [2]int{32768, 60999}
+	}
+	return e.ephemeral
+}
 
 // pathMetrics is a path between the two servers as each tunnel would carry it.
 func pathMetrics(t tunnel.Tunnel) tunnel.BenchMetrics {
@@ -308,6 +317,38 @@ func TestTunnelBenchLinkServesOneServer(t *testing.T) {
 	raw, _ := json.Marshal(benchEndRequest{Op: "start", Slot: 7, Key: "gre", PairID: tunnel.NewPairID(), Token: tunnel.NewToken()})
 	if _, err := relay.peer(BenchPeerEnd, raw); err == nil || !strings.Contains(err.Error(), "not at slot 7") {
 		t.Fatalf("an end at another candidate's slot: %v", err)
+	}
+}
+
+// Links drew their ports from 30000 to 54999, inside the range outgoing connections take
+// theirs from, so on a busy server one held a port of the span and the test could not start.
+func TestTunnelBenchLinkKeepsItsPortsOffBusyRanges(t *testing.T) {
+	cases := []struct {
+		name      string
+		ephemeral [2]int
+		within    [2]int
+	}{
+		{"above outgoing connections and the inbound forms' random ports", [2]int{32768, 60999}, [2]int{61000, 65535}},
+		{"below both servers' outgoing connections", [2]int{61000, 65535}, [2]int{10000, 32767}},
+		{"anywhere when outgoing connections take every port", [2]int{1024, 65535}, [2]int{10000, 65535}},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			initTunnelDB(t)
+			engine := newFakeBenchEngine()
+			engine.ephemeral = c.ephemeral
+			b := &benchState{engine: engine, self: benchSelfOf, addrs: addrsAt("198.51.100.7"), now: time.Now, idle: time.Minute}
+			t.Cleanup(func() { _ = b.cancel() })
+			for range 50 {
+				link, err := b.makeLink(TunnelBenchLinkRequest{Role: tunnel.RoleServer, Url: "https://relay.example.com:2053/"})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if first, last := link.Port, link.Port+tunnel.BenchPortSpan-1; first < c.within[0] || last > c.within[1] {
+					t.Fatalf("the link's ports %d to %d are outside %d to %d", first, last, c.within[0], c.within[1])
+				}
+			}
+		})
 	}
 }
 

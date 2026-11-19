@@ -8689,7 +8689,7 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "integer"
       },
       "port": {
-        "example": 41000,
+        "example": 62140,
         "type": "integer"
       },
       "role": {

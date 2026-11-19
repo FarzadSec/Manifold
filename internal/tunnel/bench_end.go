@@ -2,8 +2,10 @@ package tunnel
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
+	"math/big"
 	"net"
 	"net/netip"
 	"os"
@@ -44,6 +46,88 @@ func BenchPortsFree(base int) error {
 		_ = c.Close()
 	}
 	return nil
+}
+
+// linuxEphemeral is the kernel's default range for outgoing connections' ports, assumed
+// for the other server, whose own range this one cannot read.
+var linuxEphemeral = [2]int{32768, 60999}
+
+// inboundFormPorts is where the inbound forms draw a new inbound's random port.
+var inboundFormPorts = [2]int{10000, 60000}
+
+const benchLowestPort = 10000
+
+// EphemeralPorts is the range this server's kernel takes outgoing connections' ports from.
+func EphemeralPorts() [2]int {
+	raw, err := os.ReadFile("/proc/sys/net/ipv4/ip_local_port_range")
+	if err != nil {
+		return linuxEphemeral
+	}
+	f := strings.Fields(string(raw))
+	if len(f) != 2 {
+		return linuxEphemeral
+	}
+	lo, err1 := strconv.Atoi(f[0])
+	hi, err2 := strconv.Atoi(f[1])
+	if err1 != nil || err2 != nil || lo > hi {
+		return linuxEphemeral
+	}
+	return [2]int{lo, hi}
+}
+
+// PickBenchBase picks the first port of a test's span that free accepts, off the ports that
+// outgoing connections on either server and new inbounds take, where any such span is left.
+func PickBenchBase(ephemeral [2]int, free func(base int) error) (int, error) {
+	passes := [][][2]int{{ephemeral, linuxEphemeral, inboundFormPorts}, {ephemeral, linuxEphemeral}, nil}
+	for _, keepOff := range passes {
+		spans := benchSpans(keepOff)
+		total := 0
+		for _, s := range spans {
+			total += s[1] - s[0] + 1
+		}
+		for try := 0; total > 0 && try < 20; try++ {
+			n, err := rand.Int(rand.Reader, big.NewInt(int64(total)))
+			if err != nil {
+				return 0, err
+			}
+			base := benchBaseAt(spans, int(n.Int64()))
+			if free(base) == nil {
+				return base, nil
+			}
+		}
+	}
+	return 0, errors.New("tunnel: no free range of ports for the test was found on this server")
+}
+
+// benchSpans are the ranges of first ports whose whole span stays off every range in keepOff.
+func benchSpans(keepOff [][2]int) [][2]int {
+	var spans [][2]int
+	start := benchLowestPort
+	for port := benchLowestPort; port <= 65536; port++ {
+		blocked := port == 65536
+		for _, r := range keepOff {
+			blocked = blocked || (port >= r[0] && port <= r[1])
+		}
+		if !blocked {
+			continue
+		}
+		if last := port - BenchPortSpan; last >= start {
+			spans = append(spans, [2]int{start, last})
+		}
+		start = port + 1
+	}
+	return spans
+}
+
+func benchBaseAt(spans [][2]int, n int) int {
+	for _, s := range spans {
+		if size := s[1] - s[0] + 1; n >= size {
+			n -= size
+			continue
+		}
+		return s[0] + n
+	}
+	return spans[len(spans)-1][1]
 }
 
 // BenchFirewallOwner tags the firewall rules a test opens, so they are lifted after it.

@@ -8,7 +8,7 @@
 # with PANEL_URL; the relay is a second panel, the relay edition, in the client
 # namespace behind a firewall that turns away what it did not ask for, as ufw does.
 # The bin folder must hold backpack-linux-<arch>. Needs root, iproute2, iptables,
-# curl and python3; it uses port 20542 and ports 41000 to 41079 besides the library's.
+# curl and python3; it uses port 20542 and the 80 ports the test link names besides the library's.
 set -euo pipefail
 
 BIN="$(readlink -f "${1:?usage: tunnel-bench-e2e.sh /path/to/manifold /path/to/bin-folder}")"

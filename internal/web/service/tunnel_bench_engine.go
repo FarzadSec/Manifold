@@ -26,6 +26,7 @@ type benchEngine interface {
 	openFirewall(peer []netip.Addr, base int) error
 	closeFirewall()
 	portsFree(base int) error
+	ephemeralPorts() [2]int
 	hasBackPack() bool
 	// cleanup takes down what a test this process never finished left on the host.
 	cleanup()
@@ -54,6 +55,8 @@ func (osBenchEngine) openFirewall(peer []netip.Addr, base int) error {
 func (osBenchEngine) closeFirewall() { egress.CloseInput(tunnel.BenchFirewallOwner) }
 
 func (osBenchEngine) portsFree(base int) error { return tunnel.BenchPortsFree(base) }
+
+func (osBenchEngine) ephemeralPorts() [2]int { return tunnel.EphemeralPorts() }
 
 func (osBenchEngine) hasBackPack() bool {
 	info, err := os.Stat(tunnel.BackPackPath())

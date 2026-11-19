@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"math/big"
 	"net"
 	"net/http"
 	"net/netip"
@@ -89,7 +88,7 @@ type TunnelBenchLink struct {
 	Url     string `json:"url" example:"https://relay.example.com:2053/path/"`
 	Addr4   string `json:"addr4" example:"198.51.100.7"`
 	Addr6   string `json:"addr6" example:""`
-	Port    int    `json:"port" example:"41000"`
+	Port    int    `json:"port" example:"62140"`
 	Expires int64  `json:"expires" example:"1763301800000"`
 }
 
@@ -455,14 +454,11 @@ func (b *benchState) makeLink(req TunnelBenchLinkRequest) (*TunnelBenchLink, err
 
 // freeBase picks the first port of a span that nothing on this server uses.
 func (b *benchState) freeBase() (int, error) {
-	for range 20 {
-		n, _ := rand.Int(rand.Reader, big.NewInt(25000))
-		base := 30000 + int(n.Int64())
-		if b.engine.portsFree(base) == nil {
-			return base, nil
-		}
+	base, err := tunnel.PickBenchBase(b.engine.ephemeralPorts(), b.engine.portsFree)
+	if err != nil {
+		return 0, common.NewError(err.Error())
 	}
-	return 0, common.NewError("no free range of ports for the test was found on this server")
+	return base, nil
 }
 
 // benchPanelURL is how the other server reaches this panel, and its certificate's pin.
