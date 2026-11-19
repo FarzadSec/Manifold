@@ -10,6 +10,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/mhsanaei/3x-ui/v3/internal/seats"
 )
 
 // fakeHost stands in for the kernel and the process table behind the sessions.
@@ -37,7 +39,7 @@ func testControl(t *testing.T, users ...User) (*control, *fakeHost, string) {
 	t.Helper()
 	host := &fakeHost{counters: map[string][2]int64{}, dead: map[int]bool{}, clock: time.Unix(1_800_000_000, 0)}
 	socket := filepath.Join(t.TempDir(), "control.sock")
-	ctl, err := newControl(socket, users)
+	ctl, err := newControl(socket, 9, users)
 	if err != nil {
 		t.Fatalf("newControl: %v", err)
 	}
@@ -62,6 +64,7 @@ func testControl(t *testing.T, users ...User) (*control, *fakeHost, string) {
 		defer host.mu.Unlock()
 		return host.clock
 	}
+	ctl.seats = seats.New(ctl.now)
 	go ctl.serve()
 	t.Cleanup(ctl.close)
 	return ctl, host, socket
@@ -153,7 +156,7 @@ func TestDeviceLimitCountsSessionsAndLoginsOnTheirWay(t *testing.T) {
 	}
 	// A login that never became a session gives its seat back.
 	host.mu.Lock()
-	host.clock = host.clock.Add(2 * pendingLogin)
+	host.clock = host.clock.Add(2 * pendingLoginTTL)
 	host.mu.Unlock()
 	if got := answerTo(t, socket, login("alice")); got != granted {
 		t.Fatalf("after an abandoned login: %s", got)
@@ -255,5 +258,77 @@ func TestLiveSessionsReportTheirInterfaces(t *testing.T) {
 	host.mu.Unlock()
 	if got := ctl.interfaces()["Alice"]; !slices.Equal(got, []string{"ppp0"}) {
 		t.Fatalf("interfaces = %v after pppd 4102 died, want only ppp0", got)
+	}
+}
+
+const tooMany = "Authenticated: No\nAuthentication-Error: This account is connected on its maximum number of devices\n.\n"
+
+func TestSeatHeldOnAnotherProtocolRefusesTheL2TPLogin(t *testing.T) {
+	ctl, _, socket := testControl(t, User{Name: "Alice", Password: "clientPass", MaxSessions: 1})
+	openvpn := seats.Hold{ID: "openvpn/1#1/7", Account: "Alice", Protocol: "openvpn", Inbound: 1}
+	ctl.seats.Take(openvpn, 1, 0)
+	if got := answerTo(t, socket, login("alice")); got != tooMany {
+		t.Fatalf("logged in beside the account's OpenVPN session: %s", got)
+	}
+
+	ctl.seats.Release(openvpn.ID)
+	if got := answerTo(t, socket, login("alice")); got != granted {
+		t.Fatalf("refused with nothing else connected: %s", got)
+	}
+	hook(t, socket, "up", "alice", 4101, "ppp0", nil)
+	if ctl.seats.Take(openvpn, 1, 0) {
+		t.Fatal("OpenVPN was let in beside the account's L2TP session")
+	}
+	held := ctl.seats.Seats("Alice")
+	if len(held) != 1 || held[0].Protocol != "l2tp" || held[0].Inbound != 9 || held[0].Address != "10.9.0.2" || held[0].Pending {
+		t.Fatalf("seats = %+v, want the L2TP session with its address", held)
+	}
+
+	hook(t, socket, "down", "alice", 4101, "ppp0", nil)
+	if !ctl.seats.Take(openvpn, 1, 0) {
+		t.Fatal("the L2TP session kept its seat after it ended")
+	}
+}
+
+func TestSessionThatComesUpWithoutASeatIsCutWhenTheAccountIsFull(t *testing.T) {
+	ctl, host, socket := testControl(t, User{Name: "alice", Password: "clientPass", MaxSessions: 1})
+	if got := answerTo(t, socket, login("alice")); got != granted {
+		t.Fatalf("first login: %s", got)
+	}
+	// The link is slow: the login's seat lapses and the account's OpenVPN connection takes it.
+	host.mu.Lock()
+	host.clock = host.clock.Add(2 * pendingLoginTTL)
+	host.mu.Unlock()
+	ctl.seats.Take(seats.Hold{ID: "openvpn/1#1/7", Account: "alice", Protocol: "openvpn"}, 1, 0)
+
+	hook(t, socket, "up", "alice", 4101, "ppp0", nil)
+	if got := host.killedPIDs(); !slices.Equal(got, []int{4101}) {
+		t.Fatalf("killed %v, want the session that found no seat", got)
+	}
+	if _, online := ctl.drain(); len(online) != 0 {
+		t.Fatalf("online = %v", online)
+	}
+}
+
+func TestLoweredLimitCutsL2TPWhenAnotherProtocolWasFirst(t *testing.T) {
+	ctl, host, socket := testControl(t, User{Name: "alice", Password: "clientPass", MaxSessions: 2})
+	ctl.seats.Take(seats.Hold{ID: "openvpn/1#1/7", Account: "alice", Protocol: "openvpn"}, 2, 0)
+	host.mu.Lock()
+	host.clock = host.clock.Add(time.Second)
+	host.mu.Unlock()
+	hook(t, socket, "up", "alice", 4101, "ppp0", nil)
+
+	ctl.setUsers([]User{{Name: "alice", Password: "clientPass", MaxSessions: 1}})
+	if got := host.killedPIDs(); !slices.Equal(got, []int{4101}) {
+		t.Fatalf("killed %v, want the newer L2TP session", got)
+	}
+}
+
+func TestStoppedL2TPServerGivesItsSeatsBack(t *testing.T) {
+	ctl, _, socket := testControl(t, User{Name: "alice", Password: "clientPass", MaxSessions: 1})
+	hook(t, socket, "up", "alice", 4101, "ppp0", nil)
+	ctl.close()
+	if held := ctl.seats.Seats("alice"); len(held) != 0 {
+		t.Fatalf("seats = %+v after the server went away", held)
 	}
 }

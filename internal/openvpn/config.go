@@ -164,7 +164,8 @@ func renderServerConfig(inst Instance, f files) string {
 	line("verify-client-cert none")
 	line("username-as-common-name")
 	line("duplicate-cn")
-	line("keepalive 10 60")
+	// The server gives up on a silent device after twice 30 s, and only then frees its seat.
+	line("keepalive 10 30")
 	line("persist-key")
 	line("persist-tun")
 	// Kernel offload keeps byte counters out of the management interface.

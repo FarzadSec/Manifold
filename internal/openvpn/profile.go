@@ -56,6 +56,10 @@ func (p Profile) Render() string {
 	line("persist-key")
 	line("persist-tun")
 	line("remote-cert-tls server")
+	// Over UDP only this tells the server the device left; without it the seat waits for keepalive.
+	if p.Server.Proto != ProtoTCP {
+		line("explicit-exit-notify 1")
+	}
 	serverName := p.Server.ServerName
 	if serverName == "" {
 		serverName = serverCommonName

@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/mhsanaei/3x-ui/v3/internal/seats"
 )
 
 // fakeServer plays the openvpn side of a management connection.
@@ -18,6 +20,8 @@ type fakeServer struct {
 	lines chan string
 	ctl   *control
 	clock time.Time
+	// seats stands in for the ledger the panel's other engines share.
+	seats *seats.Ledger
 }
 
 func newFakeServer(t *testing.T, users ...User) *fakeServer {
@@ -31,8 +35,10 @@ func newFakeServer(t *testing.T, users ...User) *fakeServer {
 		}
 		close(f.lines)
 	}()
-	f.ctl = newControl(panelSide, users)
+	f.seats = seats.New(func() time.Time { return f.clock })
+	f.ctl = newControl(panelSide, 1, users)
 	f.ctl.now = func() time.Time { return f.clock }
+	f.ctl.seats = f.seats
 	go f.ctl.serve()
 	t.Cleanup(func() {
 		_ = serverSide.Close()
@@ -139,6 +145,58 @@ func TestDeviceCapCountsOnlyLiveSessions(t *testing.T) {
 	f.disconnect(1, 0, 0)
 	f.login(4, "alice", "pw")
 	f.expect("client-auth-nt 4 1")
+}
+
+func TestSeatHeldOnAnotherProtocolRefusesTheLogin(t *testing.T) {
+	f := newFakeServer(t, User{Name: "alice", Password: "pw", MaxSessions: 1})
+	l2tp := seats.Hold{ID: "l2tp/9#1/s4101", Account: "alice", Protocol: "l2tp", Inbound: 9}
+	f.seats.Take(l2tp, 1, 0)
+	f.login(1, "alice", "pw")
+	f.expect(denied(1, deniedDevice))
+
+	f.seats.Release(l2tp.ID)
+	f.login(2, "alice", "pw")
+	f.expect("client-auth-nt 2 1")
+	f.emit(">CLIENT:ESTABLISHED,2", ">CLIENT:ENV,ifconfig_pool_remote_ip=10.8.0.6", ">CLIENT:ENV,END")
+	f.settle()
+	if f.seats.Take(l2tp, 1, 0) {
+		t.Fatal("L2TP was let in beside the account's OpenVPN session")
+	}
+	held := f.seats.Seats("alice")
+	if len(held) != 1 || held[0].Protocol != "openvpn" || held[0].Inbound != 1 || held[0].Address != "10.8.0.6" || held[0].Pending {
+		t.Fatalf("seats = %+v, want the OpenVPN session with its address", held)
+	}
+
+	f.disconnect(2, 0, 0)
+	f.settle()
+	if !f.seats.Take(l2tp, 1, 0) {
+		t.Fatal("the OpenVPN session kept its seat after it ended")
+	}
+}
+
+func TestLoweredLimitCutsOpenVPNWhenAnotherProtocolWasFirst(t *testing.T) {
+	f := newFakeServer(t, User{Name: "alice", Password: "pw", MaxSessions: 2})
+	f.seats.Take(seats.Hold{ID: "l2tp/9#1/s4101", Account: "alice", Protocol: "l2tp"}, 2, 0)
+	f.clock = f.clock.Add(time.Second)
+	f.connect(1, "alice", "pw")
+	f.settle()
+
+	f.ctl.setUsers([]User{{Name: "alice", Password: "pw", MaxSessions: 1}})
+	f.expect("client-kill 1")
+	if _, online := f.ctl.drain(); len(online) != 0 {
+		t.Fatalf("online = %v after its session was cut", online)
+	}
+}
+
+func TestStoppedServerGivesItsSeatsBack(t *testing.T) {
+	f := newFakeServer(t, User{Name: "alice", Password: "pw", MaxSessions: 1})
+	f.connect(1, "alice", "pw")
+	f.settle()
+	_ = f.conn.Close()
+	<-f.ctl.done
+	if held := f.seats.Seats("alice"); len(held) != 0 {
+		t.Fatalf("seats = %+v after the server went away", held)
+	}
 }
 
 func TestUnfinishedLoginGivesItsSlotBack(t *testing.T) {

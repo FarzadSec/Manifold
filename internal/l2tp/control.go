@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/seats"
 )
 
 const (
@@ -21,7 +22,7 @@ const (
 	deniedDevice = "This account is connected on its maximum number of devices"
 
 	// A granted login holds a device seat this long while its session comes up.
-	pendingLogin = 30 * time.Second
+	pendingLoginTTL = 30 * time.Second
 	// Nothing pppd or its scripts send takes longer than this to read.
 	requestTimeout = 5 * time.Second
 )
@@ -49,6 +50,11 @@ type reply struct {
 
 type usage struct{ up, down int64 }
 
+type pendingLogin struct {
+	seat string
+	at   time.Time
+}
+
 type session struct {
 	user   string
 	ifname string
@@ -63,9 +69,16 @@ type control struct {
 	listener net.Listener
 	users    map[string]User
 	sessions map[int]*session
-	pending  map[string][]time.Time
+	// pending are the seats of granted logins whose links have not come up yet, oldest first.
+	pending  map[string][]pendingLogin
 	unbilled map[string]usage
 	done     chan struct{}
+	closed   bool
+
+	seats   *seats.Ledger
+	inbound int
+	owner   string
+	logins  int
 
 	counters func(ifname string) (rx, tx int64, ok bool)
 	alive    func(pid int) bool
@@ -73,7 +86,7 @@ type control struct {
 	now      func() time.Time
 }
 
-func newControl(socket string, users []User) (*control, error) {
+func newControl(socket string, inbound int, users []User) (*control, error) {
 	_ = os.Remove(socket)
 	listener, err := (&net.ListenConfig{}).Listen(context.Background(), "unix", socket)
 	if err != nil {
@@ -86,13 +99,16 @@ func newControl(socket string, users []User) (*control, error) {
 	c := &control{
 		listener: listener,
 		sessions: map[int]*session{},
-		pending:  map[string][]time.Time{},
+		pending:  map[string][]pendingLogin{},
 		unbilled: map[string]usage{},
 		done:     make(chan struct{}),
 		counters: interfaceCounters,
 		alive:    isPppd,
 		kill:     terminatePppd,
 		now:      time.Now,
+		seats:    seats.Local(),
+		inbound:  inbound,
+		owner:    seats.NewOwner("l2tp", inbound),
 	}
 	c.users = accountTable(users)
 	return c, nil
@@ -129,6 +145,15 @@ func (c *control) serve() {
 func (c *control) close() {
 	_ = c.listener.Close()
 	<-c.done
+	// A helper still answering takes the lock first, so whatever it took is released here.
+	c.mu.Lock()
+	c.closed = true
+	c.seats.ReleaseAll(c.owner)
+	c.mu.Unlock()
+}
+
+func (c *control) sessionSeat(pid int) seats.Hold {
+	return seats.Hold{ID: c.owner + "s" + strconv.Itoa(pid), Protocol: "l2tp", Inbound: c.inbound, Kick: func() { c.kill(pid) }}
 }
 
 func (c *control) handle(conn net.Conn) {
@@ -166,54 +191,61 @@ func (c *control) authorize(req request) reply {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	user, known := c.users[name]
-	if !known || errC != nil || errR != nil {
+	if !known || errC != nil || errR != nil || c.closed {
 		return reply{Error: deniedLogin}
 	}
 	key, ok := verifyMSCHAPv2(user.Password, challenge, response)
 	if !ok {
 		return reply{Error: deniedLogin}
 	}
-	if user.MaxSessions > 0 && c.seatsTakenLocked(name) >= user.MaxSessions {
+	c.logins++
+	seat := c.owner + "p" + strconv.Itoa(c.logins)
+	if !c.seats.Take(seats.Hold{ID: seat, Account: user.Name, Protocol: "l2tp", Inbound: c.inbound}, user.MaxSessions, pendingLoginTTL) {
 		logger.Infof("l2tp: %s was refused another device: its limit is %d", user.Name, user.MaxSessions)
 		return reply{Error: deniedDevice}
 	}
-	c.pending[name] = append(c.pending[name], c.now())
+	c.pending[name] = append(c.freshPendingLocked(name), pendingLogin{seat: seat, at: c.now()})
 	return reply{OK: true, Key: strings.ToUpper(hex.EncodeToString(key))}
 }
 
-// seatsTakenLocked counts an account's sessions and its logins still on the way to one.
-func (c *control) seatsTakenLocked(name string) int {
-	taken := 0
-	for _, s := range c.sessions {
-		if s.user == name {
-			taken++
-		}
-	}
+// freshPendingLocked returns the account's logins still waiting for their links; the others have lapsed.
+func (c *control) freshPendingLocked(name string) []pendingLogin {
 	fresh := c.pending[name][:0]
-	for _, at := range c.pending[name] {
-		if c.now().Sub(at) < pendingLogin {
-			fresh = append(fresh, at)
+	for _, p := range c.pending[name] {
+		if c.now().Sub(p.at) < pendingLoginTTL {
+			fresh = append(fresh, p)
 		}
 	}
-	c.pending[name] = fresh
-	return taken + len(fresh)
+	return fresh
 }
 
 func (c *control) sessionUp(req request) {
 	name := accountOf(req.User)
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if waiting := c.pending[name]; len(waiting) > 0 {
-		c.pending[name] = waiting[1:]
-	}
-	if req.PID <= 1 {
-		return
+	login := ""
+	if waiting := c.freshPendingLocked(name); len(waiting) > 0 {
+		login, c.pending[name] = waiting[0].seat, waiting[1:]
 	}
 	user, known := c.users[name]
-	if !known {
-		// The account was switched off between its login and its link coming up.
-		c.kill(req.PID)
+	if req.PID <= 1 || !known || c.closed {
+		c.seats.Release(login)
+		if req.PID > 1 {
+			// The account was switched off between its login and its link coming up.
+			c.kill(req.PID)
+		}
 		return
+	}
+	seat := c.sessionSeat(req.PID)
+	seat.Account = user.Name
+	if !c.seats.Move(login, seat, req.Address) {
+		// The login's seat lapsed or went to another connection; the link needs one of its own.
+		if !c.seats.Take(seat, user.MaxSessions, 0) {
+			logger.Infof("l2tp: cutting %s on %s: the account's devices are all connected", user.Name, req.Interface)
+			c.kill(req.PID)
+			return
+		}
+		c.seats.Confirm(seat.ID, req.Address)
 	}
 	c.sessions[req.PID] = &session{user: name, ifname: req.Interface}
 	logger.Infof("l2tp: %s connected from %s on %s as %s", user.Name, req.Peer, req.Interface, req.Address)
@@ -229,6 +261,7 @@ func (c *control) sessionDown(req request) {
 	}
 	c.chargeLocked(s, req.Received, req.Sent)
 	delete(c.sessions, req.PID)
+	c.seats.Release(c.sessionSeat(req.PID).ID)
 	notifySessionsChanged()
 }
 
@@ -262,13 +295,25 @@ func (c *control) chargeLocked(s *session, rx, tx int64) {
 // setUsers replaces the account table and cuts the sessions of accounts it no longer holds.
 func (c *control) setUsers(users []User) {
 	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.users = accountTable(users)
+	next := accountTable(users)
+	var lowered []User
+	for key, u := range next {
+		if old, had := c.users[key]; u.MaxSessions > 0 && (!had || old.MaxSessions <= 0 || u.MaxSessions < old.MaxSessions) {
+			lowered = append(lowered, u)
+		}
+	}
+	c.users = next
 	for pid, s := range c.sessions {
 		if _, served := c.users[s.user]; !served {
 			logger.Infof("l2tp: cutting the session of %s on %s", s.user, s.ifname)
 			c.kill(pid)
+			c.seats.Release(c.sessionSeat(pid).ID)
 		}
+	}
+	c.mu.Unlock()
+	// A lowered cap is the ledger's to apply: the account's newest seats go, on any protocol.
+	for _, u := range lowered {
+		c.seats.Limit(u.Name, u.MaxSessions)
 	}
 }
 
@@ -282,6 +327,7 @@ func (c *control) drain() (map[string]usage, []string) {
 		// Without this an interface name reused by a later session would be billed to this one.
 		if !c.alive(pid) {
 			delete(c.sessions, pid)
+			c.seats.Release(c.sessionSeat(pid).ID)
 			continue
 		}
 		if rx, tx, ok := c.counters(s.ifname); ok {
