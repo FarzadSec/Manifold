@@ -652,7 +652,8 @@ func parseWireguard(link string) (*ParseResult, error) {
 	if u.Scheme != "wireguard" && u.Scheme != "wg" {
 		return nil, fmt.Errorf("not wireguard")
 	}
-	secret, _ := url.QueryUnescape(u.User.Username())
+	// Username is already decoded; a second QueryUnescape turned each '+' of the key into a space.
+	secret := u.User.Username()
 	params := u.Query()
 	host := u.Hostname()
 	portStr := u.Port()
