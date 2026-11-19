@@ -325,7 +325,9 @@ The app fetches its profile every 10 minutes and whenever the customer presses i
 
 The app always receives OpenVPN profiles with the login in them, even when the inbound's **Ask for the login** option leaves it out for other apps: the customer signed in to the app and never types an OpenVPN password.
 
-The API the app uses is under Subscription Server in the API documentation (`app/v1/login`, `profile`, `logout`).
+**Settings → App reports** shows what customers send with **Report a problem** in the app (DT Connect 1.1 and later): their message and the app's log since it started, with the device, the app version, the account's username and its Telegram ID, so you know whose it is. The app takes passwords, keys and links out of the log before sending it. A report not opened yet is marked **New**, and the menu item counts them. Open one to read the log, copy it or download it as a text file. Each device can send 5 reports an hour; the panel keeps the newest 500.
+
+The API the app uses is under Subscription Server in the API documentation (`app/v1/login`, `profile`, `logout`, `report`).
 
 ## Several servers
 

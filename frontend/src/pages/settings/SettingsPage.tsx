@@ -33,6 +33,7 @@ import SubscriptionFormatsTab from './SubscriptionFormatsTab';
 import SubscriptionBalancersTab from './SubscriptionBalancersTab';
 import SubscriptionAppTab from './SubscriptionAppTab';
 import AppNoticesTab from './AppNoticesTab';
+import AppReportsTab from './AppReportsTab';
 import './SettingsPage.css';
 
 interface ApiMsg {
@@ -50,6 +51,7 @@ const tabSlugs = [
   'subscription-balancers',
   'subscription-app',
   'app-notices',
+  'app-reports',
 ];
 
 function isIp(h: string): boolean {
@@ -235,6 +237,8 @@ export default function SettingsPage() {
         return <SubscriptionAppTab allSetting={allSetting} updateSetting={updateSetting} />;
       case 'app-notices':
         return <AppNoticesTab />;
+      case 'app-reports':
+        return <AppReportsTab />;
       default:
         return <GeneralTab allSetting={allSetting} updateSetting={updateSetting} />;
     }
