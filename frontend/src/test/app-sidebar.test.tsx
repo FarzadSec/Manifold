@@ -8,6 +8,11 @@ import { renderWithProviders } from './test-utils';
 vi.mock('@/api/queries/useAllSettings', () => ({
   useAllSettings: () => ({ allSetting: {} }),
 }));
+// The account as it reads before /access/me answers: every page shown. Left to the shared GET
+// mock, it loaded as an account with no permissions at a moment that depended on other queries.
+vi.mock('@/api/queries/useAccess', () => ({
+  useAccess: () => ({ loaded: false, can: () => true, isReseller: false, isMainAdmin: false }),
+}));
 
 afterEach(() => {
   localStorage.clear();

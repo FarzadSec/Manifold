@@ -3891,7 +3891,7 @@ export const sections: readonly Section[] = [
     id: 'app',
     title: 'App',
     description:
-      "The locations the app offers and the notices it shows. A location (Germany, say) gathers the inbounds that serve it, on any protocol and any server; an inbound serves one location at most, and one in none is still used by the app's quick connect. The app itself signs in on the subscription server (see Subscription Server → app/v1); app access is switched on with the appEnable setting.",
+      "The locations the app offers, the notices it shows and the support reports it sends. A location (Germany, say) gathers the inbounds that serve it, on any protocol and any server; an inbound serves one location at most, and one in none is still used by the app's quick connect. The app itself signs in on the subscription server (see Subscription Server → app/v1); app access is switched on with the appEnable setting.",
     endpoints: [
       {
         method: 'GET',
@@ -3934,6 +3934,38 @@ export const sections: readonly Section[] = [
         path: '/panel/api/app/notices/del/:id',
         summary: 'Delete a notice. Apps drop it on their next profile refresh.',
         params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Notice id.' }],
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/app/reports',
+        summary:
+          "List the support reports apps sent, newest first, without their logs: each with the account's username and Telegram id, the device, the app version, the user's message and whether it was opened. The panel keeps the newest 500.",
+        responseSchema: 'AppReport',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/app/reports/unseen',
+        summary: 'Count the reports no one has opened yet.',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/app/reports/:id',
+        summary: 'Return one report with its log.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Report id.' }],
+        responseSchema: 'AppReport',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/app/reports/seen/:id',
+        summary: 'Mark a report as opened.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Report id.' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/app/reports/del/:id',
+        summary: 'Delete a report.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Report id.' }],
       },
     ],
   },
@@ -4059,6 +4091,15 @@ export const sections: readonly Section[] = [
         params: [{ name: 'subid', in: 'path', type: 'string', desc: 'Client subscription ID.' }],
         body: '{\n  "protocol": "wireguard",\n  "locationId": 3,\n  "address": "10.8.0.6"\n}',
         response: '{\n  "ok": true\n}',
+      },
+      {
+        method: 'POST',
+        path: '/{subPath}:subid/app/v1/report',
+        summary:
+          "File a support report: the user's message and the app's log, under the session's account and its Telegram id. Answers <code>{\"id\":N}</code>, the number the user can quote. Needs <code>Authorization: Bearer token</code> and <code>X-HWID: deviceId</code>.",
+        description:
+          'JSON body, sent gzipped with <code>Content-Encoding: gzip</code> (plain JSON is taken too): <code>message</code> (cut to 4000 characters), <code>log</code> (8 MB at most), <code>deviceName</code>, <code>os</code>, <code>osVersion</code>, <code>appVersion</code>. Errors are <code>{"error":code}</code>: 401 <code>bad_session</code>, 403 <code>app_disabled</code>, 400 <code>bad_request</code>, 413 <code>too_large</code> (over 3 MB on the wire or 9 MB unpacked), 429 <code>too_many_reports</code> (5 per device an hour).',
+        params: [{ name: 'subid', in: 'path', type: 'string', desc: 'Client subscription ID.' }],
       },
       {
         method: 'GET',

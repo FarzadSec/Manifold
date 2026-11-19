@@ -52,6 +52,7 @@ func migrationModels() []any {
 		&model.AppSession{},
 		&model.AppLocation{},
 		&model.AppNotice{},
+		&model.AppReport{},
 		&model.AppLocationInbound{},
 		&model.ClientExternalLink{},
 		&model.ClientGroup{},
