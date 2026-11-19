@@ -724,6 +724,78 @@ export interface BackupTargetView {
   user: string;
 }
 
+export interface BenchCandidate {
+  carrier?: string;
+  dialer?: string;
+  key: string;
+  kind: string;
+  mtu?: number;
+  transport?: string;
+}
+
+export interface BenchMetrics {
+  bytes: number;
+  downMbps: number;
+  error?: string;
+  jitterMs: number;
+  latencyMs: number;
+  loadDownMbps: number;
+  loadLatencyMs: number;
+  loadUpMbps: number;
+  loss: number;
+  setupMs: number;
+  streamErrors: number;
+  streams: number;
+  tcp: boolean;
+  udp: boolean;
+  udpDownLoss: number;
+  udpDownMbps: number;
+  udpJitterMs: number;
+  udpLatencyMs: number;
+  udpLoss: number;
+  udpUpLoss: number;
+  udpUpMbps: number;
+  upMbps: number;
+  warning?: string;
+}
+
+export interface BenchResult {
+  bytes: number;
+  carrier?: string;
+  dialer?: string;
+  downMbps: number;
+  error?: string;
+  jitterMs: number;
+  key: string;
+  kind: string;
+  latencyMs: number;
+  loadDownMbps: number;
+  loadLatencyMs: number;
+  loadUpMbps: number;
+  loss: number;
+  mtu?: number;
+  score: number;
+  setupMs: number;
+  stage: string;
+  state: string;
+  streamErrors: number;
+  streams: number;
+  tcp: boolean;
+  tcpScore: number;
+  transport?: string;
+  udp: boolean;
+  udpDownLoss: number;
+  udpDownMbps: number;
+  udpJitterMs: number;
+  udpLatencyMs: number;
+  udpLoss: number;
+  udpScore: number;
+  udpUpLoss: number;
+  udpUpMbps: number;
+  upMbps: number;
+  warning?: string;
+}
+
 export interface Blocker {
   code: BlockerCode;
   detail?: string;
@@ -1847,6 +1919,97 @@ export interface TuicServerSettings {
   sni?: string;
   udp_relay_mode: string;
   zero_rtt_handshake: boolean;
+}
+
+export interface TunnelBench {
+  benchId: string;
+  best: string;
+  createdAt: number;
+  finishedAt: number;
+  id: number;
+  initiator: boolean;
+  peer: string;
+  side: string;
+  state: string;
+}
+
+export interface TunnelBenchLink {
+  addr4: string;
+  addr6: string;
+  code: string;
+  expires: number;
+  port: number;
+  role: string;
+  url: string;
+}
+
+export interface TunnelBenchLinkRequest {
+  addr4: string;
+  addr6: string;
+  minutes: number;
+  role: string;
+  url: string;
+}
+
+export interface TunnelBenchPick {
+  carrier?: string;
+  dialer?: string;
+  key: string;
+  kind: string;
+  mtu?: number;
+  remoteAddr?: string;
+  score: number;
+  transport?: string;
+  tuned: boolean;
+}
+
+export interface TunnelBenchProfile {
+  finalists: number;
+  maxBytes: number;
+  minutes: number;
+  name: string;
+  tuned: number;
+}
+
+export interface TunnelBenchReport {
+  best?: TunnelBenchPick | null;
+  bestTcp?: TunnelBenchPick | null;
+  bestUdp?: TunnelBenchPick | null;
+  bytes: number;
+  current: string;
+  done: number;
+  error?: string;
+  finishedAt: number;
+  id: string;
+  initiator: boolean;
+  peer: string;
+  peerVersion: string;
+  phase: string;
+  profile: string;
+  results: BenchResult[];
+  role: string;
+  stage: string;
+  startedAt: number;
+  state: string;
+  total: number;
+  tuning: BenchResult[];
+  warnings: string[];
+}
+
+export interface TunnelBenchStartRequest {
+  addr4: string;
+  addr6: string;
+  code: string;
+  keys: string[];
+  profile: string;
+}
+
+export interface TunnelBenchState {
+  active?: TunnelBenchReport | null;
+  catalogue: BenchCandidate[];
+  last?: TunnelBenchReport | null;
+  link?: TunnelBenchLink | null;
+  profiles: TunnelBenchProfile[];
 }
 
 export interface TunnelGroup {

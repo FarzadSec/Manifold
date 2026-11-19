@@ -49,6 +49,8 @@ export const keys = {
     list: () => ['tunnels', 'list'] as const,
     relays: () => ['tunnels', 'relays'] as const,
     groups: () => ['tunnels', 'groups'] as const,
+    bench: () => ['tunnels', 'bench'] as const,
+    benchHistory: () => ['tunnels', 'bench', 'history'] as const,
   },
   subBalancers: {
     root: () => ['sub-balancers'] as const,

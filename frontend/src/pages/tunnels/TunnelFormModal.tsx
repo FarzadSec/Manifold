@@ -27,6 +27,8 @@ import { KERNEL_KINDS, L3_CARRIERS, REVERSE_TRANSPORTS, isKernel, kindLabel } fr
 interface TunnelFormModalProps {
   open: boolean;
   tunnel: TunnelView | null;
+  // draft fills a new tunnel, as the tunnel test's recommendation does.
+  draft?: TunnelRequest | null;
   relays: TunnelRelay[];
   onClose: (saved: boolean) => void;
 }
@@ -59,7 +61,13 @@ function fromView(t: TunnelView): TunnelRequest {
   };
 }
 
-export default function TunnelFormModal({ open, tunnel, relays, onClose }: TunnelFormModalProps) {
+export default function TunnelFormModal({
+  open,
+  tunnel,
+  draft,
+  relays,
+  onClose,
+}: TunnelFormModalProps) {
   const { t } = useTranslation();
   const uid = useId();
   const methods = useForm<TunnelRequest>({ defaultValues: emptyRequest() });
@@ -88,9 +96,16 @@ export default function TunnelFormModal({ open, tunnel, relays, onClose }: Tunne
 
   useEffect(() => {
     if (!open) return;
-    reset(tunnel ? fromView(tunnel) : emptyRequest());
+    const blank = emptyRequest();
+    reset(
+      tunnel
+        ? fromView(tunnel)
+        : draft
+          ? { ...blank, ...draft, settings: { ...blank.settings, ...draft.settings } }
+          : blank,
+    );
     if (!tunnel) void suggest(true);
-  }, [open, tunnel, reset, suggest]);
+  }, [open, tunnel, draft, reset, suggest]);
 
   async function onSubmit(values: TunnelRequest) {
     setSaving(true);

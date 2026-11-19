@@ -255,6 +255,15 @@ var routeRules = map[string]Rule{
 	key("GET", "/tunnels/groups"):             need(TunnelsRead),
 	key("POST", "/tunnels/groups/save"):       need(TunnelsWrite),
 	key("POST", "/tunnels/groups/del/:id"):    need(TunnelsWrite),
+	key("GET", "/tunnels/bench/state"):        need(TunnelsRead),
+	key("GET", "/tunnels/bench/history"):      need(TunnelsRead),
+	key("GET", "/tunnels/bench/report/:id"):   need(TunnelsRead),
+	key("POST", "/tunnels/bench/link"):        need(TunnelsWrite),
+	key("POST", "/tunnels/bench/start"):       need(TunnelsWrite),
+	key("POST", "/tunnels/bench/cancel"):      need(TunnelsWrite),
+	key("POST", "/tunnels/bench/del/:id"):     need(TunnelsWrite),
+	// The other server of a test calls this with the link's credential, as the owner.
+	key("POST", "/tunnels/bench/peer/:op"): need(TunnelsWrite),
 
 	key("POST", "/setting/defaultSettings"):          any_(),
 	key("POST", "/setting/updateUser"):               any_(),

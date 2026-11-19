@@ -2670,6 +2670,70 @@ export const sections: readonly Section[] = [
         summary: 'Delete a group; its ports stop being forwarded.',
         params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Group ID.' }],
       },
+      {
+        method: 'GET',
+        path: '/panel/api/tunnels/bench/state',
+        summary:
+          "The tunnel test of this server: the one under way or its link waiting for the other server, the last one finished, every tunnel a test can try, and the test's profiles with the most data and about the time each takes.",
+        responseSchema: 'TunnelBenchState',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/tunnels/bench/link',
+        summary:
+          "Make a tunnel test link for the other server to import. It carries this panel's address and certificate pin, this server's addresses and side, the first of the 80 ports the test may use on both servers, and a credential that reaches only the test. One link or test at a time.",
+        body: '{\n  "role": "server",\n  "url": "https://relay.example.com:2053/path/",\n  "addr4": "198.51.100.7",\n  "addr6": "",\n  "minutes": 30\n}',
+        responseSchema: 'TunnelBenchLink',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/tunnels/bench/start',
+        summary:
+          'Run a tunnel test from the link the other server made. Every chosen tunnel is screened over TCP and UDP, the best are measured in full and under load, and the best with an interface are tried at smaller MTUs; the test then names the best tunnel overall, for TCP inbounds and for UDP inbounds. It runs in the background; follow it with /bench/state.',
+        body: '{\n  "code": "manifold-tunnel-test://...",\n  "profile": "standard",\n  "keys": []\n}',
+        responseSchema: 'TunnelBenchReport',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/tunnels/bench/cancel',
+        summary:
+          'Stop the test under way, on both servers, or withdraw the link waiting here. Everything the test started is taken down.',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/tunnels/bench/history',
+        summary: 'The tunnel tests this server took part in, newest first, without their results.',
+        responseSchema: 'TunnelBench',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/tunnels/bench/report/:id',
+        summary: 'One finished test of the history, with every result and the picks.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'History ID.' }],
+        responseSchema: 'TunnelBenchReport',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/tunnels/bench/del/:id',
+        summary: 'Delete a test from the history.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'History ID.' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/tunnels/bench/peer/:op',
+        summary:
+          "Called by the server that runs a test, with the link's credential as a bearer token and nothing else: hello, end (start or stop one candidate's end, which this server builds itself), measure (start or poll, on the relay), report and close. Errors come back undecorated; 410 means this server no longer holds the test.",
+        params: [
+          {
+            name: 'op',
+            in: 'path',
+            type: 'string',
+            desc: 'hello, end, measure, report or close.',
+            pattern: '^(hello|end|measure|report|close)$',
+          },
+        ],
+      },
     ],
   },
 

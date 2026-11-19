@@ -226,6 +226,39 @@ Open on the relay's firewall the forwarded ports and, for BackPack, the tunnel p
 
 **Several origins behind one relay.** On the relay, make one tunnel to each origin server (kernel links or BackPack layer 3), without forwards of their own, then under **Groups of origins** join them and give the ports there. **Failover** sends every connection to the first origin in the list that answers its probe and moves to the next one within about ten seconds when it stops answering; **balance** gives each new connection to the next origin that answers, and an existing connection stays where it started. When no origin answers, the ports go to all of them rather than nowhere. Users then reach every origin through the same relay address. Groups live on the relay, so for a managed relay open the relay's own panel to make one.
 
+### Tunnel test
+
+Before choosing a tunnel, the **Tunnel test** card of the Tunnels page tries them all between two servers and recommends the best. It works the same on Manifold and on Manifold Relay.
+
+1. On one of the two servers, **Make a test link**. Say whether this server is the panel that serves the accounts or the relay. Check the panel address the other server will reach this one at, and this server's addresses if detection would get them wrong (behind NAT, or with several IPs). The link is valid for 30 minutes and serves one test.
+2. On the other server, **Run a test link**: paste it, choose a test and the tunnels to try, and start. Either server can make the link. The one that runs it must reach the other's panel.
+
+| Test | What it does |
+|---|---|
+| Quick | Screens every tunnel, then measures the best three in full; no MTU tuning |
+| Standard | Screens every tunnel, measures the best five in full, and tries the two best that have an MTU at 1400, 1360 and 1280 |
+| Thorough | Longer phases and more streams: the best eight in full, the MTU of the best three |
+
+The window shows about how long each test takes and the most data it can move between the two servers. A slow path moves less.
+
+Every tunnel kind is built in turn on both servers: the six kernel links, the twelve BackPack reverse transports, and the five BackPack layer-3 carriers with either server dialling. Each is measured the way users' traffic crosses it, from the relay to the origin:
+
+- **TCP:** connection time, latency, jitter and loss, one stream each way, and several streams each way at once with pings beside them to show queueing under load.
+- **UDP:** latency and loss, and the rate it holds each way. A tunnel that carries only UDP, such as BackPack's `udp` transport, is shown as UDP only instead of failed.
+
+A tunnel the servers cannot run is skipped with the reason, such as a kernel without IPIP, BackPack missing, or a kind that needs IPv6 on both servers. The live view shows the stage, the tunnel under way and the data moved. Both servers show the same progress, and **Cancel** on either stops it on both.
+
+**The result** names three tunnels:
+
+- the **recommended tunnel**, best for every inbound because it carries TCP and UDP well;
+- the best for **TCP inbounds** (VLESS, VMess, Trojan, OpenVPN over TCP);
+- the best for **UDP inbounds** (WireGuard, L2TP, OpenVPN over UDP, Hysteria).
+
+Each comes with the settings the test found best: the transport or carrier, which server dials, and an MTU when a smaller one carried clearly more. On the panel that serves the accounts, **Create this tunnel** opens the tunnel form filled with them. Add the ports to forward, save, and set up the relay's end as usual. The full table lists every tunnel with its TCP and UDP rates, latency, loss and score, and the reason behind every skip or failure. **History** keeps each test on both servers.
+
+While a test runs it uses 80 ports on both servers, TCP and UDP, from the first one the link names, and GRE, IPIP and SIT. It opens them in the firewall (also behind ufw) for the other server's address only, and takes everything down when the test ends, is cancelled, or the other server stops answering for 90 seconds. The link's credential reaches nothing on the server but the test, and stops working when the test ends.
+
+
 ## Moving from another panel
 
 **Import** (sidebar) brings users over from another panel:

@@ -306,6 +306,8 @@ const (
 	ApiScopeNodeAdmin = "node-admin"
 	// ApiScopeTunnel lets the panel that owns a tunnel set up and read its relay end.
 	ApiScopeTunnel = "tunnel"
+	// ApiScopeTunnelBench is a tunnel test link's credential: held in memory, never a token row.
+	ApiScopeTunnelBench = "tunnel-bench"
 )
 
 func IsKnownApiScope(s string) bool {
@@ -2100,6 +2102,20 @@ type TunnelGroup struct {
 	Forwards  string `json:"-" gorm:"type:text"`
 	Enable    bool   `json:"enable" example:"true"`
 	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime:milli" example:"1763300000000"`
+}
+
+// TunnelBench is a finished tunnel test as this server saw it; Report is its JSON.
+type TunnelBench struct {
+	Id         int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	BenchId    string `json:"benchId" gorm:"column:bench_id;index;not null" example:"5d1c0a9e7b2f4c11a0e3d8f6"`
+	Initiator  bool   `json:"initiator" example:"true"`
+	Side       string `json:"side" example:"server"`
+	Peer       string `json:"peer" example:"198.51.100.7"`
+	State      string `json:"state" example:"done"`
+	Best       string `json:"best" example:"reverse:tcpmux"`
+	Report     string `json:"-" gorm:"type:text"`
+	CreatedAt  int64  `json:"createdAt" gorm:"autoCreateTime:milli" example:"1763300000000"`
+	FinishedAt int64  `json:"finishedAt" example:"1763300600000"`
 }
 
 // TunnelRelay is a relay this panel manages over its API with a tunnel-scoped token.

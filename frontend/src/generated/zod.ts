@@ -785,6 +785,81 @@ export const BackupTargetViewSchema = z.object({
 });
 export type BackupTargetView = z.infer<typeof BackupTargetViewSchema>;
 
+export const BenchCandidateSchema = z.object({
+  carrier: z.string().optional(),
+  dialer: z.string().optional(),
+  key: z.string(),
+  kind: z.string(),
+  mtu: z.number().int().optional(),
+  transport: z.string().optional(),
+});
+export type BenchCandidate = z.infer<typeof BenchCandidateSchema>;
+
+export const BenchMetricsSchema = z.object({
+  bytes: z.number().int(),
+  downMbps: z.number(),
+  error: z.string().optional(),
+  jitterMs: z.number(),
+  latencyMs: z.number(),
+  loadDownMbps: z.number(),
+  loadLatencyMs: z.number(),
+  loadUpMbps: z.number(),
+  loss: z.number(),
+  setupMs: z.number(),
+  streamErrors: z.number().int(),
+  streams: z.number().int(),
+  tcp: z.boolean(),
+  udp: z.boolean(),
+  udpDownLoss: z.number(),
+  udpDownMbps: z.number(),
+  udpJitterMs: z.number(),
+  udpLatencyMs: z.number(),
+  udpLoss: z.number(),
+  udpUpLoss: z.number(),
+  udpUpMbps: z.number(),
+  upMbps: z.number(),
+  warning: z.string().optional(),
+});
+export type BenchMetrics = z.infer<typeof BenchMetricsSchema>;
+
+export const BenchResultSchema = z.object({
+  bytes: z.number().int(),
+  carrier: z.string().optional(),
+  dialer: z.string().optional(),
+  downMbps: z.number(),
+  error: z.string().optional(),
+  jitterMs: z.number(),
+  key: z.string(),
+  kind: z.string(),
+  latencyMs: z.number(),
+  loadDownMbps: z.number(),
+  loadLatencyMs: z.number(),
+  loadUpMbps: z.number(),
+  loss: z.number(),
+  mtu: z.number().int().optional(),
+  score: z.number(),
+  setupMs: z.number(),
+  stage: z.string(),
+  state: z.string(),
+  streamErrors: z.number().int(),
+  streams: z.number().int(),
+  tcp: z.boolean(),
+  tcpScore: z.number(),
+  transport: z.string().optional(),
+  udp: z.boolean(),
+  udpDownLoss: z.number(),
+  udpDownMbps: z.number(),
+  udpJitterMs: z.number(),
+  udpLatencyMs: z.number(),
+  udpLoss: z.number(),
+  udpScore: z.number(),
+  udpUpLoss: z.number(),
+  udpUpMbps: z.number(),
+  upMbps: z.number(),
+  warning: z.string().optional(),
+});
+export type BenchResult = z.infer<typeof BenchResultSchema>;
+
 export const BlockerSchema = z.object({
   code: z.lazy(() => BlockerCodeSchema),
   detail: z.string().optional(),
@@ -1994,6 +2069,105 @@ export const TuicServerSettingsSchema = z.object({
   zero_rtt_handshake: z.boolean(),
 });
 export type TuicServerSettings = z.infer<typeof TuicServerSettingsSchema>;
+
+export const TunnelBenchSchema = z.object({
+  benchId: z.string(),
+  best: z.string(),
+  createdAt: z.number().int(),
+  finishedAt: z.number().int(),
+  id: z.number().int(),
+  initiator: z.boolean(),
+  peer: z.string(),
+  side: z.string(),
+  state: z.string(),
+});
+export type TunnelBench = z.infer<typeof TunnelBenchSchema>;
+
+export const TunnelBenchLinkSchema = z.object({
+  addr4: z.string(),
+  addr6: z.string(),
+  code: z.string(),
+  expires: z.number().int(),
+  port: z.number().int(),
+  role: z.string(),
+  url: z.string(),
+});
+export type TunnelBenchLink = z.infer<typeof TunnelBenchLinkSchema>;
+
+export const TunnelBenchLinkRequestSchema = z.object({
+  addr4: z.string(),
+  addr6: z.string(),
+  minutes: z.number().int(),
+  role: z.string(),
+  url: z.string(),
+});
+export type TunnelBenchLinkRequest = z.infer<typeof TunnelBenchLinkRequestSchema>;
+
+export const TunnelBenchPickSchema = z.object({
+  carrier: z.string().optional(),
+  dialer: z.string().optional(),
+  key: z.string(),
+  kind: z.string(),
+  mtu: z.number().int().optional(),
+  remoteAddr: z.string().optional(),
+  score: z.number(),
+  transport: z.string().optional(),
+  tuned: z.boolean(),
+});
+export type TunnelBenchPick = z.infer<typeof TunnelBenchPickSchema>;
+
+export const TunnelBenchProfileSchema = z.object({
+  finalists: z.number().int(),
+  maxBytes: z.number().int(),
+  minutes: z.number().int(),
+  name: z.string(),
+  tuned: z.number().int(),
+});
+export type TunnelBenchProfile = z.infer<typeof TunnelBenchProfileSchema>;
+
+export const TunnelBenchReportSchema = z.object({
+  best: z.lazy(() => TunnelBenchPickSchema).nullable().optional(),
+  bestTcp: z.lazy(() => TunnelBenchPickSchema).nullable().optional(),
+  bestUdp: z.lazy(() => TunnelBenchPickSchema).nullable().optional(),
+  bytes: z.number().int(),
+  current: z.string(),
+  done: z.number().int(),
+  error: z.string().optional(),
+  finishedAt: z.number().int(),
+  id: z.string(),
+  initiator: z.boolean(),
+  peer: z.string(),
+  peerVersion: z.string(),
+  phase: z.string(),
+  profile: z.string(),
+  results: z.array(z.lazy(() => BenchResultSchema)),
+  role: z.string(),
+  stage: z.string(),
+  startedAt: z.number().int(),
+  state: z.string(),
+  total: z.number().int(),
+  tuning: z.array(z.lazy(() => BenchResultSchema)),
+  warnings: z.array(z.string()),
+});
+export type TunnelBenchReport = z.infer<typeof TunnelBenchReportSchema>;
+
+export const TunnelBenchStartRequestSchema = z.object({
+  addr4: z.string(),
+  addr6: z.string(),
+  code: z.string(),
+  keys: z.array(z.string()),
+  profile: z.string(),
+});
+export type TunnelBenchStartRequest = z.infer<typeof TunnelBenchStartRequestSchema>;
+
+export const TunnelBenchStateSchema = z.object({
+  active: z.lazy(() => TunnelBenchReportSchema).nullable().optional(),
+  catalogue: z.array(z.lazy(() => BenchCandidateSchema)),
+  last: z.lazy(() => TunnelBenchReportSchema).nullable().optional(),
+  link: z.lazy(() => TunnelBenchLinkSchema).nullable().optional(),
+  profiles: z.array(z.lazy(() => TunnelBenchProfileSchema)),
+});
+export type TunnelBenchState = z.infer<typeof TunnelBenchStateSchema>;
 
 export const TunnelGroupSchema = z.object({
   createdAt: z.number().int(),

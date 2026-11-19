@@ -1,18 +1,24 @@
 package controller
 
 import (
+	"errors"
+	"io"
+	"net/http"
 	"strconv"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/config"
+	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 
 	"github.com/gin-gonic/gin"
 )
 
-// TunnelController serves the tunnels between this server and others, and the
-// relays this panel manages.
+// TunnelController serves the tunnels between this server and others, the relays
+// this panel manages, and the tunnel tests between two servers.
 type TunnelController struct {
 	tunnelService service.TunnelService
+	benchService  service.TunnelBenchService
 }
 
 // NewTunnelController registers the tunnel routes on g.
@@ -37,7 +43,88 @@ func NewTunnelController(g *gin.RouterGroup) *TunnelController {
 	g.GET("/groups", a.groups)
 	g.POST("/groups/save", a.saveGroup)
 	g.POST("/groups/del/:id", a.delGroup)
+	g.GET("/bench/state", a.benchState)
+	g.GET("/bench/history", a.benchHistory)
+	g.GET("/bench/report/:id", a.benchReport)
+	g.POST("/bench/link", a.benchLink)
+	g.POST("/bench/start", a.benchStart)
+	g.POST("/bench/cancel", a.benchCancel)
+	g.POST("/bench/del/:id", a.benchDelete)
+	g.POST("/bench/peer/:op", a.benchPeer)
 	return a
+}
+
+func (a *TunnelController) benchState(c *gin.Context) {
+	jsonObj(c, a.benchService.State(), nil)
+}
+
+func (a *TunnelController) benchHistory(c *gin.Context) {
+	rows, err := a.benchService.History()
+	jsonObj(c, rows, err)
+}
+
+func (a *TunnelController) benchReport(c *gin.Context) {
+	id, ok := pathID(c)
+	if !ok {
+		return
+	}
+	r, err := a.benchService.Report(id)
+	jsonObj(c, r, err)
+}
+
+func (a *TunnelController) benchLink(c *gin.Context) {
+	var req service.TunnelBenchLinkRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.tunnels.bench.linkFailed"), err)
+		return
+	}
+	link, err := a.benchService.MakeLink(req)
+	jsonMsgObj(c, I18nWeb(c, "pages.tunnels.bench.linkFailed"), link, err)
+}
+
+func (a *TunnelController) benchStart(c *gin.Context) {
+	var req service.TunnelBenchStartRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.tunnels.bench.startFailed"), err)
+		return
+	}
+	r, err := a.benchService.Start(req)
+	jsonMsgObj(c, I18nWeb(c, "pages.tunnels.bench.startFailed"), r, err)
+}
+
+func (a *TunnelController) benchCancel(c *gin.Context) {
+	jsonMsg(c, I18nWeb(c, "pages.tunnels.bench.cancelled"), a.benchService.Cancel())
+}
+
+func (a *TunnelController) benchDelete(c *gin.Context) {
+	id, ok := pathID(c)
+	if !ok {
+		return
+	}
+	jsonMsg(c, I18nWeb(c, "pages.tunnels.deleted"), a.benchService.Delete(id))
+}
+
+// benchPeer serves the other server of a test, and only it: the link's credential is
+// the one way in, and its errors go back undecorated for that server to show.
+func (a *TunnelController) benchPeer(c *gin.Context) {
+	if scope, _ := c.Get("api_token_scope"); scope != model.ApiScopeTunnelBench {
+		c.AbortWithStatusJSON(http.StatusForbidden, entity.Msg{Msg: "only the other server of a tunnel test calls this"})
+		return
+	}
+	body, err := io.ReadAll(http.MaxBytesReader(c.Writer, c.Request.Body, 8<<20))
+	if err != nil {
+		c.JSON(http.StatusRequestEntityTooLarge, entity.Msg{Msg: err.Error()})
+		return
+	}
+	obj, err := a.benchService.Peer(c.Param("op"), body)
+	switch {
+	case errors.Is(err, service.ErrTunnelBenchGone):
+		c.JSON(http.StatusGone, entity.Msg{Msg: err.Error()})
+	case err != nil:
+		c.JSON(http.StatusOK, entity.Msg{Msg: err.Error()})
+	default:
+		c.JSON(http.StatusOK, entity.Msg{Success: true, Obj: obj})
+	}
 }
 
 func (a *TunnelController) groups(c *gin.Context) {

@@ -38,13 +38,21 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import AppSidebar from '@/layouts/AppSidebar';
 import { keys } from '@/api/queryKeys';
 import { useTunnelRelaysQuery, useTunnelsQuery } from '@/api/queries/useTunnelsQuery';
-import type { TunnelPairing, TunnelRelay, TunnelView } from '@/generated/types';
+import type {
+  TunnelBenchPick,
+  TunnelPairing,
+  TunnelRelay,
+  TunnelRequest,
+  TunnelView,
+} from '@/generated/types';
 import { ClipboardManager, HttpUtil, SizeFormatter } from '@/utils';
 import { setMessageInstance } from '@/utils/messageBus';
 import { isTunnelEdition } from '@/utils/edition';
 import TunnelFormModal from './TunnelFormModal';
 import RelaysTable from './RelaysTable';
 import TunnelGroupsCard from './TunnelGroupsCard';
+import TunnelBenchCard from './TunnelBenchCard';
+import { pickToRequest } from './benchInfo';
 import { STATE_COLORS, endpointOf, kindLabel, stateOf } from './tunnelInfo';
 
 interface RelayDraft {
@@ -70,6 +78,7 @@ export default function TunnelsPage() {
   const relays = useTunnelRelaysQuery();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<TunnelView | null>(null);
+  const [draft, setDraft] = useState<TunnelRequest | null>(null);
   const [pairing, setPairing] = useState<{
     tunnel: TunnelView;
     result: TunnelPairing;
@@ -153,6 +162,12 @@ export default function TunnelsPage() {
   async function deleteRelay(relay: TunnelRelay) {
     await HttpUtil.post(`/panel/api/tunnels/relays/del/${relay.id}`);
     void refresh();
+  }
+
+  function openPick(pick: TunnelBenchPick) {
+    setEditing(null);
+    setDraft(pickToRequest(pick, pick.key.replaceAll(':', '-')));
+    setFormOpen(true);
   }
 
   const relayName = useMemo(() => {
@@ -253,6 +268,7 @@ export default function TunnelsPage() {
             icon={<EditOutlined aria-hidden />}
             onClick={() => {
               setEditing(row);
+              setDraft(null);
               setFormOpen(true);
             }}
           />
@@ -300,6 +316,7 @@ export default function TunnelsPage() {
                           icon={<PlusOutlined aria-hidden />}
                           onClick={() => {
                             setEditing(null);
+                            setDraft(null);
                             setFormOpen(true);
                           }}
                         >
@@ -346,6 +363,7 @@ export default function TunnelsPage() {
                     />
                   </Card>
                   <TunnelGroupsCard tunnels={tunnels.data ?? []} />
+                  <TunnelBenchCard onUsePick={openPick} />
                 </>
               )}
             </Spin>
@@ -355,6 +373,7 @@ export default function TunnelsPage() {
         <TunnelFormModal
           open={formOpen}
           tunnel={editing}
+          draft={draft}
           relays={relays.data ?? []}
           onClose={(saved) => {
             setFormOpen(false);

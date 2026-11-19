@@ -3115,6 +3115,328 @@
         ],
         "type": "object"
       },
+      "BenchCandidate": {
+        "description": "BenchCandidate is one way the tunnel test links the two servers.",
+        "properties": {
+          "carrier": {
+            "type": "string"
+          },
+          "dialer": {
+            "type": "string"
+          },
+          "key": {
+            "example": "reverse:tcpmux",
+            "type": "string"
+          },
+          "kind": {
+            "example": "reverse",
+            "type": "string"
+          },
+          "mtu": {
+            "example": 0,
+            "type": "integer"
+          },
+          "transport": {
+            "example": "tcpmux",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "kind"
+        ],
+        "type": "object"
+      },
+      "BenchMetrics": {
+        "description": "BenchMetrics is what one measurement found; Error is set when the tunnel carried neither\nTCP nor UDP, Warning when one of them or a later phase broke off.",
+        "properties": {
+          "bytes": {
+            "example": 268435456,
+            "format": "int64",
+            "type": "integer"
+          },
+          "downMbps": {
+            "example": 412.5,
+            "type": "number"
+          },
+          "error": {
+            "type": "string"
+          },
+          "jitterMs": {
+            "example": 1.3,
+            "type": "number"
+          },
+          "latencyMs": {
+            "example": 42.1,
+            "type": "number"
+          },
+          "loadDownMbps": {
+            "example": 640.8,
+            "type": "number"
+          },
+          "loadLatencyMs": {
+            "example": 61.7,
+            "type": "number"
+          },
+          "loadUpMbps": {
+            "example": 602.4,
+            "type": "number"
+          },
+          "loss": {
+            "example": 0,
+            "type": "number"
+          },
+          "setupMs": {
+            "example": 850,
+            "type": "number"
+          },
+          "streamErrors": {
+            "example": 0,
+            "type": "integer"
+          },
+          "streams": {
+            "example": 8,
+            "type": "integer"
+          },
+          "tcp": {
+            "example": true,
+            "type": "boolean"
+          },
+          "udp": {
+            "example": true,
+            "type": "boolean"
+          },
+          "udpDownLoss": {
+            "example": 0.4,
+            "type": "number"
+          },
+          "udpDownMbps": {
+            "example": 380.2,
+            "type": "number"
+          },
+          "udpJitterMs": {
+            "example": 0.9,
+            "type": "number"
+          },
+          "udpLatencyMs": {
+            "example": 41.8,
+            "type": "number"
+          },
+          "udpLoss": {
+            "example": 0,
+            "type": "number"
+          },
+          "udpUpLoss": {
+            "example": 0.2,
+            "type": "number"
+          },
+          "udpUpMbps": {
+            "example": 371.5,
+            "type": "number"
+          },
+          "upMbps": {
+            "example": 398.2,
+            "type": "number"
+          },
+          "warning": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "bytes",
+          "downMbps",
+          "jitterMs",
+          "latencyMs",
+          "loadDownMbps",
+          "loadLatencyMs",
+          "loadUpMbps",
+          "loss",
+          "setupMs",
+          "streamErrors",
+          "streams",
+          "tcp",
+          "udp",
+          "udpDownLoss",
+          "udpDownMbps",
+          "udpJitterMs",
+          "udpLatencyMs",
+          "udpLoss",
+          "udpUpLoss",
+          "udpUpMbps",
+          "upMbps"
+        ],
+        "type": "object"
+      },
+      "BenchResult": {
+        "description": "BenchResult is how one candidate did: TCPScore and UDPScore weigh what it carried of\neach against the best of the run, out of 100, and Score weighs the two together.",
+        "properties": {
+          "bytes": {
+            "example": 268435456,
+            "format": "int64",
+            "type": "integer"
+          },
+          "carrier": {
+            "type": "string"
+          },
+          "dialer": {
+            "type": "string"
+          },
+          "downMbps": {
+            "example": 412.5,
+            "type": "number"
+          },
+          "error": {
+            "type": "string"
+          },
+          "jitterMs": {
+            "example": 1.3,
+            "type": "number"
+          },
+          "key": {
+            "example": "reverse:tcpmux",
+            "type": "string"
+          },
+          "kind": {
+            "example": "reverse",
+            "type": "string"
+          },
+          "latencyMs": {
+            "example": 42.1,
+            "type": "number"
+          },
+          "loadDownMbps": {
+            "example": 640.8,
+            "type": "number"
+          },
+          "loadLatencyMs": {
+            "example": 61.7,
+            "type": "number"
+          },
+          "loadUpMbps": {
+            "example": 602.4,
+            "type": "number"
+          },
+          "loss": {
+            "example": 0,
+            "type": "number"
+          },
+          "mtu": {
+            "example": 0,
+            "type": "integer"
+          },
+          "score": {
+            "example": 87.4,
+            "type": "number"
+          },
+          "setupMs": {
+            "example": 850,
+            "type": "number"
+          },
+          "stage": {
+            "description": "Stage is the round that measured it: a short screening, the full test, or tuning.",
+            "example": "full",
+            "type": "string"
+          },
+          "state": {
+            "example": "ok",
+            "type": "string"
+          },
+          "streamErrors": {
+            "example": 0,
+            "type": "integer"
+          },
+          "streams": {
+            "example": 8,
+            "type": "integer"
+          },
+          "tcp": {
+            "example": true,
+            "type": "boolean"
+          },
+          "tcpScore": {
+            "example": 91.2,
+            "type": "number"
+          },
+          "transport": {
+            "example": "tcpmux",
+            "type": "string"
+          },
+          "udp": {
+            "example": true,
+            "type": "boolean"
+          },
+          "udpDownLoss": {
+            "example": 0.4,
+            "type": "number"
+          },
+          "udpDownMbps": {
+            "example": 380.2,
+            "type": "number"
+          },
+          "udpJitterMs": {
+            "example": 0.9,
+            "type": "number"
+          },
+          "udpLatencyMs": {
+            "example": 41.8,
+            "type": "number"
+          },
+          "udpLoss": {
+            "example": 0,
+            "type": "number"
+          },
+          "udpScore": {
+            "example": 80.5,
+            "type": "number"
+          },
+          "udpUpLoss": {
+            "example": 0.2,
+            "type": "number"
+          },
+          "udpUpMbps": {
+            "example": 371.5,
+            "type": "number"
+          },
+          "upMbps": {
+            "example": 398.2,
+            "type": "number"
+          },
+          "warning": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "bytes",
+          "downMbps",
+          "jitterMs",
+          "key",
+          "kind",
+          "latencyMs",
+          "loadDownMbps",
+          "loadLatencyMs",
+          "loadUpMbps",
+          "loss",
+          "score",
+          "setupMs",
+          "stage",
+          "state",
+          "streamErrors",
+          "streams",
+          "tcp",
+          "tcpScore",
+          "udp",
+          "udpDownLoss",
+          "udpDownMbps",
+          "udpJitterMs",
+          "udpLatencyMs",
+          "udpLoss",
+          "udpScore",
+          "udpUpLoss",
+          "udpUpMbps",
+          "upMbps"
+        ],
+        "type": "object"
+      },
       "Blocker": {
         "description": "Blocker is one unmet requirement.",
         "properties": {
@@ -8315,6 +8637,438 @@
           "private_key",
           "udp_relay_mode",
           "zero_rtt_handshake"
+        ],
+        "type": "object"
+      },
+      "TunnelBench": {
+        "description": "TunnelBench is a finished tunnel test as this server saw it; Report is its JSON.",
+        "properties": {
+          "benchId": {
+            "example": "5d1c0a9e7b2f4c11a0e3d8f6",
+            "type": "string"
+          },
+          "best": {
+            "example": "reverse:tcpmux",
+            "type": "string"
+          },
+          "createdAt": {
+            "example": 1763300000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "finishedAt": {
+            "example": 1763300600000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "initiator": {
+            "example": true,
+            "type": "boolean"
+          },
+          "peer": {
+            "example": "198.51.100.7",
+            "type": "string"
+          },
+          "side": {
+            "example": "server",
+            "type": "string"
+          },
+          "state": {
+            "example": "done",
+            "type": "string"
+          }
+        },
+        "required": [
+          "benchId",
+          "best",
+          "createdAt",
+          "finishedAt",
+          "id",
+          "initiator",
+          "peer",
+          "side",
+          "state"
+        ],
+        "type": "object"
+      },
+      "TunnelBenchLink": {
+        "description": "TunnelBenchLink is a test link this server made, waiting for the other to import it.",
+        "properties": {
+          "addr4": {
+            "example": "198.51.100.7",
+            "type": "string"
+          },
+          "addr6": {
+            "type": "string"
+          },
+          "code": {
+            "example": "manifold-tunnel-test://eyJ2Ijox...",
+            "type": "string"
+          },
+          "expires": {
+            "example": 1763301800000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "port": {
+            "example": 41000,
+            "type": "integer"
+          },
+          "role": {
+            "example": "server",
+            "type": "string"
+          },
+          "url": {
+            "example": "https://relay.example.com:2053/path/",
+            "type": "string"
+          }
+        },
+        "required": [
+          "addr4",
+          "addr6",
+          "code",
+          "expires",
+          "port",
+          "role",
+          "url"
+        ],
+        "type": "object"
+      },
+      "TunnelBenchLinkRequest": {
+        "description": "TunnelBenchLinkRequest is what making a test link takes; empty fields are detected.",
+        "properties": {
+          "addr4": {
+            "example": "198.51.100.7",
+            "type": "string"
+          },
+          "addr6": {
+            "type": "string"
+          },
+          "minutes": {
+            "example": 30,
+            "type": "integer"
+          },
+          "role": {
+            "example": "server",
+            "type": "string"
+          },
+          "url": {
+            "example": "https://relay.example.com:2053/path/",
+            "type": "string"
+          }
+        },
+        "required": [
+          "addr4",
+          "addr6",
+          "minutes",
+          "role",
+          "url"
+        ],
+        "type": "object"
+      },
+      "TunnelBenchPick": {
+        "description": "TunnelBenchPick is a tunnel the test recommends, with the settings it found best, as\nthe tunnel form of the panel that serves the accounts (the client end) takes them.",
+        "properties": {
+          "carrier": {
+            "example": "udp",
+            "type": "string"
+          },
+          "dialer": {
+            "example": "client",
+            "type": "string"
+          },
+          "key": {
+            "example": "l3:udp:client",
+            "type": "string"
+          },
+          "kind": {
+            "example": "l3",
+            "type": "string"
+          },
+          "mtu": {
+            "example": 1360,
+            "type": "integer"
+          },
+          "remoteAddr": {
+            "description": "RemoteAddr is what the client end dials: the relay's address, or empty when it listens.",
+            "example": "198.51.100.7",
+            "type": "string"
+          },
+          "score": {
+            "example": 92.4,
+            "type": "number"
+          },
+          "transport": {
+            "type": "string"
+          },
+          "tuned": {
+            "description": "Tuned says the MTU came from the tuning round rather than the kind's default.",
+            "example": true,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "kind",
+          "score",
+          "tuned"
+        ],
+        "type": "object"
+      },
+      "TunnelBenchProfile": {
+        "description": "TunnelBenchProfile is one way to run a test: how long and how hard each round pushes.",
+        "properties": {
+          "finalists": {
+            "example": 5,
+            "type": "integer"
+          },
+          "maxBytes": {
+            "description": "MaxBytes is the most data the test can move between the two servers, each candidate\nat its cap; a slower path moves less.",
+            "example": 6442450944,
+            "format": "int64",
+            "type": "integer"
+          },
+          "minutes": {
+            "example": 14,
+            "type": "integer"
+          },
+          "name": {
+            "example": "standard",
+            "type": "string"
+          },
+          "tuned": {
+            "example": 2,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "finalists",
+          "maxBytes",
+          "minutes",
+          "name",
+          "tuned"
+        ],
+        "type": "object"
+      },
+      "TunnelBenchReport": {
+        "description": "TunnelBenchReport is a tunnel test as this server sees it, under way or finished. Both\nservers hold one; the server that runs the test sends its own to the other as it goes.",
+        "properties": {
+          "best": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TunnelBenchPick"
+              }
+            ],
+            "nullable": true
+          },
+          "bestTcp": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TunnelBenchPick"
+              }
+            ],
+            "nullable": true
+          },
+          "bestUdp": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TunnelBenchPick"
+              }
+            ],
+            "nullable": true
+          },
+          "bytes": {
+            "example": 1073741824,
+            "format": "int64",
+            "type": "integer"
+          },
+          "current": {
+            "example": "reverse:tcpmux",
+            "type": "string"
+          },
+          "done": {
+            "example": 12,
+            "type": "integer"
+          },
+          "error": {
+            "type": "string"
+          },
+          "finishedAt": {
+            "example": 1763300900000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "example": "5d1c0a9e7b2f4c11a0e3d8f6",
+            "type": "string"
+          },
+          "initiator": {
+            "example": true,
+            "type": "boolean"
+          },
+          "peer": {
+            "example": "198.51.100.7",
+            "type": "string"
+          },
+          "peerVersion": {
+            "example": "0.22.0",
+            "type": "string"
+          },
+          "phase": {
+            "example": "download",
+            "type": "string"
+          },
+          "profile": {
+            "example": "standard",
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/BenchResult"
+            },
+            "type": "array"
+          },
+          "role": {
+            "example": "client",
+            "type": "string"
+          },
+          "stage": {
+            "example": "screen",
+            "type": "string"
+          },
+          "startedAt": {
+            "example": 1763300000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "state": {
+            "example": "running",
+            "type": "string"
+          },
+          "total": {
+            "example": 36,
+            "type": "integer"
+          },
+          "tuning": {
+            "items": {
+              "$ref": "#/components/schemas/BenchResult"
+            },
+            "type": "array"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "bytes",
+          "current",
+          "done",
+          "finishedAt",
+          "id",
+          "initiator",
+          "peer",
+          "peerVersion",
+          "phase",
+          "profile",
+          "results",
+          "role",
+          "stage",
+          "startedAt",
+          "state",
+          "total",
+          "tuning",
+          "warnings"
+        ],
+        "type": "object"
+      },
+      "TunnelBenchStartRequest": {
+        "description": "TunnelBenchStartRequest starts a test from the other server's link; empty addresses\nof this server are detected, as for a link.",
+        "properties": {
+          "addr4": {
+            "example": "203.0.113.10",
+            "type": "string"
+          },
+          "addr6": {
+            "type": "string"
+          },
+          "code": {
+            "example": "manifold-tunnel-test://eyJ2Ijox...",
+            "type": "string"
+          },
+          "keys": {
+            "example": [
+              "gre",
+              "reverse:tcpmux"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "profile": {
+            "example": "standard",
+            "type": "string"
+          }
+        },
+        "required": [
+          "addr4",
+          "addr6",
+          "code",
+          "keys",
+          "profile"
+        ],
+        "type": "object"
+      },
+      "TunnelBenchState": {
+        "description": "TunnelBenchState is what the tunnel test page shows: the test under way or its link,\nthe last one finished here, and what a new one can try.",
+        "properties": {
+          "active": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TunnelBenchReport"
+              }
+            ],
+            "nullable": true
+          },
+          "catalogue": {
+            "items": {
+              "$ref": "#/components/schemas/BenchCandidate"
+            },
+            "type": "array"
+          },
+          "last": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TunnelBenchReport"
+              }
+            ],
+            "nullable": true
+          },
+          "link": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TunnelBenchLink"
+              }
+            ],
+            "nullable": true
+          },
+          "profiles": {
+            "items": {
+              "$ref": "#/components/schemas/TunnelBenchProfile"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "catalogue",
+          "profiles"
         ],
         "type": "object"
       },
@@ -21140,6 +21894,586 @@
             "description": "Group ID.",
             "schema": {
               "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/tunnels/bench/state": {
+      "get": {
+        "tags": [
+          "Tunnels"
+        ],
+        "summary": "The tunnel test of this server: the one under way or its link waiting for the other server, the last one finished, every tunnel a test can try, and the test's profiles with the most data and about the time each takes.",
+        "operationId": "get_panel_api_tunnels_bench_state",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/TunnelBenchState"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "active": null,
+                    "catalogue": [
+                      {
+                        "carrier": "",
+                        "dialer": "",
+                        "key": "reverse:tcpmux",
+                        "kind": "reverse",
+                        "mtu": 0,
+                        "transport": "tcpmux"
+                      }
+                    ],
+                    "last": null,
+                    "link": null,
+                    "profiles": [
+                      {
+                        "finalists": 5,
+                        "maxBytes": 6442450944,
+                        "minutes": 14,
+                        "name": "standard",
+                        "tuned": 2
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/tunnels/bench/link": {
+      "post": {
+        "tags": [
+          "Tunnels"
+        ],
+        "summary": "Make a tunnel test link for the other server to import. It carries this panel's address and certificate pin, this server's addresses and side, the first of the 80 ports the test may use on both servers, and a credential that reaches only the test. One link or test at a time.",
+        "operationId": "post_panel_api_tunnels_bench_link",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "role": "server",
+                "url": "https://relay.example.com:2053/path/",
+                "addr4": "198.51.100.7",
+                "addr6": "",
+                "minutes": 30
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/TunnelBenchLink"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "addr4": "198.51.100.7",
+                    "addr6": "",
+                    "code": "manifold-tunnel-test://eyJ2Ijox...",
+                    "expires": 1763301800000,
+                    "port": 41000,
+                    "role": "server",
+                    "url": "https://relay.example.com:2053/path/"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/tunnels/bench/start": {
+      "post": {
+        "tags": [
+          "Tunnels"
+        ],
+        "summary": "Run a tunnel test from the link the other server made. Every chosen tunnel is screened over TCP and UDP, the best are measured in full and under load, and the best with an interface are tried at smaller MTUs; the test then names the best tunnel overall, for TCP inbounds and for UDP inbounds. It runs in the background; follow it with /bench/state.",
+        "operationId": "post_panel_api_tunnels_bench_start",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "code": "manifold-tunnel-test://...",
+                "profile": "standard",
+                "keys": []
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/TunnelBenchReport"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "best": null,
+                    "bestTcp": null,
+                    "bestUdp": null,
+                    "bytes": 1073741824,
+                    "current": "reverse:tcpmux",
+                    "done": 12,
+                    "error": "",
+                    "finishedAt": 1763300900000,
+                    "id": "5d1c0a9e7b2f4c11a0e3d8f6",
+                    "initiator": true,
+                    "peer": "198.51.100.7",
+                    "peerVersion": "0.22.0",
+                    "phase": "download",
+                    "profile": "standard",
+                    "results": [
+                      {
+                        "bytes": 268435456,
+                        "carrier": "",
+                        "dialer": "",
+                        "downMbps": 412.5,
+                        "error": "",
+                        "jitterMs": 1.3,
+                        "key": "reverse:tcpmux",
+                        "kind": "reverse",
+                        "latencyMs": 42.1,
+                        "loadDownMbps": 640.8,
+                        "loadLatencyMs": 61.7,
+                        "loadUpMbps": 602.4,
+                        "loss": 0,
+                        "mtu": 0,
+                        "score": 87.4,
+                        "setupMs": 850,
+                        "stage": "full",
+                        "state": "ok",
+                        "streamErrors": 0,
+                        "streams": 8,
+                        "tcp": true,
+                        "tcpScore": 91.2,
+                        "transport": "tcpmux",
+                        "udp": true,
+                        "udpDownLoss": 0.4,
+                        "udpDownMbps": 380.2,
+                        "udpJitterMs": 0.9,
+                        "udpLatencyMs": 41.8,
+                        "udpLoss": 0,
+                        "udpScore": 80.5,
+                        "udpUpLoss": 0.2,
+                        "udpUpMbps": 371.5,
+                        "upMbps": 398.2,
+                        "warning": ""
+                      }
+                    ],
+                    "role": "client",
+                    "stage": "screen",
+                    "startedAt": 1763300000000,
+                    "state": "running",
+                    "total": 36,
+                    "tuning": [
+                      {
+                        "bytes": 268435456,
+                        "carrier": "",
+                        "dialer": "",
+                        "downMbps": 412.5,
+                        "error": "",
+                        "jitterMs": 1.3,
+                        "key": "reverse:tcpmux",
+                        "kind": "reverse",
+                        "latencyMs": 42.1,
+                        "loadDownMbps": 640.8,
+                        "loadLatencyMs": 61.7,
+                        "loadUpMbps": 602.4,
+                        "loss": 0,
+                        "mtu": 0,
+                        "score": 87.4,
+                        "setupMs": 850,
+                        "stage": "full",
+                        "state": "ok",
+                        "streamErrors": 0,
+                        "streams": 8,
+                        "tcp": true,
+                        "tcpScore": 91.2,
+                        "transport": "tcpmux",
+                        "udp": true,
+                        "udpDownLoss": 0.4,
+                        "udpDownMbps": 380.2,
+                        "udpJitterMs": 0.9,
+                        "udpLatencyMs": 41.8,
+                        "udpLoss": 0,
+                        "udpScore": 80.5,
+                        "udpUpLoss": 0.2,
+                        "udpUpMbps": 371.5,
+                        "upMbps": 398.2,
+                        "warning": ""
+                      }
+                    ],
+                    "warnings": [
+                      ""
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/tunnels/bench/cancel": {
+      "post": {
+        "tags": [
+          "Tunnels"
+        ],
+        "summary": "Stop the test under way, on both servers, or withdraw the link waiting here. Everything the test started is taken down.",
+        "operationId": "post_panel_api_tunnels_bench_cancel",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/tunnels/bench/history": {
+      "get": {
+        "tags": [
+          "Tunnels"
+        ],
+        "summary": "The tunnel tests this server took part in, newest first, without their results.",
+        "operationId": "get_panel_api_tunnels_bench_history",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TunnelBench"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "benchId": "5d1c0a9e7b2f4c11a0e3d8f6",
+                      "best": "reverse:tcpmux",
+                      "createdAt": 1763300000000,
+                      "finishedAt": 1763300600000,
+                      "id": 1,
+                      "initiator": true,
+                      "peer": "198.51.100.7",
+                      "side": "server",
+                      "state": "done"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/tunnels/bench/report/{id}": {
+      "get": {
+        "tags": [
+          "Tunnels"
+        ],
+        "summary": "One finished test of the history, with every result and the picks.",
+        "operationId": "get_panel_api_tunnels_bench_report_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "History ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/TunnelBenchReport"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "best": null,
+                    "bestTcp": null,
+                    "bestUdp": null,
+                    "bytes": 1073741824,
+                    "current": "reverse:tcpmux",
+                    "done": 12,
+                    "error": "",
+                    "finishedAt": 1763300900000,
+                    "id": "5d1c0a9e7b2f4c11a0e3d8f6",
+                    "initiator": true,
+                    "peer": "198.51.100.7",
+                    "peerVersion": "0.22.0",
+                    "phase": "download",
+                    "profile": "standard",
+                    "results": [
+                      {
+                        "bytes": 268435456,
+                        "carrier": "",
+                        "dialer": "",
+                        "downMbps": 412.5,
+                        "error": "",
+                        "jitterMs": 1.3,
+                        "key": "reverse:tcpmux",
+                        "kind": "reverse",
+                        "latencyMs": 42.1,
+                        "loadDownMbps": 640.8,
+                        "loadLatencyMs": 61.7,
+                        "loadUpMbps": 602.4,
+                        "loss": 0,
+                        "mtu": 0,
+                        "score": 87.4,
+                        "setupMs": 850,
+                        "stage": "full",
+                        "state": "ok",
+                        "streamErrors": 0,
+                        "streams": 8,
+                        "tcp": true,
+                        "tcpScore": 91.2,
+                        "transport": "tcpmux",
+                        "udp": true,
+                        "udpDownLoss": 0.4,
+                        "udpDownMbps": 380.2,
+                        "udpJitterMs": 0.9,
+                        "udpLatencyMs": 41.8,
+                        "udpLoss": 0,
+                        "udpScore": 80.5,
+                        "udpUpLoss": 0.2,
+                        "udpUpMbps": 371.5,
+                        "upMbps": 398.2,
+                        "warning": ""
+                      }
+                    ],
+                    "role": "client",
+                    "stage": "screen",
+                    "startedAt": 1763300000000,
+                    "state": "running",
+                    "total": 36,
+                    "tuning": [
+                      {
+                        "bytes": 268435456,
+                        "carrier": "",
+                        "dialer": "",
+                        "downMbps": 412.5,
+                        "error": "",
+                        "jitterMs": 1.3,
+                        "key": "reverse:tcpmux",
+                        "kind": "reverse",
+                        "latencyMs": 42.1,
+                        "loadDownMbps": 640.8,
+                        "loadLatencyMs": 61.7,
+                        "loadUpMbps": 602.4,
+                        "loss": 0,
+                        "mtu": 0,
+                        "score": 87.4,
+                        "setupMs": 850,
+                        "stage": "full",
+                        "state": "ok",
+                        "streamErrors": 0,
+                        "streams": 8,
+                        "tcp": true,
+                        "tcpScore": 91.2,
+                        "transport": "tcpmux",
+                        "udp": true,
+                        "udpDownLoss": 0.4,
+                        "udpDownMbps": 380.2,
+                        "udpJitterMs": 0.9,
+                        "udpLatencyMs": 41.8,
+                        "udpLoss": 0,
+                        "udpScore": 80.5,
+                        "udpUpLoss": 0.2,
+                        "udpUpMbps": 371.5,
+                        "upMbps": 398.2,
+                        "warning": ""
+                      }
+                    ],
+                    "warnings": [
+                      ""
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/tunnels/bench/del/{id}": {
+      "post": {
+        "tags": [
+          "Tunnels"
+        ],
+        "summary": "Delete a test from the history.",
+        "operationId": "post_panel_api_tunnels_bench_del_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "History ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/tunnels/bench/peer/{op}": {
+      "post": {
+        "tags": [
+          "Tunnels"
+        ],
+        "summary": "Called by the server that runs a test, with the link's credential as a bearer token and nothing else: hello, end (start or stop one candidate's end, which this server builds itself), measure (start or poll, on the relay), report and close. Errors come back undecorated; 410 means this server no longer holds the test.",
+        "operationId": "post_panel_api_tunnels_bench_peer_op",
+        "parameters": [
+          {
+            "name": "op",
+            "in": "path",
+            "required": true,
+            "description": "hello, end, measure, report or close.",
+            "schema": {
+              "type": "string",
+              "pattern": "^(hello|end|measure|report|close)$"
             }
           }
         ],

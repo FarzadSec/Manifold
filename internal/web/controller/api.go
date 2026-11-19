@@ -10,6 +10,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/web/access"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/clientip"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/middleware"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/panel"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/tgbot"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/session"
@@ -28,6 +29,7 @@ type APIController struct {
 	xraySettingController *XraySettingController
 	userService           panel.UserService
 	apiTokenService       panel.ApiTokenService
+	benchService          service.TunnelBenchService
 	Tgbot                 tgbot.Tgbot
 }
 
@@ -46,9 +48,12 @@ func (a *APIController) checkAPIAuth(c *gin.Context) {
 		c.Set("api_token_scope", scope)
 	}
 	var token *model.ApiToken
+	benchToken := false
 	if after, ok := strings.CutPrefix(c.GetHeader("Authorization"), "Bearer "); ok {
 		if row, matched := a.apiTokenService.MatchToken(after); matched {
 			token = row
+		} else {
+			benchToken = a.benchService.TokenMatches(after)
 		}
 	}
 	if c.Request.TLS != nil && len(c.Request.TLS.VerifiedChains) > 0 {
@@ -62,6 +67,16 @@ func (a *APIController) checkAPIAuth(c *gin.Context) {
 			return
 		}
 		authenticateAs(scope, actor)
+		c.Next()
+		return
+	}
+	if benchToken {
+		actor, err := ownerActor()
+		if err != nil {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+		authenticateAs(model.ApiScopeTunnelBench, actor)
 		c.Next()
 		return
 	}
@@ -188,6 +203,11 @@ var tunnelScopeAllow = map[string]map[string]struct{}{
 	"/tunnels/status":   {http.MethodGet: {}},
 }
 
+// tunnelBenchScopeAllow is all a tunnel test link's credential reaches on this server.
+var tunnelBenchScopeAllow = map[string]map[string]struct{}{
+	"/tunnels/bench/peer/:op": {http.MethodPost: {}},
+}
+
 var nodeAdminScopeAllow = map[string]map[string]struct{}{
 	"/server/updatePanel": {http.MethodPost: {}},
 }
@@ -239,6 +259,11 @@ func (a *APIController) enforceTokenScope(c *gin.Context) {
 		}
 	case model.ApiScopeTunnel:
 		if scopeAllows(tunnelScopeAllow, rel, c.Request.Method) {
+			c.Next()
+			return
+		}
+	case model.ApiScopeTunnelBench:
+		if scopeAllows(tunnelBenchScopeAllow, rel, c.Request.Method) {
 			c.Next()
 			return
 		}

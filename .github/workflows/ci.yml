@@ -359,6 +359,8 @@ jobs:
             || { tail -n 80 /tmp/tunnel-engine.log; exit 1; }
           grep -E '^(---|===|PASS|FAIL|ok)' /tmp/tunnel-engine.log
           if grep -q -- '--- SKIP' /tmp/tunnel-engine.log; then echo "a tunnel test was skipped"; exit 1; fi
+      - name: The tunnel test between two panels, one a relay behind a closed firewall
+        run: sudo deploy/test/tunnel-bench-e2e.sh build/manifold build/bin
 
   # Brief native-fuzz smoke on the security-/parser-critical decoders. Each runs the
   # generated corpus plus 30s of exploration; a crash here is a real input-handling bug.

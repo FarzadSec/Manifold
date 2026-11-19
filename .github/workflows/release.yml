@@ -250,6 +250,9 @@ jobs:
           echo "kernel $(uname -r), L2TP sessions in the kernel: $kernel_l2tp"
           sudo env $INSTALLED_PANEL EXPECT_KERNEL_L2TP="$kernel_l2tp" deploy/test/l2tp-e2e.sh /usr/local/manifold/manifold
 
+      - name: The tunnel test from the installed service to a relay beside it
+        run: sudo env $INSTALLED_PANEL deploy/test/tunnel-bench-e2e.sh /usr/local/manifold/manifold /usr/local/manifold/bin
+
       # The pages are the same on every system, so one of the three opens them.
       - uses: actions/setup-node@v7
         if: matrix.os == 'ubuntu-26.04'

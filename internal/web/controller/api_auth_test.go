@@ -7,7 +7,9 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -16,7 +18,9 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/dbtest"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/tunnel"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/crypto"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/session"
 )
 
@@ -409,5 +413,68 @@ func TestTokenRateLimitAppliesOnlyWhenSet(t *testing.T) {
 	}
 	if code := call("rate-three-token"); code != http.StatusTooManyRequests {
 		t.Fatalf("fourth request of a 3-per-minute token = %d, want 429", code)
+	}
+}
+
+// A tunnel test link's credential reaches the test's peer route and nothing else, works
+// only while the link stands, and that route takes no other credential.
+func TestTunnelBenchLinkReachesOnlyItsTest(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	dbDir := t.TempDir()
+	t.Setenv("XUI_DB_FOLDER", dbDir)
+	dbtest.InitDB(t, filepath.Join(dbDir, "x-ui.db"))
+	engine := gin.New()
+	engine.Use(sessions.Sessions("manifold", cookie.NewStore([]byte("bench-auth-test-secret"))))
+	a := &APIController{}
+	engine.GET("/test-login", func(c *gin.Context) {
+		u, _ := a.userService.GetFirstUser()
+		_ = session.SetLoginUser(c, u)
+	})
+	api := engine.Group("/panel/api")
+	api.Use(a.checkAPIAuth, a.enforceTokenScope)
+	NewTunnelController(api.Group("/tunnels"))
+
+	bench := service.TunnelBenchService{}
+	link, err := bench.MakeLink(service.TunnelBenchLinkRequest{
+		Role: tunnel.RoleServer, Url: "https://relay.example.com:2053/", Addr4: "198.51.100.7",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = bench.Cancel() })
+	inv, err := tunnel.ParseBenchInvite(link.Code, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	call := func(method, path, auth string, cookies []*http.Cookie) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(method, path, strings.NewReader("{}"))
+		if auth != "" {
+			req.Header.Set("Authorization", "Bearer "+auth)
+		}
+		for _, c := range cookies {
+			req.AddCookie(c)
+		}
+		w := httptest.NewRecorder()
+		engine.ServeHTTP(w, req)
+		return w
+	}
+	if w := call(http.MethodPost, "/panel/api/tunnels/bench/peer/report", inv.Token, nil); w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "the test has not started") {
+		t.Fatalf("the link's credential on its route: %d %s", w.Code, w.Body.String())
+	}
+	for _, path := range []string{"/panel/api/tunnels/bench/start", "/panel/api/tunnels/import", "/panel/api/tunnels/add"} {
+		if w := call(http.MethodPost, path, inv.Token, nil); w.Code != http.StatusForbidden {
+			t.Errorf("the link's credential reached %s: %d", path, w.Code)
+		}
+	}
+	login := httptest.NewRecorder()
+	engine.ServeHTTP(login, httptest.NewRequest(http.MethodGet, "/test-login", nil))
+	if w := call(http.MethodPost, "/panel/api/tunnels/bench/peer/report", "", login.Result().Cookies()); w.Code != http.StatusForbidden {
+		t.Fatalf("a logged-in admin called the peer route: %d %s", w.Code, w.Body.String())
+	}
+	if err := bench.Cancel(); err != nil {
+		t.Fatal(err)
+	}
+	if w := call(http.MethodPost, "/panel/api/tunnels/bench/peer/report", inv.Token, nil); w.Code != http.StatusUnauthorized {
+		t.Fatalf("the credential of a withdrawn link: %d", w.Code)
 	}
 }

@@ -1,8 +1,10 @@
 # Manifold — Architecture and Roadmap
 
-Version 0.19 · 2026-11-18 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnels, full backups, the access model, limits and usage, subscriptions, nodes, shared ports, scheduled backups, webhooks, monitoring, the certificate store, importers, tunnel groups, the addon groundwork, the 3x-ui style installer and management menu, Manifold Relay and the app API delivered; see 8.1 to 8.17 for what they leave open
+Version 0.20 · 2026-11-19 · Status: P0, OpenVPN, WireGuard, L2TP/IPsec, tunnels, full backups, the access model, limits and usage, subscriptions, nodes, shared ports, scheduled backups, webhooks, monitoring, the certificate store, importers, tunnel groups, the addon groundwork, the 3x-ui style installer and management menu, Manifold Relay, the app API and the tunnel test delivered; see 8.1 to 8.22 for what they leave open
 
 Decision log:
+
+- 2026-11-19 — The tunnel test is run by one panel against the other through a link, not by a tool run on each server by hand: the panel that imports the link drives the test through the other's API with a credential that exists only in memory and reaches nothing but the test's peer route. Each server builds its own end of every candidate from the candidate's place in the catalogue and two secrets, so that credential cannot make the other server build anything outside the catalogue or aimed anywhere but at the test's other server. The relay measures, as users' traffic enters there, over a protocol of the test's own on the origin's side, on TCP and on UDP, so a UDP-only transport is reported as such and the recommendation can tell tunnels for TCP inbounds from tunnels for UDP ones.
 
 - 2026-11-18 — The database is chosen at install and switched from the `manifold` command in both directions, SQLite and PostgreSQL, as 3x-ui offers. The installer hands PostgreSQL to `manifold db postgres`, so one function sets up the server, the role and its password login, client tools as new as the server, and the panel's boot order after it. A move copies every table with the panel stopped and is undone when the panel does not come up on the other side. A panel on PostgreSQL has no `manifold.db`, so the installer recognises an installed panel by the env file too; before, an update would have treated it as a first install and replaced its login
 
@@ -266,6 +268,16 @@ This is the contract Mirza Bot will sync against.
 - `MANIFOLD_EDITION=tunnel` in `/etc/default/manifold`, set by `install.sh --edition relay` (or the old `tunnel`) and kept on update. `config.IsTunnelEdition` makes the panel start only the tunnel job and housekeeping, keeps the subscription server off, and tells the page through `window.X_UI_EDITION`; the sidebar and command palette then list the overview, tunnels, settings and API only, and the overview hides the Xray controls.
 - The installer installs `nftables`, `iptables` and `iproute2` for it and none of the VPN engines.
 
+### 4.21 Tunnel test (built, 0.22.0)
+
+- A link (`manifold-tunnel-test://`, base64url JSON) carries the panel URL, a SHA-256 pin of its certificate, a 256-bit credential, the maker's side and addresses, the first of 80 ports (`BenchPortSpan`) and an expiry. `TunnelBenchService` holds one link or one run per server; `checkAPIAuth` matches the credential in memory as scope `tunnel-bench`, allowed only `POST /tunnels/bench/peer/:op`, and the handler refuses any other caller.
+- The importing panel (driver) says hello (its addresses, the key of the test's protocol, its tunnel subnets); the other (host) picks a /24 in 10.79.0.0/16 and a /64 in fd4d:5454::/48 that neither uses, opens its firewall and, as the origin, the answering port. Then for each candidate: `end start` on the host, the driver's own end, the measurement on whichever is the relay (`measure start`, then `poll` each second), `end stop` on both. The driver pushes its report on every change and every 15 seconds; the host shows that report as its own and ends the test after 90 seconds without a call.
+- Ends: `tunnel.BuildBenchPair` from (candidate, slot, both sides, pair id, token) gives the same end on either server; kernel links are `mfx<slot>` with the alias `manifold-tunnel-test:<pair id>` and a GRE key of their own, BackPack runs from `bin/tunnel-test`. Reverse ends forward one port, TCP and UDP, to the answering port. `RemoveBenchLeftovers` and `egress.CloseInput` run when the tunnel job starts.
+- Firewall: `egress.OpenInput` inserts INPUT accepts, tagged `manifold:bench`, from the other server for the 80 ports over TCP and UDP and for GRE, IPIP and SIT, and for anything arriving on `mfx+`; with iptables-nft they come before ufw's rules.
+- Measurement (`tunnel.Measure`): TCP and UDP are awaited together and the other gets three seconds once one answers. TCP: echoes (and ICMP through an interface for loss), a stream each way, then half the streams each way at once with echoes beside them; uploads are framed, since muxed transports close both ways on a half-close. UDP: 50 echoes 20 ms apart, then a paced ladder each way that quadruples while under 2 % is lost and settles at 95 % of what got through when more is; each step gets its share of the cap in a shorter step, never at a lower rate.
+- Rounds: every candidate is screened (short phases, no load); the best few overall plus the best two for TCP and for UDP are measured in full; the best with an interface are tried at MTUs 1400, 1360 and 1280 and keep one only when it wins by three points. Scores are out of 100 against the best of the round: TCP weighs throughput, latency, queueing under load and stability (loss and broken streams); UDP its rate, latency and loss; overall 0.6 TCP and 0.4 UDP. The picks are expressed as the client end's form values.
+- Reports are kept in `tunnel_benches` on both servers (the JSON, the pick's key, side and peer).
+
 ### 4.10 Full backup and restore (built, 0.5.0)
 
 - `GET /server/getFullBackup`: `manifest.json`, `database.db` and `files/<absolute path>` for every regular file of at most 1 MiB that the web and subscription certificate settings, the Xray template or an inbound's settings name under a certificate or key field.
@@ -363,7 +375,7 @@ This is the contract Mirza Bot will sync against.
 | First-run setup wizard | Not found | NX | Build |
 | Panel self-update | Present | NX | Repoint at the fork's releases |
 | Hosts and domain fronting | Present (`Host` model, hosts page) | NX | Compare in detail |
-| Managed node-to-node tunnels with status view | Built in 0.5.0 (4.8, 4.9): kernel and BackPack tunnels, relays managed by API, state on the overview | NX, user | Groups of origins with failover and balance built in 0.12.0 (4.8); traffic limits per tunnel and a REALITY tunnel kind open |
+| Managed node-to-node tunnels with status view | Built in 0.5.0 (4.8, 4.9): kernel and BackPack tunnels, relays managed by API, state on the overview | NX, user | Groups of origins with failover and balance built in 0.12.0 (4.8); a test of every tunnel kind between two servers with a recommendation built in 0.22.0 (4.21); traffic limits per tunnel and a REALITY tunnel kind open |
 | WARP, NordVPN, PIA outbound integration | Present | NX | None |
 | Subscription page themes, usage CSV | Partial or unverified | NX | Themes and a theme catalogue built in 0.8.0 (4.12), usage history in 0.7.0 |
 | Certificate store with ACME, wildcards, renewal | Absent | NX | Built in 0.11.0 (4.17) |
@@ -501,6 +513,14 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 - SSH install downloads the installer from GitHub on the server; a server that cannot reach GitHub needs the package copied by hand (`install.sh --package`).
 - Node templates (one configuration applied to many nodes) are not built; a node's inbounds are created on it from the master as before.
 - Live connections per node are still not listed (see 8.7).
+
+### 8.22 Open items after the tunnel test (0.22.0)
+
+- No test has crossed a real filtered path: the end-to-end script runs two panels in network namespaces on one host. BackPack's `pck` and `sni` carriers choose the interface of the default route and cannot run there.
+- BackPack's `kcp` and `xdi` reverse transports carry about 10 Mbps between namespaces with the panel's settings; whether that is BackPack's own pacing or a setting the panel does not write is not known.
+- UDP rates are measured up to what each round's cap allows at a 250 ms step (about 270 Mbps for the quick test's full round); a faster path reads as that.
+- A test does not apply what it recommends: the form opens with it, and the forwarded ports and the relay's end are still the admin's.
+- The test uses one server's detected address unless the admin enters one; a server whose route to the other leaves by another address (policy routing, several uplinks) needs it entered.
 
 ### 8.21 Changes in 0.21.0
 

@@ -7,6 +7,7 @@
 //
 // Needs frontend/node_modules (npm ci) with a Chromium for Playwright, and the
 // three engines' programs on the panel's server. Run from the repository root.
+// It also makes and withdraws a tunnel test link on the Tunnels page.
 const { createRequire } = require('module');
 const path = require('path');
 
@@ -48,7 +49,10 @@ async function shows(what, locator, texts) {
 
 (async () => {
   if (!BASE || !USER || !PASSWORD) fail('set PANEL_URL, PANEL_USER and PANEL_PASSWORD');
-  const browser = await chromium.launch();
+  // CHROME_PATH runs it with an installed Chrome where Playwright's own cannot be fetched.
+  const browser = await chromium.launch(
+    process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {},
+  );
   const page = await browser.newPage({ viewport: { width: 1400, height: 1600 } });
   page.on('pageerror', (error) => fail(`the page threw: ${error.message}`));
   const dialog = () => page.locator('.ant-modal-container').last();
@@ -100,6 +104,19 @@ async function shows(what, locator, texts) {
   if (answer.status() !== 200) fail(`the subscription page answered ${answer.status()} at ${address}`);
   await customer.click('[role=tab]:has-text("Configs")');
   await shows('the subscription page', customer.locator('body'), ['OpenVPN profile', 'L2TP account', `Username: ${CLIENT}`]);
+
+  // A tunnel test link is made from the Tunnels page and withdrawn there.
+  await page.goto(`${BASE}/panel/tunnels`);
+  await page.click('button:has-text("Make a test link")');
+  await field('This panel\'s address').locator('input').fill(`${BASE}/`);
+  await field('This server\'s IPv4').locator('input').fill('192.0.2.10');
+  await saved(page, '/panel/api/tunnels/bench/link', () => dialog().locator('button:has-text("Make the link")').click());
+  const code = await dialog().locator('textarea').inputValue();
+  if (!code.startsWith('manifold-tunnel-test://')) fail(`the test link window shows "${code.slice(0, 80)}"`);
+  await page.keyboard.press('Escape');
+  await page.locator('text=Waiting for the other server to run this link').waitFor();
+  await saved(page, '/panel/api/tunnels/bench/cancel', () => page.click('button:has-text("Withdraw the link")'));
+  console.log('== the tunnel test link was made and withdrawn from the Tunnels page');
 
   await browser.close();
   console.log('PASS');

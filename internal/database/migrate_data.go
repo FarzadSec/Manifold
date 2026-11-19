@@ -79,6 +79,7 @@ func migrationModels() []any {
 		&model.Certificate{},
 		&model.SubAlias{},
 		&model.TunnelGroup{},
+		&model.TunnelBench{},
 		&model.Addon{},
 		&model.LegacySubSecret{},
 	}

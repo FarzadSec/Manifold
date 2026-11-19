@@ -494,6 +494,7 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 
 // startTunnelJob runs the tunnels on the job's cadence and after every save.
 func (s *Server) startTunnelJob() {
+	service.TunnelBenchService{}.Cleanup()
 	tunnelJob := job.NewTunnelJob()
 	_, _ = s.cron.AddJob(cadenceTunnels, tunnelJob)
 	go tunnelJob.Run()
@@ -882,6 +883,7 @@ func (s *Server) stop(stopXray bool, stopTgBot bool) error {
 	}
 	s.tunnelRequests.Wait()
 	if stopXray {
+		service.TunnelBenchService{}.Shutdown()
 		tuic.GetManager().StopAll()
 		if err := job.NewTuicJob().FlushStoppedTraffic(); err != nil {
 			logger.Warning("persist final TUIC traffic on shutdown failed:", err)
