@@ -617,6 +617,22 @@ export interface AppProfile {
   title?: string;
 }
 
+export interface AppReport {
+  appVersion: string;
+  createdAt: number;
+  deviceName: string;
+  deviceOs: string;
+  email: string;
+  id: number;
+  log?: string;
+  logSize: number;
+  message: string;
+  osVersion: string;
+  seen: boolean;
+  subId: string;
+  tgId: number;
+}
+
 export interface AuditEntry {
   action: string;
   at: number;

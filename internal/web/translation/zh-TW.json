@@ -1974,6 +1974,32 @@
             "delete": "Deleting the notice",
             "deleted": "Notice deleted"
           }
+        },
+        "reports": {
+          "menu": "App reports",
+          "desc": "What users send with Report a problem in DT Connect: their message and the app's log since it started, filed under their username and Telegram ID. The app takes passwords, keys and links out of the log. The newest 500 reports are kept.",
+          "time": "Sent",
+          "user": "User",
+          "tgId": "Telegram ID",
+          "device": "Device",
+          "app": "App",
+          "message": "Message",
+          "noMessage": "No message",
+          "log": "Log",
+          "logSize": "Log size",
+          "new": "New",
+          "open": "Open",
+          "download": "Download log",
+          "copy": "Copy log",
+          "copied": "Log copied",
+          "empty": "No reports yet",
+          "deleteConfirm": "Delete this report?",
+          "toasts": {
+            "load": "Loading app reports",
+            "seen": "Marking the report as read",
+            "delete": "Deleting the report",
+            "deleted": "Report deleted"
+          }
         }
       },
       "subCalendarExpireInclusive": "訂閱到期日期顯示為月底",

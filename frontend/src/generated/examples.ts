@@ -699,6 +699,21 @@ export const EXAMPLES: Record<string, unknown> = {
     "supportUrl": "https://t.me/support",
     "title": "DataCraft"
   },
+  "AppReport": {
+    "appVersion": "1.1.0",
+    "createdAt": 1767225600000,
+    "deviceName": "Pixel 8",
+    "deviceOs": "android",
+    "email": "dana@example.com",
+    "id": 12,
+    "log": "=== app ===\n2026-11-19 01:02:03.456 [vpn] trying vless",
+    "logSize": 48213,
+    "message": "به هیچ لوکیشنی وصل نشد",
+    "osVersion": "15",
+    "seen": false,
+    "subId": "k3x9q2m7",
+    "tgId": 987654321
+  },
   "AuditEntry": {
     "action": "update",
     "at": 1700000000000,

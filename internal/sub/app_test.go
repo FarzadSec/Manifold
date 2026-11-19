@@ -2,6 +2,7 @@ package sub
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
@@ -367,4 +368,87 @@ func TestAppProfileGivesOpenVPNTheLoginEvenWhenTheServerPromptsForIt(t *testing.
 		return
 	}
 	t.Fatal("no openvpn config in the profile")
+}
+
+func postReport(t *testing.T, router *gin.Engine, token string, gzipped bool, report map[string]any) (int, map[string]any) {
+	t.Helper()
+	raw, err := json.Marshal(report)
+	if err != nil {
+		t.Fatalf("encode report: %v", err)
+	}
+	body := raw
+	if gzipped {
+		var packed bytes.Buffer
+		zw := gzip.NewWriter(&packed)
+		if _, err := zw.Write(raw); err != nil {
+			t.Fatalf("gzip: %v", err)
+		}
+		if err := zw.Close(); err != nil {
+			t.Fatalf("gzip close: %v", err)
+		}
+		body = packed.Bytes()
+	}
+	req := httptest.NewRequest(http.MethodPost, "http://vpn.example.com/sub/"+appSubID+"/app/v1/report", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	if gzipped {
+		req.Header.Set("Content-Encoding", "gzip")
+	}
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	req.Header.Set("X-HWID", appDevice)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	out := map[string]any{}
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatalf("report answered non-JSON %d: %s", rec.Code, rec.Body.String())
+	}
+	return rec.Code, out
+}
+
+// DT Connect sends its log gzipped; the panel files it under the session's account and its
+// Telegram id, so support sees whose it is, and answers the report's number.
+func TestAppReportFilesTheLogUnderTheSessionsAccount(t *testing.T) {
+	seedAppAccount(t, true)
+	if err := database.GetDB().Model(&model.ClientRecord{}).Where("email = ?", appUser).Update("tg_id", 987654321).Error; err != nil {
+		t.Fatalf("set tg id: %v", err)
+	}
+	router := newAppTestRouter()
+	token := loginApp(t, router, "/sub/")
+	for _, gzipped := range []bool{true, false} {
+		code, out := postReport(t, router, token, gzipped, map[string]any{
+			"message": "وصل نمی\u200cشود", "log": "=== app ===\nno config connected\n", "deviceId": "ignored", "deviceName": "office-pc", "os": "windows", "osVersion": "10.0.22631", "appVersion": "1.1.0",
+		})
+		id, _ := out["id"].(float64)
+		if code != http.StatusOK || id == 0 {
+			t.Fatalf("gzipped=%v: report = %d %v, want 200 with its number", gzipped, code, out)
+		}
+		report, err := (&service.AppService{}).Report(int(id))
+		if err != nil {
+			t.Fatalf("stored report: %v", err)
+		}
+		if report.Email != appUser || report.TgID != 987654321 || report.Log != "=== app ===\nno config connected\n" || report.Message != "وصل نمی\u200cشود" || report.AppVersion != "1.1.0" {
+			t.Fatalf("gzipped=%v: stored %+v", gzipped, report)
+		}
+	}
+}
+
+func TestAppReportRefusesWithoutASessionAndOverTheSizeCap(t *testing.T) {
+	seedAppAccount(t, true)
+	router := newAppTestRouter()
+	if code, out := postReport(t, router, "", true, map[string]any{"log": "x"}); code != http.StatusUnauthorized || out["error"] != "bad_session" {
+		t.Fatalf("report without a session = %d %v, want 401 bad_session", code, out)
+	}
+	token := loginApp(t, router, "/sub/")
+	// Compresses to a few kB: the cap must hold on what the gzip stream expands to.
+	huge := strings.Repeat("a", appReportJSONLimit)
+	if code, out := postReport(t, router, token, true, map[string]any{"log": huge}); code != http.StatusRequestEntityTooLarge || out["error"] != "too_large" {
+		t.Fatalf("expanding past the cap = %d %v, want 413 too_large", code, out)
+	}
+	if code, out := postReport(t, router, token, false, map[string]any{"log": 7}); code != http.StatusBadRequest || out["error"] != "bad_request" {
+		t.Fatalf("a malformed report = %d %v, want 400 bad_request", code, out)
+	}
+	if list, _ := (&service.AppService{}).Reports(); len(list) != 0 {
+		t.Fatalf("a refused report was stored: %+v", list)
+	}
 }

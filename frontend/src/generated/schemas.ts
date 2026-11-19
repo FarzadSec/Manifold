@@ -2613,6 +2613,80 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "AppReport": {
+    "description": "AppReport is a support report a signed-in app sent: the user's words and its log, filed under\nthe session's account and that account's Telegram id as they were at the time.",
+    "properties": {
+      "appVersion": {
+        "example": "1.1.0",
+        "type": "string"
+      },
+      "createdAt": {
+        "example": 1767225600000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "deviceName": {
+        "example": "Pixel 8",
+        "type": "string"
+      },
+      "deviceOs": {
+        "example": "android",
+        "type": "string"
+      },
+      "email": {
+        "example": "dana@example.com",
+        "type": "string"
+      },
+      "id": {
+        "example": 12,
+        "type": "integer"
+      },
+      "log": {
+        "example": "=== app ===\n2026-11-19 01:02:03.456 [vpn] trying vless",
+        "type": "string"
+      },
+      "logSize": {
+        "example": 48213,
+        "type": "integer"
+      },
+      "message": {
+        "example": "به هیچ لوکیشنی وصل نشد",
+        "type": "string"
+      },
+      "osVersion": {
+        "example": "15",
+        "type": "string"
+      },
+      "seen": {
+        "example": false,
+        "type": "boolean"
+      },
+      "subId": {
+        "example": "k3x9q2m7",
+        "type": "string"
+      },
+      "tgId": {
+        "example": 987654321,
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "appVersion",
+      "createdAt",
+      "deviceName",
+      "deviceOs",
+      "email",
+      "id",
+      "logSize",
+      "message",
+      "osVersion",
+      "seen",
+      "subId",
+      "tgId"
+    ],
+    "type": "object"
+  },
   "AuditEntry": {
     "description": "AuditEntry records one admin action; secrets in Detail are redacted before it is stored.",
     "properties": {

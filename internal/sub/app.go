@@ -1,8 +1,10 @@
 package sub
 
 import (
+	"compress/gzip"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"slices"
 	"strings"
@@ -73,6 +75,22 @@ type appLoginRequest struct {
 
 const appRequestBodyLimit = 4 << 10
 
+// A report's log is capped at 8 MB (service.FileReport); its JSON comes gzipped, so the cap
+// holds on what the stream expands to as well as on what crosses the wire.
+const (
+	appReportBodyLimit = 3 << 20
+	appReportJSONLimit = 9 << 20
+)
+
+type appReportRequest struct {
+	Message    string `json:"message"`
+	Log        string `json:"log"`
+	DeviceName string `json:"deviceName"`
+	OS         string `json:"os"`
+	OSVersion  string `json:"osVersion"`
+	AppVersion string `json:"appVersion"`
+}
+
 // The newest notices only: the panel keeps every notice until an admin deletes it.
 const maxAppProfileNotices = 50
 
@@ -84,6 +102,7 @@ func (a *SUBController) registerAppRoutes(g *gin.RouterGroup) {
 	g.POST(":subid/app/v1/login", a.appLogin)
 	g.GET(":subid/app/v1/profile", a.appProfile)
 	g.POST(":subid/app/v1/logout", a.appLogout)
+	g.POST(":subid/app/v1/report", a.appReport)
 }
 
 func appError(c *gin.Context, status int, code string) {
@@ -103,6 +122,10 @@ func appServiceError(c *gin.Context, err error) {
 		appError(c, http.StatusForbidden, "device_limit")
 	case errors.Is(err, service.ErrAppSession):
 		appError(c, http.StatusUnauthorized, "bad_session")
+	case errors.Is(err, service.ErrAppReportTooLarge):
+		appError(c, http.StatusRequestEntityTooLarge, "too_large")
+	case errors.Is(err, service.ErrAppTooManyReports):
+		appError(c, http.StatusTooManyRequests, "too_many_reports")
 	default:
 		logger.Warning("app API:", err)
 		appError(c, http.StatusInternalServerError, "server_error")
@@ -223,6 +246,44 @@ func (a *SUBController) appProfile(c *gin.Context) {
 	if err := a.subService.RecordSubscriptionFetch(subID); err != nil {
 		logger.Warning("Failed to record subscription fetch:", err)
 	}
+}
+
+// appReport files a support report: the user's message and the app's log, under the account
+// and device of the session; it answers the report's number for the user to quote.
+func (a *SUBController) appReport(c *gin.Context) {
+	session, ok := a.appSession(c)
+	if !ok {
+		return
+	}
+	var body io.Reader = http.MaxBytesReader(c.Writer, c.Request.Body, appReportBodyLimit)
+	if strings.EqualFold(strings.TrimSpace(c.GetHeader("Content-Encoding")), "gzip") {
+		zr, err := gzip.NewReader(body)
+		if err != nil {
+			appError(c, http.StatusBadRequest, "bad_request")
+			return
+		}
+		defer zr.Close()
+		body = zr
+	}
+	expanded := &io.LimitedReader{R: body, N: appReportJSONLimit + 1}
+	var req appReportRequest
+	if err := json.NewDecoder(expanded).Decode(&req); err != nil {
+		var wire *http.MaxBytesError
+		if errors.As(err, &wire) || expanded.N <= 0 {
+			appError(c, http.StatusRequestEntityTooLarge, "too_large")
+			return
+		}
+		appError(c, http.StatusBadRequest, "bad_request")
+		return
+	}
+	report, err := a.appService.FileReport(session, service.AppReportInput{
+		Message: req.Message, Log: req.Log, DeviceName: req.DeviceName, OS: req.OS, OSVersion: req.OSVersion, AppVersion: req.AppVersion,
+	})
+	if err != nil {
+		appServiceError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"id": report.Id})
 }
 
 func (a *SUBController) appLogout(c *gin.Context) {
