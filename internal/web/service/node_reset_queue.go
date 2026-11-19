@@ -87,6 +87,9 @@ func pendingNodeResetEmails(tx *gorm.DB, nodeID int) (map[string]struct{}, error
 
 var nodeResetDeliveryLocks sync.Map
 
+// nodeResetDeliveries counts deliveries still out, which may outlive the request that queued them.
+var nodeResetDeliveries sync.WaitGroup
+
 // DeliverNodeResets sends the node every reset it has not confirmed. A row is
 // dropped only after the node accepted it and only if nothing re-queued it since.
 func (s *InboundService) DeliverNodeResets(ctx context.Context, nodeID int, rt runtime.Runtime) error {
@@ -154,7 +157,9 @@ func (s *InboundService) deliverNodeResetsNow(nodeIDs []int) {
 		return
 	}
 	done := make(chan struct{})
+	nodeResetDeliveries.Add(1)
 	common.GoRecover("node-reset-delivery", func() {
+		defer nodeResetDeliveries.Done()
 		defer close(done)
 		fanoutInboundResults(nodeIDs, nodeFanoutConcurrency, func(i int) struct{} {
 			rt, err := mgr.RuntimeFor(&nodeIDs[i])

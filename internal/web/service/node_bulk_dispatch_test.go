@@ -95,7 +95,11 @@ func useTestRuntimeManager(t *testing.T) *runtime.Manager {
 	prev := runtime.GetManager()
 	mgr := runtime.NewManager(runtime.LocalDeps{APIPort: func() int { return 0 }, SetNeedRestart: func() {}})
 	runtime.SetManager(mgr)
-	t.Cleanup(func() { runtime.SetManager(prev) })
+	// Before the test's database closes: a delivery held by a silent node outlives its request.
+	t.Cleanup(func() {
+		nodeResetDeliveries.Wait()
+		runtime.SetManager(prev)
+	})
 	return mgr
 }
 

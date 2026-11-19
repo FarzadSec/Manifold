@@ -376,3 +376,20 @@ func TestTrafficRemotePlansWaitOneBudgetPerNode(t *testing.T) {
 		t.Fatalf("pushing %d inbounds to one hanging node took %v", len(plans), took)
 	}
 }
+
+// A silent node holds a reset delivery past its request. Still out after its test, it read
+// the global database while the next test opened its own (the race job on 16bf4df).
+func TestNodeResetDeliveryEndsWithItsTest(t *testing.T) {
+	t.Cleanup(nodeResetDeliveries.Wait)
+	t.Run("silent node", TestNodeResetDeliveryDoesNotHoldTheRequestBehindASilentNode)
+	finished := make(chan struct{})
+	go func() {
+		nodeResetDeliveries.Wait()
+		close(finished)
+	}()
+	select {
+	case <-finished:
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("a reset delivery to the silent node outlived the test that queued it")
+	}
+}
