@@ -281,8 +281,10 @@ func TestGroupKeepsItsBackupsAndStickiness(t *testing.T) {
 		}
 		ids = append(ids, v.Id)
 	}
-	saved, err := s.SaveGroup(0, TunnelGroupRequest{Name: "ipsec", Mode: tunnel.ModeBalance, Members: ids[:2], Backups: ids[2:], Sticky: true, Enable: true,
-		Forwards: []tunnel.PortForward{{Listen: "500", Proto: tunnel.ProtoUDP}, {Listen: "4500", Proto: tunnel.ProtoUDP}}})
+	saved, err := s.SaveGroup(0, TunnelGroupRequest{
+		Name: "ipsec", Mode: tunnel.ModeBalance, Members: ids[:2], Backups: ids[2:], Sticky: true, Enable: true,
+		Forwards: []tunnel.PortForward{{Listen: "500", Proto: tunnel.ProtoUDP}, {Listen: "4500", Proto: tunnel.ProtoUDP}},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
