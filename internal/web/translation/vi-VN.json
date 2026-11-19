@@ -1039,7 +1039,7 @@
       "limitIp": "Giới hạn IP",
       "limitIpDesc": "Số IP đồng thời tối đa trên inbound Xray. 0 = không giới hạn.",
       "userLimit": "Giới hạn người dùng",
-      "userLimitDesc": "Số kết nối đồng thời một tài khoản được giữ trên OpenVPN và L2TP. 0 = không giới hạn.",
+      "userLimitDesc": "Số thiết bị một tài khoản được kết nối cùng lúc qua OpenVPN, L2TP và WireGuard, tính chung trên mọi vị trí. 0 = không giới hạn.",
       "limitHwid": "Giới hạn HWID",
       "limitHwidDesc": "Số thiết bị đăng ký tối đa cho yêu cầu đăng ký. 0 = không giới hạn.",
       "hwidLog": "Thiết bị HWID",

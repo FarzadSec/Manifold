@@ -125,9 +125,13 @@ export function countsClientIps(protocol: string): boolean {
   return !['mtproto', 'tuic', 'openvpn', 'wireguard', 'l2tp'].includes(protocol);
 }
 
-// OpenVPN and L2TP decide every login themselves, so they can hold an account to N connections.
+// The user limit's seat ledger: OpenVPN and L2TP refuse a login, WireGuard holds a full account's peers off.
 export function countsClientSessions(protocol: string): boolean {
-  return protocol === Protocols.OPENVPN || protocol === Protocols.L2TP;
+  return (
+    protocol === Protocols.OPENVPN ||
+    protocol === Protocols.L2TP ||
+    protocol === Protocols.WIREGUARD
+  );
 }
 
 // Vision seed applies only when XTLS Vision (TCP/TLS) flow is selected

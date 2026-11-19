@@ -53,6 +53,31 @@ describe('buildWireguardClientConfig', () => {
     expect(cfg).toContain('PersistentKeepalive = 25');
   });
 
+  // The user limit follows a peer's traffic, so an idle device of a limited account must still be heard.
+  it('gives a limited account the 25 s keepalive when it sets none', () => {
+    const limited = buildWireguardClientConfig(
+      { ...client, keepAlive: undefined, userLimit: 1 },
+      inbound,
+      'example.com',
+      '',
+    );
+    expect(limited).toContain('PersistentKeepalive = 25');
+    const own = buildWireguardClientConfig(
+      { ...client, keepAlive: 15, userLimit: 1 },
+      inbound,
+      'example.com',
+      '',
+    );
+    expect(own).toContain('PersistentKeepalive = 15');
+    const unlimited = buildWireguardClientConfig(
+      { ...client, keepAlive: undefined, userLimit: 0 },
+      inbound,
+      'example.com',
+      '',
+    );
+    expect(unlimited).not.toContain('PersistentKeepalive');
+  });
+
   it('omits the PresharedKey line when the client has no preshared key', () => {
     const cfg = buildWireguardClientConfig(
       { ...client, preSharedKey: undefined },

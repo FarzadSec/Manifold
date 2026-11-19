@@ -388,3 +388,34 @@ func TestGetSubs_WireGuardEmptyOptionalTunnelFieldsDoNotInheritShared(t *testing
 		t.Fatalf("link inherited shared tunnel fields: %s", links[0])
 	}
 }
+
+// A limited account's seat follows its peer's traffic, so its configs must keep an idle device heard.
+func TestGenWireguardLinkKeepsALimitedAccountsIdleDeviceHeard(t *testing.T) {
+	serverPriv, _, err := wgutil.GenerateWireguardKeypair()
+	if err != nil {
+		t.Fatalf("keypair: %v", err)
+	}
+	clientPriv, _, _ := wgutil.GenerateWireguardKeypair()
+	tests := []struct {
+		name, client, want string
+	}{
+		{"limited, no keepalive of its own", `"userLimit":1`, "25"},
+		{"limited, its own keepalive", `"userLimit":1,"keepAlive":15`, "15"},
+		{"no limit", `"userLimit":0`, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			inbound := &model.Inbound{
+				Listen: "203.0.113.7", Port: 51820, Protocol: model.WireGuard, Remark: "wg",
+				Settings: `{"secretKey":"` + serverPriv + `","clients":[{"email":"user","privateKey":"` + clientPriv + `","allowedIPs":["10.0.0.2/32"],` + tt.client + `}]}`,
+			}
+			u, err := url.Parse((&SubService{}).genWireguardLink(inbound, "user"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := u.Query().Get("keepalive"); got != tt.want {
+				t.Fatalf("keepalive = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}

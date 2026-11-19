@@ -24,6 +24,14 @@ export function findWireguardInbounds(
     .filter((ib): ib is InboundOption => ib?.protocol === 'wireguard');
 }
 
+// Matches model.LimitedKeepAlive: a limited account's seat follows its peer's traffic.
+const LIMITED_KEEPALIVE = 25;
+
+function exportKeepAlive(client: ClientRecord): number {
+  if (typeof client.keepAlive === 'number' && client.keepAlive > 0) return client.keepAlive;
+  return (client.userLimit ?? 0) > 0 ? LIMITED_KEEPALIVE : 0;
+}
+
 export function buildWireguardClientConfig(
   client: ClientRecord,
   inbound: InboundOption | undefined,
@@ -53,7 +61,7 @@ export function buildWireguardClientConfig(
   lines.push('[Peer]', `PublicKey = ${inbound?.wgPublicKey || ''}`);
   if (client.preSharedKey) lines.push(`PresharedKey = ${client.preSharedKey}`);
   lines.push('AllowedIPs = 0.0.0.0/0, ::/0', `Endpoint = ${endpoint}`);
-  if (typeof client.keepAlive === 'number' && client.keepAlive > 0)
-    lines.push(`PersistentKeepalive = ${client.keepAlive}`);
+  const keepAlive = exportKeepAlive(client);
+  if (keepAlive > 0) lines.push(`PersistentKeepalive = ${keepAlive}`);
   return joinConfLines(lines);
 }

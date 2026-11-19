@@ -1039,7 +1039,7 @@
       "limitIp": "Limit IP adries",
       "limitIpDesc": "Najvyšší počet súčasne používaných IP adries na vstupoch Xray. Hodnota 0 znamená bez obmedzenia.",
       "userLimit": "Limit používateľov",
-      "userLimitDesc": "Počet súčasných pripojení účtu v OpenVPN a L2TP. Hodnota 0 znamená bez obmedzenia.",
+      "userLimitDesc": "Počet zariadení, ktoré môže mať účet pripojené naraz cez OpenVPN, L2TP a WireGuard, spolu vo všetkých lokalitách. Hodnota 0 znamená bez obmedzenia.",
       "limitHwid": "Limit zariadení HWID",
       "limitHwidDesc": "Najvyšší počet registrovaných zariadení pre požiadavky na odber konfigurácií. Hodnota 0 znamená bez obmedzenia.",
       "hwidLog": "Zariadenia HWID",

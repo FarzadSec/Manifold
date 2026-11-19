@@ -7,6 +7,7 @@ import {
   canEnableTlsFlow,
   canEnableStream,
   canEnableVisionSeed,
+  countsClientSessions,
   inboundProtocolChoices,
   isSS2022,
 } from '@/lib/xray/protocol-capabilities';
@@ -83,5 +84,15 @@ describe('inbound protocol choices', () => {
 
   it('still names the protocol of an AmneziaWG inbound made before', () => {
     expect(inboundProtocolChoices('amneziawg')).toContain('amneziawg');
+  });
+});
+
+describe('countsClientSessions', () => {
+  // The form offers the user limit wherever the panel enforces it.
+  it('covers the three engines of the seat ledger and nothing else', () => {
+    for (const protocol of ['openvpn', 'l2tp', 'wireguard'])
+      expect(countsClientSessions(protocol)).toBe(true);
+    for (const protocol of ['vless', 'vmess', 'trojan', 'amneziawg', 'mtproto'])
+      expect(countsClientSessions(protocol)).toBe(false);
   });
 });

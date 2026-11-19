@@ -7,12 +7,9 @@ import (
 )
 
 func keepAliveForScalarExport(client model.Client) (int, bool) {
-	if client.KeepAlive == nil {
-		return 0, false
-	}
-	if strings.Contains(client.KeepAliveText(), "-") && client.KeepAlive.Validate(true) == nil {
+	if client.KeepAlive != nil && strings.Contains(client.KeepAliveText(), "-") && client.KeepAlive.Validate(true) == nil {
 		return client.KeepAlive.MinSeconds(), true
 	}
-	value := client.KeepAliveSeconds()
+	value := client.ExportKeepAliveSeconds()
 	return value, value > 0
 }

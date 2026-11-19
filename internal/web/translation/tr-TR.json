@@ -1039,7 +1039,7 @@
       "limitIp": "IP Limiti",
       "limitIpDesc": "Xray girişlerinde eş zamanlı en fazla IP sayısı. 0 = sınırsız.",
       "userLimit": "Kullanıcı sınırı",
-      "userLimitDesc": "Bir hesabın OpenVPN ve L2TP'de aynı anda tutabileceği bağlantı sayısı. 0 = sınırsız.",
+      "userLimitDesc": "Bir hesabın OpenVPN, L2TP ve WireGuard üzerinden aynı anda bağlı tutabileceği cihaz sayısı; tüm konumlarda birlikte sayılır. 0 = sınırsız.",
       "limitHwid": "HWID Limiti",
       "limitHwidDesc": "Abonelik istekleri için en fazla kayıtlı cihaz. 0 = sınırsız.",
       "hwidLog": "HWID Cihazları",
