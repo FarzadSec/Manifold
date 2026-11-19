@@ -94,8 +94,9 @@ func renderPPPOptions(inst Instance, f files, exe string, debug bool) (string, e
 	}
 	line("mtu %d", inst.MTU)
 	line("mru %d", inst.MTU)
-	line("lcp-echo-interval 30")
-	line("lcp-echo-failure 4")
+	// A device gone without hanging up is noticed in 30 s, and its seat is freed with it.
+	line("lcp-echo-interval 10")
+	line("lcp-echo-failure 3")
 	line("plugin winbind.so")
 	line("ntlm_auth-helper \"%s l2tp-auth %s\"", exe, f.socket)
 	line("ip-up-script %s", f.ipUp)

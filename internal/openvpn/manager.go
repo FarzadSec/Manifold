@@ -144,7 +144,7 @@ func (m *Manager) start(inst Instance) (*managed, error) {
 	if !ok {
 		return abort(proc.failure("the server did not open its management socket"))
 	}
-	ctl := newControl(conn, inst.Users)
+	ctl := newControl(conn, inst.Id, inst.Users)
 	go ctl.serve()
 	select {
 	case <-ctl.ready:

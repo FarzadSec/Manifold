@@ -51,8 +51,8 @@ func TestServerFilesTellEachDaemonItsPart(t *testing.T) {
 		"ms-dns 8.8.8.8\n" +
 		"mtu 1280\n" +
 		"mru 1280\n" +
-		"lcp-echo-interval 30\n" +
-		"lcp-echo-failure 4\n" +
+		"lcp-echo-interval 10\n" +
+		"lcp-echo-failure 3\n" +
 		"plugin winbind.so\n" +
 		"ntlm_auth-helper \"" + testExe + " l2tp-auth " + dir + "/control.sock\"\n" +
 		"ip-up-script " + dir + "/ip-up\n" +

@@ -121,7 +121,7 @@ func (m *Manager) startLocked(inst Instance) (err error) {
 	if err := f.write(inst, m.exe, config.IsDebug()); err != nil {
 		return err
 	}
-	ctl, err := newControl(f.socket, inst.Users)
+	ctl, err := newControl(f.socket, inst.Id, inst.Users)
 	if err != nil {
 		f.remove()
 		return fmt.Errorf("l2tp: opening the control socket: %w", err)

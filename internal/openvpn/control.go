@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/seats"
 )
 
 const (
@@ -45,6 +46,11 @@ type control struct {
 	conn io.ReadWriteCloser
 	now  func() time.Time
 
+	// seats holds the user limit across this panel's engines; owner prefixes this server's seats.
+	seats   *seats.Ledger
+	inbound int
+	owner   string
+
 	writeMu sync.Mutex
 
 	mu       sync.Mutex
@@ -57,10 +63,13 @@ type control struct {
 	done      chan struct{}
 }
 
-func newControl(conn io.ReadWriteCloser, users []User) *control {
+func newControl(conn io.ReadWriteCloser, inbound int, users []User) *control {
 	c := &control{
 		conn:     conn,
 		now:      time.Now,
+		seats:    seats.Local(),
+		inbound:  inbound,
+		owner:    seats.NewOwner("openvpn", inbound),
 		users:    map[string]User{},
 		sessions: map[uint64]*session{},
 		unbilled: map[string]usage{},
@@ -80,6 +89,21 @@ func (c *control) send(command string) {
 }
 
 func (c *control) close() { _ = c.conn.Close() }
+
+func (c *control) seatID(cid uint64) string { return c.owner + strconv.FormatUint(cid, 10) }
+
+// cut disconnects a session the ledger gave its seat away from.
+func (c *control) cut(cid uint64) {
+	c.mu.Lock()
+	s := c.sessions[cid]
+	if s != nil {
+		s.closing = true
+	}
+	c.mu.Unlock()
+	if s != nil {
+		c.send(fmt.Sprintf("client-kill %d", cid))
+	}
+}
 
 type clientEvent struct {
 	kind     string
@@ -123,6 +147,8 @@ func parseClientEvent(line string) *clientEvent {
 // serve reads the management connection until it closes.
 func (c *control) serve() {
 	defer close(c.done)
+	// The server's sessions end with its management connection.
+	defer c.seats.ReleaseAll(c.owner)
 	c.send("state on")
 	c.send(fmt.Sprintf("bytecount %d", byteCountInterval))
 
@@ -177,6 +203,7 @@ func (c *control) handle(ev *clientEvent) {
 		if s := c.sessions[ev.cid]; s != nil {
 			s.established = true
 			s.addrs = poolAddresses(ev.env)
+			c.seats.Confirm(c.seatID(ev.cid), ev.env["ifconfig_pool_remote_ip"])
 		}
 		c.mu.Unlock()
 		notifySessionsChanged()
@@ -188,6 +215,7 @@ func (c *control) handle(ev *clientEvent) {
 			c.billLocked(ev.cid, in, out)
 		}
 		delete(c.sessions, ev.cid)
+		c.seats.Release(c.seatID(ev.cid))
 		c.mu.Unlock()
 		notifySessionsChanged()
 	}
@@ -223,32 +251,29 @@ func (c *control) authorize(cid uint64, username, password string) string {
 	user, known := c.users[username]
 	if !known || subtle.ConstantTimeCompare([]byte(user.Password), []byte(password)) != 1 {
 		delete(c.sessions, cid)
+		c.seats.Release(c.seatID(cid))
 		return deniedLogin
 	}
 	if existing := c.sessions[cid]; existing != nil && existing.user == username {
 		return ""
 	}
-	if user.MaxSessions > 0 && c.liveSessionsLocked(username, cid) >= user.MaxSessions {
+	c.forgetUnfinishedLocked()
+	hold := seats.Hold{ID: c.seatID(cid), Account: username, Protocol: "openvpn", Inbound: c.inbound, Kick: func() { c.cut(cid) }}
+	if !c.seats.Take(hold, user.MaxSessions, pendingSessionTTL) {
 		return deniedDevice
 	}
 	c.sessions[cid] = &session{user: username, authorized: c.now()}
 	return ""
 }
 
-// liveSessionsLocked counts the user's sessions other than cid, dropping
-// logins that never finished.
-func (c *control) liveSessionsLocked(username string, except uint64) int {
-	count := 0
+// forgetUnfinishedLocked drops logins that never became a session; their seats lapse in the ledger.
+func (c *control) forgetUnfinishedLocked() {
 	for cid, s := range c.sessions {
 		if !s.established && c.now().Sub(s.authorized) > pendingSessionTTL {
 			delete(c.sessions, cid)
-			continue
-		}
-		if cid != except && s.user == username && !s.closing {
-			count++
+			c.seats.Release(c.seatID(cid))
 		}
 	}
-	return count
 }
 
 func (c *control) recordByteCount(fields string) {
@@ -294,7 +319,6 @@ func (c *control) setUsers(users []User) {
 	}
 	c.mu.Lock()
 	var kill []uint64
-	byUser := map[string][]uint64{}
 	for cid, s := range c.sessions {
 		if s.closing {
 			continue
@@ -303,20 +327,13 @@ func (c *control) setUsers(users []User) {
 		if !kept || user.Password != c.users[s.user].Password {
 			kill = append(kill, cid)
 			s.closing = true
-			continue
+			c.seats.Release(c.seatID(cid))
 		}
-		byUser[s.user] = append(byUser[s.user], cid)
 	}
-	for name, cids := range byUser {
-		limit := next[name].MaxSessions
-		if limit <= 0 || len(cids) <= limit {
-			continue
-		}
-		// Client ids grow with every connection, so the newest sessions go first.
-		slices.Sort(cids)
-		for _, cid := range cids[limit:] {
-			kill = append(kill, cid)
-			c.sessions[cid].closing = true
+	var lowered []User
+	for name, u := range next {
+		if old, had := c.users[name]; u.MaxSessions > 0 && (!had || old.MaxSessions <= 0 || u.MaxSessions < old.MaxSessions) {
+			lowered = append(lowered, u)
 		}
 	}
 	c.users = next
@@ -325,6 +342,10 @@ func (c *control) setUsers(users []User) {
 	slices.Sort(kill)
 	for _, cid := range kill {
 		c.send(fmt.Sprintf("client-kill %d", cid))
+	}
+	// A lowered cap is the ledger's to apply: the account's newest seats go, on any protocol.
+	for _, u := range lowered {
+		c.seats.Limit(u.Name, u.MaxSessions)
 	}
 }
 

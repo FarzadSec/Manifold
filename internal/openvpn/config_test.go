@@ -36,6 +36,8 @@ func TestServerConfigFollowsTheInbound(t *testing.T) {
 				`tls-crypt "/opt/manifold/openvpn/7/tls-crypt.key"`,
 				"explicit-exit-notify 1", `push "dhcp-option DNS 1.1.1.1"`, `push "dhcp-option DNS 9.9.9.9"`,
 				"management-client-auth", "management-hold", "verify-client-cert none",
+				// A device that vanished frees its seat after a minute, not two.
+				"keepalive 10 30",
 			},
 			wantNot: []string{"local 0.0.0.0"},
 		},
@@ -195,6 +197,18 @@ func TestProfileCarriesTheLoginOnlyWhenAsked(t *testing.T) {
 	}
 	if strings.Contains(prompting, "p@ss word") || strings.Contains(prompting, "<auth-user-pass>") {
 		t.Errorf("prompting profile leaks the login:\n%s", prompting)
+	}
+}
+
+func TestUDPProfileSaysGoodbyeSoTheServerFreesTheSeat(t *testing.T) {
+	profile := Profile{Host: "vpn.example.com", Port: 1194, Server: ServerSettings{Proto: ProtoUDP, CACert: "CA", TLSCryptKey: "K"}}
+	if got := profile.Render(); !strings.Contains(got, "\nexplicit-exit-notify 1\n") {
+		t.Errorf("UDP profile lacks the exit notification:\n%s", got)
+	}
+	// Some OpenVPN versions refuse the option over TCP, whose closing connection already says it.
+	profile.Server.Proto = ProtoTCP
+	if got := profile.Render(); strings.Contains(got, "explicit-exit-notify") {
+		t.Errorf("TCP profile asks for an exit notification:\n%s", got)
 	}
 }
 
