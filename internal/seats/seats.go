@@ -49,6 +49,7 @@ type Ledger struct {
 	// elsewhere is each account's seats on the master's other servers, trusted until elsewhereUntil.
 	elsewhere      map[string]int
 	elsewhereUntil time.Time
+	departures     []Departure
 }
 
 func New(now func() time.Time) *Ledger {
@@ -340,4 +341,57 @@ func Coordinate(servers map[string][]Seat) map[string]Plan {
 		plans[server] = p
 	}
 	return plans
+}
+
+// Departure is a device's word that it left a connection: the app says so, since WireGuard cannot.
+// Servers names where it was ("" for this one, "node:N" for a node); Address narrows it to one session.
+type Departure struct {
+	Account  string
+	Protocol string
+	Address  string
+	Servers  []string
+	at       time.Time
+}
+
+// departureTTL bounds how long a departure waits for the master's next round.
+const departureTTL = 10 * time.Second
+
+// Matching returns the ids of the seats a departure names.
+func Matching(held []Seat, d Departure) []string {
+	var ids []string
+	for _, s := range held {
+		if s.Account == d.Account && s.Protocol == d.Protocol && (d.Address == "" || s.Address == d.Address) {
+			ids = append(ids, s.ID)
+		}
+	}
+	return ids
+}
+
+// Depart cuts the named seats this server holds and keeps the departure for the master's next round.
+func (l *Ledger) Depart(d Departure) {
+	local := slices.Contains(d.Servers, "")
+	remote := slices.ContainsFunc(d.Servers, func(s string) bool { return s != "" })
+	if local {
+		l.Cut(Matching(l.Seats(d.Account), d))
+	}
+	if remote {
+		l.mu.Lock()
+		d.at = l.now()
+		l.departures = append(l.departures, d)
+		l.mu.Unlock()
+	}
+}
+
+// TakeDepartures hands the master the departures it has not yet passed on to the nodes.
+func (l *Ledger) TakeDepartures() []Departure {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	var fresh []Departure
+	for _, d := range l.departures {
+		if l.now().Sub(d.at) < departureTTL {
+			fresh = append(fresh, d)
+		}
+	}
+	l.departures = nil
+	return fresh
 }

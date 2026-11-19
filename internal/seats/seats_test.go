@@ -291,3 +291,48 @@ func TestAllListsEverySeatWithItsLimit(t *testing.T) {
 		t.Fatalf("all = %+v, want bob's then alice's live seats, oldest first, with their limits", got)
 	}
 }
+
+func TestDepartureCutsOnlyTheSeatsItNames(t *testing.T) {
+	l, c := newTestLedger()
+	k := &kicks{}
+	l.Take(k.hold("wireguard/3#1/k", "alice", "wireguard"), 0, 0)
+	l.Take(k.hold("openvpn/1#2/7", "alice", "openvpn"), 0, 0)
+	l.Confirm("openvpn/1#2/7", "10.8.0.6")
+	l.Take(k.hold("openvpn/1#2/8", "alice", "openvpn"), 0, 0)
+	l.Confirm("openvpn/1#2/8", "10.8.0.7")
+	l.Take(k.hold("wireguard/3#1/b", "bob", "wireguard"), 0, 0)
+
+	l.Depart(Departure{Account: "alice", Protocol: "openvpn", Address: "10.8.0.6", Servers: []string{"", "node:2"}})
+	l.Depart(Departure{Account: "alice", Protocol: "wireguard", Servers: []string{"node:2"}})
+	if got := k.cut(); !reflect.DeepEqual(got, []string{"openvpn/1#2/7"}) {
+		t.Fatalf("cut %v here, want only the OpenVPN session at that address", got)
+	}
+	// What this server does not hold goes to the master's next round, for the node named.
+	got := l.TakeDepartures()
+	if len(got) != 2 || got[0].Protocol != "openvpn" || got[1].Protocol != "wireguard" {
+		t.Fatalf("departures = %+v", got)
+	}
+	if again := l.TakeDepartures(); len(again) != 0 {
+		t.Fatalf("departures handed out twice: %+v", again)
+	}
+	l.Depart(Departure{Account: "alice", Protocol: "wireguard", Servers: []string{"node:2"}})
+	c.add(time.Minute)
+	if stale := l.TakeDepartures(); len(stale) != 0 {
+		t.Fatalf("a departure a minute old is still handed out: %+v", stale)
+	}
+}
+
+func TestMatchingNeedsTheAddressWhenOneIsGiven(t *testing.T) {
+	held := []Seat{
+		{ID: "a", Account: "alice", Protocol: "openvpn", Address: "10.8.0.6"},
+		{ID: "b", Account: "alice", Protocol: "openvpn", Address: "10.8.0.7"},
+		{ID: "c", Account: "alice", Protocol: "wireguard", Address: "10.0.0.2"},
+		{ID: "d", Account: "bob", Protocol: "wireguard"},
+	}
+	if got := Matching(held, Departure{Account: "alice", Protocol: "openvpn", Address: "10.8.0.7"}); !reflect.DeepEqual(got, []string{"b"}) {
+		t.Fatalf("openvpn by address = %v", got)
+	}
+	if got := Matching(held, Departure{Account: "alice", Protocol: "wireguard"}); !reflect.DeepEqual(got, []string{"c"}) {
+		t.Fatalf("wireguard = %v", got)
+	}
+}

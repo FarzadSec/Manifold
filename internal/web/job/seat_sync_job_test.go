@@ -86,3 +86,36 @@ func TestSeatSyncHoldsAnAccountToItsLimitAcrossServers(t *testing.T) {
 		t.Fatalf("master still counts %d seats from a node silent for 31 s", got)
 	}
 }
+
+func TestDepartureReachesTheNodeHoldingTheSeat(t *testing.T) {
+	clock := time.Unix(1_800_000_000, 0)
+	now := func() time.Time { return clock }
+	ledger := seats.New(now)
+	nodes := &fakeSeatNodes{held: map[int][]seats.Seat{}, down: map[int]bool{}, plans: map[int][]seats.Plan{}}
+	nodes.held[2] = []seats.Seat{{ID: "wireguard/3#5/k", Account: "alice", Protocol: "wireguard", Limit: 1, Since: clock}}
+	nodes.held[4] = []seats.Seat{{ID: "wireguard/7#1/k", Account: "dana", Protocol: "wireguard", Limit: 1, Since: clock}}
+	j := &SeatSyncJob{
+		ledger: ledger,
+		now:    now,
+		nodes:  func() ([]*model.Node, error) { return []*model.Node{{Id: 2, Enable: true}, {Id: 4, Enable: true}}, nil },
+		sync:   nodes.sync,
+	}
+	j.Run()
+	if ledger.Take(seats.Hold{ID: "openvpn/1#1/7", Account: "alice"}, 1, 0) {
+		t.Fatal("let in while the account's WireGuard seat on the node counts")
+	}
+
+	// DT Connect, signed in on this panel, says it left WireGuard on the node's location.
+	ledger.Depart(seats.Departure{Account: "alice", Protocol: "wireguard", Servers: []string{"node:2"}})
+	j.Run()
+	if !ledger.Take(seats.Hold{ID: "openvpn/1#1/7", Account: "alice"}, 1, 0) {
+		t.Fatal("the departed seat still counts here")
+	}
+	j.Run()
+	if got := nodes.lastPlan(2).Cut; !reflect.DeepEqual(got, []string{"wireguard/3#5/k"}) {
+		t.Fatalf("node 2 was told to cut %v", got)
+	}
+	if got := nodes.lastPlan(4).Cut; len(got) != 0 {
+		t.Fatalf("node 4 was told to cut %v", got)
+	}
+}

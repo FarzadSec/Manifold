@@ -212,3 +212,34 @@ func TestStoppedInterfaceGivesItsSeatsBack(t *testing.T) {
 		t.Fatalf("seats = %+v after the interface went down", held)
 	}
 }
+
+func TestPeerThatSaidItLeftDoesNotTakeItsSeatBackUntilItIsHeardAgain(t *testing.T) {
+	m, sys, clock := seatManager(t)
+	if err := m.Ensure(testInstance(limited(peer("alice", aliceKey, "10.0.0.2/32"), 1))); err != nil {
+		t.Fatal(err)
+	}
+	sys.dumps["mfwg3"] = dumpOf(peerState{key: aliceKey, handshake: clock.at, rx: 1200})
+	m.WatchSeats()
+	held := m.seats.Seats("alice")
+	if len(held) != 1 {
+		t.Fatalf("seats = %+v", held)
+	}
+
+	// DT Connect said it left; the counter has not moved since.
+	m.seats.Cut([]string{held[0].ID})
+	clock.at = clock.at.Add(2 * time.Second)
+	m.WatchSeats()
+	if got := m.seats.Seats("alice"); len(got) != 0 {
+		t.Fatalf("seats = %+v: the departed peer took its seat back on old traffic", got)
+	}
+	if !m.seats.Take(seats.Hold{ID: "openvpn/1#1/7", Account: "alice"}, 1, 0) {
+		t.Fatal("OpenVPN was refused right after the WireGuard device left")
+	}
+	m.seats.Release("openvpn/1#1/7")
+
+	sys.dumps["mfwg3"] = dumpOf(peerState{key: aliceKey, handshake: clock.at, rx: 1300})
+	m.WatchSeats()
+	if got := m.seats.Seats("alice"); len(got) != 1 {
+		t.Fatalf("seats = %+v: the peer is back but holds no seat", got)
+	}
+}

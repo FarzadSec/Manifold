@@ -28474,6 +28474,74 @@
         }
       }
     },
+    "/{subPath}{subid}/app/v1/disconnected": {
+      "post": {
+        "tags": [
+          "Subscription Server"
+        ],
+        "summary": "The device left a connection, so its user-limit seat is freed at once. WireGuard: the account's seat at that location, on whichever server holds it. OpenVPN: the session with that tunnel address. L2TP and Xray protocols need nothing and are answered the same. Needs the bearer token and X-HWID.",
+        "operationId": "post_subPath_subid_app_v1_disconnected",
+        "parameters": [
+          {
+            "name": "subid",
+            "in": "path",
+            "required": true,
+            "description": "Client subscription ID.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subPath",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "protocol": "wireguard",
+                "locationId": 3,
+                "address": "10.8.0.6"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "ok": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/{jsonPath}{subid}": {
       "get": {
         "tags": [

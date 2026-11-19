@@ -2,6 +2,7 @@ package job
 
 import (
 	"context"
+	"slices"
 	"strconv"
 	"sync"
 	"time"
@@ -104,15 +105,41 @@ func (j *SeatSyncJob) Run() {
 			servers[nodeServer(n.Id)] = seen.held
 		}
 	}
+	departed := j.applyDepartures(servers)
 	plans := seats.Coordinate(servers)
 	own := plans[""]
 	j.ledger.SetElsewhere(own.Elsewhere, now.Add(seatTrust))
 	j.ledger.Cut(own.Cut)
 	next := make(map[int]seats.Plan, len(enabled))
 	for _, n := range enabled {
-		next[n.Id] = plans[nodeServer(n.Id)]
+		p := plans[nodeServer(n.Id)]
+		p.Cut = append(p.Cut, departed[nodeServer(n.Id)]...)
+		slices.Sort(p.Cut)
+		p.Cut = slices.Compact(p.Cut)
+		next[n.Id] = p
 	}
 	j.plans = next
+}
+
+// applyDepartures takes the seats devices said they left out of the count at once, and returns
+// them by server, to be cut there with the next plan.
+func (j *SeatSyncJob) applyDepartures(servers map[string][]seats.Seat) map[string][]string {
+	departed := map[string][]string{}
+	for _, d := range j.ledger.TakeDepartures() {
+		for _, server := range d.Servers {
+			held, known := servers[server]
+			if server == "" || !known {
+				continue
+			}
+			ids := seats.Matching(held, d)
+			if len(ids) == 0 {
+				continue
+			}
+			departed[server] = append(departed[server], ids...)
+			servers[server] = slices.DeleteFunc(slices.Clone(held), func(s seats.Seat) bool { return slices.Contains(ids, s.ID) })
+		}
+	}
+	return departed
 }
 
 func nodeServer(id int) string { return "node:" + strconv.Itoa(id) }

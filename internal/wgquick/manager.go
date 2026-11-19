@@ -85,6 +85,10 @@ type Manager struct {
 	applyEgress  func(owner, device string) error
 	removeEgress func(owner string)
 	seats        *seats.Ledger
+
+	// departed holds seats cut by the ledger; their peers' past traffic no longer counts.
+	departedMu sync.Mutex
+	departed   map[string]bool
 }
 
 var (
@@ -551,9 +555,12 @@ func (m *Manager) claimSeatsLocked(cur *managed, limits map[string]int) {
 			limits[p.Name] = p.Limit
 		}
 		id := cur.owner + key
+		if m.takeDeparted(id) {
+			delete(cur.heard, key)
+		}
 		heard, handshake := cur.heard[key], cur.handshake[key]
 		if !heard.IsZero() && now.Sub(heard) < seatIdle && now.Sub(handshake) <= onlineWindow {
-			hold := seats.Hold{ID: id, Account: p.Name, Protocol: "wireguard", Inbound: cur.inst.Id}
+			hold := seats.Hold{ID: id, Account: p.Name, Protocol: "wireguard", Inbound: cur.inst.Id, Kick: func() { m.markDeparted(id) }}
 			if m.seats.Take(hold, p.Limit, 0) && len(p.AllowedIPs) > 0 {
 				m.seats.Confirm(id, p.AllowedIPs[0].Addr().String())
 			}
@@ -593,4 +600,22 @@ func sortedAccounts(limits map[string]int) []string {
 	}
 	slices.Sort(out)
 	return out
+}
+
+// markDeparted runs as a ledger kick, possibly under m.mu, so it takes a lock of its own.
+func (m *Manager) markDeparted(id string) {
+	m.departedMu.Lock()
+	defer m.departedMu.Unlock()
+	if m.departed == nil {
+		m.departed = map[string]bool{}
+	}
+	m.departed[id] = true
+}
+
+func (m *Manager) takeDeparted(id string) bool {
+	m.departedMu.Lock()
+	defer m.departedMu.Unlock()
+	gone := m.departed[id]
+	delete(m.departed, id)
+	return gone
 }
