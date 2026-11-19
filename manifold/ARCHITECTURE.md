@@ -493,7 +493,7 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 
 - Fixed in 0.14.0: BackPack tunnels did not start under the installed service from 0.5.0 on. The service's bin folder is relative to its working directory and BackPack runs in its config's folder, so both paths it was given pointed inside `bin/tunnels`; the tests used absolute temporary paths. The relay smoke test now starts a BackPack end under the unit.
 - No tunnel has run between two real servers: the GRE test uses network namespaces on one runner, and the BackPack test runs both ends on one host over loopback. Real paths (GRE through a provider's filter, BackPack transports through DPI) have to be seen.
-- Only the BackPack reverse transport `tcpmux` and the kernel kind GRE are exercised by a test; the other eleven transports, the layer-3 carriers and GRETAP, IP6GRE, IP6GRETAP, IPIP and SIT are covered by unit tests of their configuration only.
+- Since 0.22.0 the tunnel test's end-to-end runs carry TCP and UDP through GRE, GRETAP, IPIP and SIT, the reverse transports `tcpmux`, `ws` and `udp`, and the layer-3 `udp` and `quic` carriers dialled from either side, also under the installed service. IP6GRE, IP6GRETAP, the other reverse transports and the `pck`, `sni` and `xdi` carriers are covered by unit tests of their configuration only.
 - A BackPack process dies with the panel, so a panel restart or update interrupts BackPack tunnels for a few seconds while kernel links stay up.
 - Keeping each user's address is built for kernel links only; BackPack reverse tunnels offer the PROXY protocol instead, which the inbounds behind them must accept.
 - BackPack's `pck` and `sni` carriers need `AF_PACKET`, which the unit now allows; they are not exercised by a test.
