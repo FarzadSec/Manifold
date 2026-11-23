@@ -88,6 +88,7 @@ func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 	if _, ok := listenAddress(listen); !ok {
 		return Instance{}, false
 	}
+	mtu, mssfix := server.dataChannelSizes()
 	users := make([]User, 0, len(parsed.Clients))
 	for _, c := range parsed.Clients {
 		if !c.Enable || ValidateUsername(c.Email) != nil || ValidatePassword(c.Password) != nil {
@@ -103,8 +104,8 @@ func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 		Proto:         server.Proto,
 		Subnet:        subnet,
 		DNS:           dns,
-		MTU:           server.MTU,
-		MSSFix:        server.MSSFix,
+		MTU:           mtu,
+		MSSFix:        mssfix,
 		DataCiphers:   ciphers,
 		SplitTunnel:   server.SplitTunnel,
 		TLSMode:       tlsMode,

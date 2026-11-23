@@ -15,6 +15,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/amneziawg"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/pathmtu"
 	wgutil "github.com/mhsanaei/3x-ui/v3/internal/util/wireguard"
 )
 
@@ -702,9 +703,8 @@ func (s *SubClashService) buildWireguardProxy(subReq *SubService, inbound *model
 			proxy["ip"] = ip
 		}
 	}
-	if mtu, ok := inboundSettings["mtu"].(float64); ok && mtu > 0 {
-		proxy["mtu"] = int(mtu)
-	}
+	mtu, _ := inboundSettings["mtu"].(float64)
+	proxy["mtu"] = pathmtu.WireGuardMTU(int(mtu))
 	if dns, _ := inboundSettings["dns"].(string); dns != "" {
 		servers := make([]string, 0)
 		for server := range strings.SplitSeq(dns, ",") {

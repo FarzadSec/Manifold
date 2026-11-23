@@ -2,6 +2,7 @@ package openvpn
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/netip"
 	"slices"
 	"strings"
@@ -338,5 +339,48 @@ func TestDescribeCertificateReportsWhatTheAdminChose(t *testing.T) {
 	}
 	if len(info.SHA256) != 95 || strings.Count(info.SHA256, ":") != 31 {
 		t.Fatalf("fingerprint %q is not 32 colon-separated bytes", info.SHA256)
+	}
+}
+
+// Over UDP an inbound that names no size gets one that fits a 1460-byte path, the same on the
+// server and in every profile; mssfix keeps TCP inside the path even past a larger MTU.
+// Over TCP the transport carries any size, so OpenVPN keeps its own.
+func TestServerAndProfilesAgreeOnAPathSafeSize(t *testing.T) {
+	alice := model.Client{Email: "alice", Password: "pw", Enable: true}
+	for _, tc := range []struct {
+		name                string
+		proto               string
+		mtu, mssfix         int
+		wantMTU, wantMSSFix int
+	}{
+		{"udp without sizes", ProtoUDP, 0, 0, 1388, 1412},
+		{"udp with a smaller MTU", ProtoUDP, 1300, 0, 1300, 1324},
+		{"udp with a larger MTU", ProtoUDP, 1500, 0, 1500, 1412},
+		{"udp with both named", ProtoUDP, 1400, 1360, 1400, 1360},
+		{"tcp", ProtoTCP, 0, 0, 0, 0},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ib := inboundWith(t, func(s *InboundSettings) {
+				s.Server.Proto, s.Server.MTU, s.Server.MSSFix = tc.proto, tc.mtu, tc.mssfix
+			}, alice)
+			inst, ok := InstanceFromInbound(ib)
+			if !ok {
+				t.Fatal("InstanceFromInbound refused the inbound")
+			}
+			if inst.MTU != tc.wantMTU || inst.MSSFix != tc.wantMSSFix {
+				t.Fatalf("server tun-mtu %d mssfix %d, want %d %d", inst.MTU, inst.MSSFix, tc.wantMTU, tc.wantMSSFix)
+			}
+			var parsed InboundSettings
+			if err := json.Unmarshal([]byte(ib.Settings), &parsed); err != nil {
+				t.Fatal(err)
+			}
+			profile := Profile{Host: "vpn.example.com", Port: 1194, Username: "alice", Password: "pw", Server: parsed.Server.ForProfiles()}.Render()
+			for directive, want := range map[string]int{"tun-mtu": tc.wantMTU, "mssfix": tc.wantMSSFix} {
+				line := fmt.Sprintf("\n%s %d\n", directive, want)
+				if want == 0 && strings.Contains(profile, "\n"+directive+" ") || want > 0 && !strings.Contains(profile, line) {
+					t.Errorf("profile's %s does not match the server's %d:\n%s", directive, want, profile)
+				}
+			}
+		})
 	}
 }

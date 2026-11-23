@@ -419,3 +419,27 @@ func TestGenWireguardLinkKeepsALimitedAccountsIdleDeviceHeard(t *testing.T) {
 		})
 	}
 }
+
+// Without an MTU line every app picks its own (1420 on most), which does not fit a relay's
+// tunnel; the link always carries the size the server's interface was given.
+func TestWireguardLinkCarriesTheServersMTUWhenTheInboundNamesNone(t *testing.T) {
+	serverPriv, _, err := wgutil.GenerateWireguardKeypair()
+	if err != nil {
+		t.Fatalf("keypair: %v", err)
+	}
+	clientPriv, _, err := wgutil.GenerateWireguardKeypair()
+	if err != nil {
+		t.Fatalf("client keypair: %v", err)
+	}
+	inbound := &model.Inbound{
+		Listen: "203.0.113.7", Port: 51820, Protocol: model.WireGuard, Remark: "wg-sub",
+		Settings: `{"secretKey":"` + serverPriv + `","clients":[{"email":"user","privateKey":"` + clientPriv + `","allowedIPs":["10.0.0.2/32"]}]}`,
+	}
+	u, err := url.Parse((&SubService{}).genWireguardLink(inbound, "user"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := u.Query().Get("mtu"); got != "1380" {
+		t.Fatalf("mtu = %q, want 1380", got)
+	}
+}

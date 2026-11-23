@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/pathmtu"
 )
 
 // defaultSubnet is where the panel allocates client addresses when an inbound
@@ -204,7 +205,7 @@ func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 		ListenPort: ib.Port,
 		PrivateKey: parsed.SecretKey,
 		Addresses:  serverAddresses(parsed),
-		MTU:        max(parsed.MTU, 0),
+		MTU:        pathmtu.WireGuardMTU(parsed.MTU),
 		Hooks: Hooks{
 			PreUp:    hookLines(parsed.PreUp),
 			PostUp:   hookLines(parsed.PostUp),

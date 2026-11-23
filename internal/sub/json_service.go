@@ -15,6 +15,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/pathmtu"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/json_util"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/maskcompat"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/random"
@@ -1152,9 +1153,8 @@ func (s *SubJsonService) genWireguard(subReq *SubService, inbound *model.Inbound
 	if len(client.AllowedIPs) > 0 {
 		settings["address"] = client.AllowedIPs
 	}
-	if mtu, ok := inboundSettings["mtu"].(float64); ok && mtu > 0 {
-		settings["mtu"] = int(mtu)
-	}
+	mtu, _ := inboundSettings["mtu"].(float64)
+	settings["mtu"] = pathmtu.WireGuardMTU(int(mtu))
 
 	outbound := map[string]any{
 		"protocol": string(inbound.Protocol),

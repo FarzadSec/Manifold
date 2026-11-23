@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/netip"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
@@ -165,4 +166,27 @@ func errText(err error) string {
 		return ""
 	}
 	return err.Error()
+}
+
+// An inbound that names no MTU must still give its interface the size the configs it hands
+// out carry, one that fits a 1460-byte path; wg-quick's own pick follows only this host's uplink.
+func TestInterfaceWithoutAnMTUFitsThePath(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		settings map[string]any
+		want     string
+	}{
+		{"none named", map[string]any{}, "MTU = 1380\n"},
+		{"named by the inbound", map[string]any{"mtu": 1280}, "MTU = 1280\n"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			inst, ok := InstanceFromInbound(wgInbound(t, tc.settings))
+			if !ok {
+				t.Fatal("InstanceFromInbound refused the inbound")
+			}
+			if got := renderConfig(inst); !strings.Contains(got, "\n"+tc.want) {
+				t.Fatalf("config lacks %q:\n%s", tc.want, got)
+			}
+		})
+	}
 }

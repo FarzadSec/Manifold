@@ -89,7 +89,7 @@ Further fields set what the server and every profile carry:
 
 | Field | Meaning |
 |---|---|
-| MTU, MSS fix | `tun-mtu` and `mssfix` on the server and in every profile. Lower the MTU, for example to 1400, when large transfers stall on a route. Empty keeps OpenVPN's defaults |
+| MTU, MSS fix | `tun-mtu` and `mssfix` on the server and in every profile. Empty over UDP gives `tun-mtu 1388` and `mssfix` of the MTU plus 24, at most 1412: packets fit a 1460-byte path, which a GRE, IPIP or SIT relay at its default MTU carries. Over TCP, empty keeps OpenVPN's own. Behind a narrower tunnel, set the MTU to the tunnel's less 72 |
 | Data ciphers | Limits the ciphers a client may agree on; empty offers AES-256-GCM, AES-128-GCM and CHACHA20-POLY1305 |
 | Split tunnel | Stops sending the default route, so only the VPN subnet goes through the tunnel |
 | Control channel key | `tls-crypt` (the default), `tls-auth`, or none, for routers and old apps that support neither key file, such as older MikroTik |
@@ -128,7 +128,7 @@ A WireGuard inbound is a WireGuard interface of the server itself: the standard 
 | Interface name | The name of the interface and of its file in `/etc/wireguard`. Empty: `mfwg` followed by the inbound's number |
 | Subnet, Subnet CIDR | The network new clients get their addresses from. The server takes its first address |
 | Server address | Only for a server whose address is not the first of the subnet, or that has more than one, for example `10.0.0.254/24, fd42::1/64` |
-| MTU, DNS | The interface's MTU, and the DNS servers written into client configs |
+| MTU, DNS | The MTU of the interface and of every client config, and the DNS servers written into client configs. An empty MTU is 1380 on both, which fits a 1460-byte path and so a GRE, IPIP or SIT relay at its default MTU; behind a narrower tunnel, set the tunnel's MTU less 80 |
 | Hooks | Commands `wg-quick` runs as root before and after the interface goes up or down, one per line; `%i` stands for the interface name |
 
 On a system that confines `wg-quick` with AppArmor, as Ubuntu 26.04 does, a hook can only run what that profile allows: `ip`, `wg`, `nft`, `iptables` and a few basic tools. A hook that runs anything else fails, and the interface with it; `/etc/apparmor.d/local/wg-quick` is where such a system lets you allow more.
@@ -221,6 +221,8 @@ BackPack tunnels run the BackPack program by Amin Mohammadi (AminMGMT), shipped 
 On the relay, `manifold tunnel import CODE` takes a pairing code from the command line, and `manifold tunnel list` shows each end's state measured on the spot.
 
 **Users' addresses** (kernel links): with **Masquerade on the relay**, every user seems to come from the relay. **Keep each user's address** lets the panel see each user's own IP, which the device limit and the IP log need; the replies are then routed back through the tunnel by a routing table of its own.
+
+**Packet size.** A kernel link without an MTU of its own takes what this server's outgoing interface carries less the outer headers: 1476 for GRE on a 1500-byte interface, 4 less with a GRE key, less again on a cloud interface of 1450. The relay and each VPN inbound fit TCP to the link: every connection through a tunnel, a WireGuard interface or an OpenVPN or L2TP subnet is told to send no more than the narrower of its two routes carries (TCP MSS clamping), so large transfers do not stall on a lost ICMP message. A tunnel narrower than 1460, such as IP6GRE or one the tunnel test lowered, needs the MTU of the VPN inbounds behind it lowered to match (see each inbound's MTU field).
 
 **State.** The Tunnels page and the overview show each tunnel as up, degraded (more than 20 % loss or slow), down, connecting, disabled or error, with latency and loss measured through the tunnel and the traffic it carried. Kernel links stay up when the panel restarts or updates; `manifold uninstall` takes them down.
 

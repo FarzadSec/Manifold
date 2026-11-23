@@ -172,6 +172,8 @@ describe('createDefault*InboundSettings factories', () => {
     });
     expect(s).toMatchSnapshot();
     expect(WireguardInboundSettingsSchema.parse(s)).toEqual(s);
+    // A pinned 1420 put 1480-byte packets on a relay's 1476-byte GRE link; empty lets the panel pick.
+    expect(s.mtu).toBeUndefined();
     expect(s.peers).toEqual([]);
     expect(s.clients).toEqual([]);
   });

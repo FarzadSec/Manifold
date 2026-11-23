@@ -68,11 +68,12 @@ func (p Profile) Render() string {
 	if len(p.Server.DataCiphers) > 0 {
 		line("data-ciphers %s", strings.Join(p.Server.DataCiphers, ":"))
 	}
-	if p.Server.MTU > 0 {
-		line("tun-mtu %d", p.Server.MTU)
+	mtu, mssfix := p.Server.dataChannelSizes()
+	if mtu > 0 {
+		line("tun-mtu %d", mtu)
 	}
-	if p.Server.MSSFix > 0 {
-		line("mssfix %d", p.Server.MSSFix)
+	if mssfix > 0 {
+		line("mssfix %d", mssfix)
 	}
 	if reneg := renegLine(p.Server.RenegSec); reneg != "" {
 		line("%s", reneg)

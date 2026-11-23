@@ -50,7 +50,7 @@ exports[`createDefault*InboundSettings factories > vmess 1`] = `
 exports[`createDefault*InboundSettings factories > wireguard 1`] = `
 {
   "clients": [],
-  "mtu": 1420,
+  "mtu": undefined,
   "noKernelTun": false,
   "peers": [],
   "secretKey": "QGVlb2dXc1ZTWGw0ZXBzZndsWmtMaUM5MUlNYjBHWFdYbz0=",
