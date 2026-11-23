@@ -1308,14 +1308,8 @@ func (s *ClientService) Attach(inboundSvc *InboundService, id int, inboundIds []
 	clientWire.Flow = flow
 	clientWire.UpdatedAt = time.Now().UnixMilli()
 
-	// If this identity has no CURRENT WireGuard/AmneziaWG attachment,
-	// clientWire.AllowedIPs (from the ClientRecord) is a leftover from
-	// whenever it last had one -- nothing reserves it anymore. Clear it so
-	// attaching to a tunnel inbound now allocates a fresh address instead
-	// of resurrecting the old one, which may no longer even be the lowest
-	// free slot. Left untouched when the identity already has an active
-	// tunnel elsewhere, so extending it to a second protocol still keeps
-	// the same address on both.
+	// Without a current tunnel attachment the record's address is a leftover nothing reserves;
+	// with one, each target keeps it only where its own pool holds it (tunnelAddressCarry).
 	if !s.hasTunnelAttachment(inboundSvc, currentIds) {
 		clientWire.AllowedIPs = nil
 	}
@@ -1333,7 +1327,11 @@ func (s *ClientService) Attach(inboundSvc *InboundService, id int, inboundIds []
 		// A forward is a listener on the target inbound's host, set per inbound: carried over, it
 		// would let a node-reported client choose ports on this host.
 		copyClient.ForwardedPorts = nil
-		if !addressesFitAmneziaWGInbound(copyClient.AllowedIPs, inbound) {
+		carry, carryErr := newTunnelAddressCarry(inboundSvc, inbound)
+		if carryErr != nil {
+			return false, fmt.Errorf("inbound %d: %w", ibId, carryErr)
+		}
+		if carry != nil && !carry.keep(existing.Email, copyClient.AllowedIPs) {
 			copyClient.AllowedIPs = nil
 		}
 		if err := s.fillProtocolDefaults(&copyClient, inbound); err != nil {

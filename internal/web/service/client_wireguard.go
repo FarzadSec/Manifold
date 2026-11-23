@@ -118,12 +118,12 @@ func allocateWireguardAddress(used []string, base string, allowWidening bool) (s
 	if base == "" {
 		base = defaultWireguardBase
 	}
-	prefix, err := netip.ParsePrefix(base)
+	scopes, err := wireguardPoolScopes(base, allowWidening)
 	if err != nil {
 		return "", err
 	}
 	hostBits := "32"
-	if prefix.Addr().Is6() {
+	if scopes[0].Addr().Is6() {
 		hostBits = "128"
 	}
 	taken := make(map[netip.Addr]struct{}, len(used))
@@ -149,12 +149,6 @@ func allocateWireguardAddress(used []string, base string, allowWidening bool) (s
 		}
 		return netip.Prefix{}, false
 	}
-	scopes := []netip.Prefix{prefix}
-	if allowWidening && prefix.Addr().Is4() && prefix.Bits() > wireguardPoolFloorBits {
-		if wider, wErr := prefix.Addr().Prefix(wireguardPoolFloorBits); wErr == nil {
-			scopes = append(scopes, wider)
-		}
-	}
 	for _, scope := range scopes {
 		addr := scope.Masked().Addr().Next().Next()
 		for addr.IsValid() && scope.Contains(addr) {
@@ -170,6 +164,36 @@ func allocateWireguardAddress(used []string, base string, allowWidening bool) (s
 		}
 	}
 	return "", common.NewError("wireguard: no free address available in", scopes[len(scopes)-1].String())
+}
+
+// wireguardPoolScopes are the ranges allocateWireguardAddress hands addresses out of, in order.
+func wireguardPoolScopes(base string, allowWidening bool) ([]netip.Prefix, error) {
+	if base == "" {
+		base = defaultWireguardBase
+	}
+	prefix, err := netip.ParsePrefix(base)
+	if err != nil {
+		return nil, err
+	}
+	scopes := []netip.Prefix{prefix}
+	if allowWidening && prefix.Addr().Is4() && prefix.Bits() > wireguardPoolFloorBits {
+		if wider, wErr := prefix.Addr().Prefix(wireguardPoolFloorBits); wErr == nil {
+			scopes = append(scopes, wider)
+		}
+	}
+	return scopes, nil
+}
+
+// wireguardInboundBase is the subnet defaultWireguardClients allocates from for an inbound.
+func wireguardInboundBase(settingsJSON string, existing []model.Client) string {
+	if base := explicitWireguardSubnetBase(settingsJSON); base != "" {
+		return base
+	}
+	used := make([]string, 0, len(existing))
+	for i := range existing {
+		used = append(used, existing[i].AllowedIPs...)
+	}
+	return wireguardAllocationBase(used, defaultWireguardBase)
 }
 
 // lastPrefixAddr is the highest address of p.
@@ -305,10 +329,7 @@ func defaultWireguardClients(settingsJSON string, existing, clients []model.Clie
 	for i := range existing {
 		used = append(used, existing[i].AllowedIPs...)
 	}
-	base := explicitWireguardSubnetBase(settingsJSON)
-	if base == "" {
-		base = wireguardAllocationBase(used, defaultWireguardBase)
-	}
+	base := wireguardInboundBase(settingsJSON, existing)
 	for addr := range crossInboundUsed {
 		used = append(used, addr)
 	}

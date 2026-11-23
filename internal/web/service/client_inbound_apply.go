@@ -342,34 +342,41 @@ func (s *ClientService) delInboundClients(inboundSvc *InboundService, inboundId 
 // match there is never a real collision -- and Attach deliberately reuses one
 // address across every inbound it attaches the identity to.
 func (s *ClientService) otherTunnelAllowedIPs(db *gorm.DB, inboundSvc *InboundService, excludeID int, selfEmails map[string]struct{}) (map[string]string, error) {
-	var inbounds []*model.Inbound
-	err := db.Model(model.Inbound{}).
-		Where("protocol IN ? AND id != ?", []model.Protocol{model.WireGuard, model.AmneziaWG}, excludeID).
-		Find(&inbounds).Error
-	if err != nil {
-		return nil, err
-	}
 	used := make(map[string]string)
-	for _, ib := range inbounds {
-		clients, cErr := inboundSvc.GetClients(ib)
-		if cErr != nil {
-			continue
+	err := forEachOtherTunnelClient(db, inboundSvc, excludeID, func(ib *model.Inbound, c model.Client) {
+		if _, self := selfEmails[strings.ToLower(c.Email)]; self {
+			return
 		}
 		name := ib.Remark
 		if name == "" {
 			name = ib.Tag
 		}
-		label := fmt.Sprintf("inbound '%s' (#%d)", name, ib.Id)
+		for _, addr := range c.AllowedIPs {
+			used[addr] = fmt.Sprintf("inbound '%s' (#%d)", name, ib.Id)
+		}
+	})
+	return used, err
+}
+
+// forEachOtherTunnelClient calls visit for every client of every WireGuard/AmneziaWG inbound but excludeID.
+func forEachOtherTunnelClient(db *gorm.DB, inboundSvc *InboundService, excludeID int, visit func(*model.Inbound, model.Client)) error {
+	var inbounds []*model.Inbound
+	err := db.Model(model.Inbound{}).
+		Where("protocol IN ? AND id != ?", []model.Protocol{model.WireGuard, model.AmneziaWG}, excludeID).
+		Find(&inbounds).Error
+	if err != nil {
+		return err
+	}
+	for _, ib := range inbounds {
+		clients, cErr := inboundSvc.GetClients(ib)
+		if cErr != nil {
+			continue
+		}
 		for _, c := range clients {
-			if _, self := selfEmails[strings.ToLower(c.Email)]; self {
-				continue
-			}
-			for _, addr := range c.AllowedIPs {
-				used[addr] = label
-			}
+			visit(ib, c)
 		}
 	}
-	return used, nil
+	return nil
 }
 
 func (s *ClientService) checkEmailsExistForClients(inboundSvc *InboundService, clients []model.Client) (string, error) {
