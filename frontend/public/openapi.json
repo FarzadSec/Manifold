@@ -2639,6 +2639,80 @@
         ],
         "type": "object"
       },
+      "AppReport": {
+        "description": "AppReport is a support report a signed-in app sent: the user's words and its log, filed under\nthe session's account and that account's Telegram id as they were at the time.",
+        "properties": {
+          "appVersion": {
+            "example": "1.1.0",
+            "type": "string"
+          },
+          "createdAt": {
+            "example": 1767225600000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "deviceName": {
+            "example": "Pixel 8",
+            "type": "string"
+          },
+          "deviceOs": {
+            "example": "android",
+            "type": "string"
+          },
+          "email": {
+            "example": "dana@example.com",
+            "type": "string"
+          },
+          "id": {
+            "example": 12,
+            "type": "integer"
+          },
+          "log": {
+            "example": "=== app ===\n2026-11-19 01:02:03.456 [vpn] trying vless",
+            "type": "string"
+          },
+          "logSize": {
+            "example": 48213,
+            "type": "integer"
+          },
+          "message": {
+            "example": "به هیچ لوکیشنی وصل نشد",
+            "type": "string"
+          },
+          "osVersion": {
+            "example": "15",
+            "type": "string"
+          },
+          "seen": {
+            "example": false,
+            "type": "boolean"
+          },
+          "subId": {
+            "example": "k3x9q2m7",
+            "type": "string"
+          },
+          "tgId": {
+            "example": 987654321,
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "appVersion",
+          "createdAt",
+          "deviceName",
+          "deviceOs",
+          "email",
+          "id",
+          "logSize",
+          "message",
+          "osVersion",
+          "seen",
+          "subId",
+          "tgId"
+        ],
+        "type": "object"
+      },
       "AuditEntry": {
         "description": "AuditEntry records one admin action; secrets in Detail are redacted before it is stored.",
         "properties": {
@@ -10390,7 +10464,7 @@
     },
     {
       "name": "App",
-      "description": "The locations the app offers and the notices it shows. A location (Germany, say) gathers the inbounds that serve it, on any protocol and any server; an inbound serves one location at most, and one in none is still used by the app's quick connect. The app itself signs in on the subscription server (see Subscription Server → app/v1); app access is switched on with the appEnable setting."
+      "description": "The locations the app offers, the notices it shows and the support reports it sends. A location (Germany, say) gathers the inbounds that serve it, on any protocol and any server; an inbound serves one location at most, and one in none is still used by the app's quick connect. The app itself signs in on the subscription server (see Subscription Server → app/v1); app access is switched on with the appEnable setting."
     },
     {
       "name": "Subscription Server",
@@ -28153,6 +28227,234 @@
         }
       }
     },
+    "/panel/api/app/reports": {
+      "get": {
+        "tags": [
+          "App"
+        ],
+        "summary": "List the support reports apps sent, newest first, without their logs: each with the account's username and Telegram id, the device, the app version, the user's message and whether it was opened. The panel keeps the newest 500.",
+        "operationId": "get_panel_api_app_reports",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AppReport"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "appVersion": "1.1.0",
+                      "createdAt": 1767225600000,
+                      "deviceName": "Pixel 8",
+                      "deviceOs": "android",
+                      "email": "dana@example.com",
+                      "id": 12,
+                      "log": "=== app ===\n2026-11-19 01:02:03.456 [vpn] trying vless",
+                      "logSize": 48213,
+                      "message": "به هیچ لوکیشنی وصل نشد",
+                      "osVersion": "15",
+                      "seen": false,
+                      "subId": "k3x9q2m7",
+                      "tgId": 987654321
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/app/reports/unseen": {
+      "get": {
+        "tags": [
+          "App"
+        ],
+        "summary": "Count the reports no one has opened yet.",
+        "operationId": "get_panel_api_app_reports_unseen",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/app/reports/{id}": {
+      "get": {
+        "tags": [
+          "App"
+        ],
+        "summary": "Return one report with its log.",
+        "operationId": "get_panel_api_app_reports_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Report id.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/AppReport"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "appVersion": "1.1.0",
+                    "createdAt": 1767225600000,
+                    "deviceName": "Pixel 8",
+                    "deviceOs": "android",
+                    "email": "dana@example.com",
+                    "id": 12,
+                    "log": "=== app ===\n2026-11-19 01:02:03.456 [vpn] trying vless",
+                    "logSize": 48213,
+                    "message": "به هیچ لوکیشنی وصل نشد",
+                    "osVersion": "15",
+                    "seen": false,
+                    "subId": "k3x9q2m7",
+                    "tgId": 987654321
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/app/reports/seen/{id}": {
+      "post": {
+        "tags": [
+          "App"
+        ],
+        "summary": "Mark a report as opened.",
+        "operationId": "post_panel_api_app_reports_seen_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Report id.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/app/reports/del/{id}": {
+      "post": {
+        "tags": [
+          "App"
+        ],
+        "summary": "Delete a report.",
+        "operationId": "post_panel_api_app_reports_del_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Report id.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/{subPath}{subid}": {
       "get": {
         "tags": [
@@ -28588,6 +28890,57 @@
                 },
                 "example": {
                   "ok": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{subPath}{subid}/app/v1/report": {
+      "post": {
+        "tags": [
+          "Subscription Server"
+        ],
+        "summary": "File a support report: the user's message and the app's log, under the session's account and its Telegram id. Answers <code>{\"id\":N}</code>, the number the user can quote. Needs <code>Authorization: Bearer token</code> and <code>X-HWID: deviceId</code>.",
+        "operationId": "post_subPath_subid_app_v1_report",
+        "description": "JSON body, sent gzipped with <code>Content-Encoding: gzip</code> (plain JSON is taken too): <code>message</code> (cut to 4000 characters), <code>log</code> (8 MB at most), <code>deviceName</code>, <code>os</code>, <code>osVersion</code>, <code>appVersion</code>. Errors are <code>{\"error\":code}</code>: 401 <code>bad_session</code>, 403 <code>app_disabled</code>, 400 <code>bad_request</code>, 413 <code>too_large</code> (over 3 MB on the wire or 9 MB unpacked), 429 <code>too_many_reports</code> (5 per device an hour).",
+        "parameters": [
+          {
+            "name": "subid",
+            "in": "path",
+            "required": true,
+            "description": "Client subscription ID.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subPath",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
                 }
               }
             }
