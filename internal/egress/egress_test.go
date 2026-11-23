@@ -71,7 +71,7 @@ func TestApplyReplacesOnlyTheOwnersRules(t *testing.T) {
 		"table ip manifold_ovpn3 {\n\tchain postrouting {\n" +
 		"\t\ttype nat hook postrouting priority 100; policy accept;\n" +
 		"\t\tip saddr 10.8.0.0/24 ip daddr != 10.8.0.0/24 masquerade\n\t}\n" +
-		"\tchain mss {\n\t\ttype filter hook forward priority mangle; policy accept;\n" +
+		"\tchain clamp_mss {\n\t\ttype filter hook forward priority mangle; policy accept;\n" +
 		"\t\tip saddr 10.8.0.0/24 tcp flags & (syn | rst) == syn tcp option maxseg size set rt mtu\n" +
 		"\t\tip daddr 10.8.0.0/24 tcp flags & (syn | rst) == syn tcp option maxseg size set rt mtu\n\t}\n}\n"
 	if got := f.calls[0]; got.argv != "nft -f -" || got.stdin != wantNAT {
@@ -103,7 +103,7 @@ func TestApplyDeviceMatchesByInterface(t *testing.T) {
 		"table ip manifold_wg7 {\n\tchain postrouting {\n" +
 		"\t\ttype nat hook postrouting priority 100; policy accept;\n" +
 		"\t\tiifname \"mfwg7\" oifname != \"mfwg7\" masquerade\n\t}\n" +
-		"\tchain mss {\n\t\ttype filter hook forward priority mangle; policy accept;\n" +
+		"\tchain clamp_mss {\n\t\ttype filter hook forward priority mangle; policy accept;\n" +
 		"\t\tiifname \"mfwg7\" tcp flags & (syn | rst) == syn tcp option maxseg size set rt mtu\n" +
 		"\t\toifname \"mfwg7\" tcp flags & (syn | rst) == syn tcp option maxseg size set rt mtu\n\t}\n}\n"
 	if got := f.calls[0].stdin; got != wantNAT {

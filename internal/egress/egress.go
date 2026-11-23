@@ -74,7 +74,8 @@ func bothWays(devices string) []string {
 // routes, both ways, so TCP fits a narrow tunnel or a user's VPN without relying on ICMP.
 func mssChain(matches []string) string {
 	var b strings.Builder
-	b.WriteString("\tchain mss {\n\t\ttype filter hook forward priority mangle; policy accept;\n")
+	// Not "mss": nft 1.0.2 (Ubuntu 22.04) reads that as a keyword and rejects the whole table.
+	b.WriteString("\tchain clamp_mss {\n\t\ttype filter hook forward priority mangle; policy accept;\n")
 	for _, m := range matches {
 		fmt.Fprintf(&b, "\t\t%s tcp flags & (syn | rst) == syn tcp option maxseg size set rt mtu\n", m)
 	}
