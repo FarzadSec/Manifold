@@ -26,7 +26,7 @@ func TestApplyForwardsSendsThePortsThroughTheTunnel(t *testing.T) {
 		"\t\tiifname != \"mft3\" udp dport 2201 dnat to 10.80.0.2:22\n" +
 		"\t\tiifname != \"mft3\" tcp dport 10000-10009 dnat to 10.80.0.2\n\t}\n" +
 		"\tchain postrouting {\n\t\ttype nat hook postrouting priority srcnat; policy accept;\n\t\toifname \"mft3\" masquerade\n\t}\n" +
-		"\tchain mss {\n\t\ttype filter hook forward priority mangle; policy accept;\n" +
+		"\tchain clamp_mss {\n\t\ttype filter hook forward priority mangle; policy accept;\n" +
 		"\t\tiifname \"mft3\" tcp flags & (syn | rst) == syn tcp option maxseg size set rt mtu\n" +
 		"\t\toifname \"mft3\" tcp flags & (syn | rst) == syn tcp option maxseg size set rt mtu\n\t}\n}\n"
 	if f.calls[0].stdin != want {
@@ -105,7 +105,7 @@ func TestApplyBalancedForwardsSpreadsNewConnectionsOverTheTunnels(t *testing.T) 
 		"\t\tiifname != { \"mft1\", \"mft2\" } udp dport 2201 dnat ip to numgen inc mod 2 map { 0 : 10.80.0.2 . 22, 1 : 10.81.0.2 . 22 }\n" +
 		"\t\tiifname != { \"mft1\", \"mft2\" } tcp dport 10000-10009 dnat to numgen inc mod 2 map { 0 : 10.80.0.2, 1 : 10.81.0.2 }\n\t}\n" +
 		"\tchain postrouting {\n\t\ttype nat hook postrouting priority srcnat; policy accept;\n\t\toifname { \"mft1\", \"mft2\" } masquerade\n\t}\n" +
-		"\tchain mss {\n\t\ttype filter hook forward priority mangle; policy accept;\n" +
+		"\tchain clamp_mss {\n\t\ttype filter hook forward priority mangle; policy accept;\n" +
 		"\t\tiifname { \"mft1\", \"mft2\" } tcp flags & (syn | rst) == syn tcp option maxseg size set rt mtu\n" +
 		"\t\toifname { \"mft1\", \"mft2\" } tcp flags & (syn | rst) == syn tcp option maxseg size set rt mtu\n\t}\n}\n"
 	if f.calls[0].stdin != want {
