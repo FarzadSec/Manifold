@@ -10,6 +10,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/egress"
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
+
 	"github.com/xtls/xray-core/infra/conf"
 )
 

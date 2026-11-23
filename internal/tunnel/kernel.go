@@ -202,8 +202,11 @@ func portForwards(forwards []PortForward) []egress.PortForward {
 	return rules
 }
 
-// applyPortForwards installs an end's forwards; tests replace it.
-var applyPortForwards = egress.ApplyForwards
+// applyPortForwards and applyReplyMark install an end's nftables rules; tests replace them.
+var (
+	applyPortForwards = egress.ApplyForwards
+	applyReplyMark    = egress.ApplyReplyMark
+)
 
 // applyRouting gives a kernel link what its role needs beyond the link itself: each end
 // forwards the ports it exposes, the client routes replies back when sources are kept.
@@ -231,7 +234,7 @@ func applyRouting(t Tunnel) error {
 
 func applyReplyRoute(t Tunnel, peer netip.Addr) error {
 	dev, id := t.Device(), t.ID
-	if err := egress.ApplyReplyMark(replyOwner(id), dev, replyMark(id)); err != nil {
+	if err := applyReplyMark(replyOwner(id), dev, replyMark(id)); err != nil {
 		return err
 	}
 	fam := "-4"
