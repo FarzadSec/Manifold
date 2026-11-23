@@ -351,6 +351,13 @@ jobs:
             > /tmp/speed.log 2>&1 || { tail -n 80 /tmp/speed.log; exit 1; }
           grep -E '^(---|===|PASS|FAIL|ok)' /tmp/speed.log
           if grep -q -- '--- SKIP' /tmp/speed.log; then echo "a speed test was skipped"; exit 1; fi
+      - name: A relay forward fits TCP to a narrower link, between real namespaces
+        run: |
+          go test -c -o build/egress.test ./internal/egress/
+          sudo XUI_EGRESS_E2E=1 ./build/egress.test -test.run TestReal -test.v > /tmp/egress.log 2>&1 \
+            || { tail -n 80 /tmp/egress.log; exit 1; }
+          grep -E '^(---|===|PASS|FAIL|ok)' /tmp/egress.log
+          if grep -q -- '--- SKIP' /tmp/egress.log; then echo "the egress test was skipped"; exit 1; fi
       - name: Tunnels, a kernel GRE link and a BackPack reverse tunnel, each forwarding a port
         run: |
           go test -c -o build/tunnel.test ./internal/tunnel/

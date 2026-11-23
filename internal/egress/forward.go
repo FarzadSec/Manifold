@@ -83,6 +83,7 @@ func forwardTransaction(owner, device string, target netip.Addr, rules []PortFor
 	if masquerade {
 		fmt.Fprintf(&b, "\tchain postrouting {\n\t\ttype nat hook postrouting priority srcnat; policy accept;\n\t\toifname %q masquerade\n\t}\n", device)
 	}
+	b.WriteString(mssChain(bothWays(fmt.Sprintf("%q", device))))
 	b.WriteString("}\n")
 	return b.String()
 }
@@ -258,6 +259,7 @@ func balancedTransaction(owner string, targets []Target, rules []PortForward, ma
 	if masquerade {
 		fmt.Fprintf(&b, "\tchain postrouting {\n\t\ttype nat hook postrouting priority srcnat; policy accept;\n\t\toifname %s masquerade\n\t}\n", devices)
 	}
+	b.WriteString(mssChain(bothWays(devices)))
 	b.WriteString("}\n")
 	return b.String()
 }
