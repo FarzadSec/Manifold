@@ -98,10 +98,9 @@ func TestAddressesFitAmneziaWGInbound(t *testing.T) {
 	}
 }
 
-// A /0 reported by a node contains every address of the target inbound, and its
-// host bits are what the AmneziaWG forwarder reads as the peer's address, so
-// Attach refuses it next to another client exactly as it refuses the /32.
-func TestAttachRefusesDefaultRouteNextToHeldAddress(t *testing.T) {
+// A /0 reported by a node holds every address of the target inbound, and its host bits are
+// what the AmneziaWG forwarder reads as the peer's: the target gives it a free address instead.
+func TestAttachMovesADefaultRouteOffAHeldAddress(t *testing.T) {
 	attaches := map[string]func(*ClientService, *InboundService, string, int) error{
 		"Attach": func(s *ClientService, inboundSvc *InboundService, email string, ibId int) error {
 			_, err := s.AttachByEmail(inboundSvc, email, []int{ibId})
@@ -142,16 +141,15 @@ func TestAttachRefusesDefaultRouteNextToHeldAddress(t *testing.T) {
 					}
 				}
 
-				err := attach(s, inboundSvc, "host-bits", own.Id)
-				if err == nil || !strings.Contains(err.Error(), "10.8.1.2/0 overlaps 10.8.1.2/32") {
-					t.Errorf("attach of host-bits (10.8.1.2/0): err = %v, want an overlap with 10.8.1.2/32", err)
+				if err := attach(s, inboundSvc, "host-bits", own.Id); err != nil {
+					t.Fatalf("attach of host-bits (10.8.1.2/0): %v", err)
 				}
 				got, gErr := s.TunnelAllowedIPsByInbound(inboundSvc, "host-bits", []int{own.Id})
 				if gErr != nil {
 					t.Fatalf("TunnelAllowedIPsByInbound: %v", gErr)
 				}
-				if _, held := got[own.Id]; held {
-					t.Errorf("host-bits landed on the master's inbound with %q", got[own.Id])
+				if got[own.Id] != "10.8.1.3/32" {
+					t.Errorf("host-bits is on the master's inbound with %q, want the free 10.8.1.3/32", got[own.Id])
 				}
 			})
 		}

@@ -104,6 +104,11 @@ func (s *ClientService) BulkAttach(inboundSvc *InboundService, emails []string, 
 		for _, c := range existingClients {
 			have[strings.ToLower(c.Email)] = struct{}{}
 		}
+		carry, err := newTunnelAddressCarry(inboundSvc, inbound)
+		if err != nil {
+			recordErr("inbound %d: %v", ibId, err)
+			continue
+		}
 
 		clientsToAdd := make([]model.Client, 0, len(records))
 		for _, rec := range records {
@@ -114,6 +119,11 @@ func (s *ClientService) BulkAttach(inboundSvc *InboundService, emails []string, 
 			client := *rec.ToClient()
 			// Forwards are set per inbound; see Attach.
 			client.ForwardedPorts = nil
+			// A record's address may be stale or another location's; one that cannot stay
+			// would refuse the whole batch on this inbound, so the inbound allocates instead.
+			if carry != nil && !carry.keep(rec.Email, client.AllowedIPs) {
+				client.AllowedIPs = nil
+			}
 			if flow, ok := flowsByEmail[rec.Email]; ok && flow != "" {
 				client.Flow = flow
 			}
