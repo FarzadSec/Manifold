@@ -55,12 +55,13 @@ func TestClientEndForwardsItsPortsToTheRelayThroughTheLink(t *testing.T) {
 		masquerade    bool
 	}
 	var calls []call
-	prev := applyPortForwards
+	prevForwards, prevMark := applyPortForwards, applyReplyMark
 	applyPortForwards = func(owner, device string, target netip.Addr, rules []egress.PortForward, masquerade bool) error {
 		calls = append(calls, call{owner, device, target, rules, masquerade})
 		return nil
 	}
-	t.Cleanup(func() { applyPortForwards = prev })
+	applyReplyMark = func(string, string, uint32) error { return nil }
+	t.Cleanup(func() { applyPortForwards, applyReplyMark = prevForwards, prevMark })
 
 	client := normalized(t, greClientForwardingBack())
 	client.Settings.NAT = NATPreserve
