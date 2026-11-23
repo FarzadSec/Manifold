@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -43,6 +44,8 @@ func NewTunnelController(g *gin.RouterGroup) *TunnelController {
 	g.GET("/groups", a.groups)
 	g.POST("/groups/save", a.saveGroup)
 	g.POST("/groups/del/:id", a.delGroup)
+	g.POST("/groups/import", a.importGroup)
+	g.POST("/groups/withdraw", a.withdrawGroup)
 	g.GET("/bench/state", a.benchState)
 	g.GET("/bench/history", a.benchHistory)
 	g.GET("/bench/report/:id", a.benchReport)
@@ -151,6 +154,21 @@ func (a *TunnelController) delGroup(c *gin.Context) {
 		return
 	}
 	jsonMsg(c, I18nWeb(c, "pages.tunnels.groups.deleteFailed"), a.tunnelService.DeleteGroup(id))
+}
+
+// importGroup takes a group the managing panel places on this relay, as JSON in the form field group.
+func (a *TunnelController) importGroup(c *gin.Context) {
+	var placed service.PlacedTunnelGroup
+	if err := json.Unmarshal([]byte(c.PostForm("group")), &placed); err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.tunnels.groups.saveFailed"), err)
+		return
+	}
+	view, err := a.tunnelService.ImportGroup(placed)
+	jsonMsgObj(c, I18nWeb(c, "pages.tunnels.groups.saveFailed"), view, err)
+}
+
+func (a *TunnelController) withdrawGroup(c *gin.Context) {
+	jsonMsg(c, I18nWeb(c, "pages.tunnels.groups.deleteFailed"), a.tunnelService.WithdrawGroup(c.PostForm("pairId")))
 }
 
 func pathID(c *gin.Context) (int, bool) {

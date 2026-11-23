@@ -2036,6 +2036,8 @@ export interface TunnelGroup {
   members: number[];
   mode: string;
   name: string;
+  pairId: string;
+  relayId: number;
   sticky: boolean;
 }
 
@@ -2046,6 +2048,7 @@ export interface TunnelGroupRequest {
   members: number[];
   mode: string;
   name: string;
+  relayId: number;
   sticky: boolean;
 }
 
@@ -2058,6 +2061,8 @@ export interface TunnelGroupView {
   members: number[];
   mode: string;
   name: string;
+  pairId: string;
+  relayId: number;
   sticky: boolean;
 }
 

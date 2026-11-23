@@ -658,7 +658,8 @@ func (s *TunnelService) RelayStatuses(relayID int) ([]TunnelView, error) {
 	return views, err
 }
 
-// Resync pushes every relayed tunnel to its relay again, as after this panel moved to a new address.
+// Resync pushes every relayed tunnel to its relay again, as after this panel moved to a new
+// address, then the groups placed there, which name those tunnels.
 func (s *TunnelService) Resync() []error {
 	var rows []model.TunnelEnd
 	if err := database.GetDB().Where("relay_id <> 0").Find(&rows).Error; err != nil {
@@ -672,6 +673,15 @@ func (s *TunnelService) Resync() []error {
 		}
 		if err != nil {
 			errs = append(errs, fmt.Errorf("%s: %w", rows[i].Name, err))
+		}
+	}
+	var groups []model.TunnelGroup
+	if err := database.GetDB().Where("relay_id <> 0").Find(&groups).Error; err != nil {
+		return append(errs, err)
+	}
+	for i := range groups {
+		if err := s.pushGroup(&groups[i]); err != nil {
+			errs = append(errs, fmt.Errorf("group %s: %w", groups[i].Name, err))
 		}
 	}
 	return errs

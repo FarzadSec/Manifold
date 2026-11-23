@@ -374,7 +374,7 @@ export default function TunnelsPage() {
                       locale={{ emptyText: t('pages.tunnels.empty') }}
                     />
                   </Card>
-                  <TunnelGroupsCard tunnels={tunnels.data ?? []} />
+                  <TunnelGroupsCard tunnels={tunnels.data ?? []} relays={relays.data ?? []} />
                   <TunnelBenchCard onUsePick={openPick} />
                 </>
               )}

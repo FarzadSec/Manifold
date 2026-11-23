@@ -198,10 +198,12 @@ var nodeSyncScopeAllow = map[string]map[string]struct{}{
 
 // tunnelScopeAllow is all a relay's token lets the panel that owns its tunnels do there.
 var tunnelScopeAllow = map[string]map[string]struct{}{
-	"/tunnels/import":   {http.MethodPost: {}},
-	"/tunnels/withdraw": {http.MethodPost: {}},
-	"/tunnels/list":     {http.MethodGet: {}},
-	"/tunnels/status":   {http.MethodGet: {}},
+	"/tunnels/import":          {http.MethodPost: {}},
+	"/tunnels/withdraw":        {http.MethodPost: {}},
+	"/tunnels/list":            {http.MethodGet: {}},
+	"/tunnels/status":          {http.MethodGet: {}},
+	"/tunnels/groups/import":   {http.MethodPost: {}},
+	"/tunnels/groups/withdraw": {http.MethodPost: {}},
 }
 
 // tunnelBenchScopeAllow is all a tunnel test link's credential reaches on this server.

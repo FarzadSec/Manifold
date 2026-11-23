@@ -28,7 +28,18 @@ const tunnels = [
 
 describe('tunnel groups', () => {
   it('offers only relay ends with a tunnel address', () => {
-    expect(groupCandidates(tunnels).map((t) => t.id)).toEqual([1, 2, 3]);
+    expect(groupCandidates(tunnels, 0).map((t) => t.id)).toEqual([1, 2, 3]);
+  });
+
+  it("offers, for a relay, this panel's ends of that relay's tunnels with a tunnel address", () => {
+    const relayed = [
+      { ...tunnel(6, 'gre', 'client', 'up'), relayId: 2 },
+      { ...tunnel(7, 'l3', 'client', 'up'), relayId: 2 },
+      { ...tunnel(8, 'reverse', 'client', 'up'), relayId: 2 },
+      { ...tunnel(9, 'gre', 'client', 'up'), relayId: 3 },
+      { ...tunnel(10, 'gre', 'server', 'up'), relayId: 2 },
+    ] as TunnelView[];
+    expect(groupCandidates([...tunnels, ...relayed], 2).map((t) => t.id)).toEqual([6, 7]);
   });
 
   it('marks where the relay sends the ports now', () => {

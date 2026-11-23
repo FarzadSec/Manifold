@@ -256,6 +256,8 @@ var routeRules = map[string]Rule{
 	key("GET", "/tunnels/groups"):             need(TunnelsRead),
 	key("POST", "/tunnels/groups/save"):       need(TunnelsWrite),
 	key("POST", "/tunnels/groups/del/:id"):    need(TunnelsWrite),
+	key("POST", "/tunnels/groups/import"):     need(TunnelsWrite),
+	key("POST", "/tunnels/groups/withdraw"):   need(TunnelsWrite),
 	key("GET", "/tunnels/bench/state"):        need(TunnelsRead),
 	key("GET", "/tunnels/bench/history"):      need(TunnelsRead),
 	key("GET", "/tunnels/bench/report/:id"):   need(TunnelsRead),

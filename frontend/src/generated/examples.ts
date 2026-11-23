@@ -2435,6 +2435,8 @@ export const EXAMPLES: Record<string, unknown> = {
     ],
     "mode": "failover",
     "name": "origins",
+    "pairId": "9f3c2a7b1d4e5f6071829304",
+    "relayId": 0,
     "sticky": false
   },
   "TunnelGroupRequest": {
@@ -2455,6 +2457,7 @@ export const EXAMPLES: Record<string, unknown> = {
     ],
     "mode": "failover",
     "name": "origins",
+    "relayId": 0,
     "sticky": false
   },
   "TunnelGroupView": {
@@ -2477,6 +2480,8 @@ export const EXAMPLES: Record<string, unknown> = {
     ],
     "mode": "failover",
     "name": "origins",
+    "pairId": "9f3c2a7b1d4e5f6071829304",
+    "relayId": 0,
     "sticky": false
   },
   "TunnelPairing": {

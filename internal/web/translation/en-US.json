@@ -2994,8 +2994,8 @@
         "error": "Error"
       },
       "groups": {
-        "title": "Groups of origins",
-        "intro": "Join this relay's tunnels to several origin servers under shared ports. Failover sends everything to the first origin that answers and moves to the next within seconds when it stops; balance spreads new connections over every origin that answers.",
+        "title": "Tunnel balancers",
+        "intro": "Share ports over several tunnels. On a relay, join its tunnels to one or more origins; on the panel that manages a relay, join your tunnels to that relay and the group is placed there. Failover sends everything to the first tunnel that answers and moves to the next within seconds when it stops; balance spreads new connections over every tunnel that answers.",
         "empty": "No groups yet",
         "add": "Add a group",
         "edit": "Edit group",
@@ -3006,7 +3006,11 @@
         "failoverHint": "The members are tried in the order listed; the first that answers its probe takes every connection.",
         "balanceHint": "Each new connection goes to the next member that answers; a connection stays on its member until it ends.",
         "members": "Tunnels",
-        "membersHint": "Relay ends of kernel or layer-3 tunnels, one to each origin. Green marks where the ports go now.",
+        "membersHint": "Kernel or layer-3 tunnels: this relay's ends, or this panel's ends of the chosen relay's tunnels. Green marks where the ports go now.",
+        "runsOn": "Runs on",
+        "thisServer": "This server",
+        "runsOnHint": "A group of a relay's tunnels is placed on that relay: the relay listens on its ports and spreads them over those tunnels to this server.",
+        "placed": "Placed by the managing panel",
         "confirmDelete": "Delete this group? Its ports stop being forwarded.",
         "saveFailed": "Could not save the group",
         "deleteFailed": "Could not delete the group",

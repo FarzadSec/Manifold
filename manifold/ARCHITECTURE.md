@@ -270,7 +270,7 @@ This is the contract Mirza Bot will sync against.
 - State: an end with an interface is probed with ICMP through the tunnel every two seconds over a window of thirty echoes (down after three lost in a row, degraded above 20 % loss or 800 ms); a reverse end reports what BackPack's snapshot says of its control channel. Bytes come from the interface or the snapshot.
 - Pairing: `tunnel.Mirror` swaps the sides (role, tunnel addresses, the remote address), and a pairing code is that end as base64url JSON under `manifold-tunnel://`. A relay in `tunnel_relays` is a panel URL and a tunnel-scoped token, sealed like node tokens; the panel imports the mirrored end there on every save and withdraws it on delete, and `POST /tunnels/resync` sends every relayed tunnel again.
 - A save is refused when a port it listens on belongs to another tunnel, an enabled inbound, SSH or the panel, or when its tunnel subnet overlaps another tunnel's.
-- Groups (0.12.0): `tunnel_groups` joins 2 to 16 relay ends with an interface under shared forwards, in `manifold_tg<id>`. Balance writes `dnat to numgen inc mod N map { … }` over the members that answer; failover writes a plain DNAT to the first. `ReconcileGroups` runs after every reconcile and every ten seconds, and rewrites the table only when the chosen set changes; with no member answering it uses all of them, so a probe that cannot run never takes the ports away. A group's ports are checked against tunnels, other groups, inbounds and the panel, and a member cannot be deleted while a group lists it.
+- Groups (0.12.0): `tunnel_groups` joins 2 to 16 relay ends with an interface under shared forwards, in `manifold_tg<id>`. Balance writes `dnat to numgen inc mod N map { … }` over the members that answer; failover writes a plain DNAT to the first. `ReconcileGroups` runs after every reconcile and every ten seconds, and rewrites the table only when the chosen set changes; with no member answering it uses all of them, so a probe that cannot run never takes the ports away. A group's ports are checked against tunnels, other groups, inbounds and the panel, and a member cannot be deleted while a group lists it. Since 0.24.0 a group with `relay_id` is placed on that managed relay: its members are this panel's client ends of that relay's tunnels, it is not run here, and `POST /tunnels/groups/import` (tunnel scope) sends it with the members as pair ids and its own `pair_id`; the relay maps them to its ends and runs it as its own, and checks its ports. `groups/withdraw` removes it, and Resync sends the groups after the tunnels.
 
 ### 4.9 Manifold Relay, the tunnel edition (built, 0.5.0; its own product in 0.14.0)
 
@@ -599,7 +599,7 @@ Build verification: the workspace this plan is written from cannot reach the Go 
 ### 8.13 Open items after tunnel groups (0.12.0)
 
 - An Xray-based tunnel kind (VLESS + REALITY between relay and origin, so the link looks like TLS to a real site) is not built; groups balance kernel and layer-3 tunnels.
-- Groups are made on the relay's own panel; a managed relay does not receive them from the panel that manages its tunnels.
+- Since 0.24.0 the panel that manages a relay builds groups for it too; it cannot yet show the relay's own view of a placed group (which members it chose), only its own ends' states.
 - Balance is round-robin per connection; weights and per-user stickiness are not offered.
 
 ### 8.12 Open items after the importers (0.11.0)

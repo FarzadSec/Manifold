@@ -22,7 +22,7 @@ import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
 
 import { keys } from '@/api/queryKeys';
 import { selectTagRender } from '@/components/form';
-import type { PortForward, TunnelGroupView, TunnelView } from '@/generated/types';
+import type { PortForward, TunnelGroupView, TunnelRelay, TunnelView } from '@/generated/types';
 import { HttpUtil } from '@/utils';
 import { L2TP_FORWARDS, activeMembers, groupCandidates, keptForwards } from './groupMembers';
 
@@ -35,10 +35,12 @@ interface GroupForm {
   sticky: boolean;
   forwards: PortForward[];
   enable: boolean;
+  relayId: number;
 }
 
 const EMPTY: GroupForm = {
   id: 0,
+  relayId: 0,
   name: '',
   mode: 'failover',
   members: [],
@@ -48,7 +50,13 @@ const EMPTY: GroupForm = {
   enable: true,
 };
 
-export default function TunnelGroupsCard({ tunnels }: { tunnels: TunnelView[] }) {
+export default function TunnelGroupsCard({
+  tunnels,
+  relays = [],
+}: {
+  tunnels: TunnelView[];
+  relays?: TunnelRelay[];
+}) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<GroupForm | null>(null);
@@ -62,8 +70,17 @@ export default function TunnelGroupsCard({ tunnels }: { tunnels: TunnelView[] })
       return msg?.success && Array.isArray(msg.obj) ? msg.obj : [];
     },
   });
-  const candidates = groupCandidates(tunnels);
-  if (candidates.length < 2 && (groups.data?.length ?? 0) === 0) return null;
+  // Where a group can run: this server, and each managed relay with two tunnels from here.
+  const places = [
+    { relayId: 0, name: t('pages.tunnels.groups.thisServer') },
+    ...relays.map((r) => ({ relayId: r.id, name: r.name })),
+  ].filter((p) => groupCandidates(tunnels, p.relayId).length >= 2);
+  const candidates = groupCandidates(tunnels, form?.relayId ?? 0);
+  if (places.length === 0 && (groups.data?.length ?? 0) === 0) return null;
+  const placeName = (relayId: number) =>
+    relayId > 0
+      ? (relays.find((r) => r.id === relayId)?.name ?? `#${relayId}`)
+      : t('pages.tunnels.groups.thisServer');
   const nameOf = (id: number) => tunnels.find((x) => x.id === id)?.name ?? `#${id}`;
   const refresh = () => queryClient.invalidateQueries({ queryKey: keys.tunnels.groups() });
 
@@ -97,8 +114,10 @@ export default function TunnelGroupsCard({ tunnels }: { tunnels: TunnelView[] })
       extra={
         <Button
           icon={<PlusOutlined aria-hidden />}
-          disabled={candidates.length < 2}
-          onClick={() => setForm({ ...EMPTY, forwards: [...EMPTY.forwards] })}
+          disabled={places.length === 0}
+          onClick={() =>
+            setForm({ ...EMPTY, relayId: places[0]?.relayId ?? 0, forwards: [...EMPTY.forwards] })
+          }
         >
           {t('pages.tunnels.groups.add')}
         </Button>
@@ -122,8 +141,14 @@ export default function TunnelGroupsCard({ tunnels }: { tunnels: TunnelView[] })
               <Space size={4}>
                 <span>{g.name}</span>
                 {!g.enable && <Tag>{t('disabled')}</Tag>}
+                {g.pairId && !g.relayId && <Tag>{t('pages.tunnels.groups.placed')}</Tag>}
               </Space>
             ),
+          },
+          {
+            title: t('pages.tunnels.groups.runsOn'),
+            key: 'runsOn',
+            render: (_v, g) => placeName(g.relayId ?? 0),
           },
           {
             title: t('pages.tunnels.groups.mode'),
@@ -179,6 +204,7 @@ export default function TunnelGroupsCard({ tunnels }: { tunnels: TunnelView[] })
                       sticky: g.sticky ?? false,
                       forwards: g.forwards.length ? g.forwards : [...EMPTY.forwards],
                       enable: g.enable,
+                      relayId: g.relayId ?? 0,
                     })
                   }
                 />
@@ -233,6 +259,21 @@ export default function TunnelGroupsCard({ tunnels }: { tunnels: TunnelView[] })
                 </Form.Item>
               </Col>
             </Row>
+            {places.length > 1 || form.relayId > 0 ? (
+              <Form.Item
+                label={t('pages.tunnels.groups.runsOn')}
+                htmlFor="tg-runs-on"
+                tooltip={t('pages.tunnels.groups.runsOnHint')}
+              >
+                <Select
+                  id="tg-runs-on"
+                  value={form.relayId}
+                  disabled={form.id > 0}
+                  onChange={(relayId) => setForm({ ...form, relayId, members: [], backups: [] })}
+                  options={places.map((p) => ({ value: p.relayId, label: p.name }))}
+                />
+              </Form.Item>
+            ) : null}
             <Form.Item label={t('pages.tunnels.groups.mode')} htmlFor="tg-mode">
               <Segmented
                 id="tg-mode"

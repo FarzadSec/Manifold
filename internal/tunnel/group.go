@@ -83,6 +83,12 @@ func CanJoinGroup(t Tunnel) bool {
 	return t.Role == RoleServer && t.HasInterface()
 }
 
+// CanCarryRelayGroup reports whether this panel's end can be named in a group it places on the
+// relay: the relay then balances over its own end of the same link.
+func CanCarryRelayGroup(t Tunnel) bool {
+	return t.Role == RoleClient && t.HasInterface()
+}
+
 func groupOwner(id int) string { return fmt.Sprintf("tg%d", id) }
 
 // chooseTargets is what a group forwards to now: the members that answer, else the backups that
