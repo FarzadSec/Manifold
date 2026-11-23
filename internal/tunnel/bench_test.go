@@ -493,7 +493,7 @@ func TestBenchLinksStayOutOfTheTunnelJobsWay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	add := f.runs[0]
+	add := f.changes()[0]
 	if !strings.HasPrefix(add, "ip link add mfx3 type gre remote 203.0.113.10") || !strings.Contains(add, " key ") {
 		t.Fatalf("first command %q", add)
 	}
