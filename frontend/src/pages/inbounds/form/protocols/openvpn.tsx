@@ -21,6 +21,7 @@ import { useFormContext, useWatch } from 'react-hook-form';
 import { selectTagRender } from '@/components/form';
 import { NativeSelect } from '@/components/form/NativeSelect';
 import { FormField, rhfZodValidate } from '@/components/form/rhf';
+import { OPENVPN_UDP_DEFAULT_MTU, openvpnDefaultMssfix } from '@/lib/inbounds/path-mtu';
 import {
   OPENVPN_DATA_CIPHERS,
   OPENVPN_KEY_TYPES,
@@ -105,6 +106,9 @@ export default function OpenvpnFields() {
     name: 'settings.server.serverCert',
   }) as string | undefined;
   const hasKeys = !!caCert;
+  const proto = useWatch({ control, name: 'settings.server.proto' }) as string | undefined;
+  const mtu = useWatch({ control, name: 'settings.server.mtu' }) as number | undefined;
+  const overTCP = proto === 'tcp';
   const caInfo = useCertInfo(caCert);
   const serverInfo = useCertInfo(serverCert);
 
@@ -206,7 +210,12 @@ export default function OpenvpnFields() {
         tooltip={t('pages.inbounds.openvpn.mtuHint')}
         rules={{ validate: rhfZodValidate(OpenvpnServerSchema.shape.mtu) }}
       >
-        <InputNumber min={0} max={9000} placeholder="1500" style={{ width: '100%' }} />
+        <InputNumber
+          min={0}
+          max={9000}
+          placeholder={String(overTCP ? 1500 : OPENVPN_UDP_DEFAULT_MTU)}
+          style={{ width: '100%' }}
+        />
       </FormField>
 
       <FormField
@@ -215,7 +224,12 @@ export default function OpenvpnFields() {
         tooltip={t('pages.inbounds.openvpn.mssfixHint')}
         rules={{ validate: rhfZodValidate(OpenvpnServerSchema.shape.mssfix) }}
       >
-        <InputNumber min={0} max={9000} placeholder="1492" style={{ width: '100%' }} />
+        <InputNumber
+          min={0}
+          max={9000}
+          placeholder={String(overTCP ? 1492 : openvpnDefaultMssfix(mtu))}
+          style={{ width: '100%' }}
+        />
       </FormField>
 
       <FormField

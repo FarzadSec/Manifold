@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/pathmtu"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/random"
 )
 
@@ -57,7 +58,7 @@ type ServerSettings struct {
 	DNS    []string `json:"dns" example:"[\"1.1.1.1\",\"8.8.8.8\"]"`
 	// PromptCredentials leaves the login out of the profile, so the app asks for it.
 	PromptCredentials bool `json:"promptCredentials" example:"false"`
-	// MTU is tun-mtu on both ends and MSSFix their mssfix; zero keeps OpenVPN's default.
+	// MTU is tun-mtu on both ends and MSSFix their mssfix; zero is what dataChannelSizes picks.
 	MTU    int `json:"mtu,omitempty" example:"1420"`
 	MSSFix int `json:"mssfix,omitempty" example:"1360"`
 	// DataCiphers limits the negotiable ciphers; empty offers every allowed one.
@@ -86,6 +87,22 @@ type ServerSettings struct {
 type InboundSettings struct {
 	Server  *ServerSettings `json:"server"`
 	Clients []model.Client  `json:"clients"`
+}
+
+// dataChannelSizes are the tun-mtu and mssfix of both ends: the inbound's own or, over UDP, what
+// fits pathmtu.Path, mssfix keeping TCP inside it; TCP carries any size, so OpenVPN keeps its own.
+func (s ServerSettings) dataChannelSizes() (mtu, mssfix int) {
+	mtu, mssfix = s.MTU, s.MSSFix
+	if s.Proto == ProtoTCP {
+		return mtu, mssfix
+	}
+	if mtu == 0 {
+		mtu = pathmtu.OpenVPN
+	}
+	if mssfix == 0 {
+		mssfix = min(mtu+pathmtu.OpenVPNOverhead, pathmtu.OpenVPNPayload)
+	}
+	return mtu, mssfix
 }
 
 // ForProfiles returns what a client profile needs, without the private keys.

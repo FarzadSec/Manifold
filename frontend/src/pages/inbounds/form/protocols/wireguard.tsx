@@ -4,6 +4,7 @@ import { Button, Collapse, Form, Input, InputNumber, Space, Typography } from 'a
 import { ReloadOutlined } from '@ant-design/icons';
 
 import { FormField } from '@/components/form/rhf';
+import { WIREGUARD_DEFAULT_MTU } from '@/lib/inbounds/path-mtu';
 
 // wg-quick's own key names, which is how its documentation and every guide spell them.
 const HOOKS = [
@@ -51,8 +52,17 @@ export default function WireguardFields({ wgPubKey, regenInboundWg }: WireguardF
       <FormField name={['settings', 'subnetCidr']} label={t('pages.xray.wireguard.subnetCidr')}>
         <InputNumber min={1} max={30} style={{ width: '100%' }} />
       </FormField>
-      <FormField name={['settings', 'mtu']} label="MTU">
-        <InputNumber />
+      <FormField
+        name={['settings', 'mtu']}
+        label="MTU"
+        tooltip={t('pages.inbounds.wireguard.mtuHint')}
+      >
+        <InputNumber
+          min={576}
+          max={9000}
+          placeholder={String(WIREGUARD_DEFAULT_MTU)}
+          style={{ width: '100%' }}
+        />
       </FormField>
       <FormField
         name={['settings', 'address']}

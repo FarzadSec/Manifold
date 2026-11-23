@@ -21,6 +21,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/mtproto"
+	"github.com/mhsanaei/3x-ui/v3/internal/pathmtu"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/maskcompat"
@@ -493,7 +494,7 @@ func inboundWireguardHints(protocol string, settings string) (string, int, strin
 			publicKey = derived
 		}
 	}
-	return publicKey, parsed.MTU, parsed.DNS
+	return publicKey, pathmtu.WireGuardMTU(parsed.MTU), parsed.DNS
 }
 
 // inboundAmneziaWGServer returns the AmneziaWG server block for the clients

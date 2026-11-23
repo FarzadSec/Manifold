@@ -303,9 +303,11 @@ export interface WireguardInboundSeed {
 }
 
 // WireGuard is multi-client now: a new inbound holds only the server identity
-// (secretKey/mtu) and starts with no clients. Clients (peers) are added later
+// (secretKey) and starts with no clients. Clients (peers) are added later
 // through the client modal, which generates each one's keypair and a unique
 // tunnel address. peers stays empty for backward-compatible parsing.
+// The MTU stays empty, so the panel gives the server and every config one size
+// that fits a relay's path (lib/inbounds/path-mtu.ts).
 //
 // subnetIp/subnetCidr default to 10.0.0.0/24 here — the same value the Go
 // backend has always fallen back to for an inbound with no clients yet — so
@@ -316,7 +318,7 @@ export function createDefaultWireguardInboundSettings(
   seed: WireguardInboundSeed = {},
 ): WireguardInboundSettings {
   return {
-    mtu: seed.mtu ?? 1420,
+    mtu: seed.mtu,
     secretKey: seed.secretKey ?? Wireguard.generateKeypair().privateKey,
     peers: [],
     clients: [],

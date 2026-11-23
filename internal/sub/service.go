@@ -22,6 +22,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/pathmtu"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/maskcompat"
@@ -1159,9 +1160,8 @@ func (s *SubService) genWireguardLink(inbound *model.Inbound, email string) stri
 	if joined := strings.Join(client.AllowedIPs, ","); joined != "" {
 		params["address"] = joined
 	}
-	if mtu, ok := settings["mtu"].(float64); ok && mtu > 0 {
-		params["mtu"] = strconv.Itoa(int(mtu))
-	}
+	mtu, _ := settings["mtu"].(float64)
+	params["mtu"] = strconv.Itoa(pathmtu.WireGuardMTU(int(mtu)))
 	if dns, ok := settings["dns"].(string); ok && dns != "" {
 		params["dns"] = dns
 	}
