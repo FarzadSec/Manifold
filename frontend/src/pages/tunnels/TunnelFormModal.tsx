@@ -16,7 +16,7 @@ import {
   Typography,
 } from 'antd';
 import { DeleteOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
-import { FormProvider, useFieldArray, useForm, useWatch } from 'react-hook-form';
+import { FormProvider, useFieldArray, useForm, useFormContext, useWatch } from 'react-hook-form';
 
 import { FormField } from '@/components/form/rhf';
 import type { TunnelRelay, TunnelRequest, TunnelSuggestion, TunnelView } from '@/generated/types';
@@ -43,6 +43,7 @@ function emptyRequest(): TunnelRequest {
     relayId: 0,
     settings: {
       forwards: [],
+      reverseForwards: [],
       nat: 'masquerade',
       transport: 'tcpmux',
       carrier: 'udp',
@@ -58,8 +59,114 @@ function fromView(t: TunnelView): TunnelRequest {
     role: t.role,
     enable: t.enable,
     relayId: t.relayId,
-    settings: { ...t.settings, forwards: t.settings.forwards ?? [] },
+    settings: {
+      ...t.settings,
+      forwards: t.settings.forwards ?? [],
+      reverseForwards: t.settings.reverseForwards ?? [],
+    },
   };
+}
+
+type ForwardList = 'settings.forwards' | 'settings.reverseForwards';
+
+interface ForwardRowsProps {
+  name: ForwardList;
+  kernel: boolean;
+  listenLabel: string;
+  targetLabel: string;
+  listenPlaceholder: string;
+  targetPlaceholder: string;
+  addLabel: string;
+  // l2tpPreset offers the ports L2TP/IPsec needs through a kernel link.
+  l2tpPreset?: boolean;
+}
+
+// ForwardRows edits one direction's forwards: the relay's to this panel, or the client end's to the relay.
+function ForwardRows({
+  name,
+  kernel,
+  listenLabel,
+  targetLabel,
+  listenPlaceholder,
+  targetPlaceholder,
+  addLabel,
+  l2tpPreset = false,
+}: ForwardRowsProps) {
+  const { t } = useTranslation();
+  const { control } = useFormContext<TunnelRequest>();
+  const rows = useFieldArray({ control, name });
+  const values = useWatch({ control, name }) ?? [];
+  return (
+    <>
+      {rows.fields.map((field, i) => (
+        <Row gutter={8} key={field.id} align="middle">
+          <Col span={8}>
+            <FormField
+              name={`${name}.${i}.listen`}
+              label={i === 0 ? listenLabel : undefined}
+              rules={{ required: values[i]?.proto !== 'esp' }}
+            >
+              <Input placeholder={listenPlaceholder} disabled={values[i]?.proto === 'esp'} />
+            </FormField>
+          </Col>
+          <Col span={8}>
+            <FormField name={`${name}.${i}.target`} label={i === 0 ? targetLabel : undefined}>
+              <Input placeholder={targetPlaceholder} disabled={values[i]?.proto === 'esp'} />
+            </FormField>
+          </Col>
+          <Col span={6}>
+            <FormField
+              name={`${name}.${i}.proto`}
+              label={i === 0 ? t('pages.tunnels.forwardProto') : undefined}
+            >
+              <Select
+                options={[
+                  { label: 'TCP', value: 'tcp' },
+                  ...(kernel ? [{ label: 'UDP', value: 'udp' }] : []),
+                  { label: 'TCP + UDP', value: 'both' },
+                  ...(kernel ? [{ label: 'ESP (IPsec)', value: 'esp' }] : []),
+                ]}
+              />
+            </FormField>
+          </Col>
+          <Col span={2}>
+            <Button
+              type="text"
+              danger
+              aria-label={t('remove')}
+              icon={<DeleteOutlined aria-hidden />}
+              onClick={() => rows.remove(i)}
+            />
+          </Col>
+        </Row>
+      ))}
+      <Button
+        icon={<PlusOutlined aria-hidden />}
+        onClick={() => rows.append({ listen: '', target: '', proto: 'tcp' })}
+      >
+        {addLabel}
+      </Button>
+      {l2tpPreset && (
+        <>
+          <Button
+            style={{ marginInlineStart: 8 }}
+            onClick={() => {
+              for (const p of L2TP_FORWARDS) {
+                if (!values.some((f) => f.proto === p.proto && f.listen === p.listen)) {
+                  rows.append(p);
+                }
+              }
+            }}
+          >
+            {t('pages.tunnels.l2tpPreset')}
+          </Button>
+          <Typography.Paragraph type="secondary" style={{ marginTop: 8 }}>
+            {t('pages.tunnels.l2tpPresetHint')}
+          </Typography.Paragraph>
+        </>
+      )}
+    </>
+  );
 }
 
 export default function TunnelFormModal({
@@ -73,11 +180,9 @@ export default function TunnelFormModal({
   const uid = useId();
   const methods = useForm<TunnelRequest>({ defaultValues: emptyRequest() });
   const { control, setValue, reset, handleSubmit } = methods;
-  const forwards = useFieldArray({ control, name: 'settings.forwards' });
   const kind = useWatch({ control, name: 'kind' });
   const role = useWatch({ control, name: 'role' });
   const dialer = useWatch({ control, name: 'settings.dialer' });
-  const forwardRows = useWatch({ control, name: 'settings.forwards' }) ?? [];
   const [saving, setSaving] = useState(false);
   const kernel = isKernel(kind);
 
@@ -438,81 +543,34 @@ export default function TunnelFormModal({
               <Typography.Paragraph type="secondary">
                 {t('pages.tunnels.forwardsHint')}
               </Typography.Paragraph>
-              {forwards.fields.map((field, i) => (
-                <Row gutter={8} key={field.id} align="middle">
-                  <Col span={8}>
-                    <FormField
-                      name={`settings.forwards.${i}.listen`}
-                      label={i === 0 ? t('pages.tunnels.forwardListen') : undefined}
-                      rules={{ required: forwardRows[i]?.proto !== 'esp' }}
-                    >
-                      <Input placeholder="443" disabled={forwardRows[i]?.proto === 'esp'} />
-                    </FormField>
-                  </Col>
-                  <Col span={8}>
-                    <FormField
-                      name={`settings.forwards.${i}.target`}
-                      label={i === 0 ? t('pages.tunnels.forwardTarget') : undefined}
-                    >
-                      <Input
-                        placeholder={t('pages.tunnels.forwardSame')}
-                        disabled={forwardRows[i]?.proto === 'esp'}
-                      />
-                    </FormField>
-                  </Col>
-                  <Col span={6}>
-                    <FormField
-                      name={`settings.forwards.${i}.proto`}
-                      label={i === 0 ? t('pages.tunnels.forwardProto') : undefined}
-                    >
-                      <Select
-                        options={[
-                          { label: 'TCP', value: 'tcp' },
-                          ...(kernel ? [{ label: 'UDP', value: 'udp' }] : []),
-                          { label: 'TCP + UDP', value: 'both' },
-                          ...(kernel ? [{ label: 'ESP (IPsec)', value: 'esp' }] : []),
-                        ]}
-                      />
-                    </FormField>
-                  </Col>
-                  <Col span={2}>
-                    <Button
-                      type="text"
-                      danger
-                      aria-label={t('remove')}
-                      icon={<DeleteOutlined aria-hidden />}
-                      onClick={() => forwards.remove(i)}
-                    />
-                  </Col>
-                </Row>
-              ))}
-              <Button
-                icon={<PlusOutlined aria-hidden />}
-                onClick={() => forwards.append({ listen: '', target: '', proto: 'tcp' })}
-              >
-                {t('pages.tunnels.addForward')}
-              </Button>
-              {kernel && (
-                <>
-                  <Button
-                    style={{ marginInlineStart: 8 }}
-                    onClick={() => {
-                      for (const p of L2TP_FORWARDS) {
-                        if (
-                          !forwardRows.some((f) => f.proto === p.proto && f.listen === p.listen)
-                        ) {
-                          forwards.append(p);
-                        }
-                      }
-                    }}
-                  >
-                    {t('pages.tunnels.l2tpPreset')}
-                  </Button>
-                  <Typography.Paragraph type="secondary" style={{ marginTop: 8 }}>
-                    {t('pages.tunnels.l2tpPresetHint')}
-                  </Typography.Paragraph>
-                </>
-              )}
+              <ForwardRows
+                name="settings.forwards"
+                kernel={kernel}
+                listenLabel={t('pages.tunnels.forwardListen')}
+                targetLabel={t('pages.tunnels.forwardTarget')}
+                listenPlaceholder="443"
+                targetPlaceholder={t('pages.tunnels.forwardSame')}
+                addLabel={t('pages.tunnels.addForward')}
+                l2tpPreset={kernel}
+              />
+            </>
+          )}
+
+          {showForwards && kind !== 'reverse' && (
+            <>
+              <Divider titlePlacement="start">{t('pages.tunnels.reverseForwards')}</Divider>
+              <Typography.Paragraph type="secondary">
+                {t('pages.tunnels.reverseForwardsHint')}
+              </Typography.Paragraph>
+              <ForwardRows
+                name="settings.reverseForwards"
+                kernel={kernel}
+                listenLabel={t('pages.tunnels.reverseForwardListen')}
+                targetLabel={t('pages.tunnels.reverseForwardTarget')}
+                listenPlaceholder="9090"
+                targetPlaceholder="19090"
+                addLabel={t('pages.tunnels.addReverseForward')}
+              />
             </>
           )}
 

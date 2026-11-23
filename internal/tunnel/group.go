@@ -164,7 +164,7 @@ func (m *Manager) ReconcileGroups(groups []Group) {
 		}
 		wanted[g.ID] = true
 		targets := chooseTargets(g.Mode, members, backups, healthy, backupHealthy)
-		rules := portForwards(Tunnel{Settings: TunnelSettings{Forwards: g.Forwards}})
+		rules := portForwards(g.Forwards)
 		key := targetsKey(targets, rules, g.Sticky)
 		if m.groups[g.ID] == key {
 			continue

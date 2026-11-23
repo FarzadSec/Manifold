@@ -2261,6 +2261,7 @@ export const TunnelSettingsSchema = z.object({
   proxyProtocol: z.boolean().optional(),
   publicAddr: z.string().optional(),
   remoteAddr: z.string().optional(),
+  reverseForwards: z.array(z.lazy(() => PortForwardSchema)).optional(),
   token: z.string().optional(),
   transport: z.string().optional(),
   ttl: z.number().int().optional(),

@@ -80,10 +80,13 @@ type TunnelSettings struct {
 	ProxyProtocol bool   `json:"proxyProtocol,omitempty" example:"false"`
 
 	Forwards []PortForward `json:"forwards,omitempty"`
-	NAT      string        `json:"nat,omitempty" example:"masquerade"`
+	// ReverseForwards are the ports the client end exposes and sends to the server end.
+	ReverseForwards []PortForward `json:"reverseForwards,omitempty"`
+	NAT             string        `json:"nat,omitempty" example:"masquerade"`
 }
 
-// PortForward is one port, or range, the server side exposes and sends to the client side.
+// PortForward is one port, or range, one end exposes and sends to the other: the server
+// end's Forwards, or the client end's ReverseForwards.
 type PortForward struct {
 	Listen string `json:"listen" example:"443"`
 	Target string `json:"target,omitempty" example:"2096"`
@@ -101,6 +104,14 @@ type Tunnel struct {
 	Settings TunnelSettings
 	// DevName replaces the interface name the id gives, for the tunnel test's ends.
 	DevName string
+}
+
+// Exposed are the forwards this end listens on and sends through the tunnel to the other end.
+func (t Tunnel) Exposed() []PortForward {
+	if t.Role == RoleServer {
+		return t.Settings.Forwards
+	}
+	return t.Settings.ReverseForwards
 }
 
 // IsKernel reports whether the kind is a kernel link.
@@ -189,6 +200,15 @@ func Normalize(t Tunnel) (Tunnel, error) {
 	}
 	if s.Forwards, err = normalizeForwards(t.Kind, s.Forwards); err != nil {
 		return t, err
+	}
+	if t.Kind == KindReverse && len(s.ReverseForwards) > 0 {
+		return t, errors.New("tunnel: a BackPack reverse tunnel carries ports from the relay only; forward from the client end through a kernel or layer-3 tunnel")
+	}
+	if s.ReverseForwards, err = normalizeForwards(t.Kind, s.ReverseForwards); err != nil {
+		return t, err
+	}
+	if len(s.ReverseForwards) == 0 {
+		s.ReverseForwards = nil
 	}
 	return t, nil
 }
@@ -426,10 +446,7 @@ func (t Tunnel) ListenPorts() map[int]string {
 			ports[s.Port] = ProtoTCP
 		}
 	}
-	if t.Role != RoleServer {
-		return ports
-	}
-	for _, f := range s.Forwards {
+	for _, f := range t.Exposed() {
 		r, err := parsePorts(f.Listen)
 		if err != nil || f.Proto == ProtoESP {
 			continue
@@ -448,7 +465,7 @@ func Mirror(t Tunnel, publicAddr string) Tunnel {
 	m := TunnelSettings{
 		MTU: s.MTU, TTL: s.TTL, Key: s.Key, Transport: s.Transport, Carrier: s.Carrier, Port: s.Port,
 		Token: s.Token, Dialer: s.Dialer, ProxyProtocol: s.ProxyProtocol, NAT: s.NAT,
-		Forwards: slices.Clone(s.Forwards),
+		Forwards: slices.Clone(s.Forwards), ReverseForwards: slices.Clone(s.ReverseForwards),
 	}
 	if t.HasInterface() {
 		local, _ := netip.ParsePrefix(s.LocalIP)

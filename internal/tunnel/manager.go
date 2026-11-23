@@ -161,7 +161,7 @@ func (m *Manager) applyLocked(e *entry) error {
 }
 
 func routeFingerprint(t Tunnel) string {
-	raw, _ := json.Marshal([]any{t.Role, t.Settings.PeerIP, t.Settings.NAT, t.Settings.Forwards, t.Device()})
+	raw, _ := json.Marshal([]any{t.Role, t.Settings.PeerIP, t.Settings.NAT, t.Exposed(), t.Device()})
 	sum := sha256.Sum256(raw)
 	return hex.EncodeToString(sum[:8])
 }

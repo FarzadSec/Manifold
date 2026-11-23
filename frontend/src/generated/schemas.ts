@@ -7874,7 +7874,7 @@ export const SCHEMAS: Record<string, unknown> = {
     "type": "object"
   },
   "PortForward": {
-    "description": "PortForward is one port, or range, the server side exposes and sends to the client side.",
+    "description": "PortForward is one port, or range, one end exposes and sends to the other: the server\nend's Forwards, or the client end's ReverseForwards.",
     "properties": {
       "listen": {
         "example": "443",
@@ -9454,6 +9454,13 @@ export const SCHEMAS: Record<string, unknown> = {
         "description": "RemoteAddr is the other server's public address, or the relay's host for a reverse client.",
         "example": "198.51.100.7",
         "type": "string"
+      },
+      "reverseForwards": {
+        "description": "ReverseForwards are the ports the client end exposes and sends to the server end.",
+        "items": {
+          "$ref": "#/components/schemas/PortForward"
+        },
+        "type": "array"
       },
       "token": {
         "example": "3f9c...",

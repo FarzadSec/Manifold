@@ -66,6 +66,57 @@ describe('tunnel form', () => {
   });
 });
 
+describe('tunnel forwards in both directions', () => {
+  it("saves the client end's own forwards to the relay beside the relay's", async () => {
+    const post = vi.mocked(HttpUtil.post).mockResolvedValue(new Msg(true, '', {}));
+    const onClose = vi.fn();
+    renderWithProviders(
+      <TunnelFormModal
+        open
+        relays={[]}
+        tunnel={tunnel({
+          settings: {
+            remoteAddr: '198.51.100.7',
+            localIp: '10.80.0.2/30',
+            peerIp: '10.80.0.1',
+            forwards: [{ listen: '443', proto: 'tcp' }],
+          },
+        })}
+        onClose={onClose}
+      />,
+    );
+    await waitFor(() => expect(fieldLabels()).toContain('Relay port'));
+    fireEvent.click(screen.getByRole('button', { name: 'Add client end port' }));
+    await waitFor(() => expect(fieldLabels()).toContain('Client end port'));
+    fireEvent.change(screen.getByPlaceholderText('9090'), { target: { value: '9090' } });
+    fireEvent.change(screen.getByPlaceholderText('19090'), { target: { value: '19090' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onClose).toHaveBeenCalledWith(true));
+    expect(post.mock.calls.at(-1)![1]).toMatchObject({
+      settings: {
+        forwards: [{ listen: '443', proto: 'tcp' }],
+        reverseForwards: [{ listen: '9090', target: '19090', proto: 'tcp' }],
+      },
+    });
+  });
+
+  it('offers no client-end forwards on a BackPack reverse tunnel, which cannot carry them', async () => {
+    renderWithProviders(
+      <TunnelFormModal
+        open
+        relays={[]}
+        tunnel={tunnel({
+          kind: 'reverse',
+          settings: { transport: 'tcpmux', port: 8443, remoteAddr: 'r.example' },
+        })}
+        onClose={vi.fn()}
+      />,
+    );
+    await waitFor(() => expect(fieldLabels()).toContain('Transport'));
+    expect(screen.queryByRole('button', { name: 'Add client end port' })).toBeNull();
+  });
+});
+
 describe('overview tunnels card', () => {
   it('counts the tunnels by state and names the one that is down', async () => {
     vi.mocked(HttpUtil.get).mockImplementation(async (url: string) =>
