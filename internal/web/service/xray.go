@@ -464,6 +464,7 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 	// whatever rules the admin adds through the stock Routing page, exactly
 	// like routing any other protocol.
 	injectAmneziawgnetSocks(xrayConfig, inbounds)
+	injectNativeRouting(xrayConfig, inbounds)
 	tuicInstances := configuredTuicInstances(inbounds)
 	if err := injectTuicRelay(xrayConfig, tuicInstances); err != nil {
 		return nil, err
@@ -1551,6 +1552,7 @@ func (s *XrayService) RestartXray(isForce bool) error {
 			}
 			if applied {
 				logger.Info("Xray config changes applied through the core API, no restart needed")
+				s.SyncNativeRouting()
 				return nil
 			}
 		}
@@ -1575,7 +1577,7 @@ func (s *XrayService) RestartXray(isForce bool) error {
 	if err := publishTuicRelayReadiness(xrayConfig); err != nil {
 		return err
 	}
-
+	s.SyncNativeRouting()
 	return nil
 }
 
@@ -1802,7 +1804,9 @@ func (s *XrayService) StopXray() error {
 	logger.Debug("Attempting to stop Xray...")
 	process := currentXrayProcess()
 	if process != nil && process.IsRunning() {
-		return process.Stop()
+		err := process.Stop()
+		s.SyncNativeRouting()
+		return err
 	}
 	return ErrXrayNotRunning
 }

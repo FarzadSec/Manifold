@@ -70,9 +70,35 @@ func TestKernelHoldsAMarkedSocketToItsRate(t *testing.T) {
 	}
 }
 
+// A tunnel's traffic that a routing rule steers into Xray is delivered to the host's own
+// sockets, so it passes the input and output hooks instead of forward.
+func TestKernelHoldsATunnelAddressTheHostServesItself(t *testing.T) {
+	l := requireKernel(t)
+	if err := l.Apply([]Account{{ID: 13, Mbps: 8, Addrs: []netip.Prefix{pfx("127.0.0.5/32")}}}); err != nil {
+		t.Fatal(err)
+	}
+	from := &net.TCPAddr{IP: net.IPv4(127, 0, 0, 5)}
+	for _, upload := range []bool{true, false} {
+		if mbps := measureVia(t, net.Dialer{LocalAddr: from}, upload); mbps < 5 || mbps > 12 {
+			t.Errorf("upload=%v ran at %.1f Mbps, want about 8", upload, mbps)
+		}
+	}
+}
+
 // measure moves data for four seconds over loopback through a socket carrying mark
 // and returns the rate of the last three, past the bucket's initial credit.
 func measure(t *testing.T, mark uint32, upload bool) float64 {
+	t.Helper()
+	return measureVia(t, net.Dialer{Control: func(_, _ string, rc syscall.RawConn) error {
+		var serr error
+		_ = rc.Control(func(fd uintptr) {
+			serr = syscall.SetsockoptInt(int(fd), syscall.SOL_SOCKET, syscall.SO_MARK, int(mark))
+		})
+		return serr
+	}}, upload)
+}
+
+func measureVia(t *testing.T, d net.Dialer, upload bool) float64 {
 	t.Helper()
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -96,13 +122,6 @@ func measure(t *testing.T, mark uint32, upload bool) float64 {
 			}
 		}
 	}()
-	d := net.Dialer{Control: func(_, _ string, rc syscall.RawConn) error {
-		var serr error
-		_ = rc.Control(func(fd uintptr) {
-			serr = syscall.SetsockoptInt(int(fd), syscall.SOL_SOCKET, syscall.SO_MARK, int(mark))
-		})
-		return serr
-	}}
 	c, err := d.Dial("tcp", ln.Addr().String())
 	if err != nil {
 		t.Fatal(err)

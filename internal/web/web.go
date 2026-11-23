@@ -322,6 +322,7 @@ const (
 	cadenceTunnels       = "@every 15s"
 	cadenceResellers     = "@every 1m"
 	cadenceSpeedLimit    = "@every 5s"
+	cadenceNativeRouting = "@every 5s"
 	cadenceAuditPrune    = "@every 1h"
 	cadenceClientIPScan  = "@every 10s"
 	cadenceNodeHeartbeat = "@every 5s"
@@ -396,6 +397,7 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 
 	speedJob := job.NewSpeedLimitJob()
 	_, _ = s.cron.AddJob(cadenceSpeedLimit, speedJob)
+	_, _ = s.cron.AddJob(cadenceNativeRouting, job.NewNativeRoutingJob())
 	openvpn.SetSessionHook(service.KickSpeedSync)
 	l2tp.SetSessionHook(service.KickSpeedSync)
 	common.GoRecover("speed-limit-kicks", (&service.SpeedService{}).RunSpeedKicks)

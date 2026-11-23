@@ -225,7 +225,14 @@ func fullTransaction(s state) string {
 	b.WriteString("\tchain tunnels {\n\t\ttype filter hook forward priority mangle; policy accept;\n" +
 		"\t\tlimit name ip saddr map @addr4_up drop\n\t\tlimit name ip daddr map @addr4_down drop\n" +
 		"\t\tlimit name ip6 saddr map @addr6_up drop\n\t\tlimit name ip6 daddr map @addr6_down drop\n" +
-		"\t\tlimit name iifname map @iface_up drop\n\t\tlimit name oifname map @iface_down drop\n\t}\n}\n")
+		"\t\tlimit name iifname map @iface_up drop\n\t\tlimit name oifname map @iface_down drop\n\t}\n")
+	// Tunnel traffic a routing rule steers into Xray ends at the host's own sockets instead.
+	b.WriteString("\tchain tunnels_in {\n\t\ttype filter hook input priority mangle; policy accept;\n" +
+		"\t\tlimit name ip saddr map @addr4_up drop\n\t\tlimit name ip6 saddr map @addr6_up drop\n" +
+		"\t\tlimit name iifname map @iface_up drop\n\t}\n" +
+		"\tchain tunnels_out {\n\t\ttype filter hook output priority mangle; policy accept;\n" +
+		"\t\tlimit name ip daddr map @addr4_down drop\n\t\tlimit name ip6 daddr map @addr6_down drop\n" +
+		"\t\tlimit name oifname map @iface_down drop\n\t}\n}\n")
 	return b.String()
 }
 
