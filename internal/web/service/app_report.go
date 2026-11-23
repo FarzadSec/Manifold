@@ -14,10 +14,13 @@ import (
 // The app cuts its log to 2 MB and its message to 4000 characters; these leave it room.
 const (
 	maxAppReportMessage     = 4000
-	maxAppReportLog         = 8 << 20
+	maxAppReportLog         = 3 << 20
 	maxAppReportDeviceField = 128
 	appReportsPerDeviceHour = 5
-	keptAppReports          = 500
+	// A plan without a device limit signs in any number of device ids.
+	appReportsPerSubHour = 10
+	keptAppReports       = 500
+	appReportLogBudget   = 200 << 20
 )
 
 var (
@@ -52,8 +55,8 @@ func orSession(now, atLogin string) string {
 	return atLogin
 }
 
-// FileReport stores a report under the session's account with the account's Telegram id,
-// at most appReportsPerDeviceHour an hour per device, keeping the newest keptAppReports.
+// FileReport stores a report under the session's account with the account's Telegram id, within
+// the hourly limits of the device and of the subscription, keeping the newest within both caps.
 func (s *AppService) FileReport(session model.AppSession, in AppReportInput) (model.AppReport, error) {
 	report := model.AppReport{
 		CreatedAt:  time.Now().UnixMilli(),
@@ -72,13 +75,18 @@ func (s *AppService) FileReport(session model.AppSession, in AppReportInput) (mo
 		return report, ErrAppReportTooLarge
 	}
 	err := database.GetDB().Transaction(func(tx *gorm.DB) error {
-		var recent int64
 		since := report.CreatedAt - time.Hour.Milliseconds()
-		if err := tx.Model(&model.AppReport{}).Where("hwid_hash = ? AND created_at > ?", report.HwidHash, since).Count(&recent).Error; err != nil {
-			return err
-		}
-		if recent >= appReportsPerDeviceHour {
-			return ErrAppTooManyReports
+		for _, limit := range []struct {
+			column, value string
+			max           int64
+		}{{"hwid_hash", report.HwidHash, appReportsPerDeviceHour}, {"sub_id", report.SubID, appReportsPerSubHour}} {
+			var recent int64
+			if err := tx.Model(&model.AppReport{}).Where(limit.column+" = ? AND created_at > ?", limit.value, since).Count(&recent).Error; err != nil {
+				return err
+			}
+			if recent >= limit.max {
+				return ErrAppTooManyReports
+			}
 		}
 		var owner model.ClientRecord
 		err := tx.Select("tg_id").Where("sub_id = ? AND email = ?", session.SubID, session.Email).First(&owner).Error
@@ -89,21 +97,26 @@ func (s *AppService) FileReport(session model.AppSession, in AppReportInput) (mo
 		if err := tx.Create(&report).Error; err != nil {
 			return err
 		}
-		return pruneAppReports(tx, keptAppReports)
+		return pruneAppReports(tx, keptAppReports, appReportLogBudget)
 	})
 	return report, err
 }
 
-func pruneAppReports(tx *gorm.DB, keep int) error {
-	var oldestKept model.AppReport
-	err := tx.Select("id").Order("id DESC").Offset(keep - 1).Limit(1).Take(&oldestKept).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil
-	}
-	if err != nil {
+// pruneAppReports keeps the newest reports while there are at most keep of them and their
+// logs sum to at most budget bytes.
+func pruneAppReports(tx *gorm.DB, keep int, budget int) error {
+	var sizes []model.AppReport
+	if err := tx.Select("id", "log_size").Order("id DESC").Limit(keep + 1).Find(&sizes).Error; err != nil {
 		return err
 	}
-	return tx.Where("id < ?", oldestKept.Id).Delete(&model.AppReport{}).Error
+	total := 0
+	for i, r := range sizes {
+		total += r.LogSize
+		if i == keep || total > budget {
+			return tx.Where("id <= ?", r.Id).Delete(&model.AppReport{}).Error
+		}
+	}
+	return nil
 }
 
 // Reports lists every report, newest first, without its log.
