@@ -1006,6 +1006,18 @@ remove_tunnels() {
     done < <(ip rule show 2>/dev/null)
 }
 
+# remove_steers withdraws the steering of tunnel traffic into Xray: its table, rule and local route.
+remove_steers() {
+    local pref rest
+    while read -r pref rest; do
+        case "$rest" in *"fwmark 0x4d520000"*) ip rule del pref "${pref%:}" 2>/dev/null || true ;; esac
+    done < <(ip rule show 2>/dev/null)
+    ip route flush table 19900 2>/dev/null || true
+    if command -v nft >/dev/null 2>&1; then
+        nft delete table inet manifold_steer 2>/dev/null || true
+    fi
+}
+
 uninstall() {
     need_root
     systemctl disable --now manifold 2>/dev/null || true
@@ -1015,6 +1027,7 @@ uninstall() {
     rm -rf "$INSTALL_DIR"
     remove_engine_files /etc/wireguard /etc/swanctl/conf.d/manifold-l2tp.conf
     remove_tunnels /sys/class/net
+    remove_steers
     if [ "${1:-}" = "--purge" ]; then
         local db
         db=$(db_kind)

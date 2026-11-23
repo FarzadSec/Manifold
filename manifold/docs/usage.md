@@ -112,7 +112,9 @@ Under **Client profile**, **Extra profile lines** are added to every profile of 
 
 **Coming from 0.2 or 0.3.** On Ubuntu 22.04, Debian 11 and other systems with a systemd older than 252, OpenVPN inbounds did not start under the installed service ("Cannot open TUN/TAP dev" in the log). Updating to 0.4 fixes it; nothing else has to be done.
 
-Not supported yet: IPv6 inside the tunnel, logins by client certificate, and sending OpenVPN traffic through the routing rules and outbounds of Xray Configs.
+**Routing.** A rule under Xray Configs → Routing that names the inbound in **Inbound tags** sends its users' TCP and UDP through Xray, so the rule's outbound (WARP, another server, a balancer) carries it, as for a V2Ray inbound; domain rules match through sniffing. An inbound no rule names keeps leaving the server directly. Ping and other non-TCP/UDP traffic always leaves directly, and while Xray is stopped the inbound's traffic leaves directly too.
+
+Not supported yet: IPv6 inside the tunnel and logins by client certificate.
 
 ## WireGuard
 
@@ -156,7 +158,7 @@ A client imported without a private key keeps connecting with the config it has,
 
 **Coming from 0.2.** WireGuard inbounds made before 0.3 ran inside Xray. From 0.3 they run on a kernel interface with the same keys and addresses, so their clients need no new config.
 
-Not supported yet: NAT for IPv6 inside the tunnel (IPv6 addresses are carried over; routing them is left to your hooks), importing the interfaces of a node, and sending WireGuard traffic through the routing rules and outbounds of Xray Configs.
+Not supported yet: NAT for IPv6 inside the tunnel (IPv6 addresses are carried over; routing them is left to your hooks), and importing the interfaces of a node. Routing rules reach WireGuard inbounds as described for OpenVPN.
 
 ## L2TP/IPsec
 
@@ -193,7 +195,7 @@ If the server itself sits behind NAT, as with cloud providers that map a public 
 
 **While the panel is stopped its L2TP server is down**, as for OpenVPN and WireGuard.
 
-Not supported yet: IPv6 inside the tunnel, logins that use certificates instead of the shared key, a key per customer (every device of one inbound shares one), and sending L2TP traffic through the routing rules and outbounds of Xray Configs.
+Not supported yet: IPv6 inside the tunnel, logins that use certificates instead of the shared key, and a key per customer (every device of one inbound shares one). Routing rules reach L2TP inbounds as described for OpenVPN.
 
 ## Tunnels
 

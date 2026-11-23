@@ -63,6 +63,20 @@ check "only the panel's tunnel links and rules are removed" "$IP_CALLS" "[link d
 check "only the tunnel tables are removed" "$NFT_CALLS" "[delete table ip manifold_tf4][delete table inet manifold_tr4]"
 unset -f ip nft
 
+# Tunnel traffic that routing rules steer into Xray leaves a table, a rule and a local route.
+IP_CALLS="" NFT_CALLS=""
+ip() {
+    case "$*" in
+        "rule show") printf '0:\tfrom all lookup local\n9900:\tfrom all fwmark 0x4d520000 lookup 19900\n10004:\tfrom all fwmark 0x4d460004 lookup 20004\n' ;;
+        *) IP_CALLS="${IP_CALLS}[$*]" ;;
+    esac
+}
+nft() { NFT_CALLS="${NFT_CALLS}[$*]"; }
+remove_steers
+check "only the steer's rule and route are removed" "$IP_CALLS" "[rule del pref 9900][route flush table 19900]"
+check "only the steer's table is removed" "$NFT_CALLS" "[delete table inet manifold_steer]"
+unset -f ip nft
+
 # A fake panel binary: it records each call and answers the settings queries.
 mkdir -p "$work/bin"
 cat >"$work/bin/manifold" <<'FAKE'

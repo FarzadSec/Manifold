@@ -221,7 +221,7 @@ Requirement: root, the `wireguard-tools` package and the kernel WireGuard module
 - Clients reach the internet through kernel NAT (`internal/egress`): an nftables table per inbound and FORWARD accepts tagged with a comment, both removed with the server.
 - The profile embeds the login by default (`<auth-user-pass>`, read by OpenVPN 2.6 and OpenVPN Connect). Per inbound it can be left out for older apps, which then ask for it.
 - Since 0.5.0 an inbound also sets `tun-mtu` and `mssfix` on both ends, a limit on the data ciphers, split tunnelling (no pushed default route), the control channel key (`tls-crypt`, `tls-auth` with `auth SHA256`, or none) and extra profile lines, which may not repeat a directive the panel writes or add a script hook. Its key set can be issued anew (`POST /server/openvpnKeys`: ECDSA P-256 or P-384, RSA 2048 or 4096, lifetime, CA and server names) or brought in, and the form shows each certificate (`POST /server/openvpnCertInfo`). Changing any of these makes the profiles handed out before stale; the form says so.
-- Not built: IPv6 inside the tunnel, client-certificate logins, static addresses per account, and steering tunnel traffic into Xray routing (WARP, outbound rules).
+- Not built: IPv6 inside the tunnel, client-certificate logins and static addresses per account. Steering into Xray routing is in 4.22.
 
 ### 4.5 L2TP/IPsec engine (built, 0.4.0)
 
@@ -233,7 +233,7 @@ Requirement: root, the `wireguard-tools` package and the kernel WireGuard module
 - Clients reach the internet through the same kernel NAT as OpenVPN (`internal/egress`).
 - An account is handed out as an `l2tp://user:password@host?ipsec=…&psk=…` link, rendered in Go. The client pages show it as the four values a device asks for; the subscription body that proxy apps import leaves it out.
 - The unit allows `AF_PPPOX`, so that xl2tpd hands sessions to the kernel, and lets the panel write `/etc/swanctl`.
-- Not built: IKEv2 from the same strongSwan, a `.mobileconfig` for Apple devices, a key per account, IPv6 inside the tunnel, several devices behind one public address (strongSwan's `connmark` plugin is the known answer), L2TP in the container image, and steering tunnel traffic into Xray routing.
+- Not built: IKEv2 from the same strongSwan, a `.mobileconfig` for Apple devices, a key per account, IPv6 inside the tunnel, several devices behind one public address (strongSwan's `connmark` plugin is the known answer), and L2TP in the container image. Steering into Xray routing is in 4.22.
 
 ### 4.6 Access model (built, 0.6.0)
 
@@ -287,6 +287,14 @@ This is the contract Mirza Bot will sync against.
 - Measurement (`tunnel.Measure`): TCP and UDP are awaited together and the other gets three seconds once one answers. TCP: echoes (and ICMP through an interface for loss), a stream each way, then half the streams each way at once with echoes beside them; uploads are framed, since muxed transports close both ways on a half-close. UDP: 50 echoes 20 ms apart, then a paced ladder each way that quadruples while under 2 % is lost and settles at 95 % of what got through when more is; each step gets its share of the cap in a shorter step, never at a lower rate.
 - Rounds: every candidate is screened (short phases, no load); the best few overall plus the best two for TCP and for UDP are measured in full; the best with an interface are tried at MTUs 1400, 1360 and 1280 and keep one only when it wins by three points. Scores are out of 100 against the best of the round: TCP weighs throughput, latency, queueing under load and stability (loss and broken streams); UDP its rate, latency and loss; overall 0.6 TCP and 0.4 UDP. The picks are expressed as the client end's form values.
 - Reports are kept in `tunnel_benches` on both servers (the JSON, the pick's key, side and peer).
+
+### 4.22 Routing rules for OpenVPN, WireGuard and L2TP (built, 0.24.0)
+
+- A rule in the Xray template whose `inboundTag` names a local, enabled native inbound gets `~route~<tag>` added beside it, and Xray gets an inbound of that tag: `dokodemo-door` on `127.0.0.1` from port 62300 (past every port an inbound or the config already uses), `followRedirect`, `sockopt.tproxy`, sniffing with `routeOnly`. The proxy's tag differs from the inbound's because the engine already books the inbound's traffic under its tag.
+- `egress.ApplySteers` writes `inet manifold_steer`: in prerouting, TCP and UDP from a WireGuard interface or an OpenVPN or L2TP subnet, to anything but a local, broadcast or multicast address, go `tproxy ip to 127.0.0.1:<port>` with mark `0x4d520000`; `ip rule pref 9900 fwmark 0x4d520000 lookup 19900` and a `local 0.0.0.0/0 dev lo` route there deliver them. ICMP and other protocols keep the engine's NAT.
+- `XrayService.SyncNativeRouting` (every 5 s and after each start, stop or hot apply) derives the steers from the running core's own config, so traffic is steered only to ports Xray listens on, and to none while it is stopped. `manifold uninstall` removes the table, rule and route.
+- The speed limit polices tunnel addresses and ppp interfaces in the input and output hooks too, since steered traffic ends at Xray's sockets instead of passing forward.
+- Open: IPv6 inside the tunnel is not steered; a native inbound on a node is steered only by that node's own template.
 
 ### 4.10 Full backup and restore (built, 0.5.0)
 
