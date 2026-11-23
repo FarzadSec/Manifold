@@ -76,11 +76,11 @@ type appLoginRequest struct {
 
 const appRequestBodyLimit = 4 << 10
 
-// A report's log is capped at 8 MB (service.FileReport); its JSON comes gzipped, so the cap
+// A report's log is capped at 3 MB (service.FileReport); its JSON comes gzipped, so the cap
 // holds on what the stream expands to as well as on what crosses the wire.
 const (
 	appReportBodyLimit = 3 << 20
-	appReportJSONLimit = 9 << 20
+	appReportJSONLimit = 4 << 20
 )
 
 type appReportRequest struct {

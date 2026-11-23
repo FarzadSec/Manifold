@@ -37,6 +37,8 @@ import {
 import { tunnelConfigEndpoints, tunnelEndpointLabel } from './tunnelEndpoints';
 import type { HostRecord } from '@/schemas/api/host';
 import { countsClientSessions } from '@/lib/xray/protocol-capabilities';
+import { useAccess } from '@/api/queries/useAccess';
+import { ClientAppReports } from '@/pages/settings/AppReportsTab';
 import './ClientInfoModal.css';
 
 const INBOUND_PROTOCOL_COLORS: Record<string, string> = {
@@ -114,6 +116,8 @@ export default function ClientInfoModal({
 }: ClientInfoModalProps) {
   const { datepicker } = useDatepicker();
   const { t } = useTranslation();
+  const access = useAccess();
+  const canReadReports = access.can('settings:read') && !access.isReseller;
   const expiryLabel = (ts?: number) => {
     if (!ts) return '∞';
     if (ts < 0) {
@@ -877,6 +881,7 @@ export default function ClientInfoModal({
                 })}
               </>
             )}
+            {canReadReports && <ClientAppReports email={client.email} />}
           </>
         )}
       </Modal>
@@ -927,7 +932,13 @@ export default function ClientInfoModal({
                 {entry.ip}
                 {entry.time ? ` (${entry.time})` : ''}
                 {entry.node ? (
-                  <span style={{ marginInlineStart: 6, opacity: 0.85, fontWeight: 600 }}>
+                  <span
+                    style={{
+                      marginInlineStart: 6,
+                      opacity: 0.85,
+                      fontWeight: 600,
+                    }}
+                  >
                     @ {entry.node}
                   </span>
                 ) : null}

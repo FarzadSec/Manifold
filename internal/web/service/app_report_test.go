@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -120,6 +121,41 @@ func TestAppReportRefusesFloodsAndOversizedLogs(t *testing.T) {
 	}
 }
 
+// A plan without a device limit signs in any number of device ids, each with its own
+// hourly allowance; the subscription's own limit stops one account flooding the panel.
+func TestAppReportHoldsASubscriptionToItsLimitOverEveryDevice(t *testing.T) {
+	svc := initAppTestDB(t, true)
+	rec := seedReportingClient(t, 0)
+	for i := range appReportsPerSubHour {
+		session := signedInSession(t, svc, rec, fmt.Sprintf("device-%02d", i))
+		if _, err := svc.FileReport(session, AppReportInput{Message: "try"}); err != nil {
+			t.Fatalf("report %d: %v", i+1, err)
+		}
+	}
+	extra := signedInSession(t, svc, rec, "device-extra")
+	if _, err := svc.FileReport(extra, AppReportInput{Message: "one more"}); !errors.Is(err, ErrAppTooManyReports) {
+		t.Fatalf("report %d of one subscription in an hour = %v, want ErrAppTooManyReports", appReportsPerSubHour+1, err)
+	}
+}
+
+// Kept reports are bounded by their logs' total size as well, oldest going first.
+func TestPruneAppReportsKeepsTheNewestWithinTheLogBudget(t *testing.T) {
+	initAppTestDB(t, true)
+	db := database.GetDB()
+	for i := range 5 {
+		if err := db.Create(&model.AppReport{CreatedAt: int64(i + 1), SubID: "s", Email: "e", HwidHash: "h", LogSize: 40}).Error; err != nil {
+			t.Fatalf("seed: %v", err)
+		}
+	}
+	if err := pruneAppReports(db, 10, 100); err != nil {
+		t.Fatalf("prune: %v", err)
+	}
+	var left []model.AppReport
+	if err := db.Order("id").Find(&left).Error; err != nil || len(left) != 2 || left[0].CreatedAt != 4 || left[1].CreatedAt != 5 {
+		t.Fatalf("after prune = %+v %v, want the two newest, 80 of a 100 byte budget", left, err)
+	}
+}
+
 func TestPruneAppReportsKeepsTheNewest(t *testing.T) {
 	initAppTestDB(t, true)
 	db := database.GetDB()
@@ -128,7 +164,7 @@ func TestPruneAppReportsKeepsTheNewest(t *testing.T) {
 			t.Fatalf("seed: %v", err)
 		}
 	}
-	if err := pruneAppReports(db, 2); err != nil {
+	if err := pruneAppReports(db, 2, appReportLogBudget); err != nil {
 		t.Fatalf("prune: %v", err)
 	}
 	var left []model.AppReport

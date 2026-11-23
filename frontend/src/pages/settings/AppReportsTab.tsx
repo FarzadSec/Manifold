@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Button,
   Descriptions,
+  Divider,
+  Input,
   Modal,
   Popconfirm,
   Space,
@@ -48,10 +50,73 @@ function downloadLog(r: AppReport) {
   URL.revokeObjectURL(url);
 }
 
+function matches(r: AppReport, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return [r.email, r.tgId ? String(r.tgId) : '', r.message, r.deviceName].some((field) =>
+    field.toLowerCase().includes(q),
+  );
+}
+
 export default function AppReportsTab() {
   const { t } = useTranslation();
+  const { reports, loading, fetchError } = useAppReports();
+  const [query, setQuery] = useState('');
+  const shown = useMemo(() => reports.filter((r) => matches(r, query)), [reports, query]);
+  return (
+    <>
+      <Alert
+        type="info"
+        showIcon
+        style={{ marginBottom: 16 }}
+        title={t('pages.settings.app.reports.desc')}
+      />
+      {fetchError && (
+        <Alert type="error" showIcon style={{ marginBottom: 16 }} title={fetchError} />
+      )}
+      <Input.Search
+        allowClear
+        type="search"
+        style={{ marginBottom: 12, maxWidth: 360 }}
+        placeholder={t('pages.settings.app.reports.search')}
+        aria-label={t('pages.settings.app.reports.search')}
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+      />
+      <AppReportsTable reports={shown} loading={loading} />
+    </>
+  );
+}
+
+// ClientAppReports lists one user's reports in the user's own window, and nothing when there are none.
+export function ClientAppReports({ email }: { email: string }) {
+  const { t } = useTranslation();
+  const { reports, loading } = useAppReports();
+  const own = useMemo(
+    () => reports.filter((r) => r.email.toLowerCase() === email.toLowerCase()),
+    [reports, email],
+  );
+  if (own.length === 0) return null;
+  return (
+    <>
+      <Divider titlePlacement="start">{t('pages.settings.app.reports.menu')}</Divider>
+      <AppReportsTable reports={own} loading={loading} compact />
+    </>
+  );
+}
+
+function AppReportsTable({
+  reports,
+  loading,
+  compact = false,
+}: {
+  reports: AppReport[];
+  loading: boolean;
+  compact?: boolean;
+}) {
+  const { t } = useTranslation();
   const [messageApi, messageHolder] = message.useMessage();
-  const { reports, loading, fetchError, markSeen, remove } = useAppReports();
+  const { markSeen, remove } = useAppReports();
   const [open, setOpen] = useState<AppReport | null>(null);
   const [opening, setOpening] = useState(false);
   const [openError, setOpenError] = useState('');
@@ -76,7 +141,7 @@ export default function AppReportsTab() {
     }
   }
 
-  const columns = [
+  const allColumns = [
     {
       title: t('pages.settings.app.reports.time'),
       key: 'createdAt',
@@ -165,23 +230,19 @@ export default function AppReportsTab() {
     },
   ];
 
+  // The user's own window already names the user and is narrow.
+  const columns = compact
+    ? allColumns.filter((c) => !['email', 'tgId', 'logSize'].includes(c.key))
+    : allColumns;
+
   return (
     <>
       {messageHolder}
-      <Alert
-        type="info"
-        showIcon
-        style={{ marginBottom: 16 }}
-        title={t('pages.settings.app.reports.desc')}
-      />
-      {fetchError && (
-        <Alert type="error" showIcon style={{ marginBottom: 16 }} title={fetchError} />
-      )}
       <Table
         size="small"
         dataSource={reports}
         rowKey="id"
-        pagination={{ pageSize: 20, hideOnSinglePage: true }}
+        pagination={{ pageSize: compact ? 5 : 20, hideOnSinglePage: true }}
         loading={loading && reports.length === 0}
         scroll={{ x: true }}
         columns={columns}

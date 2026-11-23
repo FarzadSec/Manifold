@@ -1977,7 +1977,7 @@
         },
         "reports": {
           "menu": "App reports",
-          "desc": "What users send with Report a problem in DT Connect: their message and the app's log since it started, filed under their username and Telegram ID. The app takes passwords, keys and links out of the log. The newest 500 reports are kept.",
+          "desc": "What users send with Report a problem in DT Connect: their message and the app's log since it started, filed under their username and Telegram ID. The app takes passwords, keys and links out of the log. The newest 500 reports are kept, with at most 200 MB of logs.",
           "time": "Sent",
           "user": "User",
           "tgId": "Telegram ID",
@@ -1994,6 +1994,7 @@
           "copied": "Log copied",
           "empty": "No reports yet",
           "deleteConfirm": "Delete this report?",
+          "search": "Search by username, Telegram ID or text",
           "toasts": {
             "load": "Loading app reports",
             "seen": "Marking the report as read",
