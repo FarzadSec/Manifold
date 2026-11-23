@@ -2669,15 +2669,40 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/tunnels/groups/save',
         summary:
-          'Create (id 0) or replace a group of 2 to 16 relay ends with a tunnel address (kernel links or BackPack layer 3). Its ports are checked against tunnels, other groups, inbounds and the panel.',
-        body: '{\n  "id": 0,\n  "name": "origins",\n  "mode": "failover",\n  "members": [1, 2],\n  "forwards": [{ "listen": "443", "proto": "tcp" }],\n  "enable": true\n}',
+          "Create (id 0) or replace a group of 2 to 16 tunnels with a tunnel address (kernel links or BackPack layer 3). Without relayId the members are this relay's ends and the ports are checked against tunnels, other groups, inbounds and the panel. With relayId the members are this panel's ends of that managed relay's tunnels, and the group is placed on the relay, which checks its ports and runs it.",
+        body: '{\n  "id": 0,\n  "name": "origins",\n  "mode": "failover",\n  "relayId": 0,\n  "members": [1, 2],\n  "forwards": [{ "listen": "443", "proto": "tcp" }],\n  "enable": true\n}',
         responseSchema: 'TunnelGroupView',
       },
       {
         method: 'POST',
         path: '/panel/api/tunnels/groups/del/:id',
-        summary: 'Delete a group; its ports stop being forwarded.',
+        summary:
+          'Delete a group; its ports stop being forwarded, here or on the relay it was placed on.',
         params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Group ID.' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/tunnels/groups/import',
+        summary:
+          "Store the group a managing panel places on this relay, its tunnels named by pair id and mapped to this relay's ends, replacing the group of the same pair id. Reachable with the tunnel token.",
+        params: [
+          {
+            name: 'group',
+            in: 'body (form)',
+            type: 'string',
+            desc: 'The group as JSON: pairId, name, mode, members and backups (pair ids), sticky, forwards, enable.',
+          },
+        ],
+        responseSchema: 'TunnelGroupView',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/tunnels/groups/withdraw',
+        summary:
+          'Delete the group a managing panel placed here under this pair id. Reachable with the tunnel token.',
+        params: [
+          { name: 'pairId', in: 'body (form)', type: 'string', desc: 'Pair ID of the group.' },
+        ],
       },
       {
         method: 'GET',

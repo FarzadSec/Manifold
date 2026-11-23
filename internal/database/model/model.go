@@ -2137,6 +2137,10 @@ type TunnelGroup struct {
 	Forwards  string `json:"-" gorm:"type:text"`
 	Enable    bool   `json:"enable" example:"true"`
 	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime:milli" example:"1763300000000"`
+	// RelayId places the group on that managed relay, over this panel's ends of its tunnels.
+	RelayId int `json:"relayId" gorm:"not null;default:0" example:"0"`
+	// PairId names a group placed on a relay, on both panels; empty for a group of this server's own.
+	PairId string `json:"pairId" gorm:"index" example:"9f3c2a7b1d4e5f6071829304"`
 }
 
 // TunnelBench is a finished tunnel test as this server saw it; Report is its JSON.

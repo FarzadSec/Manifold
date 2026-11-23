@@ -2,10 +2,15 @@ import type { PortForward, TunnelView } from '@/generated/types';
 
 const KERNEL = ['gre', 'gretap', 'ip6gre', 'ip6gretap', 'ipip', 'sit'];
 
-// groupCandidates are the tunnels that can carry a group's ports: relay ends with a
-// tunnel address, as the server checks too.
-export function groupCandidates(tunnels: TunnelView[]): TunnelView[] {
-  return tunnels.filter((t) => t.role === 'server' && (KERNEL.includes(t.kind) || t.kind === 'l3'));
+// groupCandidates are the tunnels that can carry a group's ports, as the server checks too: for
+// a group of this server, relay ends with a tunnel address; for one placed on relay relayId, this
+// panel's ends of that relay's tunnels with a tunnel address.
+export function groupCandidates(tunnels: TunnelView[], relayId: number): TunnelView[] {
+  const withAddress = (t: TunnelView) => KERNEL.includes(t.kind) || t.kind === 'l3';
+  if (relayId > 0) {
+    return tunnels.filter((t) => t.role === 'client' && t.relayId === relayId && withAddress(t));
+  }
+  return tunnels.filter((t) => t.role === 'server' && withAddress(t));
 }
 
 // activeMembers is where a group sends its ports now, as the relay decides it: the members that

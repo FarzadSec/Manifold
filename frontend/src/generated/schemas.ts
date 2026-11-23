@@ -9163,6 +9163,16 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "origins",
         "type": "string"
       },
+      "pairId": {
+        "description": "PairId names a group placed on a relay, on both panels; empty for a group of this server's own.",
+        "example": "9f3c2a7b1d4e5f6071829304",
+        "type": "string"
+      },
+      "relayId": {
+        "description": "RelayId places the group on that managed relay, over this panel's ends of its tunnels.",
+        "example": 0,
+        "type": "integer"
+      },
       "sticky": {
         "example": false,
         "type": "boolean"
@@ -9176,6 +9186,8 @@ export const SCHEMAS: Record<string, unknown> = {
       "members",
       "mode",
       "name",
+      "pairId",
+      "relayId",
       "sticky"
     ],
     "type": "object"
@@ -9220,6 +9232,11 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "origins",
         "type": "string"
       },
+      "relayId": {
+        "description": "RelayId places the group on that managed relay; its members are this panel's ends of that relay's tunnels.",
+        "example": 0,
+        "type": "integer"
+      },
       "sticky": {
         "example": false,
         "type": "boolean"
@@ -9232,6 +9249,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "members",
       "mode",
       "name",
+      "relayId",
       "sticky"
     ],
     "type": "object"
@@ -9285,6 +9303,16 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "origins",
         "type": "string"
       },
+      "pairId": {
+        "description": "PairId names a group placed on a relay, on both panels; empty for a group of this server's own.",
+        "example": "9f3c2a7b1d4e5f6071829304",
+        "type": "string"
+      },
+      "relayId": {
+        "description": "RelayId places the group on that managed relay, over this panel's ends of its tunnels.",
+        "example": 0,
+        "type": "integer"
+      },
       "sticky": {
         "example": false,
         "type": "boolean"
@@ -9299,6 +9327,8 @@ export const SCHEMAS: Record<string, unknown> = {
       "members",
       "mode",
       "name",
+      "pairId",
+      "relayId",
       "sticky"
     ],
     "type": "object"

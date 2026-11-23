@@ -9189,6 +9189,16 @@
             "example": "origins",
             "type": "string"
           },
+          "pairId": {
+            "description": "PairId names a group placed on a relay, on both panels; empty for a group of this server's own.",
+            "example": "9f3c2a7b1d4e5f6071829304",
+            "type": "string"
+          },
+          "relayId": {
+            "description": "RelayId places the group on that managed relay, over this panel's ends of its tunnels.",
+            "example": 0,
+            "type": "integer"
+          },
           "sticky": {
             "example": false,
             "type": "boolean"
@@ -9202,6 +9212,8 @@
           "members",
           "mode",
           "name",
+          "pairId",
+          "relayId",
           "sticky"
         ],
         "type": "object"
@@ -9246,6 +9258,11 @@
             "example": "origins",
             "type": "string"
           },
+          "relayId": {
+            "description": "RelayId places the group on that managed relay; its members are this panel's ends of that relay's tunnels.",
+            "example": 0,
+            "type": "integer"
+          },
           "sticky": {
             "example": false,
             "type": "boolean"
@@ -9258,6 +9275,7 @@
           "members",
           "mode",
           "name",
+          "relayId",
           "sticky"
         ],
         "type": "object"
@@ -9311,6 +9329,16 @@
             "example": "origins",
             "type": "string"
           },
+          "pairId": {
+            "description": "PairId names a group placed on a relay, on both panels; empty for a group of this server's own.",
+            "example": "9f3c2a7b1d4e5f6071829304",
+            "type": "string"
+          },
+          "relayId": {
+            "description": "RelayId places the group on that managed relay, over this panel's ends of its tunnels.",
+            "example": 0,
+            "type": "integer"
+          },
           "sticky": {
             "example": false,
             "type": "boolean"
@@ -9325,6 +9353,8 @@
           "members",
           "mode",
           "name",
+          "pairId",
+          "relayId",
           "sticky"
         ],
         "type": "object"
@@ -22017,6 +22047,8 @@
                       ],
                       "mode": "failover",
                       "name": "origins",
+                      "pairId": "9f3c2a7b1d4e5f6071829304",
+                      "relayId": 0,
                       "sticky": false
                     }
                   ]
@@ -22032,7 +22064,7 @@
         "tags": [
           "Tunnels"
         ],
-        "summary": "Create (id 0) or replace a group of 2 to 16 relay ends with a tunnel address (kernel links or BackPack layer 3). Its ports are checked against tunnels, other groups, inbounds and the panel.",
+        "summary": "Create (id 0) or replace a group of 2 to 16 tunnels with a tunnel address (kernel links or BackPack layer 3). Without relayId the members are this relay's ends and the ports are checked against tunnels, other groups, inbounds and the panel. With relayId the members are this panel's ends of that managed relay's tunnels, and the group is placed on the relay, which checks its ports and runs it.",
         "operationId": "post_panel_api_tunnels_groups_save",
         "requestBody": {
           "required": true,
@@ -22045,6 +22077,7 @@
                 "id": 0,
                 "name": "origins",
                 "mode": "failover",
+                "relayId": 0,
                 "members": [
                   1,
                   2
@@ -22101,6 +22134,8 @@
                     ],
                     "mode": "failover",
                     "name": "origins",
+                    "pairId": "9f3c2a7b1d4e5f6071829304",
+                    "relayId": 0,
                     "sticky": false
                   }
                 }
@@ -22115,7 +22150,7 @@
         "tags": [
           "Tunnels"
         ],
-        "summary": "Delete a group; its ports stop being forwarded.",
+        "summary": "Delete a group; its ports stop being forwarded, here or on the relay it was placed on.",
         "operationId": "post_panel_api_tunnels_groups_del_id",
         "parameters": [
           {
@@ -22128,6 +22163,133 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/tunnels/groups/import": {
+      "post": {
+        "tags": [
+          "Tunnels"
+        ],
+        "summary": "Store the group a managing panel places on this relay, its tunnels named by pair id and mapped to this relay's ends, replacing the group of the same pair id. Reachable with the tunnel token.",
+        "operationId": "post_panel_api_tunnels_groups_import",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "group": {
+                    "type": "string",
+                    "description": "The group as JSON: pairId, name, mode, members and backups (pair ids), sticky, forwards, enable."
+                  }
+                },
+                "required": [
+                  "group"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/TunnelGroupView"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "backups": [
+                      3
+                    ],
+                    "createdAt": 1763300000000,
+                    "enable": true,
+                    "forwards": [
+                      {
+                        "listen": "443",
+                        "proto": "tcp",
+                        "target": "2096"
+                      }
+                    ],
+                    "id": 1,
+                    "members": [
+                      1,
+                      2
+                    ],
+                    "mode": "failover",
+                    "name": "origins",
+                    "pairId": "9f3c2a7b1d4e5f6071829304",
+                    "relayId": 0,
+                    "sticky": false
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/tunnels/groups/withdraw": {
+      "post": {
+        "tags": [
+          "Tunnels"
+        ],
+        "summary": "Delete the group a managing panel placed here under this pair id. Reachable with the tunnel token.",
+        "operationId": "post_panel_api_tunnels_groups_withdraw",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "pairId": {
+                    "type": "string",
+                    "description": "Pair ID of the group."
+                  }
+                },
+                "required": [
+                  "pairId"
+                ]
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful response",

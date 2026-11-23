@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 
 import TunnelFormModal from '@/pages/tunnels/TunnelFormModal';
 import RelaysTable from '@/pages/tunnels/RelaysTable';
 import TunnelsCard from '@/pages/index/TunnelsCard';
+import TunnelGroupsCard from '@/pages/tunnels/TunnelGroupsCard';
 import type { TunnelView } from '@/generated/types';
 import { HttpUtil, Msg } from '@/utils';
 import { fieldLabels, renderWithProviders } from './test-utils';
@@ -114,6 +115,42 @@ describe('tunnel forwards in both directions', () => {
     );
     await waitFor(() => expect(fieldLabels()).toContain('Transport'));
     expect(screen.queryByRole('button', { name: 'Add client end port' })).toBeNull();
+  });
+});
+
+describe('tunnel balancer on the managing panel', () => {
+  it("builds a group from this panel's ends of one relay's tunnels and places it on that relay", async () => {
+    vi.mocked(HttpUtil.get).mockResolvedValue(new Msg(true, '', []));
+    const post = vi.mocked(HttpUtil.post).mockResolvedValue(new Msg(true, '', {}));
+    const relayed = (id: number, name: string) =>
+      tunnel({
+        id,
+        name,
+        relayId: 4,
+        settings: { remoteAddr: '198.51.100.7', peerIp: '10.80.0.1' },
+      });
+    renderWithProviders(
+      <TunnelGroupsCard
+        tunnels={[relayed(1, 'gre-path'), relayed(2, 'ipip-path')]}
+        relays={[{ id: 4, name: 'uk relay', url: 'https://uk/', version: '', createdAt: 0 }]}
+      />,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Add a group' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText('uk relay')).toBeTruthy();
+    fireEvent.change(within(dialog).getByLabelText('Name'), { target: { value: 'uk paths' } });
+    fireEvent.mouseDown(within(dialog).getByLabelText('Tunnels'));
+    fireEvent.click(await screen.findByText('gre-path · 198.51.100.7'));
+    fireEvent.click(await screen.findByText('ipip-path · 198.51.100.7'));
+    fireEvent.change(within(dialog).getByLabelText('Relay port'), { target: { value: '443' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(post).toHaveBeenCalled());
+    expect(post.mock.calls.at(-1)![1]).toMatchObject({
+      name: 'uk paths',
+      relayId: 4,
+      members: [1, 2],
+      forwards: [{ listen: '443', proto: 'tcp' }],
+    });
   });
 });
 

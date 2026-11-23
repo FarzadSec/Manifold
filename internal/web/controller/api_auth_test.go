@@ -85,6 +85,11 @@ func newAPIAuthTestEngine(t *testing.T) (*gin.Engine, *APIController) {
 	api.POST("/tunnels/relays/add", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"reached": true})
 	})
+	for _, path := range []string{"/tunnels/groups/import", "/tunnels/groups/save"} {
+		api.POST(path, func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"reached": true})
+		})
+	}
 	return engine, a
 }
 
@@ -169,6 +174,8 @@ func TestTunnelScopeReachesOnlyTunnelEnds(t *testing.T) {
 		want         int
 	}{
 		{http.MethodPost, "/panel/api/tunnels/import", http.StatusOK},
+		{http.MethodPost, "/panel/api/tunnels/groups/import", http.StatusOK},
+		{http.MethodPost, "/panel/api/tunnels/groups/save", http.StatusForbidden},
 		{http.MethodPost, "/panel/api/tunnels/relays/add", http.StatusForbidden},
 		{http.MethodPost, "/panel/api/server/updatePanel", http.StatusForbidden},
 		{http.MethodPost, "/panel/api/clients/clientIpsByGuid", http.StatusForbidden},

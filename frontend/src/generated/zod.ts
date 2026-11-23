@@ -2194,6 +2194,8 @@ export const TunnelGroupSchema = z.object({
   members: z.array(z.number().int()),
   mode: z.string(),
   name: z.string(),
+  pairId: z.string(),
+  relayId: z.number().int(),
   sticky: z.boolean(),
 });
 export type TunnelGroup = z.infer<typeof TunnelGroupSchema>;
@@ -2205,6 +2207,7 @@ export const TunnelGroupRequestSchema = z.object({
   members: z.array(z.number().int()),
   mode: z.string(),
   name: z.string(),
+  relayId: z.number().int(),
   sticky: z.boolean(),
 });
 export type TunnelGroupRequest = z.infer<typeof TunnelGroupRequestSchema>;
@@ -2218,6 +2221,8 @@ export const TunnelGroupViewSchema = z.object({
   members: z.array(z.number().int()),
   mode: z.string(),
   name: z.string(),
+  pairId: z.string(),
+  relayId: z.number().int(),
   sticky: z.boolean(),
 });
 export type TunnelGroupView = z.infer<typeof TunnelGroupViewSchema>;
