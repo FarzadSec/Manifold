@@ -70,10 +70,14 @@ func TestApplyReplacesOnlyTheOwnersRules(t *testing.T) {
 	wantNAT := "add table ip manifold_ovpn3\ndelete table ip manifold_ovpn3\n" +
 		"table ip manifold_ovpn3 {\n\tchain postrouting {\n" +
 		"\t\ttype nat hook postrouting priority 100; policy accept;\n" +
-		"\t\tip saddr 10.8.0.0/24 ip daddr != 10.8.0.0/24 masquerade\n\t}\n}\n"
+		"\t\tip saddr 10.8.0.0/24 ip daddr != 10.8.0.0/24 masquerade\n\t}\n" +
+		"\tchain mss {\n\t\ttype filter hook forward priority mangle; policy accept;\n" +
+		"\t\tip saddr 10.8.0.0/24 tcp flags & (syn | rst) == syn tcp option maxseg size set rt mtu\n" +
+		"\t\tip daddr 10.8.0.0/24 tcp flags & (syn | rst) == syn tcp option maxseg size set rt mtu\n\t}\n}\n"
 	if got := f.calls[0]; got.argv != "nft -f -" || got.stdin != wantNAT {
 		t.Fatalf("NAT transaction = %q via %q, want %q via nft -f -", got.stdin, got.argv, wantNAT)
 	}
+	nftCheck(t, wantNAT)
 	if !f.forwarding {
 		t.Fatal("IPv4 forwarding was not enabled")
 	}
@@ -98,10 +102,14 @@ func TestApplyDeviceMatchesByInterface(t *testing.T) {
 	wantNAT := "add table ip manifold_wg7\ndelete table ip manifold_wg7\n" +
 		"table ip manifold_wg7 {\n\tchain postrouting {\n" +
 		"\t\ttype nat hook postrouting priority 100; policy accept;\n" +
-		"\t\tiifname \"mfwg7\" oifname != \"mfwg7\" masquerade\n\t}\n}\n"
+		"\t\tiifname \"mfwg7\" oifname != \"mfwg7\" masquerade\n\t}\n" +
+		"\tchain mss {\n\t\ttype filter hook forward priority mangle; policy accept;\n" +
+		"\t\tiifname \"mfwg7\" tcp flags & (syn | rst) == syn tcp option maxseg size set rt mtu\n" +
+		"\t\toifname \"mfwg7\" tcp flags & (syn | rst) == syn tcp option maxseg size set rt mtu\n\t}\n}\n"
 	if got := f.calls[0].stdin; got != wantNAT {
 		t.Fatalf("NAT transaction = %q, want %q", got, wantNAT)
 	}
+	nftCheck(t, wantNAT)
 	want := []string{
 		"iptables -w 5 -S FORWARD",
 		"iptables -w 5 -I FORWARD 1 -i mfwg7 -m comment --comment manifold:wg7 -j ACCEPT",

@@ -25,10 +25,14 @@ func TestApplyForwardsSendsThePortsThroughTheTunnel(t *testing.T) {
 		"\t\tiifname != \"mft3\" tcp dport 443 dnat to 10.80.0.2:443\n" +
 		"\t\tiifname != \"mft3\" udp dport 2201 dnat to 10.80.0.2:22\n" +
 		"\t\tiifname != \"mft3\" tcp dport 10000-10009 dnat to 10.80.0.2\n\t}\n" +
-		"\tchain postrouting {\n\t\ttype nat hook postrouting priority srcnat; policy accept;\n\t\toifname \"mft3\" masquerade\n\t}\n}\n"
+		"\tchain postrouting {\n\t\ttype nat hook postrouting priority srcnat; policy accept;\n\t\toifname \"mft3\" masquerade\n\t}\n" +
+		"\tchain mss {\n\t\ttype filter hook forward priority mangle; policy accept;\n" +
+		"\t\tiifname \"mft3\" tcp flags & (syn | rst) == syn tcp option maxseg size set rt mtu\n" +
+		"\t\toifname \"mft3\" tcp flags & (syn | rst) == syn tcp option maxseg size set rt mtu\n\t}\n}\n"
 	if f.calls[0].stdin != want {
 		t.Fatalf("nft transaction:\n%s\nwant:\n%s", f.calls[0].stdin, want)
 	}
+	nftCheck(t, want[strings.Index(want, "add table ip manifold_tf3"):])
 	if !f.forwarding {
 		t.Fatal("IPv4 forwarding was not turned on")
 	}
@@ -48,6 +52,10 @@ func TestApplyForwardsWithoutMasqueradeKeepsTheSource(t *testing.T) {
 	}
 	if strings.Contains(f.calls[0].stdin, "masquerade") {
 		t.Fatalf("masquerade installed:\n%s", f.calls[0].stdin)
+	}
+	// Without masquerade the client end advertises its uplink's MSS, so only the relay can fit it to the link.
+	if !strings.Contains(f.calls[0].stdin, "\t\tiifname \"mft3\" tcp flags & (syn | rst) == syn tcp option maxseg size set rt mtu\n") {
+		t.Fatalf("the replies' MSS is not clamped:\n%s", f.calls[0].stdin)
 	}
 	if err := ApplyReplyMark("tr3", "mft3", 0x4d460003); err != nil {
 		t.Fatal(err)
@@ -96,7 +104,10 @@ func TestApplyBalancedForwardsSpreadsNewConnectionsOverTheTunnels(t *testing.T) 
 		"\t\tiifname != { \"mft1\", \"mft2\" } tcp dport 443 dnat to numgen inc mod 2 map { 0 : 10.80.0.2, 1 : 10.81.0.2 }\n" +
 		"\t\tiifname != { \"mft1\", \"mft2\" } udp dport 2201 dnat ip to numgen inc mod 2 map { 0 : 10.80.0.2 . 22, 1 : 10.81.0.2 . 22 }\n" +
 		"\t\tiifname != { \"mft1\", \"mft2\" } tcp dport 10000-10009 dnat to numgen inc mod 2 map { 0 : 10.80.0.2, 1 : 10.81.0.2 }\n\t}\n" +
-		"\tchain postrouting {\n\t\ttype nat hook postrouting priority srcnat; policy accept;\n\t\toifname { \"mft1\", \"mft2\" } masquerade\n\t}\n}\n"
+		"\tchain postrouting {\n\t\ttype nat hook postrouting priority srcnat; policy accept;\n\t\toifname { \"mft1\", \"mft2\" } masquerade\n\t}\n" +
+		"\tchain mss {\n\t\ttype filter hook forward priority mangle; policy accept;\n" +
+		"\t\tiifname { \"mft1\", \"mft2\" } tcp flags & (syn | rst) == syn tcp option maxseg size set rt mtu\n" +
+		"\t\toifname { \"mft1\", \"mft2\" } tcp flags & (syn | rst) == syn tcp option maxseg size set rt mtu\n\t}\n}\n"
 	if f.calls[0].stdin != want {
 		t.Fatalf("nft transaction:\n%s\nwant:\n%s", f.calls[0].stdin, want)
 	}

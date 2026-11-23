@@ -38,13 +38,16 @@ var devicePattern = regexp.MustCompile(`^[a-zA-Z0-9_=+.-]{1,15}$`)
 // traffic says which packets belong to a tunnel: by source subnet when its
 // interfaces come and go (ppp), by interface when it has one of its own.
 type traffic struct {
-	nat     string
+	nat string
+	// mss matches each direction of the tunnel's forwarded connections.
+	mss     []string
 	forward [][]string
 }
 
 func fromSubnet(subnet netip.Prefix) traffic {
 	return traffic{
 		nat: fmt.Sprintf("ip saddr %s ip daddr != %s masquerade", subnet, subnet),
+		mss: []string{"ip saddr " + subnet.String(), "ip daddr " + subnet.String()},
 		forward: [][]string{
 			{"-s", subnet.String()},
 			{"-d", subnet.String(), "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED"},
@@ -55,11 +58,28 @@ func fromSubnet(subnet netip.Prefix) traffic {
 func fromDevice(device string) traffic {
 	return traffic{
 		nat: fmt.Sprintf("iifname %q oifname != %q masquerade", device, device),
+		mss: bothWays(fmt.Sprintf("%q", device)),
 		forward: [][]string{
 			{"-i", device},
 			{"-o", device, "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED"},
 		},
 	}
+}
+
+func bothWays(devices string) []string {
+	return []string{"iifname " + devices, "oifname " + devices}
+}
+
+// mssChain lowers the MSS of every connection a match opens to the smaller MTU of its two
+// routes, both ways, so TCP fits a narrow tunnel or a user's VPN without relying on ICMP.
+func mssChain(matches []string) string {
+	var b strings.Builder
+	b.WriteString("\tchain mss {\n\t\ttype filter hook forward priority mangle; policy accept;\n")
+	for _, m := range matches {
+		fmt.Fprintf(&b, "\t\t%s tcp flags & (syn | rst) == syn tcp option maxseg size set rt mtu\n", m)
+	}
+	b.WriteString("\t}\n")
+	return b.String()
 }
 
 // Apply masquerades what leaves subnet and accepts its forwarding. Calling it
@@ -87,7 +107,7 @@ func apply(owner string, t traffic) error {
 	if !host.has("nft") {
 		return ErrNoNftables
 	}
-	if out, err := host.run(natTransaction(owner, t.nat), "nft", "-f", "-"); err != nil {
+	if out, err := host.run(natTransaction(owner, t.nat, t.mss), "nft", "-f", "-"); err != nil {
 		return fmt.Errorf("egress: applying NAT for %s: %w (%s)", owner, err, out)
 	}
 	if err := host.enableIPv4Forwarding(); err != nil {
@@ -129,7 +149,7 @@ func Remove(owner string) {
 		return
 	}
 	if host.has("nft") {
-		if out, err := host.run(natTransaction(owner, ""), "nft", "-f", "-"); err != nil {
+		if out, err := host.run(natTransaction(owner, "", nil), "nft", "-f", "-"); err != nil {
 			logger.Warning("egress: removing NAT for ", owner, ": ", err, " ", out)
 		}
 	}
@@ -142,7 +162,7 @@ func forwardTag(owner string) string { return "manifold:" + owner }
 
 // natTransaction replaces the owner's table atomically; an empty rule only
 // deletes it, and "add" first keeps the delete valid when the table is absent.
-func natTransaction(owner, rule string) string {
+func natTransaction(owner, rule string, mss []string) string {
 	table := tableName(owner)
 	tx := fmt.Sprintf("add table ip %s\ndelete table ip %s\n", table, table)
 	if rule == "" {
@@ -152,7 +172,7 @@ func natTransaction(owner, rule string) string {
 		"\tchain postrouting {\n"+
 		"\t\ttype nat hook postrouting priority 100; policy accept;\n"+
 		"\t\t%s\n"+
-		"\t}\n}\n", table, rule)
+		"\t}\n%s}\n", table, rule, mssChain(mss))
 }
 
 // addForwardRules is best effort: with a FORWARD policy of ACCEPT the rules
