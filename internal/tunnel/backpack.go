@@ -47,8 +47,8 @@ func tomlList(items []string) string {
 // mappings renders forwards in BackPack's port syntax; a reverse tunnel names the
 // loopback of the far end, a layer-3 one leaves the host to mean the peer.
 func mappings(t Tunnel) []string {
-	out := make([]string, 0, len(t.Settings.Forwards))
-	for _, f := range t.Settings.Forwards {
+	out := make([]string, 0, len(t.Exposed()))
+	for _, f := range t.Exposed() {
 		target := f.Listen
 		if f.Target != "" {
 			target = f.Target
@@ -68,7 +68,7 @@ func mappings(t Tunnel) []string {
 }
 
 func acceptsUDP(t Tunnel) bool {
-	for _, f := range t.Settings.Forwards {
+	for _, f := range t.Exposed() {
 		if f.Proto == ProtoBoth || f.Proto == ProtoUDP {
 			return true
 		}
@@ -115,7 +115,7 @@ func renderBackPack(t Tunnel) string {
 		if s.MTU > 0 {
 			line("mtu", strconv.Itoa(s.MTU))
 		}
-		if t.Role == RoleServer && len(s.Forwards) > 0 {
+		if len(t.Exposed()) > 0 {
 			line("ports", tomlList(mappings(t)))
 			line("accept_udp", strconv.FormatBool(acceptsUDP(t)))
 		}

@@ -2516,6 +2516,13 @@ export const EXAMPLES: Record<string, unknown> = {
       "proxyProtocol": false,
       "publicAddr": "203.0.113.10",
       "remoteAddr": "198.51.100.7",
+      "reverseForwards": [
+        {
+          "listen": "443",
+          "proto": "tcp",
+          "target": "2096"
+        }
+      ],
       "token": "3f9c...",
       "transport": "tcpmux",
       "ttl": 255
@@ -2541,6 +2548,13 @@ export const EXAMPLES: Record<string, unknown> = {
     "proxyProtocol": false,
     "publicAddr": "203.0.113.10",
     "remoteAddr": "198.51.100.7",
+    "reverseForwards": [
+      {
+        "listen": "443",
+        "proto": "tcp",
+        "target": "2096"
+      }
+    ],
     "token": "3f9c...",
     "transport": "tcpmux",
     "ttl": 255
@@ -2592,6 +2606,13 @@ export const EXAMPLES: Record<string, unknown> = {
       "proxyProtocol": false,
       "publicAddr": "203.0.113.10",
       "remoteAddr": "198.51.100.7",
+      "reverseForwards": [
+        {
+          "listen": "443",
+          "proto": "tcp",
+          "target": "2096"
+        }
+      ],
       "token": "3f9c...",
       "transport": "tcpmux",
       "ttl": 255

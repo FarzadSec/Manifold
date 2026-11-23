@@ -211,7 +211,7 @@ The two ends have names. The **client** end runs on the panel that serves the ac
 
 BackPack tunnels run the BackPack program by Amin Mohammadi (AminMGMT), shipped unmodified in the package.
 
-**Create a tunnel** on the Tunnels page with **Add tunnel**. A new tunnel gets a free tunnel subnet from 10.80.0.0/16, a port and a secret. Under **Forwarded ports**, list the ports the relay should expose and the port here each one goes to: `443` → same, or `2201` → `22`, or a range such as `10000-10009`.
+**Create a tunnel** on the Tunnels page with **Add tunnel**. A new tunnel gets a free tunnel subnet from 10.80.0.0/16, a port and a secret. Under **Forwarded ports: relay → client end**, list the ports the relay should expose and the port here each one goes to: `443` → same, or `2201` → `22`, or a range such as `10000-10009`. **Forwarded ports: client end → relay** works the other way: this end listens on the port and sends it through the tunnel to a port of the relay, for a service that runs on the relay; those connections reach the relay from this end's tunnel address. Kernel and layer-3 tunnels carry both directions; a BackPack reverse tunnel carries the relay's ports only.
 
 **Set up the relay's end**, one of two ways:
 

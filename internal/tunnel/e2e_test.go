@@ -124,6 +124,10 @@ func TestRelayHelper(t *testing.T) {
 	if err := json.Unmarshal([]byte(spec), &relay); err != nil {
 		t.Fatal(err)
 	}
+	for _, f := range relay.Settings.ReverseForwards {
+		port, _ := strconv.Atoi(f.Target)
+		sourceEcho(t, port)
+	}
 	m := newManager(t.TempDir(), func() string { return "" })
 	m.Reconcile([]Tunnel{relay})
 	_, _ = io.Copy(io.Discard, os.Stdin)
@@ -212,6 +216,7 @@ func TestRealKernelLinkForwardsAPort(t *testing.T) {
 			panel := normalized(t, Tunnel{ID: 41, Name: "e2e", Kind: KindGRE, Role: RoleClient, Enabled: true, Settings: TunnelSettings{
 				LocalAddr: "192.168.252.1", RemoteAddr: "192.168.252.2", LocalIP: "10.81.0.2/30", PeerIP: "10.81.0.1",
 				NAT: tc.nat, Forwards: []PortForward{{Listen: "8080", Target: "18080"}},
+				ReverseForwards: []PortForward{{Listen: "9090", Target: "19090"}},
 			}})
 			relay := Mirror(panel, "192.168.252.1")
 			relay.ID = 42
@@ -260,6 +265,21 @@ func TestRealKernelLinkForwardsAPort(t *testing.T) {
 			}
 			if state != StateUp {
 				t.Fatalf("the link reports %q, want %q", state, StateUp)
+			}
+
+			// The panel's own forward: the relay reaches a service of its own through the panel's port.
+			back := ""
+			deadline = time.Now().Add(20 * time.Second)
+			for time.Now().Before(deadline) && back != "10.81.0.2" {
+				reply, err := exec.CommandContext(context.Background(), "ip", "netns", "exec", relayNS,
+					"bash", "-c", "exec 3<>/dev/tcp/192.168.252.1/9090 && timeout 2 head -n1 <&3").Output()
+				if err == nil {
+					back = strings.TrimSpace(string(reply))
+				}
+				time.Sleep(500 * time.Millisecond)
+			}
+			if back != "10.81.0.2" {
+				t.Fatalf("through the panel's port 9090 the relay's service saw %q, want the panel's tunnel address", back)
 			}
 		})
 	}

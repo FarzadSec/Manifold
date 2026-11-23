@@ -179,10 +179,10 @@ func replyMark(id int) uint32 { return 0x4d460000 | uint32(id&0xffff) }
 func replyTable(id int) int   { return 20000 + id }
 func replyPref(id int) int    { return 10000 + id%20000 }
 
-// portForwards turns a server end's forwards into the relay's DNAT rules.
-func portForwards(t Tunnel) []egress.PortForward {
+// portForwards turns the forwards an end exposes into its DNAT rules.
+func portForwards(forwards []PortForward) []egress.PortForward {
 	var rules []egress.PortForward
-	for _, f := range t.Settings.Forwards {
+	for _, f := range forwards {
 		if f.Proto == ProtoESP {
 			rules = append(rules, egress.PortForward{Proto: egress.ProtoESP})
 			continue
@@ -202,16 +202,21 @@ func portForwards(t Tunnel) []egress.PortForward {
 	return rules
 }
 
-// applyRouting gives a kernel link what its role needs beyond the link itself:
-// the relay forwards its ports, the client routes replies back when sources are kept.
+// applyPortForwards installs an end's forwards; tests replace it.
+var applyPortForwards = egress.ApplyForwards
+
+// applyRouting gives a kernel link what its role needs beyond the link itself: each end
+// forwards the ports it exposes, the client routes replies back when sources are kept.
 func applyRouting(t Tunnel) error {
 	dev := t.Device()
 	peer, err := netip.ParseAddr(t.Settings.PeerIP)
 	if err != nil {
 		return fmt.Errorf("tunnel: peer address: %w", err)
 	}
-	if t.Role == RoleServer && len(t.Settings.Forwards) > 0 {
-		if err := egress.ApplyForwards(forwardOwner(t.ID), dev, peer, portForwards(t), t.Settings.NAT != NATPreserve); err != nil {
+	if exposed := t.Exposed(); len(exposed) > 0 {
+		// Keeping the user's address is built for the relay's ports; the client's own are masqueraded.
+		masquerade := t.Role == RoleClient || t.Settings.NAT != NATPreserve
+		if err := applyPortForwards(forwardOwner(t.ID), dev, peer, portForwards(exposed), masquerade); err != nil {
 			return err
 		}
 	} else {

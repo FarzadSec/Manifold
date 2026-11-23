@@ -2097,6 +2097,7 @@ export interface TunnelSettings {
   proxyProtocol?: boolean;
   publicAddr?: string;
   remoteAddr?: string;
+  reverseForwards?: PortForward[];
   token?: string;
   transport?: string;
   ttl?: number;

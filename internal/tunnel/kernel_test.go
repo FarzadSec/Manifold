@@ -134,7 +134,7 @@ func TestPortForwardsSplitBothProtocols(t *testing.T) {
 	tun := greClient()
 	tun.Role = RoleServer
 	tun = normalized(t, tun)
-	got := portForwards(tun)
+	got := portForwards(tun.Exposed())
 	if len(got) != 3 || got[0].Proto != "tcp" || got[0].Low != 443 || got[0].TargetLow != 443 ||
 		got[1].Proto != "tcp" || got[1].Low != 2201 || got[1].TargetLow != 22 || got[2].Proto != "udp" || got[2].TargetLow != 22 {
 		t.Fatalf("rules = %+v", got)

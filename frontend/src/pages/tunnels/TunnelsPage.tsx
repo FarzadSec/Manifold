@@ -39,6 +39,7 @@ import AppSidebar from '@/layouts/AppSidebar';
 import { keys } from '@/api/queryKeys';
 import { useTunnelRelaysQuery, useTunnelsQuery } from '@/api/queries/useTunnelsQuery';
 import type {
+  PortForward,
   TunnelBenchPick,
   TunnelPairing,
   TunnelRelay,
@@ -238,10 +239,21 @@ export default function TunnelsPage() {
       title: t('pages.tunnels.forwards'),
       key: 'forwards',
       responsive: ['lg'],
-      render: (_, row) =>
-        (row.settings.forwards ?? [])
-          .map((f) => (f.target ? `${f.listen}→${f.target}` : f.listen))
-          .join(', ') || '-',
+      render: (_, row) => {
+        const text = (list: PortForward[] | undefined) =>
+          (list ?? []).map((f) => (f.target ? `${f.listen}→${f.target}` : f.listen)).join(', ');
+        const relay = text(row.settings.forwards);
+        const client = text(row.settings.reverseForwards);
+        if (!client) return relay || '-';
+        return (
+          <>
+            {relay && <div>{relay}</div>}
+            <div>
+              {t('pages.tunnels.reverseForwardListen')}: {client}
+            </div>
+          </>
+        );
+      },
     },
     {
       title: t('pages.tunnels.actions'),

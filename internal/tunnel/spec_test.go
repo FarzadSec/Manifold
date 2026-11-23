@@ -177,7 +177,7 @@ func TestKernelLinkForwardsESPButBackPackCannot(t *testing.T) {
 	if ports := server.ListenPorts(); len(ports) != 2 || ports[500] != ProtoUDP || ports[4500] != ProtoUDP {
 		t.Fatalf("listen ports = %v, want only the two UDP ports", ports)
 	}
-	rules := portForwards(server)
+	rules := portForwards(server.Exposed())
 	if len(rules) != 3 || rules[2].Proto != "esp" {
 		t.Fatalf("relay rules = %+v, want ESP last", rules)
 	}
