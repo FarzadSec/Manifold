@@ -53,31 +53,68 @@ func (osSystem) write(path, content string) error {
 	return os.WriteFile(path, []byte(content), 0o644)
 }
 
-// defaultMTU leaves room for each link's outer headers on a 1500-byte path.
-func defaultMTU(kind string) int {
+// encapOverhead is what a kind puts before each packet: the outer IP header, GRE's 4 bytes
+// and 4 more for a key, Ethernet's 14 for the TAP kinds, ip6gre's 8-byte encapsulation limit.
+func encapOverhead(kind string, key uint32) int {
+	gre := 4
+	if key != 0 {
+		gre += 4
+	}
 	switch kind {
 	case KindGRE:
-		return 1476
+		return 20 + gre
 	case KindGRETAP:
-		return 1462
+		return 20 + gre + 14
 	case KindIP6GRE:
-		return 1448
+		return 40 + 8 + gre
 	case KindIP6GRETAP:
-		return 1434
+		return 40 + 8 + gre + 14
 	default:
-		return 1480
+		return 20
 	}
 }
 
+// defaultMTU is a kind's MTU on a 1500-byte path, where the tunnel test starts.
+func defaultMTU(kind string) int { return 1500 - encapOverhead(kind, 0) }
+
+// mtu is the tunnel's own MTU or, when it names none, what the interface its outer
+// packets leave by carries less this kind's headers.
 func (t Tunnel) mtu() int {
 	if t.Settings.MTU > 0 {
 		return t.Settings.MTU
 	}
-	return defaultMTU(t.Kind)
+	return uplinkMTU(t.Settings.RemoteAddr, t.Settings.LocalAddr) - encapOverhead(t.Kind, t.Settings.Key)
+}
+
+// uplinkMTU is the MTU of the interface the route to remote leaves by, 1500 when it cannot be read.
+func uplinkMTU(remote, local string) int {
+	args := []string{"route", "get", remote}
+	if local != "" {
+		args = append(args, "from", local)
+	}
+	out, err := host.run("ip", args...)
+	if err != nil {
+		return 1500
+	}
+	fields := strings.Fields(out)
+	for i := 0; i+1 < len(fields); i++ {
+		if fields[i] != "dev" {
+			continue
+		}
+		raw, err := host.read(sysNet(fields[i+1], "mtu"))
+		if mtu, convErr := strconv.Atoi(raw); err == nil && convErr == nil && mtu >= 1280 {
+			return mtu
+		}
+		break
+	}
+	return 1500
 }
 
 // linkCommands is the plan for one kernel link, in the order it is run.
-func linkCommands(t Tunnel) [][]string { return linkPlan(t, aliasPrefix+linkFingerprint(t)) }
+func linkCommands(t Tunnel) [][]string {
+	t.Settings.MTU = t.mtu()
+	return linkPlan(t, aliasPrefix+linkFingerprint(t))
+}
 
 func linkPlan(t Tunnel, alias string) [][]string {
 	s := t.Settings
@@ -113,6 +150,8 @@ func sysNet(dev, file string) string { return filepath.Join("/sys/class/net", de
 
 // ensureLink makes the link unless one with the same fingerprint is already up.
 func ensureLink(t Tunnel) error {
+	// Resolved once: the fingerprint and the plan must name the same MTU.
+	t.Settings.MTU = t.mtu()
 	dev := t.Device()
 	want := aliasPrefix + linkFingerprint(t)
 	if alias, err := host.read(sysNet(dev, "ifalias")); err == nil && alias == want {
@@ -121,7 +160,7 @@ func ensureLink(t Tunnel) error {
 		}
 	}
 	_, _ = host.run("ip", "link", "del", "dev", dev)
-	for _, args := range linkCommands(t) {
+	for _, args := range linkPlan(t, want) {
 		if out, err := host.run("ip", args...); err != nil {
 			_, _ = host.run("ip", "link", "del", "dev", dev)
 			return fmt.Errorf("tunnel: ip %s: %w (%s)", strings.Join(args, " "), err, out)

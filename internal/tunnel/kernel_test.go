@@ -1,6 +1,8 @@
 package tunnel
 
 import (
+	"slices"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -9,6 +11,8 @@ type fakeHost struct {
 	files map[string]string
 	runs  []string
 	fail  string
+	// outputs are what a command line prints.
+	outputs map[string]string
 }
 
 func (f *fakeHost) run(name string, args ...string) (string, error) {
@@ -17,7 +21,18 @@ func (f *fakeHost) run(name string, args ...string) (string, error) {
 	if f.fail != "" && strings.Contains(line, f.fail) {
 		return "Error: refused", errFake
 	}
-	return "", nil
+	return f.outputs[line], nil
+}
+
+// changes are the commands that alter the host, without the lookups.
+func (f *fakeHost) changes() []string {
+	var out []string
+	for _, line := range f.runs {
+		if !strings.HasPrefix(line, "ip route get ") {
+			out = append(out, line)
+		}
+	}
+	return out
 }
 
 func (f *fakeHost) read(path string) (string, error) {
@@ -81,12 +96,14 @@ func TestEnsureLinkKeepsAMatchingLinkAndRemakesAChangedOne(t *testing.T) {
 	tun := greClient()
 	tun.ID = 4
 	tun = normalized(t, tun)
+	made := tun
+	made.Settings.MTU = 1476
 	f := &fakeHost{files: map[string]string{
-		sysNet("mft4", "ifalias"): aliasPrefix + linkFingerprint(tun),
+		sysNet("mft4", "ifalias"): aliasPrefix + linkFingerprint(made),
 		sysNet("mft4", "flags"):   "0x1091",
 	}}
 	useHost(t, f)
-	if err := ensureLink(tun); err != nil || len(f.runs) != 0 {
+	if err := ensureLink(tun); err != nil || len(f.changes()) != 0 {
 		t.Fatalf("a matching link was touched: err %v, ran %v", err, f.runs)
 	}
 
@@ -94,7 +111,7 @@ func TestEnsureLinkKeepsAMatchingLinkAndRemakesAChangedOne(t *testing.T) {
 	if err := ensureLink(tun); err != nil {
 		t.Fatal(err)
 	}
-	if len(f.runs) != 6 || f.runs[0] != "ip link del dev mft4" || !strings.Contains(f.runs[1], "remote 198.51.100.8") {
+	if ch := f.changes(); len(ch) != 6 || ch[0] != "ip link del dev mft4" || !strings.Contains(ch[1], "remote 198.51.100.8") {
 		t.Fatalf("changed link was not remade: %v", f.runs)
 	}
 
@@ -102,6 +119,59 @@ func TestEnsureLinkKeepsAMatchingLinkAndRemakesAChangedOne(t *testing.T) {
 	err := ensureLink(Tunnel{ID: 4, Kind: KindGRE, Settings: TunnelSettings{RemoteAddr: "198.51.100.9", LocalIP: "10.80.0.2/30", TTL: 9}})
 	if err == nil || f.runs[len(f.runs)-1] != "ip link del dev mft4" {
 		t.Fatalf("a half-made link was left behind: err %v, ran %v", err, f.runs)
+	}
+}
+
+// Without an MTU of its own a link takes what its uplink carries less the outer headers:
+// a GRE key adds 4 bytes, and a 1450-byte cloud interface leaves less than 1500 would.
+func TestLinkMTUFitsTheUplinkAndTheHeaders(t *testing.T) {
+	route := "ip route get 198.51.100.7 from 203.0.113.10"
+	for _, tc := range []struct {
+		name, kind string
+		key        uint32
+		uplink     string
+		want       int
+	}{
+		{"gre on a 1500-byte uplink", KindGRE, 0, "1500", 1476},
+		{"gre with a key", KindGRE, 42, "1500", 1472},
+		{"gretap with a key", KindGRETAP, 42, "1500", 1458},
+		{"ipip on a 1450-byte uplink", KindIPIP, 0, "1450", 1430},
+		{"uplink that cannot be read", KindGRE, 0, "", 1476},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			tun := greClient()
+			tun.ID, tun.Kind, tun.Settings.LocalAddr, tun.Settings.Key = 4, tc.kind, "203.0.113.10", tc.key
+			tun = normalized(t, tun)
+			f := &fakeHost{
+				files:   map[string]string{sysNet("ens3", "mtu"): tc.uplink},
+				outputs: map[string]string{route: "198.51.100.7 via 203.0.113.1 dev ens3 src 203.0.113.10 uid 0\n    cache"},
+			}
+			useHost(t, f)
+			if err := ensureLink(tun); err != nil {
+				t.Fatal(err)
+			}
+			want := "ip link set dev mft4 mtu " + strconv.Itoa(tc.want)
+			if !slices.Contains(f.runs, want) {
+				t.Fatalf("ran %q, want %q", f.runs, want)
+			}
+		})
+	}
+}
+
+func TestIP6GRELinkLeavesRoomForItsEncapsulationLimit(t *testing.T) {
+	tun := greClient()
+	tun.ID, tun.Kind, tun.Settings.RemoteAddr = 4, KindIP6GRE, "2001:db8::7"
+	tun = normalized(t, tun)
+	f := &fakeHost{
+		files:   map[string]string{sysNet("ens3", "mtu"): "1500"},
+		outputs: map[string]string{"ip route get 2001:db8::7": "2001:db8::7 from :: via fe80::1 dev ens3 proto ra src 2001:db8::10 metric 100 pref medium"},
+	}
+	useHost(t, f)
+	if err := ensureLink(tun); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(f.runs, "ip link set dev mft4 mtu 1448") {
+		t.Fatalf("ran %q, want an MTU of 1448", f.runs)
 	}
 }
 
