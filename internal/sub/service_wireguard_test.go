@@ -206,7 +206,7 @@ func TestGetSubs_PreservesPerInboundWireGuardIdentity(t *testing.T) {
 			rec := &model.ClientRecord{
 				Email: email, SubID: subID, Enable: true,
 				PrivateKey: mergedPriv, AllowedIPs: mergedAddr,
-				PreSharedKey: "sharedpsk", KeepAlive: model.KeepAliveValue("25"),
+				PreSharedKey: "sharedpsk", KeepAlive: model.KeepAliveValue("42"),
 			}
 			if err := db.Create(rec).Error; err != nil {
 				t.Fatalf("create client: %v", err)
@@ -241,7 +241,8 @@ func TestGetSubs_PreservesPerInboundWireGuardIdentity(t *testing.T) {
 				if q.Get("publickey") != n.serverPub {
 					t.Fatalf("publickey = %q, want %q", q.Get("publickey"), n.serverPub)
 				}
-				if q.Get("presharedkey") != "" || q.Get("keepalive") != "" {
+				// 25 is the default of a client that names no keepalive; the shared row says 42.
+				if q.Get("presharedkey") != "" || q.Get("keepalive") != "25" {
 					t.Fatalf("optional fields inherited shared values: %s", u.RawQuery)
 				}
 				if u.User.Username() == mergedPriv || strings.Contains(q.Get("address"), "10.9.9.9") || strings.Contains(q.Get("address"), other.allowed[0]) || strings.Contains(q.Get("address"), other.allowed[1]) {
@@ -298,7 +299,7 @@ func TestGetSubs_WireGuardUnavailableSettingsEmitNoSharedConfig(t *testing.T) {
 	rec := &model.ClientRecord{
 		Email: email, SubID: subID, Enable: true,
 		PrivateKey: mergedPriv, AllowedIPs: mergedAddr,
-		PreSharedKey: "sharedpsk", KeepAlive: model.KeepAliveValue("25"),
+		PreSharedKey: "sharedpsk", KeepAlive: model.KeepAliveValue("42"),
 	}
 	if err := db.Create(rec).Error; err != nil {
 		t.Fatalf("create client: %v", err)
@@ -326,7 +327,7 @@ func TestGetSubs_WireGuardUnavailableSettingsEmitNoSharedConfig(t *testing.T) {
 	if got, want := u.Query().Get("address"), strings.Join(validAllowed, ","); got != want {
 		t.Fatalf("address = %q, want %q", got, want)
 	}
-	if u.Query().Get("publickey") != serverPub || u.Query().Get("presharedkey") != "" || u.Query().Get("keepalive") != "" {
+	if u.Query().Get("publickey") != serverPub || u.Query().Get("presharedkey") != "" || u.Query().Get("keepalive") != "25" {
 		t.Fatalf("query borrowed shared or foreign tunnel fields: %s", u.RawQuery)
 	}
 }
@@ -358,7 +359,7 @@ func TestGetSubs_WireGuardEmptyOptionalTunnelFieldsDoNotInheritShared(t *testing
 	rec := &model.ClientRecord{
 		Email: email, SubID: subID, Enable: true,
 		PrivateKey: mergedPriv, AllowedIPs: "10.9.9.9/32,fd00:9::9/128",
-		PreSharedKey: "sharedpsk", KeepAlive: model.KeepAliveValue("25"),
+		PreSharedKey: "sharedpsk", KeepAlive: model.KeepAliveValue("42"),
 	}
 	if err := db.Create(rec).Error; err != nil {
 		t.Fatalf("create client: %v", err)
@@ -401,7 +402,8 @@ func TestGenWireguardLinkKeepsALimitedAccountsIdleDeviceHeard(t *testing.T) {
 	}{
 		{"limited, no keepalive of its own", `"userLimit":1`, "25"},
 		{"limited, its own keepalive", `"userLimit":1,"keepAlive":15`, "15"},
-		{"no limit", `"userLimit":0`, ""},
+		{"no limit, none of its own", `"userLimit":0`, "25"},
+		{"no limit, set to 0", `"userLimit":0,"keepAlive":0`, ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -420,8 +422,8 @@ func TestGenWireguardLinkKeepsALimitedAccountsIdleDeviceHeard(t *testing.T) {
 	}
 }
 
-// Without an MTU line every app picks its own (1420 on most), which does not fit a relay's
-// tunnel; the link always carries the size the server's interface was given.
+// Without an MTU line every app picks its own (1420 on most), which some mobile networks split and
+// lose half of; the link always carries the size the server's interface was given.
 func TestWireguardLinkCarriesTheServersMTUWhenTheInboundNamesNone(t *testing.T) {
 	serverPriv, _, err := wgutil.GenerateWireguardKeypair()
 	if err != nil {
@@ -439,7 +441,7 @@ func TestWireguardLinkCarriesTheServersMTUWhenTheInboundNamesNone(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := u.Query().Get("mtu"); got != "1380" {
-		t.Fatalf("mtu = %q, want 1380", got)
+	if got := u.Query().Get("mtu"); got != "1280" {
+		t.Fatalf("mtu = %q, want 1280", got)
 	}
 }

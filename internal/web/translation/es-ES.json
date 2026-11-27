@@ -946,7 +946,7 @@
         "interfaceInvalid": "Usa de 1 a 15 letras, dígitos o los caracteres _ = + . -",
         "address": "Dirección del servidor",
         "addressHint": "La dirección de la propia interfaz, por ejemplo 10.0.0.1/24. Déjala vacía para usar la primera dirección de la subred.",
-        "mtuHint": "En el servidor y en cada configuración que entrega. Vacío usa 1380, que cabe en una ruta de 1460 bytes, incluido el túnel GRE, IPIP o SIT de un relay. Detrás de un túnel más estrecho, use su MTU menos 80.",
+        "mtuHint": "En el servidor y en cada configuración que entrega. Vacío usa 1280, que cabe en una ruta de 1460 bytes, incluido el túnel GRE, IPIP o SIT de un relay. Detrás de un túnel más estrecho, use su MTU menos 80.",
         "hooks": "Hooks",
         "hooksHint": "Comandos que wg-quick ejecuta como root cuando la interfaz se levanta o se detiene, uno por línea. %i representa el nombre de la interfaz.",
         "importTitle": "Importar servidores WireGuard",

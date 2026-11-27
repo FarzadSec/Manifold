@@ -946,7 +946,7 @@
         "interfaceInvalid": "1 ile 15 arasında harf, rakam veya _ = + . - karakterlerini kullanın.",
         "address": "Sunucu adresi",
         "addressHint": "Arayüzün kendi adresi, örneğin 10.0.0.1/24. Boş bırakırsanız alt ağın ilk adresi kullanılır.",
-        "mtuHint": "Sunucuda ve verdiği her yapılandırmada. Boşsa 1380 kullanılır; bu, bir relay'in GRE, IPIP veya SIT tüneli dahil 1460 baytlık yola sığar. Daha dar bir tünelin arkasında tünelin MTU'sundan 80 çıkarın.",
+        "mtuHint": "Sunucuda ve verdiği her yapılandırmada. Boşsa 1280 kullanılır; bu, bir relay'in GRE, IPIP veya SIT tüneli dahil 1460 baytlık yola sığar. Daha dar bir tünelin arkasında tünelin MTU'sundan 80 çıkarın.",
         "hooks": "Kancalar",
         "hooksHint": "Arayüz açılırken veya kapanırken wg-quick'in root olarak çalıştırdığı komutlar; her satıra bir komut. %i arayüz adının yerine geçer.",
         "importTitle": "WireGuard sunucularını içe aktar",

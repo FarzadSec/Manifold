@@ -946,7 +946,7 @@
         "interfaceInvalid": "Use de 1 a 15 letras, dígitos ou os caracteres _ = + . -",
         "address": "Endereço do servidor",
         "addressHint": "O endereço da própria interface, por exemplo 10.0.0.1/24. Deixe vazio para usar o primeiro endereço da sub-rede.",
-        "mtuHint": "No servidor e em cada configuração entregue. Vazio usa 1380, que cabe numa rota de 1460 bytes, incluindo o túnel GRE, IPIP ou SIT de um relay. Atrás de um túnel mais estreito, use o MTU dele menos 80.",
+        "mtuHint": "No servidor e em cada configuração entregue. Vazio usa 1280, que cabe numa rota de 1460 bytes, incluindo o túnel GRE, IPIP ou SIT de um relay. Atrás de um túnel mais estreito, use o MTU dele menos 80.",
         "hooks": "Hooks",
         "hooksHint": "Comandos que o wg-quick executa como root quando a interface sobe ou desce, um por linha. %i representa o nome da interface.",
         "importTitle": "Importar servidores WireGuard",

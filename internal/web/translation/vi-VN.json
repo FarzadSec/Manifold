@@ -946,7 +946,7 @@
         "interfaceInvalid": "Dùng từ 1 đến 15 chữ cái, chữ số hoặc các ký tự _ = + . -",
         "address": "Địa chỉ máy chủ",
         "addressHint": "Địa chỉ của chính giao diện, ví dụ 10.0.0.1/24. Để trống để dùng địa chỉ đầu tiên của mạng con.",
-        "mtuHint": "Trên máy chủ và trong mọi cấu hình được cấp. Để trống dùng 1380, vừa với tuyến 1460 byte, kể cả đường hầm GRE, IPIP hoặc SIT của relay. Sau một đường hầm hẹp hơn, dùng MTU của nó trừ 80.",
+        "mtuHint": "Trên máy chủ và trong mọi cấu hình được cấp. Để trống dùng 1280, vừa với tuyến 1460 byte, kể cả đường hầm GRE, IPIP hoặc SIT của relay. Sau một đường hầm hẹp hơn, dùng MTU của nó trừ 80.",
         "hooks": "Hook",
         "hooksHint": "Các lệnh wg-quick chạy với quyền root khi giao diện được bật hoặc tắt, mỗi dòng một lệnh. %i thay cho tên giao diện.",
         "importTitle": "Nhập máy chủ WireGuard",
