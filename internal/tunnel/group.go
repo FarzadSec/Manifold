@@ -91,12 +91,33 @@ func CanCarryRelayGroup(t Tunnel) bool {
 
 func groupOwner(id int) string { return fmt.Sprintf("tg%d", id) }
 
-// chooseTargets is what a group forwards to now: the members that answer, else the backups that
-// do, else every member, so a probe that cannot run never takes the ports away; failover takes the first.
-func chooseTargets(mode string, members, backups []egress.Target, healthy, backupHealthy []bool) []egress.Target {
-	live := answering(members, healthy)
-	if len(live) == 0 {
-		live = answering(backups, backupHealthy)
+// carryHealth is how well a group's tunnel carries traffic now, best last.
+type carryHealth int
+
+const (
+	carryDown carryHealth = iota
+	carryDegraded
+	carryUp
+)
+
+// chooseTargets is what a group forwards to now: the members fully up, else the backups that are, else
+// the members and then the backups that answer with loss or delay, else every member, so a probe that
+// cannot run never takes the ports away; failover takes the first.
+func chooseTargets(mode string, members, backups []egress.Target, memberHealth, backupHealth []carryHealth) []egress.Target {
+	var live []egress.Target
+	for _, step := range []struct {
+		targets []egress.Target
+		health  []carryHealth
+		want    carryHealth
+	}{
+		{members, memberHealth, carryUp},
+		{backups, backupHealth, carryUp},
+		{members, memberHealth, carryDegraded},
+		{backups, backupHealth, carryDegraded},
+	} {
+		if live = withHealth(step.targets, step.health, step.want); len(live) > 0 {
+			break
+		}
 	}
 	if len(live) == 0 {
 		live = slices.Clone(members)
@@ -107,20 +128,20 @@ func chooseTargets(mode string, members, backups []egress.Target, healthy, backu
 	return live
 }
 
-func answering(targets []egress.Target, healthy []bool) []egress.Target {
+func withHealth(targets []egress.Target, health []carryHealth, want carryHealth) []egress.Target {
 	var live []egress.Target
 	for i, t := range targets {
-		if healthy[i] {
+		if health[i] == want {
 			live = append(live, t)
 		}
 	}
 	return live
 }
 
-// groupTargetsLocked lists the tunnels of ids that can carry a group, and whether each answers.
-func (m *Manager) groupTargetsLocked(ids []int) ([]egress.Target, []bool) {
+// groupTargetsLocked lists the tunnels of ids that can carry a group, and how well each carries now.
+func (m *Manager) groupTargetsLocked(ids []int) ([]egress.Target, []carryHealth) {
 	var targets []egress.Target
-	var healthy []bool
+	var health []carryHealth
 	for _, id := range ids {
 		e := m.entries[id]
 		if e == nil || e.disabled || e.err != nil || !CanJoinGroup(e.t) {
@@ -131,10 +152,16 @@ func (m *Manager) groupTargetsLocked(ids []int) ([]egress.Target, []bool) {
 			continue
 		}
 		targets = append(targets, egress.Target{Device: e.t.Device(), Addr: peer})
-		state := m.statusLocked(e).State
-		healthy = append(healthy, state == StateUp || state == StateDegraded)
+		switch m.statusLocked(e).State {
+		case StateUp:
+			health = append(health, carryUp)
+		case StateDegraded:
+			health = append(health, carryDegraded)
+		default:
+			health = append(health, carryDown)
+		}
 	}
-	return targets, healthy
+	return targets, health
 }
 
 // applyGroupForwards and removeGroupForwards change the relay's rules; tests replace them.
@@ -160,16 +187,16 @@ func (m *Manager) ReconcileGroups(groups []Group) {
 		if !g.Enabled {
 			continue
 		}
-		members, healthy := m.groupTargetsLocked(g.Members)
-		backups, backupHealthy := m.groupTargetsLocked(g.Backups)
+		members, health := m.groupTargetsLocked(g.Members)
+		backups, backupHealth := m.groupTargetsLocked(g.Backups)
 		if len(members) == 0 {
-			members, healthy, backups, backupHealthy = backups, backupHealthy, nil, nil
+			members, health, backups, backupHealth = backups, backupHealth, nil, nil
 		}
 		if len(members) == 0 {
 			continue
 		}
 		wanted[g.ID] = true
-		targets := chooseTargets(g.Mode, members, backups, healthy, backupHealthy)
+		targets := chooseTargets(g.Mode, members, backups, health, backupHealth)
 		rules := portForwards(g.Forwards)
 		key := targetsKey(targets, rules, g.Sticky)
 		if m.groups[g.ID] == key {

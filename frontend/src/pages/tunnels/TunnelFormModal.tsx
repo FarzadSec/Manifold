@@ -34,10 +34,12 @@ interface TunnelFormModalProps {
   onClose: (saved: boolean) => void;
 }
 
+// A new tunnel starts as BackPack layer 3: it gets through filtered paths, carries TCP and UDP,
+// and can join a group, where a kernel link to a filtered relay often carries nothing.
 function emptyRequest(): TunnelRequest {
   return {
     name: '',
-    kind: 'gre',
+    kind: 'l3',
     role: isTunnelEdition() ? 'server' : 'client',
     enable: true,
     relayId: 0,
@@ -260,15 +262,15 @@ export default function TunnelFormModal({
                   disabled={!!tunnel}
                   options={[
                     {
-                      label: t('pages.tunnels.kernelGroup'),
-                      options: KERNEL_KINDS.map((k) => ({
+                      label: 'BackPack',
+                      options: ['l3', 'reverse'].map((k) => ({
                         label: kindLabel(k),
                         value: k,
                       })),
                     },
                     {
-                      label: 'BackPack',
-                      options: ['reverse', 'l3'].map((k) => ({
+                      label: t('pages.tunnels.kernelGroup'),
+                      options: KERNEL_KINDS.map((k) => ({
                         label: kindLabel(k),
                         value: k,
                       })),
