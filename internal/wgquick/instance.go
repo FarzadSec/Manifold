@@ -291,3 +291,29 @@ func sortedKeys(peers map[string]Peer) []string {
 	slices.Sort(keys)
 	return keys
 }
+
+// TunnelSubnets are the networks an inbound's interface takes on its host, the
+// way InstanceFromInbound reads its settings; nil when they cannot be read.
+func TunnelSubnets(settings string) []netip.Prefix {
+	var parsed inboundSettings
+	if err := json.Unmarshal([]byte(settings), &parsed); err != nil {
+		return nil
+	}
+	addresses := serverAddresses(parsed)
+	out := make([]netip.Prefix, 0, len(addresses))
+	for _, a := range addresses {
+		out = append(out, a.Masked())
+	}
+	return out
+}
+
+// NamesSubnet reports whether the settings fix the interface's network: an
+// explicit subnet, named addresses, or clients whose addresses imply it.
+func NamesSubnet(settings string) bool {
+	var parsed inboundSettings
+	if err := json.Unmarshal([]byte(settings), &parsed); err != nil {
+		return true
+	}
+	_, fromClients := firstClientAddress(parsed.Clients)
+	return strings.TrimSpace(parsed.SubnetIP) != "" || strings.TrimSpace(parsed.Address) != "" || fromClients
+}

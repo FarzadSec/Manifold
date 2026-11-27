@@ -1519,14 +1519,18 @@ func (c Client) KeepAliveSeconds() int {
 	return c.KeepAlive.Seconds()
 }
 
-// LimitedKeepAlive is the user limit's keepalive: a limited account's seat follows its peer's
-// traffic, so a device that sets none still says it is there every 25 s.
+// LimitedKeepAlive is the keepalive of a config that names none: a limited account's seat follows
+// its peer's traffic, and a relay or mobile NAT forgets an idle UDP mapping within a minute or two.
 const LimitedKeepAlive = 25
 
-// ExportKeepAliveSeconds is the keepalive a client's WireGuard config carries.
+// ExportKeepAliveSeconds is the keepalive a client's WireGuard config carries; a client set to 0
+// without a user limit has it off.
 func (c Client) ExportKeepAliveSeconds() int {
-	if ka := c.KeepAliveSeconds(); ka > 0 || c.UserLimit <= 0 {
+	if ka := c.KeepAliveSeconds(); ka > 0 {
 		return ka
+	}
+	if c.KeepAlive != nil && c.UserLimit <= 0 {
+		return 0
 	}
 	return LimitedKeepAlive
 }

@@ -128,7 +128,7 @@ A WireGuard inbound is a WireGuard interface of the server itself: the standard 
 | Interface name | The name of the interface and of its file in `/etc/wireguard`. Empty: `mfwg` followed by the inbound's number |
 | Subnet, Subnet CIDR | The network new clients get their addresses from. The server takes its first address |
 | Server address | Only for a server whose address is not the first of the subnet, or that has more than one, for example `10.0.0.254/24, fd42::1/64` |
-| MTU, DNS | The MTU of the interface and of every client config, and the DNS servers written into client configs. An empty MTU is 1380 on both, which fits a 1460-byte path and so a GRE, IPIP or SIT relay at its default MTU; behind a narrower tunnel, set the tunnel's MTU less 80 |
+| MTU, DNS | The MTU of the interface and of every client config, and the DNS servers written into client configs. An empty MTU is 1280 on both, what the official WireGuard apps use: at 1380 some mobile networks split the 1440-byte packets and lost the second half. Behind a tunnel narrower than 1360, set the tunnel's MTU less 80. A client without a keepalive of its own gets 25 s, so a relay or mobile NAT keeps its UDP mapping; set 0 to send none |
 | Hooks | Commands `wg-quick` runs as root before and after the interface goes up or down, one per line; `%i` stands for the interface name |
 
 On a system that confines `wg-quick` with AppArmor, as Ubuntu 26.04 does, a hook can only run what that profile allows: `ip`, `wg`, `nft`, `iptables` and a few basic tools. A hook that runs anything else fails, and the interface with it; `/etc/apparmor.d/local/wg-quick` is where such a system lets you allow more.

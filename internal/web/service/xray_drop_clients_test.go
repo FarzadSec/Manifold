@@ -2,6 +2,7 @@ package service
 
 import (
 	"testing"
+	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 )
@@ -67,6 +68,38 @@ func TestRestartToDropClients(t *testing.T) {
 			got := (&XrayService{}).restartToDropClients(tc.diff)
 			if got != tc.wantRestart {
 				t.Fatalf("restartToDropClients = %v, want %v", got, tc.wantRestart)
+			}
+		})
+	}
+}
+
+// Every restart dropped all users' sessions to end one client's; a client the core reports offline has
+// no session left once RemoveUser drops its credential, so only a connected one needs it.
+func TestRestartToDropClientsOnlyWhileConnected(t *testing.T) {
+	dropped := &xray.HotDiff{RemovedUsers: []xray.UserOp{{Tag: "in-443", Email: "a@x"}}}
+	cases := []struct {
+		name        string
+		support     xray.OnlineAPISupport
+		online      []string
+		wantRestart bool
+	}{
+		{"dropped client offline", xray.OnlineAPISupported, []string{"b@x"}, false},
+		{"dropped client connected", xray.OnlineAPISupported, []string{"b@x", "a@x"}, true},
+		{"core without connection stats", xray.OnlineAPIUnsupported, nil, true},
+		{"stats not probed yet", xray.OnlineAPIUnknown, nil, true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			setupConflictDB(t)
+			setRestartOnClientDisable(t, true)
+			process := useOnlineTestProcess(t)
+			process.SetOnlineAPISupport(tc.support)
+			process.RefreshLocalOnline(tc.online, nil, time.Now().UnixMilli(), onlineGracePeriodMs)
+			if got := (&XrayService{}).restartToDropClients(dropped); got != tc.wantRestart {
+				t.Fatalf("restartToDropClients = %v, want %v", got, tc.wantRestart)
+			}
+			if got := droppedClientsNeedRestart("a@x"); got != tc.wantRestart {
+				t.Fatalf("droppedClientsNeedRestart = %v, want %v", got, tc.wantRestart)
 			}
 		})
 	}

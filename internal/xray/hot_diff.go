@@ -44,11 +44,21 @@ type UserOp struct {
 // DropsUsers reports users removed without being re-added under the same tag:
 // a disable or a delete, where an edit re-adds the email with new values.
 func (d *HotDiff) DropsUsers() bool {
-	if len(d.DroppedClients) > 0 {
-		return true
+	return len(d.DroppedEmails()) > 0
+}
+
+// DroppedEmails lists, once each, the emails of the users DropsUsers counts.
+func (d *HotDiff) DroppedEmails() []string {
+	var out []string
+	seen := map[string]struct{}{}
+	add := func(email string) {
+		if _, ok := seen[email]; !ok {
+			seen[email] = struct{}{}
+			out = append(out, email)
+		}
 	}
-	if len(d.RemovedUsers) == 0 {
-		return false
+	for _, u := range d.DroppedClients {
+		add(u.Email)
 	}
 	readded := make(map[string]struct{}, len(d.AddedUsers))
 	for _, u := range d.AddedUsers {
@@ -56,10 +66,10 @@ func (d *HotDiff) DropsUsers() bool {
 	}
 	for _, u := range d.RemovedUsers {
 		if _, ok := readded[u.Tag+"\x00"+u.Email]; !ok {
-			return true
+			add(u.Email)
 		}
 	}
-	return false
+	return out
 }
 
 // Empty reports whether the diff contains no operations.

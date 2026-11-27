@@ -33,14 +33,41 @@ func fakeGroupRules(t *testing.T) *groupCalls {
 
 // relayEnd is a running relay end of a GRE tunnel whose probe saw the far side answer or not.
 func relayEnd(id int, answering bool) *entry {
+	return relayEndRTT(id, answering, 20*time.Millisecond)
+}
+
+func relayEndRTT(id int, answering bool, rtt time.Duration) *entry {
 	e := &entry{t: Tunnel{
 		ID: id, Kind: KindGRE, Role: RoleServer, Enabled: true,
 		Settings: TunnelSettings{PeerIP: fmt.Sprintf("10.8%d.0.2", id), LocalIP: fmt.Sprintf("10.8%d.0.1/30", id)},
 	}, prober: &prober{}}
 	for range 5 {
-		e.prober.window.add(result{rtt: 20 * time.Millisecond, lost: !answering})
+		e.prober.window.add(result{rtt: rtt, lost: !answering})
 	}
 	return e
+}
+
+// A degraded tunnel (loss or delay over the limits) kept its share of every client while a healthy
+// one sat beside it: everyone hashed onto it got the slow link.
+func TestGroupsLeaveADegradedTunnelWhileAHealthyOneCarries(t *testing.T) {
+	calls := fakeGroupRules(t)
+	m := newManager(t.TempDir(), func() string { return "" })
+	slow := 2 * time.Second
+	m.entries = map[int]*entry{1: relayEndRTT(1, true, slow), 2: relayEnd(2, true), 3: relayEnd(3, true)}
+	forwards := []PortForward{{Listen: "8007", Proto: ProtoUDP}}
+	g := Group{ID: 7, Name: "lb", Mode: ModeBalance, Members: []int{1, 2}, Backups: []int{3}, Forwards: forwards, Enabled: true}
+	step := func(want string) {
+		t.Helper()
+		m.ReconcileGroups([]Group{g})
+		if got := calls.applied[len(calls.applied)-1]; got != want {
+			t.Fatalf("forwarding to %s, want %s", got, want)
+		}
+	}
+	step("tg7:mft2:1")
+	m.entries[2] = relayEndRTT(2, true, slow)
+	step("tg7:mft3:1")
+	m.entries[3] = relayEnd(3, false)
+	step("tg7:mft1,mft2:1")
 }
 
 func TestGroupsFollowTheTunnelsThatAnswer(t *testing.T) {

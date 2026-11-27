@@ -946,7 +946,7 @@
         "interfaceInvalid": "Gunakan 1 sampai 15 huruf, angka, atau karakter _ = + . -",
         "address": "Alamat server",
         "addressHint": "Alamat antarmuka itu sendiri, misalnya 10.0.0.1/24. Kosongkan untuk memakai alamat pertama subnet.",
-        "mtuHint": "Di server dan di setiap konfigurasi yang diberikan. Kosong memakai 1380, yang muat di jalur 1460 byte, termasuk terowongan GRE, IPIP atau SIT dari relay. Di balik terowongan yang lebih sempit, pakai MTU-nya dikurangi 80.",
+        "mtuHint": "Di server dan di setiap konfigurasi yang diberikan. Kosong memakai 1280, yang muat di jalur 1460 byte, termasuk terowongan GRE, IPIP atau SIT dari relay. Di balik terowongan yang lebih sempit, pakai MTU-nya dikurangi 80.",
         "hooks": "Hook",
         "hooksHint": "Perintah yang dijalankan wg-quick sebagai root saat antarmuka dinyalakan atau dimatikan, satu per baris. %i mewakili nama antarmuka.",
         "importTitle": "Impor server WireGuard",
