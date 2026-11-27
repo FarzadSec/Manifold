@@ -436,3 +436,16 @@ func parseSearchDomains(raw []string) ([]string, error) {
 	}
 	return out, nil
 }
+
+// TunnelSubnet is the network an inbound's server hands its clients addresses from.
+func TunnelSubnet(settings string) (netip.Prefix, bool) {
+	server := serverOf(settings)
+	if server == nil {
+		return netip.Prefix{}, false
+	}
+	subnet, err := parseSubnet(server.Subnet)
+	return subnet, err == nil
+}
+
+// DefaultSubnet is the network a server without one is given.
+func DefaultSubnet() netip.Prefix { return netip.MustParsePrefix(defaultSubnet) }

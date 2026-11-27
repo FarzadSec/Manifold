@@ -232,3 +232,13 @@ func ServerOf(settings string) *ServerSettings {
 	}
 	return parsed.Server
 }
+
+// TunnelSubnet is the network the inbound's sessions are given addresses from.
+func TunnelSubnet(settings string) (netip.Prefix, bool) {
+	server := ServerOf(settings)
+	if server == nil {
+		return netip.Prefix{}, false
+	}
+	subnet, err := parseSubnet(server.Subnet)
+	return subnet, err == nil
+}

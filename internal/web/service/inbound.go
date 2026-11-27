@@ -1349,6 +1349,7 @@ func (s *InboundService) AddInbound(inbound *model.Inbound) (*model.Inbound, boo
 	if err := s.normalizeAmneziaWGSettings(inbound, nil); err != nil {
 		return inbound, false, err
 	}
+	subnetGiven := tunnelSubnetGiven(inbound)
 	if err := prepareOpenVPNInbound(inbound, ""); err != nil {
 		return inbound, false, err
 	}
@@ -1356,6 +1357,12 @@ func (s *InboundService) AddInbound(inbound *model.Inbound) (*model.Inbound, boo
 		return inbound, false, err
 	}
 	if err := prepareWireGuardInbound(database.GetDB(), inbound); err != nil {
+		return inbound, false, err
+	}
+	if err := assignFreeTunnelSubnet(database.GetDB(), inbound, subnetGiven); err != nil {
+		return inbound, false, err
+	}
+	if err := checkTunnelSubnetConflict(database.GetDB(), inbound); err != nil {
 		return inbound, false, err
 	}
 	if inbound.NodeID != nil {
@@ -2089,6 +2096,12 @@ func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, 
 	}
 	if err := prepareWireGuardInbound(database.GetDB(), inbound); err != nil {
 		return inbound, false, err
+	}
+	// A node checked its own inbounds; refusing its copy here would stall the sync.
+	if !s.FromNodeSync {
+		if err := checkTunnelSubnetConflict(database.GetDB(), inbound); err != nil {
+			return inbound, false, err
+		}
 	}
 	inbound.SubSortIndex = normalizeSubSortIndex(inbound.SubSortIndex)
 
