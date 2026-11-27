@@ -91,11 +91,10 @@ func CanCarryRelayGroup(t Tunnel) bool {
 
 func groupOwner(id int) string { return fmt.Sprintf("tg%d", id) }
 
-// carryHealth is how well a group's tunnel carries traffic now, best last.
-type carryHealth int
-
+// How well a group's tunnel carries traffic now, best last; a plain int, so the API
+// type generator, which reads this package, has nothing new to describe.
 const (
-	carryDown carryHealth = iota
+	carryDown = iota
 	carryDegraded
 	carryUp
 )
@@ -103,12 +102,12 @@ const (
 // chooseTargets is what a group forwards to now: the members fully up, else the backups that are, else
 // the members and then the backups that answer with loss or delay, else every member, so a probe that
 // cannot run never takes the ports away; failover takes the first.
-func chooseTargets(mode string, members, backups []egress.Target, memberHealth, backupHealth []carryHealth) []egress.Target {
+func chooseTargets(mode string, members, backups []egress.Target, memberHealth, backupHealth []int) []egress.Target {
 	var live []egress.Target
 	for _, step := range []struct {
 		targets []egress.Target
-		health  []carryHealth
-		want    carryHealth
+		health  []int
+		want    int
 	}{
 		{members, memberHealth, carryUp},
 		{backups, backupHealth, carryUp},
@@ -128,7 +127,7 @@ func chooseTargets(mode string, members, backups []egress.Target, memberHealth, 
 	return live
 }
 
-func withHealth(targets []egress.Target, health []carryHealth, want carryHealth) []egress.Target {
+func withHealth(targets []egress.Target, health []int, want int) []egress.Target {
 	var live []egress.Target
 	for i, t := range targets {
 		if health[i] == want {
@@ -139,9 +138,9 @@ func withHealth(targets []egress.Target, health []carryHealth, want carryHealth)
 }
 
 // groupTargetsLocked lists the tunnels of ids that can carry a group, and how well each carries now.
-func (m *Manager) groupTargetsLocked(ids []int) ([]egress.Target, []carryHealth) {
+func (m *Manager) groupTargetsLocked(ids []int) ([]egress.Target, []int) {
 	var targets []egress.Target
-	var health []carryHealth
+	var health []int
 	for _, id := range ids {
 		e := m.entries[id]
 		if e == nil || e.disabled || e.err != nil || !CanJoinGroup(e.t) {
