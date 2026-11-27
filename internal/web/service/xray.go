@@ -1592,7 +1592,7 @@ func (s *XrayService) restartToDropClients(diff *xray.HotDiff) bool {
 		logger.Warning("get RestartXrayOnClientDisable failed:", err)
 		return false
 	}
-	return restart
+	return restart && clientsConnected(diff.DroppedEmails())
 }
 
 // tryHotApply reconciles the running core with newCfg over gRPC; false means restart, while a TUIC
