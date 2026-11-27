@@ -34,7 +34,7 @@ func TestTunnelNetworksAreKeptApartOnOneHost(t *testing.T) {
 	if err != nil {
 		t.Fatalf("first WireGuard inbound: %v", err)
 	}
-	second, err := add(48102, model.WireGuard, wgTestSettings(""))
+	second, err := add(48102, model.WireGuard, wgTestSettings(`,"subnetIp":"10.0.0.0","subnetCidr":24`))
 	if err != nil {
 		t.Fatalf("second WireGuard inbound with no network named: %v", err)
 	}
@@ -42,7 +42,8 @@ func TestTunnelNetworksAreKeptApartOnOneHost(t *testing.T) {
 		t.Fatalf("both inbounds left their network empty and got %s and %s", a, b)
 	}
 
-	ovpn := `{"server":{"proto":"udp"},"clients":[]}`
+	// The inbound form fills in the engine's default network, so that counts as none named.
+	ovpn := `{"server":{"proto":"udp","subnet":"10.8.0.0/24"},"clients":[]}`
 	third, err := add(48103, model.OpenVPN, ovpn)
 	if err != nil {
 		t.Fatalf("first OpenVPN inbound: %v", err)
@@ -55,14 +56,16 @@ func TestTunnelNetworksAreKeptApartOnOneHost(t *testing.T) {
 		t.Fatalf("both OpenVPN inbounds got %s and %s", a, b)
 	}
 
-	taken := only(t, first)
-	named := fmt.Sprintf(`,"subnetIp":"%s","subnetCidr":%d`, taken.Addr(), taken.Bits())
-	if _, err := add(48105, model.WireGuard, wgTestSettings(named)); err == nil || !strings.Contains(err.Error(), "overlaps") {
-		t.Fatalf("a WireGuard inbound on %s was stored next to inbound %d: err = %v", taken, first.Id, err)
+	// A network the admin chose is kept as chosen, so one that overlaps another inbound's is refused.
+	audited := `,"subnetIp":"172.24.0.0","subnetCidr":20`
+	if _, err := add(48105, model.WireGuard, wgTestSettings(audited)); err != nil {
+		t.Fatalf("first inbound on 172.24.0.0/20: %v", err)
 	}
-
-	second.Settings = wgTestSettings(named)
+	if _, err := add(48106, model.WireGuard, wgTestSettings(audited)); err == nil || !strings.Contains(err.Error(), "overlaps") {
+		t.Fatalf("a second WireGuard inbound on 172.24.0.0/20 was stored: err = %v", err)
+	}
+	second.Settings = wgTestSettings(audited)
 	if _, _, err := svc.UpdateInbound(second); err == nil || !strings.Contains(err.Error(), "overlaps") {
-		t.Fatalf("moving inbound %d onto %s was accepted: err = %v", second.Id, taken, err)
+		t.Fatalf("moving inbound %d onto 172.24.0.0/20 was accepted: err = %v", second.Id, err)
 	}
 }

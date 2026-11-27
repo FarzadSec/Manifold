@@ -307,13 +307,16 @@ func TunnelSubnets(settings string) []netip.Prefix {
 	return out
 }
 
-// NamesSubnet reports whether the settings fix the interface's network: an
-// explicit subnet, named addresses, or clients whose addresses imply it.
+// NamesSubnet reports whether the settings fix the interface's network: a subnet other than the
+// default the form fills in, named addresses, or clients whose addresses imply it.
 func NamesSubnet(settings string) bool {
 	var parsed inboundSettings
 	if err := json.Unmarshal([]byte(settings), &parsed); err != nil {
 		return true
 	}
-	_, fromClients := firstClientAddress(parsed.Clients)
-	return strings.TrimSpace(parsed.SubnetIP) != "" || strings.TrimSpace(parsed.Address) != "" || fromClients
+	if _, fromClients := firstClientAddress(parsed.Clients); fromClients || strings.TrimSpace(parsed.Address) != "" {
+		return true
+	}
+	subnet := strings.TrimSpace(parsed.SubnetIP)
+	return subnet != "" && serverAddress(parsed).Masked() != netip.MustParsePrefix(defaultSubnet)
 }

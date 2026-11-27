@@ -34,22 +34,31 @@ func tunnelSubnets(ib *model.Inbound) []netip.Prefix {
 	return nil
 }
 
-// tunnelSubnetGiven reports whether the admin chose the inbound's network; one left
-// empty takes the engine's default, which every other such inbound would share.
+// tunnelSubnetGiven reports whether the admin chose the inbound's network. An empty one, or the
+// engine's default the form fills in, is the default every other such inbound would share.
 func tunnelSubnetGiven(ib *model.Inbound) bool {
 	switch ib.Protocol {
 	case model.WireGuard:
 		return wgquick.NamesSubnet(ib.Settings)
-	case model.OpenVPN, model.L2TP:
-		var parsed struct {
-			Server *struct {
-				Subnet string `json:"subnet"`
-			} `json:"server"`
-		}
-		_ = json.Unmarshal([]byte(ib.Settings), &parsed)
-		return parsed.Server != nil && parsed.Server.Subnet != ""
+	case model.OpenVPN:
+		return serverSubnetGiven(ib.Settings, openvpn.DefaultSubnet())
+	case model.L2TP:
+		return serverSubnetGiven(ib.Settings, l2tp.DefaultSubnet())
 	}
 	return true
+}
+
+func serverSubnetGiven(settings string, fallback netip.Prefix) bool {
+	var parsed struct {
+		Server *struct {
+			Subnet string `json:"subnet"`
+		} `json:"server"`
+	}
+	if err := json.Unmarshal([]byte(settings), &parsed); err != nil || parsed.Server == nil || parsed.Server.Subnet == "" {
+		return false
+	}
+	subnet, err := netip.ParsePrefix(parsed.Server.Subnet)
+	return err != nil || subnet.Masked() != fallback
 }
 
 // sameHostTunnelInbounds are the other WireGuard, OpenVPN and L2TP inbounds on ib's host.

@@ -242,3 +242,6 @@ func TunnelSubnet(settings string) (netip.Prefix, bool) {
 	subnet, err := parseSubnet(server.Subnet)
 	return subnet, err == nil
 }
+
+// DefaultSubnet is the network a server without one is given.
+func DefaultSubnet() netip.Prefix { return netip.MustParsePrefix(defaultSubnet) }
